@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: x-chatgpt-poster
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: POSTING_API_KEY
+        generateValue: true
+      - key: X_API_KEY
+        sync: false
+      - key: X_API_SECRET
+        sync: false
+      - key: X_ACCESS_TOKEN
+        sync: false
+      - key: X_ACCESS_TOKEN_SECRET
+        sync: false
+      - key: X_USERNAME
+        value: DataMaxxing
