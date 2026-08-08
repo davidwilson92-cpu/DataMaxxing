@@ -1,0 +1,50 @@
+name: Post Tweet
+
+on:
+  workflow_dispatch:
+    inputs:
+      tweet_text:
+        description: "Tweet text (max 280 chars)"
+        required: true
+        type: string
+      image_path:
+        description: "Optional path to an image in this repo (e.g. charts/q3.png)"
+        required: false
+        type: string
+      dry_run:
+        description: "Dry run (log only, don't actually post)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install tweepy
+
+      - name: Post to X
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: |
+          ARGS=("${{ github.event.inputs.tweet_text }}")
+          if [ -n "${{ github.event.inputs.image_path }}" ]; then
+            ARGS+=(--image "${{ github.event.inputs.image_path }}")
+          fi
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          python post_tweet.py "${ARGS[@]}"
