@@ -638,11 +638,11 @@ def root() -> RedirectResponse:
     return RedirectResponse("/connect/x", status_code=302)
 
 
-@app.get("/studio", response_class=HTMLResponse)
+@app.get("/studio", response_class=HTMLResponse, response_model=None)
 def studio_page(
     x_creator_session: Annotated[str | None, Cookie()] = None,
     db: Session = Depends(get_db),
-) -> HTMLResponse | RedirectResponse:
+):
     if creator_from_session(x_creator_session, db) is None:
         return RedirectResponse("/studio/login", status_code=302)
     return HTMLResponse(STUDIO_HTML)
