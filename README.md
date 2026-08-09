@@ -1,71 +1,92 @@
-# X Poster V3 — OAuth onboarding
+# X Creator Studio — V4
 
-V3 keeps existing OAuth 1.0a creators working and adds self-service OAuth 2.0 Authorization Code + PKCE onboarding.
+V4 adds a creator-facing web interface on top of the existing multi-tenant X posting backend.
 
-## New public routes
+## What creators can do
 
-- `/connect/x` — simple onboarding page with a Connect X button
-- `/connect/x/start` — begins X authorization
-- `/callback/x` — exchanges the authorization code, retrieves the X account and stores encrypted tokens
-- `/privacy` — privacy policy page
+- Connect an X account with OAuth
+- Enter Creator Studio automatically after connecting
+- Sign in later using their creator key
+- Draft manually
+- Optionally generate a draft with the OpenAI API
+- See the exact connected X account
+- Preview character count
+- Confirm and publish
+- View recent publishing activity
 
-## X Developer Portal configuration
+Existing Custom GPT Actions and V3 API routes remain supported.
 
-In the X Developer Portal, enable OAuth 2.0 for the platform app.
+## New routes
 
-Use a Web App / confidential client configuration and set:
+- `/studio` — creator dashboard
+- `/studio/login` — sign in with creator key
+- `/studio/api/me`
+- `/studio/api/preview`
+- `/studio/api/publish`
+- `/studio/api/recent`
+- `/studio/api/ai/draft`
 
-- Callback URL: `https://x-chatgpt-poster.onrender.com/callback/x`
-- Website URL: `https://x-chatgpt-poster.onrender.com/connect/x`
+## Upgrade from V3
 
-The app requests:
-
-- `tweet.read`
-- `tweet.write`
-- `users.read`
-- `offline.access`
-
-Copy the OAuth 2.0 Client ID and Client Secret into Render as:
-
-- `X_OAUTH2_CLIENT_ID`
-- `X_OAUTH2_CLIENT_SECRET`
-
-Also add/check:
-
-- `PUBLIC_BASE_URL=https://x-chatgpt-poster.onrender.com`
-- `X_OAUTH2_REDIRECT_URI=https://x-chatgpt-poster.onrender.com/callback/x`
-
-## Deploy
-
-Replace the repository's V2 versions of:
+Replace these files in the existing GitHub repository:
 
 - `app.py`
 - `requirements.txt`
 - `render.yaml`
-- `.env.example`
 - `README.md`
 
-Commit and push, then sync the Render Blueprint or deploy the latest commit.
+Keep all existing environment variables and database resources.
 
-After deployment, check:
+## New Render variables
 
-`https://x-chatgpt-poster.onrender.com/health`
+`SESSION_SECRET`
 
-Expected response:
+- Render can generate this automatically from the Blueprint.
+- It signs secure 30-day browser sessions.
 
-```json
-{"status":"ok","version":"3.0.0"}
-```
+`OPENAI_API_KEY` (optional)
 
-Then open:
+- Required only for the in-browser AI drafting button.
+- Keep this in Render environment variables; never place it in browser code or GitHub.
 
-`https://x-chatgpt-poster.onrender.com/connect/x`
+`OPENAI_MODEL`
 
-The callback creates a creator record, encrypts the OAuth access and refresh tokens, and shows a one-time `creator_api_key`. That key goes into the new creator's private Custom GPT Action as Bearer authentication.
+- Defaults to `gpt-5-mini` in `render.yaml`.
+- Change it in Render if needed.
 
-## Important
+## Deploy
 
-- Existing DataMaxxing and JHFootballAgent creator records continue using their current OAuth 1.0a credentials.
-- Newly connected creators use OAuth 2.0.
-- The creator key shown after connection is displayed only once.
-- Keep the GPT private and never put creator keys into GPT instructions or the OpenAPI schema.
+1. Upload and commit the V4 replacement files to GitHub.
+2. In Render, sync the Blueprint or add the new environment variables manually.
+3. Use **Manual Deploy → Clear build cache & deploy**.
+4. Confirm `/health` returns version `4.0.0`.
+5. Open `/connect/x` and connect a test account, or open `/studio/login` and use an existing creator key.
+
+## Interface flow
+
+New creator:
+
+`/connect/x` → X authorisation → callback → creator key shown once → signed session → `/studio`
+
+Existing creator:
+
+`/studio/login` → creator key → signed session → `/studio`
+
+## Security notes
+
+- X and OpenAI credentials remain server-side.
+- Creator keys are hashed in the database.
+- X OAuth tokens remain encrypted at rest.
+- Browser sessions are HttpOnly, Secure and SameSite=Lax.
+- Publishing requires an explicit confirmation modal in the interface.
+- Creator Studio never lets the browser choose a different X account.
+
+## Suggested next upgrades
+
+- Creator profile and saved voice instructions
+- Threads and replies
+- Images
+- Scheduling and queued posts
+- Passwordless email login instead of creator-key login
+- Billing and plan limits
+- Admin dashboard
