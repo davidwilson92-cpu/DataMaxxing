@@ -2,11 +2,23 @@ services:
   - type: web
     name: x-chatgpt-poster
     runtime: docker
-    plan: starter
+    plan: free
     healthCheckPath: /health
     envVars:
-      - key: POSTING_API_KEY
+      - key: DATABASE_URL
+        fromDatabase:
+          name: x-chatgpt-poster-db
+          property: connectionString
+      - key: ADMIN_API_KEY
         generateValue: true
+      - key: CREDENTIAL_ENCRYPTION_KEY
+        sync: false
+      - key: BOOTSTRAP_CREATOR_API_KEY
+        sync: false
+      - key: BOOTSTRAP_CREATOR_NAME
+        value: DataMaxxing
+      - key: X_USERNAME
+        value: DataMaxxing
       - key: X_API_KEY
         sync: false
       - key: X_API_SECRET
@@ -15,5 +27,8 @@ services:
         sync: false
       - key: X_ACCESS_TOKEN_SECRET
         sync: false
-      - key: X_USERNAME
-        value: DataMaxxing
+
+databases:
+  - name: x-chatgpt-poster-db
+    plan: free
+    databaseName: x_poster

@@ -1,15 +1,15 @@
 openapi: 3.1.0
 info:
-  title: Private X Posting API
-  description: Preview and publish explicitly approved posts to the owner's X account.
-  version: 1.0.0
+  title: Creator X Posting API
+  version: 2.0.0
+  description: Preview and publish posts to the X account linked to this GPT's bearer key.
 servers:
   - url: https://REPLACE-WITH-YOUR-SERVICE.onrender.com
 paths:
   /x/preview:
     post:
-      operationId: previewXPost
-      summary: Validate and preview the exact X post without publishing it
+      operationId: previewPost
+      summary: Preview the exact X post without publishing it
       security:
         - bearerAuth: []
       requestBody:
@@ -23,26 +23,15 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 280
-                approved:
-                  type: boolean
-                  default: false
-              required: [text]
+              required:
+                - text
       responses:
         "200":
-          description: Validated preview
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  text: {type: string}
-                  character_count: {type: integer}
-                  valid: {type: boolean}
+          description: Preview successful
   /x/post:
     post:
-      operationId: publishApprovedXPost
-      summary: Publish the exact post only after the user explicitly confirms it
-      description: Never call this while drafting. Call only after the user clearly says to post or publish the exact final text. Set approved to true only then.
+      operationId: publishPost
+      summary: Publish an explicitly approved post to the linked X account
       x-openai-isConsequential: true
       security:
         - bearerAuth: []
@@ -57,28 +46,17 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 280
-                  description: The exact user-approved text; do not alter it.
                 approved:
                   type: boolean
                   enum: [true]
-                  description: Confirms the user explicitly approved publication.
-              required: [text, approved]
+              required:
+                - text
+                - approved
       responses:
         "200":
           description: Post published successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: {type: boolean}
-                  post_id: {type: string}
-                  url: {type: string}
-                  text: {type: string}
-        "400": {description: Explicit approval was not supplied}
-        "401": {description: Invalid API key}
-        "502": {description: X API rejected the post}
 components:
+  schemas: {}
   securitySchemes:
     bearerAuth:
       type: http

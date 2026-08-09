@@ -1,118 +1,133 @@
-# ChatGPT → X Poster
+# X Poster V2 — Multi-Tenant Backend
 
-This wraps the existing Tweepy posting logic in a private HTTPS API that a Custom GPT Action can call.
+This upgrades the original one-account service into a shared backend that can safely serve multiple creators.
 
 ## What changes
 
-Current flow: GitHub Actions → `post_tweet.py` → X.
+Before:
 
-New flow: Custom GPT → secured API → X.
+`one GPT → one Render service → one X account`
 
-The GitHub Action can remain as a backup.
+Now:
 
-## 1. Add these files to the existing GitHub repository
+`many GPTs → one Render service + Postgres → the correct X account`
 
-Copy all files in this folder into the repository root. Keep the existing `post_tweet.py` and workflow.
+Each creator receives a separate bearer key. The backend hashes that key, maps it to one creator record, decrypts only that creator's X credentials, and posts to that account. The GPT never chooses the target account.
 
-Commit and push.
+## Safety model
 
-## 2. Deploy on Render
+- Creator API keys are stored only as SHA-256 hashes.
+- X credentials are encrypted in the database using Fernet.
+- The encryption key stays in Render environment variables.
+- Admin onboarding uses a separate `ADMIN_API_KEY`.
+- Publishing still requires `approved=true`.
+- Every publish attempt is written to `post_logs`.
 
-1. Create a Render account and choose **New → Blueprint**.
-2. Connect the GitHub repository.
-3. Render will detect `render.yaml`.
-4. Enter the four existing X credentials when prompted:
-   - `X_API_KEY`
-   - `X_API_SECRET`
-   - `X_ACCESS_TOKEN`
-   - `X_ACCESS_TOKEN_SECRET`
-5. Confirm `X_USERNAME=DataMaxxing` or replace it with the correct handle.
-6. Deploy.
+## Upgrade the existing Render service
 
-Render generates `POSTING_API_KEY`. Open the service's Environment page and securely copy its value; it is the key entered into the GPT Action authentication screen.
+### 1. Back up first
 
-The deployed service URL will resemble:
+Keep a copy of the current working repo and note the existing Render environment variables. Do not delete the current GPT Action authentication key until the migration is complete.
 
-`https://x-chatgpt-poster.onrender.com`
+### 2. Replace/add the repository files
 
-Test health in a browser:
+Upload this package to the same repository and commit it.
 
-`https://YOUR-SERVICE.onrender.com/health`
+### 3. Generate an encryption key
 
-Expected response:
+Run locally:
 
-```json
-{"status":"ok"}
+```bash
+python generate_fernet_key.py
 ```
 
-## 3. Test the private endpoint
+Or run:
 
-Replace the placeholders:
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Copy the output into Render as `CREDENTIAL_ENCRYPTION_KEY`. Keep it permanently. Losing it makes stored X tokens unreadable.
+
+### 4. Add Postgres and environment variables
+
+Sync the updated Blueprint or manually create a Render Postgres database and set `DATABASE_URL` to its internal connection string.
+
+Required service variables:
+
+- `DATABASE_URL`
+- `ADMIN_API_KEY`
+- `CREDENTIAL_ENCRYPTION_KEY`
+
+To preserve DataMaxxing during the first deployment, also keep:
+
+- `X_API_KEY`
+- `X_API_SECRET`
+- `X_ACCESS_TOKEN`
+- `X_ACCESS_TOKEN_SECRET`
+- `X_USERNAME=DataMaxxing`
+- `BOOTSTRAP_CREATOR_NAME=DataMaxxing`
+- `BOOTSTRAP_CREATOR_API_KEY=<the same key currently used by the DataMaxxing Custom GPT>`
+
+On startup, the app inserts DataMaxxing into Postgres once. Existing GPT authentication therefore continues to work without changing the GPT.
+
+After `/health` works and DataMaxxing can preview successfully, you may remove the four `X_*` bootstrap secrets and `BOOTSTRAP_CREATOR_API_KEY` from Render. The encrypted copy remains in Postgres. Keep `CREDENTIAL_ENCRYPTION_KEY`.
+
+## Add a second creator manually
+
+Use the admin endpoint. Do not put any real secrets into chat or source control.
+
+```bash
+curl -X POST "https://YOUR-SERVICE.onrender.com/admin/creators" \
+  -H "Authorization: Bearer YOUR_ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Creator Two",
+    "x_username": "creator_two",
+    "x_api_key": "...",
+    "x_api_secret": "...",
+    "x_access_token": "...",
+    "x_access_token_secret": "..."
+  }'
+```
+
+The response contains `creator_api_key`. Copy it immediately; only its hash is stored.
+
+Create or duplicate a private Custom GPT, use the same `openapi-action.yaml`, and set its Action bearer key to that creator's new `creator_api_key`.
+
+Both GPTs use the same Render URL. Their different bearer keys determine which X account receives the post.
+
+## List creators
+
+```bash
+curl "https://YOUR-SERVICE.onrender.com/admin/creators" \
+  -H "Authorization: Bearer YOUR_ADMIN_API_KEY"
+```
+
+## Deactivate a creator
+
+```bash
+curl -X POST "https://YOUR-SERVICE.onrender.com/admin/creators/2/deactivate" \
+  -H "Authorization: Bearer YOUR_ADMIN_API_KEY"
+```
+
+## Test a creator key
 
 ```bash
 curl -X POST "https://YOUR-SERVICE.onrender.com/x/preview" \
-  -H "Authorization: Bearer YOUR_POSTING_API_KEY" \
+  -H "Authorization: Bearer CREATOR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"text":"Testing the private X API","approved":false}'
+  -d '{"text":"Testing creator routing"}'
 ```
 
-For one deliberate live test:
+The response includes the linked `account`, so you can verify routing before publishing.
 
-```bash
-curl -X POST "https://YOUR-SERVICE.onrender.com/x/post" \
-  -H "Authorization: Bearer YOUR_POSTING_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"text":"Testing my ChatGPT to X integration.","approved":true}'
-```
+## OAuth-ready design
 
-That second command publishes a real post.
+This version still onboards creators by entering credentials through the protected admin endpoint. The database and account routing are now in place for the next phase: adding `/connect/x` and `/callback/x` so a creator can authorize your single X developer app with a Connect X button.
 
-## 4. Create the Custom GPT
+For that phase, the credential columns can store OAuth-issued access tokens instead of manually supplied tokens. The GPT-facing posting endpoints do not need to change.
 
-1. In ChatGPT on the web, open **GPTs → Create**.
-2. Under **Configure**, paste `custom-gpt-instructions.txt` into Instructions.
-3. Open **Actions → Create new action**.
-4. Open `openapi-action.yaml` and replace the server URL with the deployed Render URL.
-5. Paste the complete schema into the Action editor.
-6. Set Authentication to:
-   - Type: **API key**
-   - Auth type: **Bearer**
-   - API key: the value of `POSTING_API_KEY`
-7. Test `previewXPost` first.
-8. Keep the GPT private and save it.
+## Important limitation
 
-## 5. Use it
-
-Example:
-
-1. “Draft a post about AWS growth in the DataMaxxing style.”
-2. “Make it shorter.”
-3. “Post it.”
-
-The publish endpoint requires both valid bearer authentication and `approved=true`. The GPT instructions also prohibit publishing until the exact final wording has been explicitly approved.
-
-## Local development
-
-```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env
-# Export the variables from .env, then:
-uvicorn app:app --reload
-```
-
-Run tests:
-
-```bash
-pip install pytest httpx
-pytest -q
-```
-
-## Security notes
-
-- Never commit `.env` or any credentials.
-- Keep the GPT private.
-- Use a long, random `POSTING_API_KEY` unrelated to the X credentials.
-- Rotate `POSTING_API_KEY` immediately if it is exposed.
-- The endpoint currently publishes text-only posts. The original CLI still supports local image uploads; adding images to the web workflow requires a separate upload/storage design.
+A free Render Postgres database has lifecycle and storage constraints. It is fine for proving the multi-tenant flow, but review Render's current database terms before relying on it for paying customers.
