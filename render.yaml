@@ -13,6 +13,14 @@ services:
         generateValue: true
       - key: CREDENTIAL_ENCRYPTION_KEY
         sync: false
+      - key: PUBLIC_BASE_URL
+        value: https://x-chatgpt-poster.onrender.com
+      - key: X_OAUTH2_CLIENT_ID
+        sync: false
+      - key: X_OAUTH2_CLIENT_SECRET
+        sync: false
+      - key: X_OAUTH2_REDIRECT_URI
+        value: https://x-chatgpt-poster.onrender.com/callback/x
       - key: BOOTSTRAP_CREATOR_API_KEY
         sync: false
       - key: BOOTSTRAP_CREATOR_NAME

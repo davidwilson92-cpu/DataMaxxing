@@ -1,133 +1,71 @@
-# X Poster V2 — Multi-Tenant Backend
+# X Poster V3 — OAuth onboarding
 
-This upgrades the original one-account service into a shared backend that can safely serve multiple creators.
+V3 keeps existing OAuth 1.0a creators working and adds self-service OAuth 2.0 Authorization Code + PKCE onboarding.
 
-## What changes
+## New public routes
 
-Before:
+- `/connect/x` — simple onboarding page with a Connect X button
+- `/connect/x/start` — begins X authorization
+- `/callback/x` — exchanges the authorization code, retrieves the X account and stores encrypted tokens
+- `/privacy` — privacy policy page
 
-`one GPT → one Render service → one X account`
+## X Developer Portal configuration
 
-Now:
+In the X Developer Portal, enable OAuth 2.0 for the platform app.
 
-`many GPTs → one Render service + Postgres → the correct X account`
+Use a Web App / confidential client configuration and set:
 
-Each creator receives a separate bearer key. The backend hashes that key, maps it to one creator record, decrypts only that creator's X credentials, and posts to that account. The GPT never chooses the target account.
+- Callback URL: `https://x-chatgpt-poster.onrender.com/callback/x`
+- Website URL: `https://x-chatgpt-poster.onrender.com/connect/x`
 
-## Safety model
+The app requests:
 
-- Creator API keys are stored only as SHA-256 hashes.
-- X credentials are encrypted in the database using Fernet.
-- The encryption key stays in Render environment variables.
-- Admin onboarding uses a separate `ADMIN_API_KEY`.
-- Publishing still requires `approved=true`.
-- Every publish attempt is written to `post_logs`.
+- `tweet.read`
+- `tweet.write`
+- `users.read`
+- `offline.access`
 
-## Upgrade the existing Render service
+Copy the OAuth 2.0 Client ID and Client Secret into Render as:
 
-### 1. Back up first
+- `X_OAUTH2_CLIENT_ID`
+- `X_OAUTH2_CLIENT_SECRET`
 
-Keep a copy of the current working repo and note the existing Render environment variables. Do not delete the current GPT Action authentication key until the migration is complete.
+Also add/check:
 
-### 2. Replace/add the repository files
+- `PUBLIC_BASE_URL=https://x-chatgpt-poster.onrender.com`
+- `X_OAUTH2_REDIRECT_URI=https://x-chatgpt-poster.onrender.com/callback/x`
 
-Upload this package to the same repository and commit it.
+## Deploy
 
-### 3. Generate an encryption key
+Replace the repository's V2 versions of:
 
-Run locally:
+- `app.py`
+- `requirements.txt`
+- `render.yaml`
+- `.env.example`
+- `README.md`
 
-```bash
-python generate_fernet_key.py
+Commit and push, then sync the Render Blueprint or deploy the latest commit.
+
+After deployment, check:
+
+`https://x-chatgpt-poster.onrender.com/health`
+
+Expected response:
+
+```json
+{"status":"ok","version":"3.0.0"}
 ```
 
-Or run:
+Then open:
 
-```bash
-python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-```
+`https://x-chatgpt-poster.onrender.com/connect/x`
 
-Copy the output into Render as `CREDENTIAL_ENCRYPTION_KEY`. Keep it permanently. Losing it makes stored X tokens unreadable.
+The callback creates a creator record, encrypts the OAuth access and refresh tokens, and shows a one-time `creator_api_key`. That key goes into the new creator's private Custom GPT Action as Bearer authentication.
 
-### 4. Add Postgres and environment variables
+## Important
 
-Sync the updated Blueprint or manually create a Render Postgres database and set `DATABASE_URL` to its internal connection string.
-
-Required service variables:
-
-- `DATABASE_URL`
-- `ADMIN_API_KEY`
-- `CREDENTIAL_ENCRYPTION_KEY`
-
-To preserve DataMaxxing during the first deployment, also keep:
-
-- `X_API_KEY`
-- `X_API_SECRET`
-- `X_ACCESS_TOKEN`
-- `X_ACCESS_TOKEN_SECRET`
-- `X_USERNAME=DataMaxxing`
-- `BOOTSTRAP_CREATOR_NAME=DataMaxxing`
-- `BOOTSTRAP_CREATOR_API_KEY=<the same key currently used by the DataMaxxing Custom GPT>`
-
-On startup, the app inserts DataMaxxing into Postgres once. Existing GPT authentication therefore continues to work without changing the GPT.
-
-After `/health` works and DataMaxxing can preview successfully, you may remove the four `X_*` bootstrap secrets and `BOOTSTRAP_CREATOR_API_KEY` from Render. The encrypted copy remains in Postgres. Keep `CREDENTIAL_ENCRYPTION_KEY`.
-
-## Add a second creator manually
-
-Use the admin endpoint. Do not put any real secrets into chat or source control.
-
-```bash
-curl -X POST "https://YOUR-SERVICE.onrender.com/admin/creators" \
-  -H "Authorization: Bearer YOUR_ADMIN_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Creator Two",
-    "x_username": "creator_two",
-    "x_api_key": "...",
-    "x_api_secret": "...",
-    "x_access_token": "...",
-    "x_access_token_secret": "..."
-  }'
-```
-
-The response contains `creator_api_key`. Copy it immediately; only its hash is stored.
-
-Create or duplicate a private Custom GPT, use the same `openapi-action.yaml`, and set its Action bearer key to that creator's new `creator_api_key`.
-
-Both GPTs use the same Render URL. Their different bearer keys determine which X account receives the post.
-
-## List creators
-
-```bash
-curl "https://YOUR-SERVICE.onrender.com/admin/creators" \
-  -H "Authorization: Bearer YOUR_ADMIN_API_KEY"
-```
-
-## Deactivate a creator
-
-```bash
-curl -X POST "https://YOUR-SERVICE.onrender.com/admin/creators/2/deactivate" \
-  -H "Authorization: Bearer YOUR_ADMIN_API_KEY"
-```
-
-## Test a creator key
-
-```bash
-curl -X POST "https://YOUR-SERVICE.onrender.com/x/preview" \
-  -H "Authorization: Bearer CREATOR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"text":"Testing creator routing"}'
-```
-
-The response includes the linked `account`, so you can verify routing before publishing.
-
-## OAuth-ready design
-
-This version still onboards creators by entering credentials through the protected admin endpoint. The database and account routing are now in place for the next phase: adding `/connect/x` and `/callback/x` so a creator can authorize your single X developer app with a Connect X button.
-
-For that phase, the credential columns can store OAuth-issued access tokens instead of manually supplied tokens. The GPT-facing posting endpoints do not need to change.
-
-## Important limitation
-
-A free Render Postgres database has lifecycle and storage constraints. It is fine for proving the multi-tenant flow, but review Render's current database terms before relying on it for paying customers.
+- Existing DataMaxxing and JHFootballAgent creator records continue using their current OAuth 1.0a credentials.
+- Newly connected creators use OAuth 2.0.
+- The creator key shown after connection is displayed only once.
+- Keep the GPT private and never put creator keys into GPT instructions or the OpenAPI schema.
