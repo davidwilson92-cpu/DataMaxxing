@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Nova{% endblock %}</title>
+  <link rel="stylesheet" href="/static/nova.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="/"><span class="brand-mark">N</span><span>NOVA</span></a>
+  <nav>
+    {% if user %}
+      <a href="/studio">Studio</a><a href="/account">Account</a><a href="/security">Security</a>
+      <form method="post" action="/logout" class="inline"><button class="nav-button">Sign out</button></form>
+    {% else %}
+      <a href="/security">Security</a><a href="/login">Log in</a><a class="pill" href="/signup">Start creating</a>
+    {% endif %}
+  </nav>
+</header>
+{% block body %}{% endblock %}
+<footer class="footer"><span>Nova</span><span>AI publishing across your social accounts.</span><a href="/security">Security & privacy</a></footer>
+</body>
+</html>

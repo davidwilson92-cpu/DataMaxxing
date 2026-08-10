@@ -13,26 +13,73 @@ services:
         generateValue: true
       - key: SESSION_SECRET
         generateValue: true
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: OPENAI_MODEL
-        value: gpt-5-mini
       - key: CREDENTIAL_ENCRYPTION_KEY
         sync: false
       - key: PUBLIC_BASE_URL
         value: https://x-chatgpt-poster.onrender.com
+      - key: PRIVACY_CONTACT_EMAIL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5-mini
       - key: X_OAUTH2_CLIENT_ID
         sync: false
       - key: X_OAUTH2_CLIENT_SECRET
         sync: false
       - key: X_OAUTH2_REDIRECT_URI
         value: https://x-chatgpt-poster.onrender.com/callback/x
+      - key: META_APP_ID
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
+      - key: META_GRAPH_VERSION
+        value: v23.0
+      - key: META_REDIRECT_URI
+        value: https://x-chatgpt-poster.onrender.com/oauth/meta/callback
+      - key: TIKTOK_CLIENT_KEY
+        sync: false
+      - key: TIKTOK_CLIENT_SECRET
+        sync: false
+      - key: TIKTOK_REDIRECT_URI
+        value: https://x-chatgpt-poster.onrender.com/oauth/tiktok/callback
+      - key: TIKTOK_DEFAULT_PRIVACY
+        value: PUBLIC_TO_EVERYONE
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: REQUIRE_SUBSCRIPTION
+        value: "false"
+      - key: NOVA_PRICE_LABEL
+        value: Creator plan
+      - key: NOVA_PRICE_NOTE
+        value: Cancel from your account at any time.
+      - key: SCHEDULER_SECRET
+        generateValue: true
+      - key: SCHEDULER_INTERVAL_SECONDS
+        value: "60"
+      - key: S3_BUCKET
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_PUBLIC_BASE_URL
+        sync: false
+      - key: S3_ENDPOINT_URL
+        sync: false
+      # Legacy X Custom GPT compatibility. Existing values can remain in Render.
       - key: BOOTSTRAP_CREATOR_API_KEY
         sync: false
       - key: BOOTSTRAP_CREATOR_NAME
-        value: DataMaxxing
+        sync: false
       - key: X_USERNAME
-        value: DataMaxxing
+        sync: false
       - key: X_API_KEY
         sync: false
       - key: X_API_SECRET

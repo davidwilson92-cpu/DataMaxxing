@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: Creator X Posting API
-  version: 2.0.0
-  description: Preview and publish posts to the X account linked to this GPT's bearer key.
+  title: Nova X Posting API
+  version: 5.0.0
+  description: Backward-compatible X preview and publish actions for an authenticated creator account.
 servers:
   - url: https://REPLACE-WITH-YOUR-SERVICE.onrender.com
 paths:
@@ -10,8 +10,7 @@ paths:
     post:
       operationId: previewPost
       summary: Preview the exact X post without publishing it
-      security:
-        - bearerAuth: []
+      security: [{bearerAuth: []}]
       requestBody:
         required: true
         content:
@@ -19,22 +18,16 @@ paths:
             schema:
               type: object
               properties:
-                text:
-                  type: string
-                  minLength: 1
-                  maxLength: 280
-              required:
-                - text
+                text: {type: string, minLength: 1, maxLength: 280}
+              required: [text]
       responses:
-        "200":
-          description: Preview successful
+        "200": {description: Preview successful}
   /x/post:
     post:
       operationId: publishPost
-      summary: Publish an explicitly approved post to the linked X account
+      summary: Publish an explicitly approved post to X
       x-openai-isConsequential: true
-      security:
-        - bearerAuth: []
+      security: [{bearerAuth: []}]
       requestBody:
         required: true
         content:
@@ -42,22 +35,11 @@ paths:
             schema:
               type: object
               properties:
-                text:
-                  type: string
-                  minLength: 1
-                  maxLength: 280
-                approved:
-                  type: boolean
-                  enum: [true]
-              required:
-                - text
-                - approved
+                text: {type: string, minLength: 1, maxLength: 280}
+                approved: {type: boolean, enum: [true]}
+              required: [text, approved]
       responses:
-        "200":
-          description: Post published successfully
+        "200": {description: Published successfully}
 components:
-  schemas: {}
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
+    bearerAuth: {type: http, scheme: bearer}

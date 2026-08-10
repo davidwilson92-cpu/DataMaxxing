@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}{{ heading }} — Nova{% endblock %}
+{% block body %}<main class="auth-wrap"><section class="auth-card"><div class="eyebrow">NOVA ACCOUNT</div><h1>{{ heading }}</h1><p>{{ subheading }}</p>{% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+<form method="post" action="{{ action }}"><label>Email</label><input type="email" name="email" autocomplete="email" required><label>Password</label><input type="password" name="password" autocomplete="{% if action == '/signup' %}new-password{% else %}current-password{% endif %}" minlength="10" required><button class="button primary full" type="submit">{{ button }}</button></form>
+<p class="fine">{% if action == '/signup' %}Already have an account? <a href="/login">Log in</a>{% else %}New to Nova? <a href="/signup">Create an account</a>{% endif %}</p></section></main>{% endblock %}
