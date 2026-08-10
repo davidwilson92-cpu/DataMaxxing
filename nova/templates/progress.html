@@ -1,0 +1,1 @@
+<ol class="progress" aria-label="Onboarding progress"><li class="done">Account</li><li class="{% if request.url.path.endswith('socials') %}active{% else %}done{% endif %}">Socials</li><li class="{% if 'writing-style' in request.url.path %}active{% endif %}">Writing style</li><li>Studio</li></ol>

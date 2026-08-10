@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Nova X Posting API
-  version: 5.0.0
+  title: Zova X Posting API
+  version: 5.1.0
   description: Backward-compatible X preview and publish actions for an authenticated creator account.
 servers:
   - url: https://REPLACE-WITH-YOUR-SERVICE.onrender.com

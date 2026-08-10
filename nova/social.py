@@ -310,7 +310,7 @@ def publish_facebook(db: Session, conn: SocialConnection, posts: list[str], asse
 
 def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], assets: list[MediaAsset], link_url: str = "") -> dict[str, Any]:
     if not assets:
-        raise RuntimeError("Instagram publishing requires an image in this Nova build")
+        raise RuntimeError("Instagram publishing requires an image in this Zova build")
     token = access_token(conn, db)
     version = os.environ.get("META_GRAPH_VERSION", "v23.0")
     caption = posts[0]
@@ -340,7 +340,7 @@ def _tiktok_creator_info(token: str) -> dict[str, Any]:
 
 def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets: list[MediaAsset], link_url: str = "") -> dict[str, Any]:
     if not assets:
-        raise RuntimeError("TikTok publishing requires visual media in this Nova build")
+        raise RuntimeError("TikTok publishing requires visual media in this Zova build")
     token = access_token(conn, db)
     info = _tiktok_creator_info(token)
     options = info.get("privacy_level_options") or ["SELF_ONLY"]

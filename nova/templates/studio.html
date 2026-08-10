@@ -1,8 +1,8 @@
-{% extends "base.html" %}{% block title %}Creator Studio — Nova{% endblock %}
+{% extends "base.html" %}{% block title %}Creator Studio — Zova{% endblock %}
 {% block body %}
 <main class="studio-shell">
   <section class="studio-main">
-    <div class="studio-title"><div><div class="eyebrow">CREATOR STUDIO</div><h1>Create once. Shape for each channel.</h1></div><a class="mini-button" href="/account">Manage account</a></div>
+    <div class="studio-title"><div><div class="eyebrow">ZOVA STUDIO</div><h1>What do you want to say?</h1></div><a class="mini-button" href="/account">Manage account</a></div>
     {% if subscription_blocked %}<div class="alert error">Your subscription is not active. <a href="/subscribe">Subscribe to continue.</a></div>{% endif %}
     <section class="composer panel">
       <label class="label-big">What do you want to say?</label>
@@ -23,17 +23,17 @@
   </section>
   <aside class="studio-side">
     <section class="side-card analytics-card"><div class="eyebrow">ANALYTICS</div><h2>Recent performance</h2><div id="analytics"><div class="muted">Loading analytics…</div></div></section>
-    <section class="side-card"><div class="eyebrow">RECENT ACTIVITY</div><h2>What Nova has done</h2><div id="recentActivity"><div class="muted">Loading…</div></div></section>
+    <section class="side-card"><div class="eyebrow">RECENT ACTIVITY</div><h2>What Zova has done</h2><div id="recentActivity"><div class="muted">Loading…</div></div></section>
   </aside>
 </main>
 <script>
 let variants = {}; let currentPlatform = 'x'; let currentDraftId = null; let uploadedMediaIds=[];
-const headers={'Content-Type':'application/json','X-Nova-Request':'1'};
+const headers={'Content-Type':'application/json','X-Zova-Request':'1'};
 function selectedPlatforms(){return [...document.querySelectorAll('.platform-check input:checked')].map(x=>x.value)}
 function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 async function api(url,opts={}){let r=await fetch(url,opts);let j;try{j=await r.json()}catch(e){j={detail:await r.text()}}if(!r.ok)throw new Error(j.detail||'Request failed');return j}
 function busy(btn,on,label){btn.disabled=on;if(on){btn.dataset.old=btn.textContent;btn.textContent=label}else btn.textContent=btn.dataset.old||btn.textContent}
-async function uploadMedia(){let files=document.getElementById('mediaInput').files;if(!files.length)return;let fd=new FormData();[...files].forEach(f=>fd.append('files',f));let st=document.getElementById('mediaStatus');st.textContent='Uploading…';try{let j=await api('/api/media',{method:'POST',headers:{'X-Nova-Request':'1'},body:fd});uploadedMediaIds.push(...j.assets.map(a=>a.id));st.textContent=`${uploadedMediaIds.length} image${uploadedMediaIds.length===1?'':'s'} attached`}catch(e){st.textContent=e.message}}
+async function uploadMedia(){let files=document.getElementById('mediaInput').files;if(!files.length)return;let fd=new FormData();[...files].forEach(f=>fd.append('files',f));let st=document.getElementById('mediaStatus');st.textContent='Uploading…';try{let j=await api('/api/media',{method:'POST',headers:{'X-Zova-Request':'1'},body:fd});uploadedMediaIds.push(...j.assets.map(a=>a.id));st.textContent=`${uploadedMediaIds.length} image${uploadedMediaIds.length===1?'':'s'} attached`}catch(e){st.textContent=e.message}}
 document.getElementById('mediaInput').addEventListener('change',uploadMedia);
 async function generateDraft(){let btn=document.getElementById('generateBtn'), platforms=selectedPlatforms();if(!platforms.length)return alert('Choose at least one social platform.');busy(btn,true,'Generating…');try{let j=await api('/api/ai/generate',{method:'POST',headers,body:JSON.stringify({brief:document.getElementById('brief').value,instruction:document.getElementById('instruction').value,platforms,thread_length:+document.getElementById('threadLength').value,link_url:document.getElementById('linkUrl').value})});variants=j.variants;currentDraftId=j.draft_id;currentPlatform=platforms[0];renderDrafts();loadHistory()}catch(e){alert(e.message)}finally{busy(btn,false)}}
 function renderDrafts(){document.getElementById('draftArea').classList.remove('hidden');let tabs=document.getElementById('platformTabs');tabs.innerHTML=Object.keys(variants).map(p=>`<button class="tab ${p===currentPlatform?'active':''}" onclick="switchPlatform('${p}')">${p==='x'?'X':p[0].toUpperCase()+p.slice(1)}</button>`).join('');renderEditor()}

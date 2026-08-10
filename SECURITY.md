@@ -1,4 +1,4 @@
-# Nova — security notes for V5
+# Zova — security notes for V5
 
 ## Implemented controls
 
@@ -9,14 +9,14 @@
 - Social account selection is derived from the signed-in user's database connections.
 - Each user can unlink a social connection from Account settings.
 - Existing Custom GPT bearer keys remain hashed in the legacy creator table.
-- Stripe card/payment details are handled by Stripe Checkout; Nova stores Stripe customer/subscription references and status.
+- Stripe card/payment details are handled by Stripe Checkout; Zova stores Stripe customer/subscription references and status.
 - Publication attempts and status are logged to support history and troubleshooting.
 
 ## Production hardening still recommended
 
 Before public launch:
 
-1. Put the product on a dedicated Nova domain.
+1. Put the product on a dedicated Zova domain.
 2. Use persistent managed object storage for uploads and apply lifecycle/retention rules.
 3. Configure strict CORS / trusted hosts and a Content Security Policy.
 4. Add email verification, password reset and account deletion workflows.

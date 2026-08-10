@@ -19,6 +19,16 @@ services:
         value: https://x-chatgpt-poster.onrender.com
       - key: PRIVACY_CONTACT_EMAIL
         sync: false
+      - key: APPLE_CLIENT_ID
+        sync: false
+      - key: APPLE_TEAM_ID
+        sync: false
+      - key: APPLE_KEY_ID
+        sync: false
+      - key: APPLE_PRIVATE_KEY
+        sync: false
+      - key: APPLE_REDIRECT_URI
+        value: https://x-chatgpt-poster.onrender.com/auth/apple/callback
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL
@@ -53,9 +63,9 @@ services:
         sync: false
       - key: REQUIRE_SUBSCRIPTION
         value: "false"
-      - key: NOVA_PRICE_LABEL
+      - key: ZOVA_PRICE_LABEL
         value: Creator plan
-      - key: NOVA_PRICE_NOTE
+      - key: ZOVA_PRICE_NOTE
         value: Cancel from your account at any time.
       - key: SCHEDULER_SECRET
         generateValue: true

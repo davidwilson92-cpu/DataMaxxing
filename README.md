@@ -1,11 +1,13 @@
-# Nova Social Studio — V5
+# Zova Social Studio — V5.1
 
-Nova V5 turns the working X Creator Studio into a multi-social SaaS foundation for **X, Instagram, Facebook and TikTok**.
+Zova V5.1 is an AI social manager for content creators. It turns one piece of intent into genuinely different native content for **X, Instagram, Facebook and TikTok**, applies the creator's voice and brings performance back into the creative workflow.
 
 ## What is implemented
 
-- Nova landing page and branding layer
-- Bare-minimum email/password signup and login
+- Zova landing page and branding layer
+- Sign in / sign up with Apple
+- Minimal email/password signup with password confirmation
+- Guided onboarding: Account -> Socials -> Writing style -> Studio
 - Stripe subscription checkout + Stripe Customer Portal
 - Apple Pay support through Stripe Checkout when Stripe/device/region eligibility allows it
 - Account management and social unlinking
@@ -40,10 +42,10 @@ The code is ready for the integrations, but Meta, TikTok, Stripe and persistent 
 7. Open `/health`; expected response:
 
 ```json
-{"status":"ok","version":"5.0.0","brand":"Nova"}
+{"status":"ok","version":"5.1.0","brand":"Zova"}
 ```
 
-8. Open `/signup` and create a test Nova user.
+8. Open `/signup` and create a test Zova user.
 9. Configure providers one at a time using `PROVIDER_SETUP.md`.
 
 ## URLs
@@ -77,7 +79,7 @@ Then AI generation, image upload, preview/publish and scheduling require an `act
 
 ## Scheduling
 
-Nova runs an in-process scheduler every 60 seconds while the Render service is awake. There is also a protected endpoint:
+Zova runs an in-process scheduler every 60 seconds while the Render service is awake. There is also a protected endpoint:
 
 ```text
 POST /internal/run-due
@@ -108,13 +110,13 @@ Existing Custom GPT X Actions remain available at:
 - `/x/preview`
 - `/x/post`
 
-Keep the legacy X environment variables in Render if you still use those GPTs. The Nova web product itself uses the new `nova_*` user/social tables.
+Keep the legacy X environment variables in Render if you still use those GPTs. The Zova web product itself uses the new `nova_*` user/social tables.
 
 ## Brand profile
 
-The application contains **no hard-coded previous-product branding**. All core Nova colours/styles are centralized in `nova/static/nova.css`.
+The application contains **no hard-coded previous-product branding**. All core Zova colours/styles are centralized in `nova/static/nova.css`.
 
-The exact Zova/Nova brand-profile attachment was not available in the working file set while this package was built, so the supplied interface uses a clean Nova placeholder theme rather than inventing brand rules. Once the actual brand profile is uploaded, update the CSS tokens and wordmark treatment without changing the backend.
+The exact Zova/Zova brand-profile attachment was not available in the working file set while this package was built, so the supplied interface uses a clean Zova placeholder theme rather than inventing brand rules. Once the actual brand profile is uploaded, update the CSS tokens and wordmark treatment without changing the backend.
 
 ## Security
 

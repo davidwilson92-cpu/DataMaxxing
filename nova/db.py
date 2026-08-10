@@ -77,6 +77,26 @@ class User(Base):
     social_connections: Mapped[list['SocialConnection']] = relationship(back_populates='user', cascade='all,delete-orphan')
 
 
+class AuthIdentity(Base):
+    __tablename__ = 'zova_auth_identities'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    provider: Mapped[str] = mapped_column(String(30), index=True)
+    subject: Mapped[str] = mapped_column(String(320), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AuthState(Base):
+    __tablename__ = 'zova_auth_states'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    provider: Mapped[str] = mapped_column(String(30), index=True)
+    state_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    nonce_hash: Mapped[str] = mapped_column(String(64), index=True)
+    intent: Mapped[str] = mapped_column(String(20), default='login')
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class CreatorPreferences(Base):
     __tablename__ = 'nova_creator_preferences'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

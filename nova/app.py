@@ -16,6 +16,7 @@ from typing import Annotated, Any
 from zoneinfo import ZoneInfo
 
 import httpx
+import jwt
 import tweepy
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
@@ -27,7 +28,7 @@ from sqlalchemy.orm import Session
 
 from . import ai, billing
 from .db import (
-    Activity, Creator, CreatorPreferences, Draft, MediaAsset, OAuth2Connection, OAuthState,
+    Activity, AuthIdentity, AuthState, Creator, CreatorPreferences, Draft, MediaAsset, OAuth2Connection, OAuthState,
     PostLog, ScheduledPost, SessionLocal, SocialConnection, User, get_db, get_preferences, utcnow,
 )
 from .scheduler import loop as scheduler_loop, process_due
@@ -52,7 +53,7 @@ def base_url() -> str:
 
 def subscription_guard(user: User) -> None:
     if not billing.has_access(user):
-        raise HTTPException(status_code=402, detail="An active Nova subscription is required")
+        raise HTTPException(status_code=402, detail="An active Zova subscription is required")
 
 
 def template_context(request: Request, user: User | None = None, **kwargs: Any) -> dict[str, Any]:
@@ -147,7 +148,7 @@ async def lifespan(app: FastAPI):
         except asyncio.CancelledError: pass
 
 
-app = FastAPI(title="Nova Social Publishing", version="5.0.0", lifespan=lifespan)
+app = FastAPI(title="Zova Social Publishing", version="5.1.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
 
 
@@ -163,7 +164,7 @@ def bootstrap_legacy_account() -> None:
 
 # ---------- Pages + auth ----------
 @app.get("/health")
-def health() -> dict[str, str]: return {"status":"ok","version":"5.0.0","brand":"Nova"}
+def health() -> dict[str, str]: return {"status":"ok","version":"5.1.0","brand":"Zova"}
 
 @app.get("/", response_class=HTMLResponse)
 def landing(request: Request):
@@ -173,20 +174,60 @@ def landing(request: Request):
 
 @app.get("/signup", response_class=HTMLResponse)
 def signup_page(request: Request, error: str | None = None):
-    return templates.TemplateResponse("auth.html", template_context(request, heading="Create your account", subheading="Just an email and password. Connect socials after signup.", action="/signup", button="Create account", error=error))
+    return templates.TemplateResponse("auth.html", template_context(request, heading="Create your account", subheading="Start with Apple or use your email. You’ll connect socials next.", action="/signup", button="Create account", error=error, apple_ready=apple_configured()))
 
 @app.post("/signup")
-def signup(request: Request, email: Annotated[str, Form()], password: Annotated[str, Form()], db: Session=Depends(get_db)):
+def signup(request: Request, email: Annotated[str, Form()], password: Annotated[str, Form()], password_confirmation: Annotated[str, Form()], db: Session=Depends(get_db)):
     email=email.strip().lower()
+    if password != password_confirmation: return RedirectResponse("/signup?error=Passwords+do+not+match",303)
     if len(password)<10: return RedirectResponse("/signup?error=Use+a+password+of+at+least+10+characters",303)
     if db.scalar(select(User).where(User.email==email)): return RedirectResponse("/signup?error=An+account+with+that+email+already+exists",303)
     user=User(email=email,password_hash=hash_password(password)); db.add(user); db.commit(); db.refresh(user); get_preferences(db,user.id)
-    target="/subscribe" if billing.configured() else "/studio"
-    resp=RedirectResponse(target,303); set_user_cookie(resp,user); return resp
+    resp=RedirectResponse("/onboarding/socials",303); set_user_cookie(resp,user); return resp
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, error: str | None = None):
-    return templates.TemplateResponse("auth.html", template_context(request, heading="Welcome back", subheading="Sign in to your Nova workspace.", action="/login", button="Log in", error=error))
+    return templates.TemplateResponse("auth.html", template_context(request, heading="Welcome back", subheading="Sign in to your Zova workspace.", action="/login", button="Log in", error=error, apple_ready=apple_configured()))
+
+
+def apple_configured() -> bool:
+    return all(os.environ.get(k) for k in ("APPLE_CLIENT_ID", "APPLE_TEAM_ID", "APPLE_KEY_ID", "APPLE_PRIVATE_KEY"))
+
+
+def apple_client_secret() -> str:
+    now = int(datetime.now(timezone.utc).timestamp())
+    key = os.environ["APPLE_PRIVATE_KEY"].replace("\\n", "\n")
+    return jwt.encode({"iss": os.environ["APPLE_TEAM_ID"], "iat": now, "exp": now + 300, "aud": "https://appleid.apple.com", "sub": os.environ["APPLE_CLIENT_ID"]}, key, algorithm="ES256", headers={"kid": os.environ["APPLE_KEY_ID"]})
+
+
+@app.get("/auth/apple/start")
+def apple_start(intent: str = "login", db: Session = Depends(get_db)):
+    if not apple_configured(): raise HTTPException(503, "Sign in with Apple is not configured")
+    state, nonce = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+    db.add(AuthState(provider="apple", state_hash=hash_api_key(state), nonce_hash=hash_api_key(nonce), intent="signup" if intent == "signup" else "login")); db.commit()
+    params = httpx.QueryParams({"client_id": os.environ["APPLE_CLIENT_ID"], "redirect_uri": os.environ.get("APPLE_REDIRECT_URI", f"{base_url()}/auth/apple/callback"), "response_type": "code id_token", "response_mode": "form_post", "scope": "name email", "state": state, "nonce": nonce})
+    return RedirectResponse(f"https://appleid.apple.com/auth/authorize?{params}", 302)
+
+
+@app.post("/auth/apple/callback")
+def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotated[str | None, Form()] = None, state: Annotated[str | None, Form()] = None, error: Annotated[str | None, Form()] = None, db: Session = Depends(get_db)):
+    if error or not code or not id_token or not state: return RedirectResponse("/login?error=Apple+sign-in+was+cancelled", 303)
+    row = db.scalar(select(AuthState).where(AuthState.state_hash == hash_api_key(state), AuthState.provider == "apple", AuthState.used.is_(False)))
+    if not row or row.created_at.replace(tzinfo=row.created_at.tzinfo or timezone.utc) < utcnow() - timedelta(minutes=10): raise HTTPException(400, "Invalid or expired Apple sign-in state")
+    row.used = True; db.commit()
+    token_response = httpx.post("https://appleid.apple.com/auth/token", data={"client_id": os.environ["APPLE_CLIENT_ID"], "client_secret": apple_client_secret(), "code": code, "grant_type": "authorization_code", "redirect_uri": os.environ.get("APPLE_REDIRECT_URI", f"{base_url()}/auth/apple/callback")}, timeout=30.0)
+    if token_response.status_code >= 400: raise HTTPException(502, "Apple token exchange failed")
+    jwks = jwt.PyJWKClient("https://appleid.apple.com/auth/keys")
+    claims = jwt.decode(id_token, jwks.get_signing_key_from_jwt(id_token).key, algorithms=["RS256"], audience=os.environ["APPLE_CLIENT_ID"], issuer="https://appleid.apple.com")
+    if hash_api_key(str(claims.get("nonce", ""))) != row.nonce_hash: raise HTTPException(400, "Invalid Apple sign-in nonce")
+    subject, email = str(claims["sub"]), str(claims.get("email") or "").strip().lower()
+    identity = db.scalar(select(AuthIdentity).where(AuthIdentity.provider == "apple", AuthIdentity.subject == subject))
+    user = db.get(User, identity.user_id) if identity else (db.scalar(select(User).where(User.email == email)) if email else None)
+    created = user is None
+    if created:
+        user = User(email=email or f"apple-{hash_api_key(subject)[:20]}@private.zova.invalid", password_hash=hash_password(secrets.token_urlsafe(48))); db.add(user); db.commit(); db.refresh(user); get_preferences(db, user.id)
+    if not identity: db.add(AuthIdentity(user_id=user.id, provider="apple", subject=subject)); db.commit()
+    resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303); set_user_cookie(resp, user); return resp
 
 @app.post("/login")
 def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Form()],db:Session=Depends(get_db)):
@@ -201,7 +242,7 @@ def logout():
 @app.get("/subscribe", response_class=HTMLResponse)
 def subscribe(request:Request):
     user=current_user(request)
-    return templates.TemplateResponse("subscribe.html", template_context(request,user,billing_ready=billing.configured(),subscription_required=billing.require_subscription(),price_label=os.environ.get("NOVA_PRICE_LABEL","Subscription"),price_note=os.environ.get("NOVA_PRICE_NOTE","Cancel from your account at any time.")))
+    return templates.TemplateResponse("subscribe.html", template_context(request,user,billing_ready=billing.configured(),subscription_required=billing.require_subscription(),price_label=os.environ.get("ZOVA_PRICE_LABEL",os.environ.get("NOVA_PRICE_LABEL","Subscription")),price_note=os.environ.get("ZOVA_PRICE_NOTE",os.environ.get("NOVA_PRICE_NOTE","Cancel from your account at any time."))))
 
 @app.get("/billing/checkout")
 def billing_checkout(request:Request):
@@ -246,6 +287,26 @@ def studio(request:Request):
     user=current_user(request)
     return templates.TemplateResponse("studio.html",template_context(request,user,subscription_blocked=not billing.has_access(user)))
 
+@app.get("/onboarding/socials", response_class=HTMLResponse)
+def onboarding_socials(request: Request, db: Session = Depends(get_db)):
+    user = current_user(request)
+    rows = db.scalars(select(SocialConnection).where(SocialConnection.user_id == user.id, SocialConnection.active.is_(True))).all()
+    by = {}
+    for row in rows: by.setdefault(row.platform, []).append(row)
+    response = templates.TemplateResponse("onboarding_socials.html", template_context(request, user, by_platform=by))
+    response.set_cookie("zova_onboarding", "1", max_age=1800, httponly=True, secure=base_url().startswith("https://"), samesite="lax", path="/")
+    return response
+
+@app.get("/onboarding/writing-style", response_class=HTMLResponse)
+def onboarding_writing_style(request: Request, db: Session = Depends(get_db)):
+    user = current_user(request)
+    return templates.TemplateResponse("onboarding_writing.html", template_context(request, user, prefs=get_preferences(db, user.id)))
+
+@app.get("/onboarding/complete")
+def onboarding_complete(request: Request):
+    current_user(request)
+    response = RedirectResponse("/studio", 303); response.delete_cookie("zova_onboarding", path="/"); return response
+
 @app.get("/account",response_class=HTMLResponse)
 def account(request:Request,db:Session=Depends(get_db)):
     user=current_user(request); prefs=get_preferences(db,user.id); rows=db.scalars(select(SocialConnection).where(SocialConnection.user_id==user.id,SocialConnection.active.is_(True)).order_by(SocialConnection.id.desc())).all(); by={}
@@ -253,11 +314,11 @@ def account(request:Request,db:Session=Depends(get_db)):
     return templates.TemplateResponse("account.html",template_context(request,user,prefs=prefs,by_platform=by,billing_ready=billing.configured()))
 
 @app.post("/account/preferences")
-def save_preferences(request:Request,writing_tone:Annotated[str,Form()]="",audience:Annotated[str,Form()]="",topics:Annotated[str,Form()]="",things_to_avoid:Annotated[str,Form()]="",example_posts:Annotated[str,Form()]="",preferred_post_length:Annotated[int,Form()]=220,timezone_name:Annotated[str,Form(alias="timezone")]="Europe/London",db:Session=Depends(get_db)):
+def save_preferences(request:Request,writing_tone:Annotated[str,Form()]="",audience:Annotated[str,Form()]="",topics:Annotated[str,Form()]="",things_to_avoid:Annotated[str,Form()]="",example_posts:Annotated[str,Form()]="",preferred_post_length:Annotated[int,Form()]=220,timezone_name:Annotated[str,Form(alias="timezone")]="Europe/London",next_url:Annotated[str,Form(alias="next")]="",db:Session=Depends(get_db)):
     user=current_user(request); prefs=get_preferences(db,user.id)
     try:ZoneInfo(timezone_name)
     except Exception:timezone_name="Europe/London"
-    prefs.writing_tone=writing_tone[:5000]; prefs.audience=audience[:5000]; prefs.topics=topics[:5000]; prefs.things_to_avoid=things_to_avoid[:5000]; prefs.example_posts=example_posts[:12000]; prefs.preferred_post_length=max(30,min(preferred_post_length,4000)); prefs.timezone=timezone_name; db.commit(); return RedirectResponse("/account",303)
+    prefs.writing_tone=writing_tone[:5000]; prefs.audience=audience[:5000]; prefs.topics=topics[:5000]; prefs.things_to_avoid=things_to_avoid[:5000]; prefs.example_posts=example_posts[:12000]; prefs.preferred_post_length=max(30,min(preferred_post_length,4000)); prefs.timezone=timezone_name; db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account",303)
 
 @app.post("/account/connections/{connection_id}/unlink")
 def unlink(connection_id:int,request:Request,db:Session=Depends(get_db)):
@@ -280,7 +341,7 @@ def oauth_x_callback(request:Request,code:str|None=None,state:str|None=None,erro
     try:token,user_info=x_exchange(code,verifier)
     except RuntimeError as exc:raise HTTPException(502,str(exc))
     upsert_connection(db,user_id=row.user_id,platform="x",account_id=str(user_info["id"]),username=user_info.get("username","") or "",display_name=user_info.get("name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",X_SCOPES),metadata={"profile_image_url":user_info.get("profile_image_url")})
-    return RedirectResponse("/account?connected=x",303)
+    return RedirectResponse("/onboarding/socials?connected=x" if request.cookies.get("zova_onboarding") else "/account?connected=x",303)
 
 @app.get("/oauth/meta/start")
 def oauth_meta_start(request:Request,db:Session=Depends(get_db)):
@@ -300,7 +361,7 @@ def oauth_meta_callback(request:Request,code:str|None=None,state:str|None=None,e
         ig=page.get("instagram_business_account") or {}
         if ig.get("id"):
             upsert_connection(db,user_id=row.user_id,platform="instagram",account_id=str(ig["id"]),username=ig.get("username","") or "",display_name=ig.get("name","") or ig.get("username","") or "",access=page_token,scope=META_SCOPES,metadata={"facebook_page_id":page_id,"profile_picture_url":ig.get("profile_picture_url")})
-    return RedirectResponse("/account?connected=meta",303)
+    return RedirectResponse("/onboarding/socials?connected=meta" if request.cookies.get("zova_onboarding") else "/account?connected=meta",303)
 
 @app.get("/oauth/tiktok/start")
 def oauth_tiktok_start(request:Request,db:Session=Depends(get_db)):
@@ -314,7 +375,7 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
     try:token,info=tiktok_exchange(code)
     except RuntimeError as exc:raise HTTPException(502,str(exc))
     upsert_connection(db,user_id=row.user_id,platform="tiktok",account_id=str(info.get("open_id")),username=info.get("display_name","") or "",display_name=info.get("display_name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",TIKTOK_SCOPES),metadata={"avatar_url":info.get("avatar_url")})
-    return RedirectResponse("/account?connected=tiktok",303)
+    return RedirectResponse("/onboarding/socials?connected=tiktok" if request.cookies.get("zova_onboarding") else "/account?connected=tiktok",303)
 
 
 # ---------- API models ----------

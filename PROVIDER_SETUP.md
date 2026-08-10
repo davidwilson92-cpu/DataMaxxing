@@ -1,4 +1,4 @@
-# Nova V5 — Provider setup
+# Zova V5 — Provider setup
 
 Add secrets only to **Render → Environment**. Do not commit credentials to GitHub.
 
@@ -39,7 +39,7 @@ META_GRAPH_VERSION=v23.0
 META_REDIRECT_URI=https://YOUR-DOMAIN/oauth/meta/callback
 ```
 
-Nova requests:
+Zova requests:
 
 ```text
 pages_show_list
@@ -50,7 +50,7 @@ instagram_content_publish
 instagram_manage_insights
 ```
 
-The callback reads Pages the user manages. Each Page becomes a Facebook connection. If the Page has a linked Instagram professional account, Nova creates an Instagram connection too.
+The callback reads Pages the user manages. Each Page becomes a Facebook connection. If the Page has a linked Instagram professional account, Zova creates an Instagram connection too.
 
 For external customers rather than app-role test users, expect Meta App Review / Advanced Access requirements for permissions.
 
@@ -79,7 +79,7 @@ TIKTOK_REDIRECT_URI=https://YOUR-DOMAIN/oauth/tiktok/callback
 TIKTOK_DEFAULT_PRIVACY=PUBLIC_TO_EVERYONE
 ```
 
-Nova requests:
+Zova requests:
 
 ```text
 user.info.basic
@@ -87,7 +87,7 @@ video.list
 video.publish
 ```
 
-V5 implements TikTok photo Direct Post. TikTok requires the app to query creator information before posting and Nova does this. If `PUBLIC_TO_EVERYONE` is not available, Nova falls back to an allowed privacy level, preferring `SELF_ONLY`.
+V5 implements TikTok photo Direct Post. TikTok requires the app to query creator information before posting and Zova does this. If `PUBLIC_TO_EVERYONE` is not available, Zova falls back to an allowed privacy level, preferring `SELF_ONLY`.
 
 Important launch requirement: unaudited TikTok Direct Post clients are restricted to private posts. Complete TikTok's Content Posting API audit before promising public direct posting to customers.
 
@@ -116,9 +116,9 @@ At minimum subscribe it to:
 - `customer.subscription.updated`
 - `customer.subscription.deleted`
 
-Nova uses Stripe Checkout for subscription creation and Stripe Customer Portal for management/cancellation.
+Zova uses Stripe Checkout for subscription creation and Stripe Customer Portal for management/cancellation.
 
-Apple Pay is not a separate Nova credential. When Apple Pay is enabled in Stripe and supported for the customer/device/region, it is offered by Stripe Checkout. Eligibility rules for digital subscriptions vary by region/platform, so validate your launch market before advertising it universally.
+Apple Pay is not a separate Zova credential. When Apple Pay is enabled in Stripe and supported for the customer/device/region, it is offered by Stripe Checkout. Eligibility rules for digital subscriptions vary by region/platform, so validate your launch market before advertising it universally.
 
 After successful testing set:
 
@@ -151,7 +151,7 @@ S3_PUBLIC_BASE_URL
 
 `S3_ENDPOINT_URL` is optional for an S3-compatible provider.
 
-If `S3_PUBLIC_BASE_URL` is omitted, Nova can generate temporary S3 signed URLs. For TikTok, a stable URL on a verified domain is preferable.
+If `S3_PUBLIC_BASE_URL` is omitted, Zova can generate temporary S3 signed URLs. For TikTok, a stable URL on a verified domain is preferable.
 
 ## 7. Scheduler
 

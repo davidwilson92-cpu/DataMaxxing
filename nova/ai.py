@@ -90,7 +90,7 @@ def generate_variants(
     selected = [p for p in platforms if p in PLATFORM_GUIDANCE]
     guidance = "\n".join(PLATFORM_GUIDANCE[p] for p in selected)
     examples = (getattr(preferences, "example_posts", "") or "")[:7000]
-    prompt = f"""You are Nova, a social publishing editor. Produce platform-native drafts from one source brief.
+    prompt = f"""You are Zova, a social publishing editor. Produce platform-native drafts from one source brief.
 
 Return ONLY valid JSON. No markdown fences and no commentary.
 Schema:
