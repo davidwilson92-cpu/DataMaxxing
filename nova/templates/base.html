@@ -7,7 +7,8 @@
   <link rel="stylesheet" href="/static/nova.css">
   {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
+{% block site_header %}
 <header class="site-header">
   <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><i></i><i></i><b></b></span><span>zova</span></a>
   <nav>
@@ -19,7 +20,10 @@
     {% endif %}
   </nav>
 </header>
+{% endblock %}
 {% block body %}{% endblock %}
+{% block site_footer %}
 <footer class="footer"><span>Zova</span><span>From one intent to native content everywhere.</span><a href="/security">Security & privacy</a></footer>
+{% endblock %}
 </body>
 </html>

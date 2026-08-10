@@ -45,3 +45,14 @@ def test_signup_form_has_confirmation_and_client_validation():
     page = client.get("/signup").text
     assert 'name="password_confirmation"' in page
     assert "setCustomValidity" in page
+
+
+def test_studio_has_premium_application_shell():
+    email = f"studio-{secrets.token_hex(5)}@example.com"
+    signup = client.post("/signup", data={"email": email, "password": "long-password-1", "password_confirmation": "long-password-1"}, follow_redirects=False)
+    page = client.get("/studio", cookies=signup.cookies)
+    assert page.status_code == 200
+    assert "ZOVA INTELLIGENCE" in page.text
+    assert "Shape for every platform" in page.text
+    assert 'src="/static/studio.js"' in page.text
+    assert "site-header" not in page.text
