@@ -18,7 +18,7 @@ def test_health_and_branding():
     response = client.get("/health")
     assert response.json() == {"status": "ok", "version": "5.1.0", "brand": "Zova"}
     landing = client.get("/").text
-    assert "Your idea." in landing and "Native everywhere." in landing
+    assert "One idea." in landing and "Every social." in landing
     assert "YOUR AI SOCIAL MANAGER" in landing
     assert "Nova" not in landing
 
@@ -38,7 +38,7 @@ def test_signup_routes_through_onboarding():
     socials = client.get("/onboarding/socials", cookies=response.cookies)
     assert socials.status_code == 200 and "Skip for now" in socials.text
     writing = client.get("/onboarding/writing-style", cookies=response.cookies)
-    assert writing.status_code == 200 and "TEACH ZOVA HOW YOU WRITE" in writing.text
+    assert writing.status_code == 200 and "NO QUESTIONNAIRE. JUST YOUR WORDS." in writing.text
 
 
 def test_signup_form_has_confirmation_and_client_validation():
@@ -56,3 +56,17 @@ def test_studio_has_premium_application_shell():
     assert "Shape for every platform" in page.text
     assert 'src="/static/studio.js"' in page.text
     assert "site-header" not in page.text
+
+
+def test_voice_learning_updates_inferred_profile():
+    email = f"voice-{secrets.token_hex(5)}@example.com"
+    signup = client.post("/signup", data={"email": email, "password": "long-password-1", "password_confirmation": "long-password-1"}, follow_redirects=False)
+    import nova.app as app_module
+    original = app_module.ai.infer_voice_profile
+    app_module.ai.infer_voice_profile = lambda sample: {"summary": "Direct and optimistic.", "writing_tone": "Direct", "audience": "Creators", "topics": "Social media", "things_to_avoid": "Jargon", "preferred_post_length": 180}
+    try:
+        response = client.post("/api/voice/learn", json={"content": "This is a representative piece of creator writing. " * 4}, cookies=signup.cookies)
+    finally:
+        app_module.ai.infer_voice_profile = original
+    assert response.status_code == 200
+    assert response.json()["summary"] == "Direct and optimistic."
