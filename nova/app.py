@@ -386,11 +386,31 @@ class GenerateRequest(BaseModel):
     def valid_thread(cls,v:int): return v if v in {1,3,5} else 1
 class RewriteRequest(BaseModel): platform:str; posts:list[str]; action:str
 class ScheduleSuggestRequest(BaseModel): platforms:list[str]; context:str=""
+class VoiceLearnRequest(BaseModel): content:str=Field(min_length=80,max_length=30000)
 class PreviewRequest(BaseModel): platforms:list[str]; variants:dict[str,Any]
 class PublishRequest(BaseModel): draft_id:int|None=None; platforms:list[str]; variants:dict[str,Any]; media_asset_ids:list[int]=[]; link_url:str=""
 class ScheduleRequest(PublishRequest): scheduled_local:str
 class LegacyPostRequest(BaseModel):
     text:str=Field(min_length=1,max_length=280); approved:bool=False
+
+
+@app.post("/api/voice/learn")
+def learn_voice(payload: VoiceLearnRequest, request: Request, db: Session = Depends(get_db)):
+    user = current_user(request)
+    try:
+        profile = ai.infer_voice_profile(payload.content)
+    except Exception as exc:
+        log.exception("Voice learning failed")
+        raise HTTPException(502, f"Zova could not analyse that sample: {exc}") from exc
+    prefs = get_preferences(db, user.id)
+    prefs.writing_tone = profile["writing_tone"][:5000]
+    prefs.audience = profile["audience"][:5000]
+    prefs.topics = profile["topics"][:5000]
+    prefs.things_to_avoid = profile["things_to_avoid"][:5000]
+    prefs.example_posts = payload.content[:12000]
+    prefs.preferred_post_length = profile["preferred_post_length"]
+    db.commit()
+    return profile
 
 
 def _validate_platforms(values:list[str])->list[str]:

@@ -78,6 +78,32 @@ def _responses(prompt: str, *, max_output_tokens: int = 2500) -> str:
     return text
 
 
+def infer_voice_profile(content_sample: str) -> dict[str, Any]:
+    """Infer a useful creator profile from their own published writing."""
+    prompt = f"""You are Zova's voice analyst. Study the creator's writing sample and infer a practical profile that another AI can use to represent them accurately.
+
+Return ONLY valid JSON with this schema:
+{{"summary":"one concise sentence", "writing_tone":"...", "audience":"...", "topics":"...", "things_to_avoid":"...", "preferred_post_length":220}}
+
+Be specific but never invent biographical facts. Describe observed patterns, vocabulary, rhythm, point of view, likely audience and recurring subjects. 'things_to_avoid' should prevent the model from flattening or caricaturing the voice. preferred_post_length must be an integer from 30 to 4000 based on the sample.
+
+CREATOR WRITING SAMPLE:
+{content_sample[:30000]}
+"""
+    data = _parse_json(_responses(prompt, max_output_tokens=1200))
+    if not isinstance(data, dict):
+        raise RuntimeError("AI returned an invalid voice profile")
+    required = ("summary", "writing_tone", "audience", "topics", "things_to_avoid")
+    if any(not isinstance(data.get(key), str) for key in required):
+        raise RuntimeError("AI returned an incomplete voice profile")
+    try:
+        length = int(data.get("preferred_post_length", 220))
+    except (TypeError, ValueError):
+        length = 220
+    data["preferred_post_length"] = max(30, min(length, 4000))
+    return data
+
+
 def generate_variants(
     *,
     brief: str,
