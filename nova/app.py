@@ -488,7 +488,7 @@ def api_publish(body:PublishRequest,request:Request,db:Session=Depends(get_db)):
     if body.draft_id:
         d=db.get(Draft,body.draft_id)
         if d and d.user_id==user.id:d.variants_json=json.dumps(body.variants,ensure_ascii=False);d.status="published" if successes==len(platforms) else ("partial" if successes else "failed");db.commit()
-    failed=len(platforms)-successes;summary=f"Published/accepted by {successes} platform{'s' if successes!=1 else ''}."+(f" {failed} failed — check the result details." if failed else "")
+    failed=len(platforms)-successes;summary=f"Published to {successes} platform{'s' if successes!=1 else ''}."+(f" {failed} failed. Check the details below." if failed else "")
     return {"summary":summary,"results":results}
 
 @app.post("/api/schedule")

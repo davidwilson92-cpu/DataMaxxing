@@ -38,7 +38,7 @@ def test_signup_routes_through_onboarding():
     socials = client.get("/onboarding/socials", cookies=response.cookies)
     assert socials.status_code == 200 and "Skip for now" in socials.text
     writing = client.get("/onboarding/writing-style", cookies=response.cookies)
-    assert writing.status_code == 200 and "NO QUESTIONNAIRE. JUST YOUR WORDS." in writing.text
+    assert writing.status_code == 200 and "LET ZOVA LISTEN" in writing.text
 
 
 def test_signup_form_has_confirmation_and_client_validation():
@@ -56,6 +56,10 @@ def test_studio_has_premium_application_shell():
     assert "Shape for every platform" in page.text
     assert 'src="/static/studio.js"' in page.text
     assert "site-header" not in page.text
+    assert "Give Zova the thought behind the post" not in page.text
+    assert 'href="/account#voice"' in page.text
+    assert "Calendar" not in page.text
+    assert "orbit-brand-mark" in page.text
 
 
 def test_voice_learning_updates_inferred_profile():
