@@ -55,7 +55,9 @@ def test_studio_has_premium_application_shell():
     assert page.status_code == 200
     assert "ACCOUNT ANALYTICS" in page.text
     assert "Shape for every platform" in page.text
-    assert 'src="/static/studio.js"' in page.text
+    assert 'src="/static/studio.js?v=5.6"' in page.text
+    assert 'href="/static/nova.css?v=5.6"' in page.text
+    assert "Ã" not in page.text and "â" not in page.text
     assert "site-header" not in page.text
     assert "Give Zova the thought behind the post" not in page.text
     assert 'href="/account#voice"' in page.text

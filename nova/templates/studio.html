@@ -1,9 +1,15 @@
-{% extends "base.html" %}{% block title %}Zova Studio | Your idea, native everywhere{% endblock %}{% block body_class %}app-body{% endblock %}{% block site_header %}{% endblock %}{% block site_footer %}{% endblock %}
+{% extends "base.html" %}
+{% block title %}Zova Studio | Your idea, native everywhere{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block site_header %}{% endblock %}{% block site_footer %}{% endblock %}
 {% block body %}
 <div class="app-shell">
   {% set active_page = 'studio' %}{% include "app_nav.html" %}
   <div class="app-workspace">
-    <header class="app-topbar"><div><div class="eyebrow">ZOVA STUDIO</div><h1>What do you want to say?</h1><p>Start with an idea. Zova shapes it for every platform.</p></div><div class="topbar-actions"><a class="icon-button" href="/account" aria-label="Account settings">Account</a><button class="button primary" onclick="document.getElementById('brief').focus()">New idea</button></div></header>
+    <header class="app-topbar">
+      <div><div class="eyebrow">ZOVA STUDIO</div><h1>What do you want to say?</h1><p>Start with an idea. Zova shapes it for every platform.</p></div>
+      <div class="topbar-actions"><a class="icon-button account-button" href="/account">Account</a><button class="button primary" type="button" onclick="document.getElementById('brief').focus()">New idea</button></div>
+    </header>
     <main class="studio-shell">
       <section class="studio-main">
         {% if subscription_blocked %}<div class="alert error">Your subscription is not active. <a href="/subscribe">Subscribe to continue.</a></div>{% endif %}
@@ -12,7 +18,15 @@
           <textarea id="brief" rows="6" placeholder="I want to say something about..."></textarea>
           <div class="intent-tools"><label class="tool-button">Add images<input id="mediaInput" type="file" accept="image/*" multiple hidden></label><input id="linkUrl" type="url" placeholder="Paste a source link"><span id="mediaStatus" class="muted"></span></div>
           <div class="creative-controls"><div class="grow"><label>Creative direction <span>Optional</span></label><input id="instruction" placeholder="Add a goal, angle, audience or call to action"></div><div><label>X format</label><select id="threadLength"><option value="1">Single post</option><option value="3">3-post thread</option><option value="5">5-post thread</option></select></div></div>
-          <div class="platform-row"><div><small>CREATE FOR</small><div class="platform-picker"><div class="platform-check"><input id="px" type="checkbox" value="x" checked><label for="px"><b class="social-badge x">X</b>X</label></div><div class="platform-check"><input id="pig" type="checkbox" value="instagram"><label for="pig"><b class="social-badge instagram">IG</b>Instagram</label></div><div class="platform-check"><input id="pfb" type="checkbox" value="facebook"><label for="pfb"><b class="social-badge facebook">f</b>Facebook</label></div><div class="platform-check"><input id="ptt" type="checkbox" value="tiktok"><label for="ptt"><b class="social-badge tiktok">T</b>TikTok</label></div></div></div></div><div class="composer-actions"><button class="button quiet" onclick="clearComposer()">Clear</button><button id="generateBtn" class="button primary generate-button" onclick="generateDraft()"><span>âœ¦</span>Shape for every platform</button></div></div>
+          <div class="platform-row">
+            <div class="platform-options"><small>CREATE FOR</small><div class="platform-picker">
+              <div class="platform-check"><input id="px" type="checkbox" value="x" checked><label for="px"><b class="social-badge x">X</b>X</label></div>
+              <div class="platform-check"><input id="pig" type="checkbox" value="instagram"><label for="pig"><b class="social-badge instagram">IG</b>Instagram</label></div>
+              <div class="platform-check"><input id="pfb" type="checkbox" value="facebook"><label for="pfb"><b class="social-badge facebook">f</b>Facebook</label></div>
+              <div class="platform-check"><input id="ptt" type="checkbox" value="tiktok"><label for="ptt"><b class="social-badge tiktok">T</b>TikTok</label></div>
+            </div></div>
+            <div class="composer-actions"><button class="button quiet" type="button" onclick="clearComposer()">Clear</button><button id="generateBtn" class="button primary generate-button" type="button" onclick="generateDraft()">Shape for every platform</button></div>
+          </div>
         </section>
         <section id="draftArea" class="panel draft-panel hidden">
           <div class="draft-top"><div><div class="eyebrow">NATIVE DRAFTS</div><h2>Distinct by design.</h2><p class="muted">Each version is shaped around how people use that platform.</p></div><div id="platformTabs" class="tabs"></div></div><div id="variantEditor"></div>
@@ -20,17 +34,14 @@
           <div class="preview-strip"><button class="button ghost" onclick="previewCurrent()">Preview selected</button><span id="previewResult" class="muted"></span></div>
           <div class="publish-zone"><div class="schedule-box"><label>Schedule <span>Optional</span></label><input id="scheduleAt" type="datetime-local"><button class="mini-button" onclick="suggestSchedule()">Suggest the right time</button><div id="scheduleSuggestions" class="suggestions"></div></div><div class="publish-actions"><button class="button ghost" onclick="scheduleSelected()">Schedule</button><button class="button primary" onclick="publishSelected()">Publish now</button></div></div>
         </section>
-        <section class="panel history-panel"><div class="section-mini-head"><div><div class="eyebrow">RECENT WORK</div><h2>Your content</h2></div><a href="#draftHistory">View all â†’</a></div><div id="draftHistory" class="history-table"><div class="muted">Loadingâ€¦</div></div></section>
+        <section class="panel history-panel"><div class="section-mini-head"><div><div class="eyebrow">RECENT WORK</div><h2>Your content</h2></div><a href="#draftHistory">View all →</a></div><div id="draftHistory" class="history-table"><div class="muted">Loading...</div></div></section>
       </section>
       <aside class="studio-side">
-        <section class="intelligence-card account-analytics-card">
-<div class="orbit-mini" aria-hidden="true"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><span class="orbit-dot d1"></span><span class="orbit-dot d2"></span><span class="orbit-dot d3"></span><span class="orbit-core">{% include "logo_mark.html" %}</span></div>
-<div class="eyebrow">ACCOUNT ANALYTICS</div><h2>Your last 7 days</h2><p>Performance across connected accounts and content published through Zova.</p><div id="analytics"><div class="skeleton-lines"><i></i><i></i><i></i></div></div>
-</section>
-        <section class="side-card activity-card"><div class="eyebrow">ACTIVITY</div><h2>What Zova has done</h2><div id="recentActivity"><div class="muted">Loadingâ€¦</div></div></section>
+        <section class="intelligence-card account-analytics-card"><div class="orbit-mini" aria-hidden="true"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><span class="orbit-dot d1"></span><span class="orbit-dot d2"></span><span class="orbit-dot d3"></span><span class="orbit-core">{% include "logo_mark.html" %}</span></div><div class="eyebrow">ACCOUNT ANALYTICS</div><h2>Your last 7 days</h2><p>Performance across connected accounts and content published through Zova.</p><div id="analytics"><div class="skeleton-lines"><i></i><i></i><i></i></div></div></section>
+        <section class="side-card activity-card"><div class="eyebrow">ACTIVITY</div><h2>What Zova has done</h2><div id="recentActivity"><div class="muted">Loading...</div></div></section>
       </aside>
     </main>
   </div>
 </div>
-<script src="/static/studio.js"></script>
+<script src="/static/studio.js?v=5.6"></script>
 {% endblock %}
