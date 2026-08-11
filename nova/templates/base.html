@@ -10,7 +10,7 @@
 <body class="{% block body_class %}{% endblock %}">
 {% block site_header %}
 <header class="site-header">
-  <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><i></i><i></i><b></b></span><span>zova</span></a>
+  <a class="brand" href="/">{% include "logo_mark.html" %}<span>zova</span></a>
   <nav>
     {% if user %}
       <a href="/studio">Studio</a><a href="/account">Account</a><a href="/security">Security</a>

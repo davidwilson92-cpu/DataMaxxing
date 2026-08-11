@@ -35,7 +35,7 @@ from .scheduler import loop as scheduler_loop, process_due
 from .security import current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password
 from .social import (
     META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, meta_authorize_url, meta_exchange,
-    publish_platform, tiktok_authorize_url, tiktok_exchange, upsert_connection, x_authorize_url, x_exchange,
+    publish_platform, recent_content_for_user, tiktok_authorize_url, tiktok_exchange, upsert_connection, x_authorize_url, x_exchange,
 )
 from .storage import UPLOAD_DIR, save_bytes
 
@@ -65,6 +65,22 @@ def set_user_cookie(response: RedirectResponse | JSONResponse, user: User) -> No
         "nova_session", make_user_session(user.id), max_age=30 * 86400, httponly=True,
         secure=base_url().startswith("https://"), samesite="lax", path="/",
     )
+
+
+def learn_voice_from_socials(db: Session, user_id: int) -> dict[str, Any] | None:
+    posts = recent_content_for_user(db, user_id)
+    if not posts:
+        return None
+    profile = ai.infer_voice_profile("\n\n--- POST ---\n\n".join(posts))
+    prefs = get_preferences(db, user_id)
+    prefs.writing_tone = profile["writing_tone"][:5000]
+    prefs.audience = profile["audience"][:5000]
+    prefs.topics = profile["topics"][:5000]
+    prefs.things_to_avoid = profile["things_to_avoid"][:5000]
+    prefs.example_posts = "\n\n".join(posts)[:12000]
+    prefs.preferred_post_length = profile["preferred_post_length"]
+    db.commit()
+    return {**profile, "posts_scanned": len(posts)}
 
 
 def _state_row(db: Session, raw_state: str, platform: str) -> OAuthState:
@@ -300,7 +316,8 @@ def onboarding_socials(request: Request, db: Session = Depends(get_db)):
 @app.get("/onboarding/writing-style", response_class=HTMLResponse)
 def onboarding_writing_style(request: Request, db: Session = Depends(get_db)):
     user = current_user(request)
-    return templates.TemplateResponse("onboarding_writing.html", template_context(request, user, prefs=get_preferences(db, user.id)))
+    connected = db.scalar(select(SocialConnection.id).where(SocialConnection.user_id == user.id, SocialConnection.active.is_(True)).limit(1)) is not None
+    return templates.TemplateResponse("onboarding_writing.html", template_context(request, user, prefs=get_preferences(db, user.id), connected=connected))
 
 @app.get("/onboarding/complete")
 def onboarding_complete(request: Request):
@@ -319,6 +336,29 @@ def save_preferences(request:Request,writing_tone:Annotated[str,Form()]="",audie
     try:ZoneInfo(timezone_name)
     except Exception:timezone_name="Europe/London"
     prefs.writing_tone=writing_tone[:5000]; prefs.audience=audience[:5000]; prefs.topics=topics[:5000]; prefs.things_to_avoid=things_to_avoid[:5000]; prefs.example_posts=example_posts[:12000]; prefs.preferred_post_length=max(30,min(preferred_post_length,4000)); prefs.timezone=timezone_name; db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account",303)
+
+@app.post("/account/profile")
+def update_profile(request: Request, display_name: Annotated[str, Form()] = "", guidance: Annotated[str, Form()] = "", next_url: Annotated[str, Form(alias="next")] = "", db: Session = Depends(get_db)):
+    user = current_user(request); prefs = get_preferences(db, user.id)
+    user.display_name = display_name.strip()[:160]
+    if guidance.strip(): prefs.things_to_avoid = guidance.strip()[:5000]
+    db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=profile", 303)
+
+@app.post("/account/password")
+def change_password(request: Request, current_password: Annotated[str, Form()], new_password: Annotated[str, Form()], new_password_confirmation: Annotated[str, Form()], db: Session = Depends(get_db)):
+    user = current_user(request)
+    if not verify_password(current_password, user.password_hash): return RedirectResponse("/account?error=current_password", 303)
+    if len(new_password) < 10: return RedirectResponse("/account?error=password_length", 303)
+    if new_password != new_password_confirmation: return RedirectResponse("/account?error=password_match", 303)
+    user.password_hash = hash_password(new_password); db.commit(); return RedirectResponse("/account?saved=password", 303)
+
+@app.post("/api/voice/scan-socials")
+def scan_social_voice(request: Request, db: Session = Depends(get_db)):
+    user = current_user(request)
+    try: profile = learn_voice_from_socials(db, user.id)
+    except Exception as exc: log.exception("Social voice scan failed"); raise HTTPException(502, f"Zova could not scan recent posts: {exc}") from exc
+    if not profile: return {"status": "waiting", "message": "Connect a social account so Zova can learn from recent posts."}
+    return {"status": "learned", **profile}
 
 @app.post("/account/connections/{connection_id}/unlink")
 def unlink(connection_id:int,request:Request,db:Session=Depends(get_db)):
@@ -341,6 +381,8 @@ def oauth_x_callback(request:Request,code:str|None=None,state:str|None=None,erro
     try:token,user_info=x_exchange(code,verifier)
     except RuntimeError as exc:raise HTTPException(502,str(exc))
     upsert_connection(db,user_id=row.user_id,platform="x",account_id=str(user_info["id"]),username=user_info.get("username","") or "",display_name=user_info.get("name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",X_SCOPES),metadata={"profile_image_url":user_info.get("profile_image_url")})
+    try: learn_voice_from_socials(db, row.user_id)
+    except Exception as exc: log.warning("Automatic X voice learning failed: %s", exc)
     return RedirectResponse("/onboarding/socials?connected=x" if request.cookies.get("zova_onboarding") else "/account?connected=x",303)
 
 @app.get("/oauth/meta/start")
@@ -361,6 +403,8 @@ def oauth_meta_callback(request:Request,code:str|None=None,state:str|None=None,e
         ig=page.get("instagram_business_account") or {}
         if ig.get("id"):
             upsert_connection(db,user_id=row.user_id,platform="instagram",account_id=str(ig["id"]),username=ig.get("username","") or "",display_name=ig.get("name","") or ig.get("username","") or "",access=page_token,scope=META_SCOPES,metadata={"facebook_page_id":page_id,"profile_picture_url":ig.get("profile_picture_url")})
+    try: learn_voice_from_socials(db, row.user_id)
+    except Exception as exc: log.warning("Automatic Meta voice learning failed: %s", exc)
     return RedirectResponse("/onboarding/socials?connected=meta" if request.cookies.get("zova_onboarding") else "/account?connected=meta",303)
 
 @app.get("/oauth/tiktok/start")
@@ -375,6 +419,8 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
     try:token,info=tiktok_exchange(code)
     except RuntimeError as exc:raise HTTPException(502,str(exc))
     upsert_connection(db,user_id=row.user_id,platform="tiktok",account_id=str(info.get("open_id")),username=info.get("display_name","") or "",display_name=info.get("display_name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",TIKTOK_SCOPES),metadata={"avatar_url":info.get("avatar_url")})
+    try: learn_voice_from_socials(db, row.user_id)
+    except Exception as exc: log.warning("Automatic TikTok voice learning failed: %s", exc)
     return RedirectResponse("/onboarding/socials?connected=tiktok" if request.cookies.get("zova_onboarding") else "/account?connected=tiktok",303)
 
 

@@ -23,7 +23,7 @@ log = logging.getLogger("nova.social")
 
 X_SCOPES = "tweet.read tweet.write users.read offline.access"
 META_SCOPES = "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish,instagram_manage_insights"
-TIKTOK_SCOPES = "user.info.basic,video.list,video.publish"
+TIKTOK_SCOPES = "user.info.basic,user.info.stats,video.list,video.publish"
 
 
 def json_meta(conn: SocialConnection) -> dict[str, Any]:
@@ -389,7 +389,8 @@ def publish_platform(db: Session, *, user_id: int, platform: str, posts: list[st
 # ---------- Analytics ----------
 
 def _recent_ids(db: Session, user_id: int, platform: str, limit: int = 10) -> list[str]:
-    rows = db.scalars(select(Activity).where(Activity.user_id == user_id, Activity.platform == platform, Activity.status.in_(["published", "pending"]), Activity.platform_post_id.is_not(None)).order_by(Activity.id.desc()).limit(limit)).all()
+    cutoff = utcnow() - timedelta(days=7)
+    rows = db.scalars(select(Activity).where(Activity.user_id == user_id, Activity.platform == platform, Activity.status.in_(["published", "pending"]), Activity.platform_post_id.is_not(None), Activity.created_at >= cutoff).order_by(Activity.id.desc()).limit(limit)).all()
     return [str(r.platform_post_id) for r in rows if r.platform_post_id]
 
 
@@ -459,6 +460,23 @@ def analytics_tiktok(db: Session, conn: SocialConnection, ids: list[str]) -> dic
     return out
 
 
+def follower_count(db: Session, conn: SocialConnection) -> int:
+    token = access_token(conn, db)
+    if conn.platform == "x":
+        r = httpx.get(f"https://api.x.com/2/users/{conn.account_id}", headers={"Authorization": f"Bearer {token}"}, params={"user.fields": "public_metrics"}, timeout=20.0)
+        return int(((r.json().get("data") or {}).get("public_metrics") or {}).get("followers_count", 0)) if r.status_code < 400 else 0
+    if conn.platform in {"instagram", "facebook"}:
+        version = os.environ.get("META_GRAPH_VERSION", "v23.0")
+        fields = "followers_count" if conn.platform == "instagram" else "followers_count,fan_count"
+        r = httpx.get(f"https://graph.facebook.com/{version}/{conn.account_id}", params={"fields": fields, "access_token": token}, timeout=20.0)
+        data = r.json() if r.status_code < 400 else {}
+        return int(data.get("followers_count", data.get("fan_count", 0)) or 0)
+    if conn.platform == "tiktok":
+        r = httpx.get("https://open.tiktokapis.com/v2/user/info/", headers={"Authorization": f"Bearer {token}"}, params={"fields": "follower_count"}, timeout=20.0)
+        return int((((r.json().get("data") or {}).get("user") or {}).get("follower_count", 0))) if r.status_code < 400 else 0
+    return 0
+
+
 def analytics_for_user(db: Session, user_id: int) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for platform in ["x", "instagram", "facebook", "tiktok"]:
@@ -473,8 +491,50 @@ def analytics_for_user(db: Session, user_id: int) -> dict[str, Any]:
             elif platform == "instagram": metrics = analytics_instagram(db, conn, ids)
             elif platform == "facebook": metrics = analytics_facebook(db, conn, ids)
             else: metrics = analytics_tiktok(db, conn, ids)
-            result[platform] = {"connected": True, "account": conn.username or conn.display_name, **metrics}
+            result[platform] = {"connected": True, "account": conn.username or conn.display_name, "followers": follower_count(db, conn), **metrics}
         except Exception as exc:
             log.warning("%s analytics error: %s", platform, exc)
             result[platform] = {"connected": True, "account": conn.username or conn.display_name, "error": str(exc)}
+    totals = {"impressions": 0, "likes": 0, "comments": 0, "shares": 0, "followers": 0, "posts": 0}
+    for platform, values in result.items():
+        if not values.get("connected"): continue
+        totals["impressions"] += int(values.get("impressions", values.get("views", 0)) or 0)
+        totals["likes"] += int(values.get("likes", values.get("reactions", 0)) or 0)
+        totals["comments"] += int(values.get("comments", values.get("replies", 0)) or 0)
+        totals["shares"] += int(values.get("shares", values.get("reposts", 0)) or 0)
+        totals["followers"] += int(values.get("followers", 0) or 0)
+        totals["posts"] += int(values.get("posts", 0) or 0)
+    result["_summary"] = totals
     return result
+
+
+def recent_content_for_connection(db: Session, conn: SocialConnection, limit: int = 20) -> list[str]:
+    """Read recent creator-authored content for voice learning."""
+    token = access_token(conn, db)
+    if conn.platform == "x":
+        r = httpx.get(f"https://api.x.com/2/users/{conn.account_id}/tweets", headers={"Authorization": f"Bearer {token}"}, params={"max_results": max(5, min(limit, 100)), "tweet.fields": "created_at", "exclude": "retweets,replies"}, timeout=30.0)
+        if r.status_code >= 400: raise RuntimeError("X recent posts are unavailable")
+        return [str(x.get("text", "")).strip() for x in r.json().get("data", []) if x.get("text")]
+    if conn.platform in {"instagram", "facebook"}:
+        version = os.environ.get("META_GRAPH_VERSION", "v23.0")
+        edge = "media" if conn.platform == "instagram" else "posts"
+        fields = "caption,timestamp" if conn.platform == "instagram" else "message,created_time"
+        r = httpx.get(f"https://graph.facebook.com/{version}/{conn.account_id}/{edge}", params={"fields": fields, "limit": limit, "access_token": token}, timeout=30.0)
+        if r.status_code >= 400: raise RuntimeError(f"{conn.platform.title()} recent posts are unavailable")
+        key = "caption" if conn.platform == "instagram" else "message"
+        return [str(x.get(key, "")).strip() for x in r.json().get("data", []) if x.get(key)]
+    if conn.platform == "tiktok":
+        r = httpx.post("https://open.tiktokapis.com/v2/video/list/", headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, params={"fields": "id,title,video_description,create_time"}, json={"max_count": min(limit, 20)}, timeout=30.0)
+        if r.status_code >= 400: raise RuntimeError("TikTok recent posts are unavailable")
+        videos = (r.json().get("data") or {}).get("videos", [])
+        return [str(x.get("video_description") or x.get("title") or "").strip() for x in videos if x.get("video_description") or x.get("title")]
+    return []
+
+
+def recent_content_for_user(db: Session, user_id: int) -> list[str]:
+    rows = db.scalars(select(SocialConnection).where(SocialConnection.user_id == user_id, SocialConnection.active.is_(True))).all()
+    content: list[str] = []
+    for conn in rows:
+        try: content.extend(recent_content_for_connection(db, conn))
+        except Exception as exc: log.warning("%s voice scan failed: %s", conn.platform, exc)
+    return content[:60]

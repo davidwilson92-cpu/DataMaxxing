@@ -1,13 +1,1 @@
-<aside class="app-nav">
-  <a class="app-brand" href="/studio"><span class="brand-mark" aria-hidden="true"><i></i><i></i><b></b></span><span>zova</span></a>
-  <nav class="app-menu" aria-label="Zova workspace">
-    <a class="{% if active_page == 'studio' %}active{% endif %}" href="/studio"><span>+</span>Studio</a>
-    <a href="/account#voice"><span>o</span>Voice</a>
-    <a href="/account#socials"><span>@</span>Socials</a>
-    <a class="{% if active_page == 'account' %}active{% endif %}" href="/account"><span>o</span>Account</a>
-    <a href="/security"><span>◇</span>Security</a>
-  </nav>
-  <div class="nav-spacer"></div>
-  <form method="post" action="/logout"><button class="nav-settings" type="submit">Sign out</button></form>
-  <div class="nav-profile"><span>{{ user.email[:1]|upper }}</span><div><b>{{ user.email.split('@')[0] }}</b><small>Creator workspace</small></div></div>
-</aside>
+<aside class="app-nav"><a class="app-brand" href="/studio">{% include "logo_mark.html" %}<span>zova</span></a><nav class="app-menu" aria-label="Zova workspace"><a class="{% if active_page == 'studio' %}active{% endif %}" href="/studio"><span class="nav-glyph">+</span>Studio</a><a href="/account#voice"><span class="nav-glyph">◌</span>Voice</a><a href="/account#socials"><span class="nav-glyph">◎</span>Socials</a><a class="{% if active_page == 'account' %}active{% endif %}" href="/account"><span class="nav-glyph">○</span>Account</a><a href="/security"><span class="nav-glyph">◇</span>Security</a></nav><div class="nav-spacer"></div><form method="post" action="/logout"><button class="nav-settings" type="submit">Sign out</button></form><div class="nav-profile"><span>{{ user.email[:1]|upper }}</span><div><b>{{ user.display_name or user.email.split('@')[0] }}</b><small>Creator workspace</small></div></div></aside>
