@@ -103,7 +103,7 @@ function updateCount(element) { if (currentPlatform === "x") element.parentNode.
 function renderEditor() {
   const posts = (variants[currentPlatform] || {}).posts || [];
   const rule = currentPlatform === "x" ? "280 characters max per post" : (["instagram","tiktok"].includes(currentPlatform) ? "Visual media required to publish" : "Platform-native version");
-  document.getElementById("variantEditor").innerHTML = `<div class="platform-rule"><b>${platformName(currentPlatform)}</b><span>${rule}</span></div>` + posts.map((post,index) => `<div class="post-editor"><label>${posts.length > 1 ? `Post ${index + 1}` : "Draft"}</label><textarea rows="${posts.length > 1 ? 4 : 7}" oninput="updateCount(this)">${esc(post)}</textarea><small>${currentPlatform === "x" ? `${post.length} / 280 characters` : ""}</small></div>`).join("");
+  document.getElementById("variantEditor").innerHTML = `<div class="platform-rule"><b>${platformName(currentPlatform)}</b><span>${rule}</span></div>` + posts.map((post,index) => `<div class="post-editor"><label>${posts.length > 1 ? `Post ${index + 1}` : "Draft"}</label><textarea rows="${posts.length > 1 ? 3 : 4}" oninput="updateCount(this)">${esc(post)}</textarea><small>${currentPlatform === "x" ? `${post.length} / 280 characters` : ""}</small></div>`).join("");
 }
 
 async function requestRewrite(action = "", instruction = "") { saveEditor(); try { const result = await api("/api/ai/rewrite", {method:"POST",headers,body:JSON.stringify({platform:currentPlatform,posts:variants[currentPlatform].posts,action,instruction})}); variants[currentPlatform].posts = result.posts; renderEditor(); } catch (error) { alert(error.message); } }

@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Annotated, Any
+from urllib.parse import quote_plus
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -23,7 +24,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from . import ai, billing
@@ -33,6 +34,7 @@ from .db import (
 )
 from .scheduler import loop as scheduler_loop, process_due
 from .security import current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password
+from .user_data import normalize_country, normalize_email, normalize_name
 from .social import (
     META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, meta_authorize_url, meta_exchange,
     publish_platform, publishing_context, recent_content_for_user, resolve_tiktok_post, tiktok_authorize_url, tiktok_exchange, upsert_connection, x_authorize_url, x_exchange,
@@ -193,12 +195,18 @@ def signup_page(request: Request, error: str | None = None):
     return templates.TemplateResponse("auth.html", template_context(request, heading="Create your account", subheading="Start with Apple or use your email. You’ll connect socials next.", action="/signup", button="Create account", error=error, apple_ready=apple_configured()))
 
 @app.post("/signup")
-def signup(request: Request, email: Annotated[str, Form()], password: Annotated[str, Form()], password_confirmation: Annotated[str, Form()], db: Session=Depends(get_db)):
-    email=email.strip().lower()
+def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str, Form()], country: Annotated[str, Form()], password: Annotated[str, Form()], password_confirmation: Annotated[str, Form()], accept_terms: Annotated[str | None, Form()] = None, marketing_consent: Annotated[str | None, Form()] = None, db: Session=Depends(get_db)):
+    try:
+        email, name, country = normalize_email(email), normalize_name(name), normalize_country(country)
+    except ValueError as exc:
+        return RedirectResponse(f"/signup?error={quote_plus(str(exc))}", 303)
+    if accept_terms != "yes": return RedirectResponse("/signup?error=Please+accept+the+Terms+and+Privacy+Policy",303)
     if password != password_confirmation: return RedirectResponse("/signup?error=Passwords+do+not+match",303)
     if len(password)<10: return RedirectResponse("/signup?error=Use+a+password+of+at+least+10+characters",303)
     if db.scalar(select(User).where(User.email==email)): return RedirectResponse("/signup?error=An+account+with+that+email+already+exists",303)
-    user=User(email=email,password_hash=hash_password(password)); db.add(user); db.commit(); db.refresh(user); get_preferences(db,user.id)
+    now = utcnow()
+    consent = marketing_consent == "yes"
+    user=User(email=email,display_name=name,country_code=country,password_hash=hash_password(password),terms_accepted_at=now,marketing_consent=consent,marketing_consent_at=now if consent else None); db.add(user); db.commit(); db.refresh(user); get_preferences(db,user.id)
     resp=RedirectResponse("/onboarding/socials",303); set_user_cookie(resp,user); return resp
 
 @app.get("/login", response_class=HTMLResponse)
@@ -249,6 +257,7 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
 def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Form()],db:Session=Depends(get_db)):
     user=db.scalar(select(User).where(User.email==email.strip().lower()))
     if not user or not verify_password(password,user.password_hash): return RedirectResponse("/login?error=Incorrect+email+or+password",303)
+    user.last_login_at=utcnow(); db.commit()
     resp=RedirectResponse("/studio",303); set_user_cookie(resp,user); return resp
 
 @app.post("/logout")
@@ -341,6 +350,46 @@ def account(request:Request,db:Session=Depends(get_db)):
     for r in rows: by.setdefault(r.platform,[]).append(r)
     return templates.TemplateResponse("account.html",template_context(request,user,prefs=prefs,by_platform=by,billing_ready=billing.configured()))
 
+
+def require_admin(request: Request) -> User:
+    """Return the signed-in administrator without revealing this page to other users."""
+    try:
+        user = current_user(request)
+    except HTTPException:
+        raise HTTPException(404, "Not found")
+    allowed = {email.strip().lower() for email in os.environ.get("ADMIN_EMAILS", "").split(",") if email.strip()}
+    if user.email.lower() not in allowed:
+        raise HTTPException(404, "Not found")
+    return user
+
+
+@app.get("/admin/users", response_class=HTMLResponse, include_in_schema=False)
+def admin_users(request: Request, q: str = "", subscription: str = "", country: str = "", page: int = 1, db: Session = Depends(get_db)):
+    admin = require_admin(request)
+    page, page_size = max(page, 1), 50
+    query = select(User)
+    search = q.strip()[:160]
+    if search:
+        like = f"%{search}%"
+        query = query.where(or_(User.email.ilike(like), User.display_name.ilike(like)))
+    if subscription:
+        query = query.where(User.subscription_status == subscription[:40])
+    country_code = country.strip().upper()[:2]
+    if country_code:
+        query = query.where(User.country_code == country_code)
+    filtered = query.subquery()
+    total = db.scalar(select(func.count()).select_from(filtered)) or 0
+    users = db.scalars(query.order_by(User.created_at.desc()).offset((page - 1) * page_size).limit(page_size)).all()
+    summary = {
+        "users": db.scalar(select(func.count(User.id))) or 0,
+        "active": db.scalar(select(func.count(User.id)).where(User.active.is_(True))) or 0,
+        "subscribers": db.scalar(select(func.count(User.id)).where(User.subscription_status.in_(("active", "trialing")))) or 0,
+        "marketing": db.scalar(select(func.count(User.id)).where(User.marketing_consent.is_(True))) or 0,
+    }
+    statuses = db.scalars(select(User.subscription_status).distinct().order_by(User.subscription_status)).all()
+    countries = db.scalars(select(User.country_code).where(User.country_code != "").distinct().order_by(User.country_code)).all()
+    return templates.TemplateResponse("admin_users.html", template_context(request, admin, users=users, summary=summary, statuses=statuses, countries=countries, total=total, page=page, page_size=page_size, q=search, subscription=subscription, country=country_code))
+
 @app.post("/account/preferences")
 def save_preferences(request:Request,writing_tone:Annotated[str,Form()]="",audience:Annotated[str,Form()]="",topics:Annotated[str,Form()]="",things_to_avoid:Annotated[str,Form()]="",example_posts:Annotated[str,Form()]="",preferred_post_length:Annotated[int,Form()]=220,timezone_name:Annotated[str,Form(alias="timezone")]="Europe/London",next_url:Annotated[str,Form(alias="next")]="",db:Session=Depends(get_db)):
     user=current_user(request); prefs=get_preferences(db,user.id)
@@ -351,7 +400,8 @@ def save_preferences(request:Request,writing_tone:Annotated[str,Form()]="",audie
 @app.post("/account/profile")
 def update_profile(request: Request, display_name: Annotated[str, Form()] = "", guidance: Annotated[str, Form()] = "", next_url: Annotated[str, Form(alias="next")] = "", db: Session = Depends(get_db)):
     user = current_user(request); prefs = get_preferences(db, user.id)
-    user.display_name = display_name.strip()[:160]
+    try: user.display_name = normalize_name(display_name)
+    except ValueError: return RedirectResponse("/account?error=profile", 303)
     if guidance.strip(): prefs.things_to_avoid = guidance.strip()[:5000]
     db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=profile", 303)
 

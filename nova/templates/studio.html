@@ -30,12 +30,12 @@
           </div>
         </section>
         <section id="draftArea" class="panel draft-panel hidden">
-          <div class="draft-top"><div><div class="eyebrow">NATIVE DRAFTS</div><h2>Distinct by design.</h2><p class="muted">Each version is shaped around how people use that platform.</p></div><div id="platformTabs" class="tabs"></div></div><div id="variantEditor"></div>
+          <div class="draft-top"><h2>Drafts</h2><div id="platformTabs" class="tabs"></div></div><div id="variantEditor"></div>
           <div class="rewrite-bar"><span>REFINE</span><div class="rewrite-shortcuts"><button onclick="rewrite('shorter')">Shorter</button><button onclick="rewrite('punchier')">Punchier</button><button onclick="rewrite('serious')">More serious</button><button onclick="rewrite('humorous')">More humorous</button><button onclick="rewrite('controversial')">Bolder</button><button onclick="rewrite('data-driven')">More data-driven</button></div><div class="custom-refine"><input id="refineInstruction" maxlength="1000" placeholder="Or tell Zova exactly how to refine it"><button type="button" onclick="refineCustom()">Apply</button></div></div>
           <div class="preview-strip"><button class="button ghost" onclick="previewCurrent()">Preview selected</button><span id="previewResult" class="muted"></span></div>
           <div class="publish-zone"><div class="schedule-box"><label>Schedule <span>Optional</span></label><input id="scheduleAt" type="datetime-local"><button class="mini-button" onclick="suggestSchedule()">Suggest the right time</button><div id="scheduleSuggestions" class="suggestions"></div></div><div class="publish-actions"><button class="button ghost" onclick="scheduleSelected()">Review schedule</button><button class="button primary" onclick="publishSelected()">Review and publish</button></div></div>
         </section>
-        <section class="panel history-panel"><div class="section-mini-head"><div><div class="eyebrow">RECENT WORK</div><h2>Your content</h2></div><a href="#draftHistory">View all →</a></div><div id="draftHistory" class="history-table"><div class="muted">Loading...</div></div></section>
+        <details class="panel history-panel"><summary><span>Recent work</span><small>Show</small></summary><div id="draftHistory" class="history-table"><div class="muted">Loading...</div></div></details>
       </section>
       <aside class="studio-side">
         <section class="intelligence-card account-analytics-card"><div class="orbit-mini" aria-hidden="true"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><span class="orbit-dot d1"></span><span class="orbit-dot d2"></span><span class="orbit-dot d3"></span><span class="orbit-core">{% include "logo_mark.html" %}</span></div><div class="eyebrow">ACCOUNT ANALYTICS</div><h2>Your last 7 days</h2><p>Performance across connected accounts and content published through Zova.</p><div id="analytics"><div class="skeleton-lines"><i></i><i></i><i></i></div></div></section>
@@ -45,5 +45,5 @@
   </div>
 </div>
 <dialog id="publishReview" class="publish-review"><form method="dialog" class="review-dialog"><header><div><div class="eyebrow">FINAL REVIEW</div><h2 id="reviewTitle">Ready to publish?</h2><p>Check every version and confirm exactly what Zova will send.</p></div><button class="review-close" value="cancel" aria-label="Close">&times;</button></header><div id="reviewBody" class="review-body"></div><div id="reviewError" class="alert error hidden"></div><footer><button class="button ghost" value="cancel">Back to editing</button><button id="confirmPublishBtn" class="button primary" type="button" onclick="confirmReviewedPublish()">Confirm and publish</button></footer></form></dialog>
-<script src="/static/studio.js?v=5.9"></script>
+<script src="/static/studio.js?v=5.10"></script>
 {% endblock %}

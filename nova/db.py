@@ -67,12 +67,19 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
     display_name: Mapped[str] = mapped_column(String(160), default='')
+    country_code: Mapped[str] = mapped_column(String(2), default='')
     password_hash: Mapped[str] = mapped_column(Text)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     stripe_customer_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     subscription_status: Mapped[str] = mapped_column(String(40), default='none')
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    marketing_consent: Mapped[bool] = mapped_column(Boolean, default=False)
+    marketing_consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
     preferences: Mapped['CreatorPreferences | None'] = relationship(back_populates='user', uselist=False, cascade='all,delete-orphan')
     social_connections: Mapped[list['SocialConnection']] = relationship(back_populates='user', cascade='all,delete-orphan')
@@ -213,12 +220,8 @@ class UserCreatorLink(Base):
 
 
 Base.metadata.create_all(bind=engine)
-
-# Small in-place migration for existing V5 databases.
-from sqlalchemy import inspect, text
-if 'display_name' not in {c['name'] for c in inspect(engine).get_columns('nova_users')}:
-    with engine.begin() as connection:
-        connection.execute(text("ALTER TABLE nova_users ADD COLUMN display_name VARCHAR(160) DEFAULT ''"))
+from .migrations import run_migrations
+run_migrations(engine)
 
 
 def get_db():

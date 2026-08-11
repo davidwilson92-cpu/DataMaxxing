@@ -14,6 +14,12 @@ from nova.app import app
 client = TestClient(app)
 
 
+def signup_payload(email: str, password_confirmation: str = "long-password-1", **overrides):
+    data = {"name": "Test Creator", "email": email, "country": "GB", "password": "long-password-1", "password_confirmation": password_confirmation, "accept_terms": "yes"}
+    data.update(overrides)
+    return data
+
+
 def test_health_and_branding():
     response = client.get("/health")
     assert response.json() == {"status": "ok", "version": "5.1.0", "brand": "Zova"}
@@ -35,14 +41,14 @@ def test_public_legal_pages_and_footer_links():
 
 
 def test_password_confirmation_is_required_server_side():
-    response = client.post("/signup", data={"email": "mismatch@example.com", "password": "long-password-1", "password_confirmation": "long-password-2"}, follow_redirects=False)
+    response = client.post("/signup", data=signup_payload("mismatch@example.com", "long-password-2"), follow_redirects=False)
     assert response.status_code == 303
     assert "Passwords+do+not+match" in response.headers["location"]
 
 
 def test_signup_routes_through_onboarding():
     email = f"test-{secrets.token_hex(5)}@example.com"
-    response = client.post("/signup", data={"email": email, "password": "long-password-1", "password_confirmation": "long-password-1"}, follow_redirects=False)
+    response = client.post("/signup", data=signup_payload(email, marketing_consent="yes"), follow_redirects=False)
     assert response.status_code == 303
     assert response.headers["location"] == "/onboarding/socials"
     assert response.cookies.get("nova_session")
@@ -51,6 +57,17 @@ def test_signup_routes_through_onboarding():
     writing = client.get("/onboarding/writing-style", cookies=response.cookies)
     assert writing.status_code == 200 and "YOUR ZOVA VOICE" in writing.text
     assert "Paste 3" not in writing.text
+
+    from nova.db import SessionLocal, User
+    from sqlalchemy import select
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == email))
+        assert user.display_name == "Test Creator"
+        assert user.country_code == "GB"
+        assert user.subscription_status == "none"
+        assert user.terms_accepted_at is not None
+        assert user.marketing_consent is True
+        assert user.password_hash.startswith("scrypt$") and "long-password-1" not in user.password_hash
 
 
 def test_signup_form_has_confirmation_and_client_validation():
@@ -61,19 +78,22 @@ def test_signup_form_has_confirmation_and_client_validation():
 
 def test_studio_has_premium_application_shell():
     email = f"studio-{secrets.token_hex(5)}@example.com"
-    signup = client.post("/signup", data={"email": email, "password": "long-password-1", "password_confirmation": "long-password-1"}, follow_redirects=False)
+    signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     page = client.get("/studio", cookies=signup.cookies)
     assert page.status_code == 200
     assert "ACCOUNT ANALYTICS" in page.text
     assert "Shape for every platform" in page.text
-    assert 'src="/static/studio.js?v=5.9"' in page.text
-    assert 'href="/static/nova.css?v=5.9"' in page.text
+    assert 'src="/static/studio.js?v=5.10"' in page.text
+    assert 'href="/static/nova.css?v=5.10"' in page.text
     assert 'accept="image/*,video/mp4,video/quicktime,video/webm"' in page.text
     assert "Videos publish to Instagram and TikTok only" in page.text
     assert 'id="refineInstruction"' in page.text
     assert 'class="rewrite-shortcuts"' in page.text
     assert 'id="publishReview"' in page.text
     assert "Review and publish" in page.text
+    assert "Distinct by design" not in page.text
+    assert "NATIVE DRAFTS" not in page.text
+    assert "<summary><span>Recent work</span>" in page.text
     assert "Ã" not in page.text and "â" not in page.text
     assert "site-header" not in page.text
     assert "Give Zova the thought behind the post" not in page.text
@@ -86,7 +106,7 @@ def test_studio_has_premium_application_shell():
 
 def test_account_management_and_social_voice_waiting_state():
     email = f"account-{secrets.token_hex(5)}@example.com"
-    signup = client.post("/signup", data={"email": email, "password": "long-password-1", "password_confirmation": "long-password-1"}, follow_redirects=False)
+    signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     page = client.get("/account", cookies=signup.cookies).text
     assert 'action="/account/profile"' in page
     assert 'action="/account/password"' in page
@@ -97,7 +117,7 @@ def test_account_management_and_social_voice_waiting_state():
 
 def test_voice_learning_updates_inferred_profile():
     email = f"voice-{secrets.token_hex(5)}@example.com"
-    signup = client.post("/signup", data={"email": email, "password": "long-password-1", "password_confirmation": "long-password-1"}, follow_redirects=False)
+    signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     import nova.app as app_module
     original = app_module.ai.infer_voice_profile
     app_module.ai.infer_voice_profile = lambda sample: {"summary": "Direct and optimistic.", "writing_tone": "Direct", "audience": "Creators", "topics": "Social media", "things_to_avoid": "Jargon", "preferred_post_length": 180}
@@ -107,3 +127,30 @@ def test_voice_learning_updates_inferred_profile():
         app_module.ai.infer_voice_profile = original
     assert response.status_code == 200
     assert response.json()["summary"] == "Direct and optimistic."
+
+
+def test_signup_requires_terms_and_valid_country():
+    email = f"privacy-{secrets.token_hex(5)}@example.com"
+    no_terms = signup_payload(email)
+    no_terms.pop("accept_terms")
+    assert "accept+the+Terms" in client.post("/signup", data=no_terms, follow_redirects=False).headers["location"]
+    invalid_country = signup_payload(email, country="United Kingdom")
+    assert "valid+country" in client.post("/signup", data=invalid_country, follow_redirects=False).headers["location"]
+
+
+def test_admin_dashboard_is_allowlisted_and_hides_secrets():
+    email = f"admin-{secrets.token_hex(5)}@example.com"
+    signup = client.post("/signup", data=signup_payload(email, marketing_consent="yes"), follow_redirects=False)
+    assert client.get("/admin/users", cookies=signup.cookies).status_code == 404
+    previous = os.environ.get("ADMIN_EMAILS")
+    os.environ["ADMIN_EMAILS"] = email
+    try:
+        page = client.get("/admin/users", cookies=signup.cookies)
+        filtered = client.get("/admin/users", params={"q": email, "country": "GB", "subscription": "none"}, cookies=signup.cookies)
+    finally:
+        if previous is None: os.environ.pop("ADMIN_EMAILS", None)
+        else: os.environ["ADMIN_EMAILS"] = previous
+    assert page.status_code == 200 and "ZOVA ADMIN" in page.text
+    assert email in page.text and "Marketing: yes" in page.text
+    assert "password_hash" not in page.text and "scrypt$" not in page.text
+    assert filtered.status_code == 200 and "1 matching account" in filtered.text
