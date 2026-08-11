@@ -29,10 +29,11 @@ def process_due(limit: int = 25) -> dict[str, int]:
                 content = json.loads(row.content_json)
                 posts = content.get("posts") or []
                 link_url = content.get("link_url") or ""
+                publish_options = content.get("publish_options") or {}
                 media_ids = json.loads(row.media_asset_ids_json or "[]")
                 assets = [db.get(MediaAsset, int(mid)) for mid in media_ids]
                 assets = [a for a in assets if a is not None and a.user_id == row.user_id]
-                result = publish_platform(db, user_id=row.user_id, platform=row.platform, posts=posts, assets=assets, link_url=link_url)
+                result = publish_platform(db, user_id=row.user_id, platform=row.platform, posts=posts, assets=assets, link_url=link_url, options=publish_options)
                 row.status = "pending" if result.get("pending") else "published"
                 row.platform_post_id = result.get("post_id")
                 row.post_url = result.get("url")

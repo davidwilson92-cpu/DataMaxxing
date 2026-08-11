@@ -3,6 +3,10 @@ let currentPlatform = "x";
 let currentDraftId = null;
 let uploadedMediaIds = [];
 let uploadedMediaKind = null;
+let uploadedMedia = [];
+let uploadedVideoDuration = 0;
+let reviewMode = "publish";
+let reviewContexts = {};
 const headers = {"Content-Type": "application/json", "X-Zova-Request": "1"};
 
 const selectedPlatforms = () => [...document.querySelectorAll(".platform-check input:checked")].map(input => input.value);
@@ -32,6 +36,7 @@ async function uploadMedia() {
     status.textContent = "Add one video at a time, without images.";
     return;
   }
+  if (videos.length) uploadedVideoDuration = await readVideoDuration(videos[0]);
   const form = new FormData();
   [...files].forEach(file => form.append("files", file));
   status.textContent = "Uploading...";
@@ -39,16 +44,29 @@ async function uploadMedia() {
     const result = await api("/api/media", {method:"POST", headers:{"X-Zova-Request":"1"}, body:form});
     if (result.assets.some(asset => asset.kind === "video")) {
       uploadedMediaIds = result.assets.map(asset => asset.id);
+      uploadedMedia = result.assets;
       uploadedMediaKind = "video";
       ["px", "pfb"].forEach(id => { document.getElementById(id).checked = false; });
       status.textContent = "1 video attached · Instagram and TikTok only";
     } else {
       if (uploadedMediaKind === "video") uploadedMediaIds = [];
       uploadedMediaIds.push(...result.assets.map(asset => asset.id));
+      if (uploadedMediaKind === "video") uploadedMedia = [];
+      uploadedMedia.push(...result.assets);
       uploadedMediaKind = "image";
       status.textContent = `${uploadedMediaIds.length} image${uploadedMediaIds.length === 1 ? "" : "s"} attached`;
     }
   } catch (error) { status.textContent = error.message; }
+}
+
+function readVideoDuration(file) {
+  return new Promise(resolve => {
+    const video = document.createElement("video"); const url = URL.createObjectURL(file);
+    video.preload = "metadata";
+    video.onloadedmetadata = () => { const duration = Number(video.duration || 0); URL.revokeObjectURL(url); resolve(duration); };
+    video.onerror = () => { URL.revokeObjectURL(url); resolve(0); };
+    video.src = url;
+  });
 }
 
 function validateVideoPlatforms(platforms) {
@@ -93,20 +111,67 @@ async function rewrite(action) { return requestRewrite(action); }
 async function refineCustom() { const input = document.getElementById("refineInstruction"); const instruction = input.value.trim(); if (!instruction) return input.focus(); await requestRewrite("", instruction); input.value = ""; }
 async function previewCurrent() { saveEditor(); const platforms = selectedPlatforms().filter(p => variants[p]); try { const result = await api("/api/preview", {method:"POST",headers,body:JSON.stringify({platforms,variants})}); document.getElementById("previewResult").textContent = result.summary; } catch (error) { alert(error.message); } }
 
-async function publishSelected() {
-  saveEditor(); const platforms = selectedPlatforms().filter(p => variants[p]);
-  if (!platforms.length) return alert("Choose a generated platform draft.");
-  if (!validateVideoPlatforms(platforms)) return;
-  if (!confirm(`Publish now to ${platforms.map(platformName).join(", ")}?`)) return;
-  try { const result = await api("/api/publish", {method:"POST",headers,body:JSON.stringify({draft_id:currentDraftId,platforms,variants,media_asset_ids:uploadedMediaIds,link_url:document.getElementById("linkUrl").value})}); alert(result.summary); loadSidebar(); loadHistory(); } catch (error) { alert(error.message); }
-}
+async function publishSelected() { await openPublishReview("publish"); }
 
 async function scheduleSelected() {
   saveEditor(); const scheduled = document.getElementById("scheduleAt").value;
   if (!scheduled) return alert("Choose a scheduled date and time.");
-  const platforms = selectedPlatforms().filter(p => variants[p]);
+  await openPublishReview("schedule");
+}
+
+async function openPublishReview(mode) {
+  saveEditor(); const platforms = selectedPlatforms().filter(platform => variants[platform]);
+  if (!platforms.length) return alert("Choose a generated platform draft.");
   if (!validateVideoPlatforms(platforms)) return;
-  try { const result = await api("/api/schedule", {method:"POST",headers,body:JSON.stringify({draft_id:currentDraftId,platforms,variants,media_asset_ids:uploadedMediaIds,link_url:document.getElementById("linkUrl").value,scheduled_local:scheduled})}); alert(result.summary); loadSidebar(); } catch (error) { alert(error.message); }
+  reviewMode = mode; const dialog = document.getElementById("publishReview"); const error = document.getElementById("reviewError");
+  error.classList.add("hidden"); document.getElementById("reviewBody").innerHTML = '<div class="review-loading">Checking connected accounts and current platform settings...</div>';
+  document.getElementById("reviewTitle").textContent = mode === "schedule" ? "Review scheduled posts" : "Ready to publish?";
+  document.getElementById("confirmPublishBtn").textContent = mode === "schedule" ? "Confirm schedule" : "Confirm and publish";
+  dialog.showModal();
+  try {
+    const result = await api("/api/publish-context", {method:"POST",headers,body:JSON.stringify({platforms,variants})}); reviewContexts = result.platforms; renderPublishReview(platforms);
+  } catch (problem) { error.textContent = problem.message; error.classList.remove("hidden"); }
+}
+
+function renderPublishReview(platforms) {
+  const mediaHtml = uploadedMedia.length ? `<div class="review-media"><div class="review-label">ATTACHED MEDIA</div>${uploadedMedia.map(asset => asset.url ? (asset.kind === "video" ? `<video src="${esc(asset.url)}" controls preload="metadata"></video>` : `<img src="${esc(asset.url)}" alt="Attached media preview">`) : `<span>${esc(asset.filename)}</span>`).join("")}</div>` : "";
+  const sections = platforms.map(platform => {
+    const context = reviewContexts[platform] || {}; const posts = variants[platform].posts || [];
+    if (context.error) return `<section class="review-platform blocked"><h3>${platformName(platform)}</h3><div class="alert error">${esc(context.error)} Connect this account before publishing.</div></section>`;
+    const account = esc(context.display_name || context.username || "Connected account");
+    const editors = posts.map((post,index) => `<label>${posts.length > 1 ? `Post ${index + 1}` : "Caption"}<textarea data-review-platform="${platform}" data-review-index="${index}" rows="${posts.length > 1 ? 3 : 5}">${esc(post)}</textarea></label>`).join("");
+    let settings = "";
+    if (platform === "tiktok") {
+      const privacy = (context.privacy_options || []).map(value => `<option value="${esc(value)}">${privacyLabel(value)}</option>`).join("");
+      const max = Number(context.max_video_duration_sec || 0); const tooLong = uploadedMediaKind === "video" && max && uploadedVideoDuration > max;
+      settings = `<div class="tiktok-settings"><label>Who can view this post?<select id="tiktokPrivacy">${privacy}</select></label>${max ? `<p class="platform-note ${tooLong ? "error-text" : ""}">This account allows videos up to ${max} seconds.${uploadedVideoDuration ? ` Your video is ${Math.ceil(uploadedVideoDuration)} seconds.` : ""}</p>` : ""}<div class="review-switches"><label><input id="allowComment" type="checkbox" ${context.comment_disabled ? "disabled" : "checked"}> Allow comments</label><label><input id="allowDuet" type="checkbox" ${context.duet_disabled ? "disabled" : "checked"}> Allow Duet</label><label><input id="allowStitch" type="checkbox" ${context.stitch_disabled ? "disabled" : "checked"}> Allow Stitch</label></div><div class="commercial-box"><div class="review-label">CONTENT DISCLOSURE</div><label><input id="yourBrand" type="checkbox" onchange="updateTikTokDeclaration()"> This post promotes my own brand</label><label><input id="brandContent" type="checkbox" onchange="updateTikTokDeclaration()"> This post promotes another brand or third party</label><p id="tiktokDeclaration">By posting, you agree to TikTok's Music Usage Confirmation.</p></div>${tooLong ? '<div class="alert error">This video is too long for the connected TikTok account.</div>' : ""}</div>`;
+    }
+    return `<section class="review-platform" data-platform="${platform}"><div class="review-platform-head"><h3>${platformName(platform)}</h3><span>Publishing to <b>${account}</b>${context.username ? ` · @${esc(context.username).replace(/^@/,"")}` : ""}</span></div>${editors}${settings}</section>`;
+  }).join("");
+  const timing = reviewMode === "schedule" ? `<div class="review-timing">Scheduled for <b>${esc(document.getElementById("scheduleAt").value.replace("T"," "))}</b></div>` : "";
+  document.getElementById("reviewBody").innerHTML = `${timing}${mediaHtml}${sections}<label class="final-consent"><input id="publishConsent" type="checkbox"> I have reviewed this content and authorise Zova to send it to the accounts shown above.</label><p class="processing-note">TikTok and Instagram may take a few minutes to process media after submission. Zova will show the latest status in Activity.</p>`;
+}
+
+function privacyLabel(value) { return ({PUBLIC_TO_EVERYONE:"Everyone",MUTUAL_FOLLOW_FRIENDS:"Friends",FOLLOWER_OF_CREATOR:"Followers",SELF_ONLY:"Only me"})[value] || value.replaceAll("_"," ").toLowerCase(); }
+function updateTikTokDeclaration() { const branded = document.getElementById("brandContent")?.checked; document.getElementById("tiktokDeclaration").textContent = branded ? "By posting, you agree to TikTok's Branded Content Policy and Music Usage Confirmation." : "By posting, you agree to TikTok's Music Usage Confirmation."; }
+
+function collectPublishOptions(platforms) {
+  const options = {};
+  if (platforms.includes("tiktok")) options.tiktok = {privacy_level:document.getElementById("tiktokPrivacy").value,allow_comment:document.getElementById("allowComment").checked,allow_duet:document.getElementById("allowDuet").checked,allow_stitch:document.getElementById("allowStitch").checked,your_brand:document.getElementById("yourBrand").checked,brand_content:document.getElementById("brandContent").checked,video_duration_sec:uploadedVideoDuration};
+  return options;
+}
+
+async function confirmReviewedPublish() {
+  const platforms = selectedPlatforms().filter(platform => variants[platform]); const error = document.getElementById("reviewError"); const button = document.getElementById("confirmPublishBtn");
+  if (platforms.some(platform => reviewContexts[platform]?.error)) { error.textContent = "Connect every selected account before continuing."; return error.classList.remove("hidden"); }
+  if (!document.getElementById("publishConsent")?.checked) { error.textContent = "Confirm that you reviewed and authorised these posts."; return error.classList.remove("hidden"); }
+  document.querySelectorAll("[data-review-platform]").forEach(box => { variants[box.dataset.reviewPlatform].posts[Number(box.dataset.reviewIndex)] = box.value; });
+  const publishOptions = collectPublishOptions(platforms); const payload = {draft_id:currentDraftId,platforms,variants,media_asset_ids:uploadedMediaIds,link_url:document.getElementById("linkUrl").value,publish_options:publishOptions};
+  if (reviewMode === "schedule") payload.scheduled_local = document.getElementById("scheduleAt").value;
+  busy(button,true,reviewMode === "schedule" ? "Scheduling..." : "Publishing...");
+  try { const result = await api(reviewMode === "schedule" ? "/api/schedule" : "/api/publish",{method:"POST",headers,body:JSON.stringify(payload)}); document.getElementById("publishReview").close(); alert(result.summary + (reviewMode === "publish" && result.results?.tiktok?.pending ? " TikTok is processing the post; follow its status in Activity." : "")); loadSidebar(); loadHistory(); }
+  catch (problem) { error.textContent = problem.message; error.classList.remove("hidden"); }
+  finally { busy(button,false); }
 }
 
 async function suggestSchedule() {
@@ -115,7 +180,7 @@ async function suggestSchedule() {
 }
 
 function useTime(value) { document.getElementById("scheduleAt").value = value; }
-function clearComposer() { document.getElementById("brief").value = ""; document.getElementById("instruction").value = ""; document.getElementById("linkUrl").value = ""; document.getElementById("mediaInput").value = ""; variants = {}; currentDraftId = null; uploadedMediaIds = []; uploadedMediaKind = null; document.getElementById("mediaStatus").textContent = ""; document.getElementById("draftArea").classList.add("hidden"); }
+function clearComposer() { document.getElementById("brief").value = ""; document.getElementById("instruction").value = ""; document.getElementById("linkUrl").value = ""; document.getElementById("mediaInput").value = ""; variants = {}; currentDraftId = null; uploadedMediaIds = []; uploadedMedia = []; uploadedMediaKind = null; uploadedVideoDuration = 0; document.getElementById("mediaStatus").textContent = ""; document.getElementById("draftArea").classList.add("hidden"); }
 
 async function loadSidebar() {
   try {

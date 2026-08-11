@@ -358,28 +358,56 @@ def _tiktok_creator_info(token: str) -> dict[str, Any]:
     return r.json().get("data", {})
 
 
-def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets: list[MediaAsset], link_url: str = "") -> dict[str, Any]:
+def publishing_context(db: Session, user_id: int, platform: str) -> dict[str, Any]:
+    conn = connection_for(db, user_id, platform)
+    result = {"platform": platform, "username": conn.username, "display_name": conn.display_name or conn.username or conn.account_id}
+    if platform == "tiktok":
+        info = _tiktok_creator_info(access_token(conn, db))
+        result.update({
+            "username": info.get("creator_username") or result["username"],
+            "display_name": info.get("creator_nickname") or result["display_name"],
+            "avatar_url": info.get("creator_avatar_url") or "",
+            "privacy_options": info.get("privacy_level_options") or ["SELF_ONLY"],
+            "max_video_duration_sec": int(info.get("max_video_post_duration_sec") or 0),
+            "comment_disabled": bool(info.get("comment_disabled")),
+            "duet_disabled": bool(info.get("duet_disabled")),
+            "stitch_disabled": bool(info.get("stitch_disabled")),
+        })
+    return result
+
+
+def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets: list[MediaAsset], link_url: str = "", options: dict[str, Any] | None = None) -> dict[str, Any]:
     if not assets:
         raise RuntimeError("TikTok publishing requires visual media in this Zova build")
     token = access_token(conn, db)
     info = _tiktok_creator_info(token)
-    options = info.get("privacy_level_options") or ["SELF_ONLY"]
-    preferred = os.environ.get("TIKTOK_DEFAULT_PRIVACY", "PUBLIC_TO_EVERYONE")
-    privacy = preferred if preferred in options else ("SELF_ONLY" if "SELF_ONLY" in options else options[0])
+    settings = options or {}
+    privacy_options = info.get("privacy_level_options") or ["SELF_ONLY"]
+    requested_privacy = str(settings.get("privacy_level") or "")
+    if requested_privacy not in privacy_options:
+        raise RuntimeError("The selected TikTok privacy setting is no longer available. Review the post again.")
+    privacy = requested_privacy
     urls = [get_public_url(a.storage_key, a.public_url) for a in assets[:10]]
     is_video = assets[0].mime_type.startswith("video/")
+    if is_video:
+        duration = float(settings.get("video_duration_sec") or 0)
+        maximum = float(info.get("max_video_post_duration_sec") or 0)
+        if duration <= 0:
+            raise RuntimeError("TikTok video duration could not be verified. Remove and re-add the video.")
+        if maximum and duration > maximum:
+            raise RuntimeError(f"This TikTok account accepts videos up to {int(maximum)} seconds.")
     description = posts[0]
     if link_url and link_url not in description:
         description = (description + " " + link_url).strip()
     if is_video:
         body = {
-            "post_info": {"title": description[:2200], "privacy_level": privacy, "disable_duet": False, "disable_comment": False, "disable_stitch": False, "video_cover_timestamp_ms": 1000},
+            "post_info": {"title": description[:2200], "privacy_level": privacy, "disable_duet": not bool(settings.get("allow_duet")), "disable_comment": not bool(settings.get("allow_comment")), "disable_stitch": not bool(settings.get("allow_stitch")), "video_cover_timestamp_ms": 1000, "brand_content_toggle": bool(settings.get("brand_content")), "brand_organic_toggle": bool(settings.get("your_brand"))},
             "source_info": {"source": "PULL_FROM_URL", "video_url": urls[0]},
         }
         endpoint = "https://open.tiktokapis.com/v2/post/publish/video/init/"
     else:
         body = {
-        "post_info": {"title": description[:90], "description": description[:4000], "privacy_level": privacy, "disable_comment": False, "auto_add_music": True},
+        "post_info": {"title": description[:90], "description": description[:4000], "privacy_level": privacy, "disable_comment": not bool(settings.get("allow_comment")), "auto_add_music": True, "brand_content_toggle": bool(settings.get("brand_content")), "brand_organic_toggle": bool(settings.get("your_brand"))},
         "source_info": {"source": "PULL_FROM_URL", "photo_cover_index": 0, "photo_images": urls},
         "post_mode": "DIRECT_POST",
         "media_type": "PHOTO",
@@ -402,7 +430,7 @@ def resolve_tiktok_post(db: Session, conn: SocialConnection, publish_id: str) ->
     return {"status": data.get("status", "unknown"), "public_ids": [str(x) for x in post_ids], "fail_reason": data.get("fail_reason")}
 
 
-def publish_platform(db: Session, *, user_id: int, platform: str, posts: list[str], assets: list[MediaAsset], link_url: str = "") -> dict[str, Any]:
+def publish_platform(db: Session, *, user_id: int, platform: str, posts: list[str], assets: list[MediaAsset], link_url: str = "", options: dict[str, Any] | None = None) -> dict[str, Any]:
     conn = connection_for(db, user_id, platform)
     if platform == "x":
         return publish_x(db, conn, posts, assets, link_url)
@@ -411,7 +439,7 @@ def publish_platform(db: Session, *, user_id: int, platform: str, posts: list[st
     if platform == "instagram":
         return publish_instagram(db, conn, posts, assets, link_url)
     if platform == "tiktok":
-        return publish_tiktok(db, conn, posts, assets, link_url)
+        return publish_tiktok(db, conn, posts, assets, link_url, options)
     raise RuntimeError("Unsupported social platform")
 
 

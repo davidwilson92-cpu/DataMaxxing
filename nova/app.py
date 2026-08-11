@@ -35,7 +35,7 @@ from .scheduler import loop as scheduler_loop, process_due
 from .security import current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password
 from .social import (
     META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, meta_authorize_url, meta_exchange,
-    publish_platform, recent_content_for_user, tiktok_authorize_url, tiktok_exchange, upsert_connection, x_authorize_url, x_exchange,
+    publish_platform, publishing_context, recent_content_for_user, resolve_tiktok_post, tiktok_authorize_url, tiktok_exchange, upsert_connection, x_authorize_url, x_exchange,
 )
 from .storage import UPLOAD_DIR, save_bytes
 
@@ -445,7 +445,7 @@ class RewriteRequest(BaseModel): platform:str; posts:list[str]; action:str=""; i
 class ScheduleSuggestRequest(BaseModel): platforms:list[str]; context:str=""
 class VoiceLearnRequest(BaseModel): content:str=Field(min_length=80,max_length=30000)
 class PreviewRequest(BaseModel): platforms:list[str]; variants:dict[str,Any]
-class PublishRequest(BaseModel): draft_id:int|None=None; platforms:list[str]; variants:dict[str,Any]; media_asset_ids:list[int]=[]; link_url:str=""
+class PublishRequest(BaseModel): draft_id:int|None=None; platforms:list[str]; variants:dict[str,Any]; media_asset_ids:list[int]=[]; link_url:str=""; publish_options:dict[str,Any]={}
 class ScheduleRequest(PublishRequest): scheduled_local:str
 class LegacyPostRequest(BaseModel):
     text:str=Field(min_length=1,max_length=280); approved:bool=False
@@ -507,7 +507,7 @@ async def upload_media(request:Request,files:list[UploadFile]=File(...),db:Sessi
         limit=100*1024*1024 if is_video else 15*1024*1024
         if len(data)>limit:raise HTTPException(413,"Videos must be 100 MB or smaller" if is_video else "Images must be 15 MB or smaller")
         stored=save_bytes(data,f.filename or "media",mime,base_url())
-        row=MediaAsset(user_id=user.id,filename=f.filename or "media",mime_type=mime,storage_key=stored.storage_key,public_url=stored.public_url,size_bytes=len(data));db.add(row);db.commit();db.refresh(row);result.append({"id":row.id,"filename":row.filename,"kind":"video" if is_video else "image","mime_type":mime})
+        row=MediaAsset(user_id=user.id,filename=f.filename or "media",mime_type=mime,storage_key=stored.storage_key,public_url=stored.public_url,size_bytes=len(data));db.add(row);db.commit();db.refresh(row);result.append({"id":row.id,"filename":row.filename,"kind":"video" if is_video else "image","mime_type":mime,"url":stored.public_url})
     return {"assets":result}
 
 @app.get("/media/raw/{filename}")
@@ -548,6 +548,14 @@ def api_preview(body:PreviewRequest,request:Request):
     if problems:raise HTTPException(400,"; ".join(problems))
     return {"valid":True,"summary":f"Ready for {', '.join(platforms)}. Nothing has been published."}
 
+@app.post("/api/publish-context")
+def api_publish_context(body:PreviewRequest,request:Request,db:Session=Depends(get_db)):
+    user=current_user(request);subscription_guard(user);platforms=_validate_platforms(body.platforms);contexts={}
+    for platform in platforms:
+        try:contexts[platform]=publishing_context(db,user.id,platform)
+        except RuntimeError as exc:contexts[platform]={"platform":platform,"error":str(exc)}
+    return {"platforms":contexts}
+
 @app.post("/api/publish")
 def api_publish(body:PublishRequest,request:Request,db:Session=Depends(get_db)):
     user=current_user(request);subscription_guard(user);platforms=_validate_platforms(body.platforms);assets=_user_assets(db,user.id,body.media_asset_ids);_validate_media_targets(platforms,assets);results={};successes=0
@@ -555,7 +563,7 @@ def api_publish(body:PublishRequest,request:Request,db:Session=Depends(get_db)):
         posts=((body.variants.get(p) or {}).get("posts") or [])
         if not posts:results[p]={"status":"failed","error":"No draft supplied"};continue
         try:
-            r=publish_platform(db,user_id=user.id,platform=p,posts=posts,assets=assets,link_url=body.link_url); st="pending" if r.get("pending") else "published"; results[p]={"status":st,**r}; db.add(Activity(user_id=user.id,draft_id=body.draft_id,platform=p,action="publish",status=st,text="\n\n".join(posts),platform_post_id=r.get("post_id"),url=r.get("url")));successes+=1
+            r=publish_platform(db,user_id=user.id,platform=p,posts=posts,assets=assets,link_url=body.link_url,options=body.publish_options.get(p) or {}); st="pending" if r.get("pending") else "published"; results[p]={"status":st,**r}; db.add(Activity(user_id=user.id,draft_id=body.draft_id,platform=p,action="publish",status=st,text="\n\n".join(posts),platform_post_id=r.get("post_id"),url=r.get("url")));successes+=1
         except Exception as exc:
             results[p]={"status":"failed","error":str(exc)};db.add(Activity(user_id=user.id,draft_id=body.draft_id,platform=p,action="publish",status="failed",text="\n\n".join(posts),error=str(exc)))
         db.commit()
@@ -577,7 +585,7 @@ def api_schedule(body:ScheduleRequest,request:Request,db:Session=Depends(get_db)
         posts=((body.variants.get(p) or {}).get("posts") or [])
         if not posts:continue
         conn=db.scalar(select(SocialConnection).where(SocialConnection.user_id==user.id,SocialConnection.platform==p,SocialConnection.active.is_(True)).order_by(SocialConnection.id.desc()))
-        row=ScheduledPost(user_id=user.id,draft_id=body.draft_id,platform=p,connection_id=conn.id if conn else None,content_json=json.dumps({"posts":posts,"link_url":body.link_url},ensure_ascii=False),media_asset_ids_json=json.dumps(body.media_asset_ids),scheduled_at=scheduled,status="scheduled");db.add(row);rows.append(row)
+        row=ScheduledPost(user_id=user.id,draft_id=body.draft_id,platform=p,connection_id=conn.id if conn else None,content_json=json.dumps({"posts":posts,"link_url":body.link_url,"publish_options":body.publish_options.get(p) or {}},ensure_ascii=False),media_asset_ids_json=json.dumps(body.media_asset_ids),scheduled_at=scheduled,status="scheduled");db.add(row);rows.append(row)
     if body.draft_id:
         d=db.get(Draft,body.draft_id)
         if d and d.user_id==user.id:d.status="scheduled"
@@ -595,7 +603,19 @@ def api_drafts(request:Request,db:Session=Depends(get_db)):
 
 @app.get("/api/activity")
 def api_activity(request:Request,db:Session=Depends(get_db)):
-    user=current_user(request); rows=db.scalars(select(Activity).where(Activity.user_id==user.id).order_by(Activity.id.desc()).limit(20)).all();return [{"platform":r.platform,"action":r.action,"status":r.status,"text":r.text,"url":r.url,"created_at":r.created_at.isoformat()} for r in rows]
+    user=current_user(request); rows=db.scalars(select(Activity).where(Activity.user_id==user.id).order_by(Activity.id.desc()).limit(20)).all()
+    conn=db.scalar(select(SocialConnection).where(SocialConnection.user_id==user.id,SocialConnection.platform=="tiktok",SocialConnection.active.is_(True)).order_by(SocialConnection.id.desc()))
+    if conn:
+        for row in rows:
+            if row.platform=="tiktok" and row.status in {"pending","processing"} and row.platform_post_id:
+                try:
+                    state=resolve_tiktok_post(db,conn,row.platform_post_id); remote=str(state.get("status") or "").upper()
+                    if remote=="PUBLISH_COMPLETE":row.status="published"
+                    elif remote in {"FAILED","PUBLISH_FAILED"}:row.status="failed";row.error=state.get("fail_reason") or "TikTok processing failed"
+                    else:row.status="processing"
+                except Exception:pass
+        db.commit()
+    return [{"platform":r.platform,"action":r.action,"status":r.status,"text":r.text,"url":r.url,"error":r.error,"created_at":r.created_at.isoformat()} for r in rows]
 
 @app.get("/api/analytics")
 def api_analytics(request:Request,db:Session=Depends(get_db)):
