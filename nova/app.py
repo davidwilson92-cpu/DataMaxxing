@@ -37,7 +37,7 @@ from .security import current_user, decrypt, encrypt, hash_api_key, hash_passwor
 from .user_data import normalize_country, normalize_email, normalize_name
 from .social import (
     META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, meta_authorize_url, meta_exchange,
-    publish_platform, publishing_context, recent_content_for_user, resolve_tiktok_post, tiktok_authorize_url, tiktok_exchange, upsert_connection, x_authorize_url, x_exchange,
+    publish_platform, publishing_context, recent_content_for_user, recent_posts_for_user, resolve_tiktok_post, tiktok_authorize_url, tiktok_exchange, upsert_connection, x_authorize_url, x_exchange,
 )
 from .storage import UPLOAD_DIR, save_bytes
 
@@ -670,6 +670,10 @@ def api_activity(request:Request,db:Session=Depends(get_db)):
 @app.get("/api/analytics")
 def api_analytics(request:Request,db:Session=Depends(get_db)):
     user=current_user(request);return analytics_for_user(db,user.id)
+
+@app.get("/api/recent-posts")
+def api_recent_posts(request:Request,db:Session=Depends(get_db)):
+    user=current_user(request);return recent_posts_for_user(db,user.id)
 
 @app.post("/internal/run-due")
 def run_due(authorization:Annotated[str|None,Header()]=None):

@@ -7,7 +7,7 @@ import logging
 import os
 import secrets
 import time
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 from typing import Any
 
@@ -563,6 +563,43 @@ def analytics_for_user(db: Session, user_id: int) -> dict[str, Any]:
         totals["posts"] += int(values.get("posts", 0) or 0)
     result["_summary"] = totals
     return result
+
+
+def recent_posts_for_user(db: Session, user_id: int, limit: int = 12) -> dict[str, Any]:
+    posts: list[dict[str, Any]] = []
+    unavailable: list[str] = []
+    for platform in ["x", "instagram", "facebook", "tiktok"]:
+        try:
+            conn = connection_for(db, user_id, platform); token = access_token(conn, db)
+            if platform == "x":
+                response = httpx.get(f"https://api.x.com/2/users/{conn.account_id}/tweets", headers={"Authorization": f"Bearer {token}"}, params={"max_results": 10, "exclude": "retweets,replies", "tweet.fields": "created_at,public_metrics,attachments", "expansions": "attachments.media_keys", "media.fields": "url,preview_image_url,type"}, timeout=30.0)
+                if response.status_code >= 400: raise RuntimeError("X feed unavailable")
+                media = {item.get("media_key"): item for item in response.json().get("includes", {}).get("media", [])}
+                for item in response.json().get("data", []):
+                    metrics = item.get("public_metrics") or {}; keys = (item.get("attachments") or {}).get("media_keys") or []; visual = media.get(keys[0], {}) if keys else {}
+                    posts.append({"platform":"x","id":str(item.get("id")),"text":item.get("text") or "","created_at":item.get("created_at") or "","url":f"https://x.com/{conn.username or 'i'}/status/{item.get('id')}","image_url":visual.get("preview_image_url") or visual.get("url") or "","likes":metrics.get("like_count",0),"comments":metrics.get("reply_count",0),"shares":metrics.get("retweet_count",0),"views":metrics.get("impression_count",0)})
+            elif platform == "instagram":
+                version = os.environ.get("META_GRAPH_VERSION", "v23.0")
+                response = httpx.get(f"https://graph.facebook.com/{version}/{conn.account_id}/media", params={"fields":"id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count","limit":10,"access_token":token}, timeout=30.0)
+                if response.status_code >= 400: raise RuntimeError("Instagram feed unavailable")
+                for item in response.json().get("data", []):posts.append({"platform":"instagram","id":str(item.get("id")),"text":item.get("caption") or "","created_at":item.get("timestamp") or "","url":item.get("permalink") or "","image_url":item.get("thumbnail_url") or item.get("media_url") or "","likes":item.get("like_count",0),"comments":item.get("comments_count",0),"shares":0,"views":0})
+            elif platform == "facebook":
+                version = os.environ.get("META_GRAPH_VERSION", "v23.0")
+                response = httpx.get(f"https://graph.facebook.com/{version}/{conn.account_id}/posts", params={"fields":"id,message,created_time,permalink_url,full_picture,reactions.limit(0).summary(true),comments.limit(0).summary(true),shares","limit":10,"access_token":token}, timeout=30.0)
+                if response.status_code >= 400: raise RuntimeError("Facebook feed unavailable")
+                for item in response.json().get("data", []):posts.append({"platform":"facebook","id":str(item.get("id")),"text":item.get("message") or "","created_at":item.get("created_time") or "","url":item.get("permalink_url") or "","image_url":item.get("full_picture") or "","likes":((item.get("reactions") or {}).get("summary") or {}).get("total_count",0),"comments":((item.get("comments") or {}).get("summary") or {}).get("total_count",0),"shares":(item.get("shares") or {}).get("count",0),"views":0})
+            else:
+                response = httpx.post("https://open.tiktokapis.com/v2/video/list/", headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"}, params={"fields":"id,title,video_description,cover_image_url,share_url,create_time,like_count,comment_count,share_count,view_count"}, json={"max_count":10}, timeout=30.0)
+                if response.status_code >= 400: raise RuntimeError("TikTok feed unavailable")
+                for item in response.json().get("data", {}).get("videos", []):
+                    created = datetime.fromtimestamp(int(item.get("create_time") or 0),tz=timezone.utc).isoformat() if item.get("create_time") else ""
+                    posts.append({"platform":"tiktok","id":str(item.get("id")),"text":item.get("video_description") or item.get("title") or "","created_at":created,"url":item.get("share_url") or "","image_url":item.get("cover_image_url") or "","likes":item.get("like_count",0),"comments":item.get("comment_count",0),"shares":item.get("share_count",0),"views":item.get("view_count",0)})
+        except RuntimeError:
+            continue
+        except Exception as exc:
+            log.warning("%s recent posts error: %s", platform, exc); unavailable.append(platform)
+    posts.sort(key=lambda item: item.get("created_at") or "", reverse=True)
+    return {"posts":posts[:max(1,min(limit,30))],"unavailable":unavailable}
 
 
 def recent_content_for_connection(db: Session, conn: SocialConnection, limit: int = 20) -> list[str]:

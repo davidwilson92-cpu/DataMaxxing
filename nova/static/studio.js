@@ -12,6 +12,7 @@ const headers = {"Content-Type": "application/json", "X-Zova-Request": "1"};
 const selectedPlatforms = () => [...document.querySelectorAll(".platform-check input:checked")].map(input => input.value);
 const esc = value => String(value || "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]));
 const platformName = value => value === "x" ? "X" : value.charAt(0).toUpperCase() + value.slice(1);
+const platformIcon = platform => platform === "x" ? '<svg class="inline-social-icon x" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.67l7.74-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg>' : platform === "instagram" ? '<span class="inline-social-icon instagram">IG</span>' : platform === "facebook" ? '<span class="inline-social-icon facebook">f</span>' : '<span class="inline-social-icon tiktok">♪</span>';
 
 async function api(url, options = {}) {
   const response = await fetch(url, options);
@@ -92,7 +93,7 @@ async function generateDraft() {
 
 function renderDrafts() {
   document.getElementById("draftArea").classList.remove("hidden");
-  document.getElementById("platformTabs").innerHTML = Object.keys(variants).map(platform => `<button class="tab ${platform === currentPlatform ? "active" : ""}" onclick="switchPlatform('${platform}')">${platformName(platform)}</button>`).join("");
+  document.getElementById("platformTabs").innerHTML = Object.keys(variants).map(platform => `<button class="tab ${platform === currentPlatform ? "active" : ""}" onclick="switchPlatform('${platform}')">${platformIcon(platform)}<span>${platformName(platform)}</span></button>`).join("");
   renderEditor();
 }
 
@@ -103,7 +104,7 @@ function updateCount(element) { if (currentPlatform === "x") element.parentNode.
 function renderEditor() {
   const posts = (variants[currentPlatform] || {}).posts || [];
   const rule = currentPlatform === "x" ? "280 characters max per post" : (["instagram","tiktok"].includes(currentPlatform) ? "Visual media required to publish" : "Platform-native version");
-  document.getElementById("variantEditor").innerHTML = `<div class="platform-rule"><b>${platformName(currentPlatform)}</b><span>${rule}</span></div>` + posts.map((post,index) => `<div class="post-editor"><label>${posts.length > 1 ? `Post ${index + 1}` : "Draft"}</label><textarea rows="${posts.length > 1 ? 3 : 4}" oninput="updateCount(this)">${esc(post)}</textarea><small>${currentPlatform === "x" ? `${post.length} / 280 characters` : ""}</small></div>`).join("");
+  document.getElementById("variantEditor").innerHTML = `<div class="platform-rule"><b>${platformIcon(currentPlatform)}${platformName(currentPlatform)}</b><span>${rule}</span></div>` + posts.map((post,index) => `<div class="post-editor"><label>${posts.length > 1 ? `Post ${index + 1}` : "Draft"}</label><textarea rows="${posts.length > 1 ? 3 : 4}" oninput="updateCount(this)">${esc(post)}</textarea><small>${currentPlatform === "x" ? `${post.length} / 280 characters` : ""}</small></div>`).join("");
 }
 
 async function requestRewrite(action = "", instruction = "") { saveEditor(); try { const result = await api("/api/ai/rewrite", {method:"POST",headers,body:JSON.stringify({platform:currentPlatform,posts:variants[currentPlatform].posts,action,instruction})}); variants[currentPlatform].posts = result.posts; renderEditor(); } catch (error) { alert(error.message); } }
@@ -190,7 +191,10 @@ async function loadSidebar() {
     const trending = connected.length ? platformName(connected.sort((a,b) => score(b[1]) - score(a[1]))[0][0]) : "No signal yet";
     document.getElementById("analytics").innerHTML = `<div class="analytics-period">LAST 7 DAYS</div><div class="analytics-summary"><div><strong>${Number(summary.impressions || 0).toLocaleString()}</strong><span>Impressions</span></div><div><strong>${Number(summary.likes || 0).toLocaleString()}</strong><span>Likes</span></div><div><strong>${Number(summary.comments || 0).toLocaleString()}</strong><span>Comments</span></div><div><strong>${Number(summary.shares || 0).toLocaleString()}</strong><span>Shares / reposts</span></div><div><strong>${Number(summary.followers || 0).toLocaleString()}</strong><span>Followers</span></div><div><strong>${esc(trending)}</strong><span>Trending account</span></div></div><a class="analytics-link" href="/account#socials">Manage connected accounts →</a>`;
   } catch (error) { document.getElementById("analytics").innerHTML = `<div class="tiny-error">${esc(error.message)}</div>`; }
-  try { const rows = await api("/api/activity"); document.getElementById("recentActivity").innerHTML = rows.length ? rows.map(row => `<div class="activity-row"><span class="platform-dot ${row.platform}"></span><div><b>${platformName(row.platform)} · ${esc(row.status)}</b><p>${esc(row.text).slice(0,100)}</p><small>${new Date(row.created_at).toLocaleString()}</small></div>${row.url ? `<a target="_blank" href="${esc(row.url)}">↗</a>` : ""}</div>`).join("") : '<div class="muted">No activity yet.</div>'; } catch {}
+  try {
+    const feed = await api("/api/recent-posts"); const rows = feed.posts || [];
+    document.getElementById("recentActivity").innerHTML = rows.length ? rows.map(row => `<a class="recent-post" target="_blank" rel="noopener" href="${esc(row.url || "#")}">${row.image_url ? `<img src="${esc(row.image_url)}" alt="" loading="lazy">` : `<span class="post-platform-art ${row.platform}">${platformIcon(row.platform)}</span>`}<div class="recent-post-copy"><div class="recent-post-platform">${platformIcon(row.platform)}<b>${platformName(row.platform)}</b><time>${row.created_at ? new Date(row.created_at).toLocaleDateString() : ""}</time></div><p>${esc(row.text || "Media post").slice(0,115)}</p><div class="post-metrics"><span>♥ ${Number(row.likes || 0).toLocaleString()}</span><span>◯ ${Number(row.comments || 0).toLocaleString()}</span><span>↗ ${Number(row.shares || 0).toLocaleString()}</span>${row.views ? `<span>◉ ${Number(row.views).toLocaleString()}</span>` : ""}</div></div></a>`).join("") : '<div class="empty-feed">Recent posts will appear here once a connected platform makes them available.</div>';
+  } catch (error) { document.getElementById("recentActivity").innerHTML = `<div class="tiny-error">${esc(error.message)}</div>`; }
 }
 
 async function loadHistory() {

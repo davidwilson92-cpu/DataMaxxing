@@ -83,8 +83,8 @@ def test_studio_has_premium_application_shell():
     assert page.status_code == 200
     assert "ACCOUNT ANALYTICS" in page.text
     assert "Shape for every platform" in page.text
-    assert 'src="/static/studio.js?v=5.10"' in page.text
-    assert 'href="/static/nova.css?v=5.10"' in page.text
+    assert 'src="/static/studio.js?v=5.11"' in page.text
+    assert 'href="/static/nova.css?v=5.11"' in page.text
     assert 'accept="image/*,video/mp4,video/quicktime,video/webm"' in page.text
     assert "Videos publish to Instagram and TikTok only" in page.text
     assert 'id="refineInstruction"' in page.text
@@ -94,6 +94,8 @@ def test_studio_has_premium_application_shell():
     assert "Distinct by design" not in page.text
     assert "NATIVE DRAFTS" not in page.text
     assert "<summary><span>Recent work</span>" in page.text
+    assert "Across your socials" in page.text
+    assert "What Zova has done" not in page.text
     assert "Ã" not in page.text and "â" not in page.text
     assert "site-header" not in page.text
     assert "Give Zova the thought behind the post" not in page.text
