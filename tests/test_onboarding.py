@@ -23,6 +23,17 @@ def test_health_and_branding():
     assert "Nova" not in landing
 
 
+def test_public_legal_pages_and_footer_links():
+    privacy = client.get("/privacy-policy")
+    terms = client.get("/terms-of-service")
+    assert privacy.status_code == 200 and "TikTok and other platform data" in privacy.text
+    assert terms.status_code == 200 and "Connected platforms" in terms.text
+    assert 'href="/privacy-policy"' in privacy.text
+    assert 'href="/terms-of-service"' in terms.text
+    assert client.get("/privacy").status_code == 200
+    assert client.get("/terms").status_code == 200
+
+
 def test_password_confirmation_is_required_server_side():
     response = client.post("/signup", data={"email": "mismatch@example.com", "password": "long-password-1", "password_confirmation": "long-password-2"}, follow_redirects=False)
     assert response.status_code == 303
@@ -56,7 +67,7 @@ def test_studio_has_premium_application_shell():
     assert "ACCOUNT ANALYTICS" in page.text
     assert "Shape for every platform" in page.text
     assert 'src="/static/studio.js?v=5.7"' in page.text
-    assert 'href="/static/nova.css?v=5.7"' in page.text
+    assert 'href="/static/nova.css?v=5.8"' in page.text
     assert 'accept="image/*,video/mp4,video/quicktime,video/webm"' in page.text
     assert "Videos publish to Instagram and TikTok only" in page.text
     assert 'id="refineInstruction"' in page.text

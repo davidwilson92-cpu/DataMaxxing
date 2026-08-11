@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{% block title %}Zova{% endblock %}</title>
-  <link rel="stylesheet" href="/static/nova.css?v=5.7">
+  <link rel="stylesheet" href="/static/nova.css?v=5.8">
   {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -23,7 +23,7 @@
 {% endblock %}
 {% block body %}{% endblock %}
 {% block site_footer %}
-<footer class="footer"><span>Zova</span><span>From one intent to native content everywhere.</span><a href="/security">Security & privacy</a></footer>
+<footer class="footer"><span>Zova</span><span>From one intent to native content everywhere.</span><nav class="legal-links" aria-label="Legal"><a href="/privacy-policy">Privacy Policy</a><a href="/terms-of-service">Terms of Service</a><a href="/security">Security</a></nav></footer>
 {% endblock %}
 </body>
 </html>

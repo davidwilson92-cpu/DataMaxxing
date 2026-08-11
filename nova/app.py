@@ -296,7 +296,18 @@ def security_page(request:Request):
     return templates.TemplateResponse("security.html",template_context(request,user,contact_email=os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@example.com")))
 
 @app.get("/privacy",response_class=HTMLResponse)
-def privacy_alias(request:Request): return security_page(request)
+@app.get("/privacy-policy",response_class=HTMLResponse)
+def privacy_policy(request:Request):
+    try:user=current_user(request)
+    except HTTPException:user=None
+    return templates.TemplateResponse("privacy.html",template_context(request,user,contact_email=os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@example.com"),legal_name=os.environ.get("LEGAL_ENTITY_NAME","Zova")))
+
+@app.get("/terms",response_class=HTMLResponse)
+@app.get("/terms-of-service",response_class=HTMLResponse)
+def terms_of_service(request:Request):
+    try:user=current_user(request)
+    except HTTPException:user=None
+    return templates.TemplateResponse("terms.html",template_context(request,user,contact_email=os.environ.get("LEGAL_CONTACT_EMAIL") or os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@example.com"),legal_name=os.environ.get("LEGAL_ENTITY_NAME","Zova")))
 
 @app.get("/studio",response_class=HTMLResponse)
 def studio(request:Request):
