@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import secrets
+import time
 from datetime import timedelta, timezone
 from urllib.parse import urlencode
 from typing import Any
@@ -310,17 +311,36 @@ def publish_facebook(db: Session, conn: SocialConnection, posts: list[str], asse
 
 def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], assets: list[MediaAsset], link_url: str = "") -> dict[str, Any]:
     if not assets:
-        raise RuntimeError("Instagram publishing requires an image in this Zova build")
+        raise RuntimeError("Instagram publishing requires an image or video")
     token = access_token(conn, db)
     version = os.environ.get("META_GRAPH_VERSION", "v23.0")
     caption = posts[0]
     if link_url and link_url not in caption:
         caption = (caption + "\n\n" + link_url).strip()
-    image_url = get_public_url(assets[0].storage_key, assets[0].public_url)
-    create = httpx.post(f"https://graph.facebook.com/{version}/{conn.account_id}/media", data={"image_url": image_url, "caption": caption, "access_token": token}, timeout=45.0)
+    media_url = get_public_url(assets[0].storage_key, assets[0].public_url)
+    is_video = assets[0].mime_type.startswith("video/")
+    create_data = {"caption": caption, "access_token": token}
+    if is_video:
+        create_data.update({"media_type": "REELS", "video_url": media_url, "share_to_feed": "true"})
+    else:
+        create_data["image_url"] = media_url
+    create = httpx.post(f"https://graph.facebook.com/{version}/{conn.account_id}/media", data=create_data, timeout=45.0)
     if create.status_code >= 400:
         raise RuntimeError(f"Instagram media container failed: {create.text}")
     creation_id = str(create.json()["id"])
+    if is_video:
+        for _ in range(15):
+            status = httpx.get(f"https://graph.facebook.com/{version}/{creation_id}", params={"fields": "status_code,status", "access_token": token}, timeout=20.0)
+            if status.status_code >= 400:
+                raise RuntimeError(f"Instagram video processing failed: {status.text}")
+            status_code = status.json().get("status_code")
+            if status_code == "FINISHED":
+                break
+            if status_code in {"ERROR", "EXPIRED"}:
+                raise RuntimeError(f"Instagram could not process this video: {status.json().get('status') or status_code}")
+            time.sleep(2)
+        else:
+            raise RuntimeError("Instagram is still processing the video. Try publishing again shortly.")
     publish = httpx.post(f"https://graph.facebook.com/{version}/{conn.account_id}/media_publish", data={"creation_id": creation_id, "access_token": token}, timeout=45.0)
     if publish.status_code >= 400:
         raise RuntimeError(f"Instagram publish failed: {publish.text}")
@@ -347,16 +367,25 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
     preferred = os.environ.get("TIKTOK_DEFAULT_PRIVACY", "PUBLIC_TO_EVERYONE")
     privacy = preferred if preferred in options else ("SELF_ONLY" if "SELF_ONLY" in options else options[0])
     urls = [get_public_url(a.storage_key, a.public_url) for a in assets[:10]]
+    is_video = assets[0].mime_type.startswith("video/")
     description = posts[0]
     if link_url and link_url not in description:
         description = (description + " " + link_url).strip()
-    body = {
+    if is_video:
+        body = {
+            "post_info": {"title": description[:2200], "privacy_level": privacy, "disable_duet": False, "disable_comment": False, "disable_stitch": False, "video_cover_timestamp_ms": 1000},
+            "source_info": {"source": "PULL_FROM_URL", "video_url": urls[0]},
+        }
+        endpoint = "https://open.tiktokapis.com/v2/post/publish/video/init/"
+    else:
+        body = {
         "post_info": {"title": description[:90], "description": description[:4000], "privacy_level": privacy, "disable_comment": False, "auto_add_music": True},
         "source_info": {"source": "PULL_FROM_URL", "photo_cover_index": 0, "photo_images": urls},
         "post_mode": "DIRECT_POST",
         "media_type": "PHOTO",
-    }
-    r = httpx.post("https://open.tiktokapis.com/v2/post/publish/content/init/", headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json; charset=UTF-8"}, json=body, timeout=45.0)
+        }
+        endpoint = "https://open.tiktokapis.com/v2/post/publish/content/init/"
+    r = httpx.post(endpoint, headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json; charset=UTF-8"}, json=body, timeout=45.0)
     if r.status_code >= 400 or (r.json().get("error") or {}).get("code") not in {None, "ok", 0}:
         raise RuntimeError(f"TikTok publish failed: {r.text}")
     publish_id = str(r.json()["data"]["publish_id"])

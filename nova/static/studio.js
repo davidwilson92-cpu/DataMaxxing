@@ -2,6 +2,7 @@ let variants = {};
 let currentPlatform = "x";
 let currentDraftId = null;
 let uploadedMediaIds = [];
+let uploadedMediaKind = null;
 const headers = {"Content-Type": "application/json", "X-Zova-Request": "1"};
 
 const selectedPlatforms = () => [...document.querySelectorAll(".platform-check input:checked")].map(input => input.value);
@@ -25,21 +26,44 @@ function busy(button, active, label) {
 async function uploadMedia() {
   const files = document.getElementById("mediaInput").files;
   if (!files.length) return;
+  const videos = [...files].filter(file => file.type.startsWith("video/"));
+  const status = document.getElementById("mediaStatus");
+  if (videos.length && (videos.length > 1 || files.length > 1)) {
+    status.textContent = "Add one video at a time, without images.";
+    return;
+  }
   const form = new FormData();
   [...files].forEach(file => form.append("files", file));
-  const status = document.getElementById("mediaStatus");
   status.textContent = "Uploading...";
   try {
     const result = await api("/api/media", {method:"POST", headers:{"X-Zova-Request":"1"}, body:form});
-    uploadedMediaIds.push(...result.assets.map(asset => asset.id));
-    status.textContent = `${uploadedMediaIds.length} image${uploadedMediaIds.length === 1 ? "" : "s"} attached`;
+    if (result.assets.some(asset => asset.kind === "video")) {
+      uploadedMediaIds = result.assets.map(asset => asset.id);
+      uploadedMediaKind = "video";
+      ["px", "pfb"].forEach(id => { document.getElementById(id).checked = false; });
+      status.textContent = "1 video attached · Instagram and TikTok only";
+    } else {
+      if (uploadedMediaKind === "video") uploadedMediaIds = [];
+      uploadedMediaIds.push(...result.assets.map(asset => asset.id));
+      uploadedMediaKind = "image";
+      status.textContent = `${uploadedMediaIds.length} image${uploadedMediaIds.length === 1 ? "" : "s"} attached`;
+    }
   } catch (error) { status.textContent = error.message; }
+}
+
+function validateVideoPlatforms(platforms) {
+  if (uploadedMediaKind !== "video") return true;
+  const unsupported = platforms.filter(platform => !["instagram", "tiktok"].includes(platform));
+  if (!unsupported.length) return true;
+  alert(`Videos can only be used with Instagram and TikTok. Remove ${unsupported.map(platformName).join(", ")}.`);
+  return false;
 }
 
 async function generateDraft() {
   const button = document.getElementById("generateBtn");
   const platforms = selectedPlatforms();
   if (!platforms.length) return alert("Choose at least one social platform.");
+  if (!validateVideoPlatforms(platforms)) return;
   busy(button, true, "Generating...");
   try {
     const result = await api("/api/ai/generate", {method:"POST", headers, body:JSON.stringify({brief:document.getElementById("brief").value,instruction:document.getElementById("instruction").value,platforms,thread_length:+document.getElementById("threadLength").value,link_url:document.getElementById("linkUrl").value})});
@@ -64,12 +88,15 @@ function renderEditor() {
   document.getElementById("variantEditor").innerHTML = `<div class="platform-rule"><b>${platformName(currentPlatform)}</b><span>${rule}</span></div>` + posts.map((post,index) => `<div class="post-editor"><label>${posts.length > 1 ? `Post ${index + 1}` : "Draft"}</label><textarea rows="${posts.length > 1 ? 4 : 7}" oninput="updateCount(this)">${esc(post)}</textarea><small>${currentPlatform === "x" ? `${post.length} / 280 characters` : ""}</small></div>`).join("");
 }
 
-async function rewrite(action) { saveEditor(); try { const result = await api("/api/ai/rewrite", {method:"POST",headers,body:JSON.stringify({platform:currentPlatform,posts:variants[currentPlatform].posts,action})}); variants[currentPlatform].posts = result.posts; renderEditor(); } catch (error) { alert(error.message); } }
+async function requestRewrite(action = "", instruction = "") { saveEditor(); try { const result = await api("/api/ai/rewrite", {method:"POST",headers,body:JSON.stringify({platform:currentPlatform,posts:variants[currentPlatform].posts,action,instruction})}); variants[currentPlatform].posts = result.posts; renderEditor(); } catch (error) { alert(error.message); } }
+async function rewrite(action) { return requestRewrite(action); }
+async function refineCustom() { const input = document.getElementById("refineInstruction"); const instruction = input.value.trim(); if (!instruction) return input.focus(); await requestRewrite("", instruction); input.value = ""; }
 async function previewCurrent() { saveEditor(); const platforms = selectedPlatforms().filter(p => variants[p]); try { const result = await api("/api/preview", {method:"POST",headers,body:JSON.stringify({platforms,variants})}); document.getElementById("previewResult").textContent = result.summary; } catch (error) { alert(error.message); } }
 
 async function publishSelected() {
   saveEditor(); const platforms = selectedPlatforms().filter(p => variants[p]);
   if (!platforms.length) return alert("Choose a generated platform draft.");
+  if (!validateVideoPlatforms(platforms)) return;
   if (!confirm(`Publish now to ${platforms.map(platformName).join(", ")}?`)) return;
   try { const result = await api("/api/publish", {method:"POST",headers,body:JSON.stringify({draft_id:currentDraftId,platforms,variants,media_asset_ids:uploadedMediaIds,link_url:document.getElementById("linkUrl").value})}); alert(result.summary); loadSidebar(); loadHistory(); } catch (error) { alert(error.message); }
 }
@@ -78,6 +105,7 @@ async function scheduleSelected() {
   saveEditor(); const scheduled = document.getElementById("scheduleAt").value;
   if (!scheduled) return alert("Choose a scheduled date and time.");
   const platforms = selectedPlatforms().filter(p => variants[p]);
+  if (!validateVideoPlatforms(platforms)) return;
   try { const result = await api("/api/schedule", {method:"POST",headers,body:JSON.stringify({draft_id:currentDraftId,platforms,variants,media_asset_ids:uploadedMediaIds,link_url:document.getElementById("linkUrl").value,scheduled_local:scheduled})}); alert(result.summary); loadSidebar(); } catch (error) { alert(error.message); }
 }
 
@@ -87,7 +115,7 @@ async function suggestSchedule() {
 }
 
 function useTime(value) { document.getElementById("scheduleAt").value = value; }
-function clearComposer() { document.getElementById("brief").value = ""; document.getElementById("instruction").value = ""; document.getElementById("linkUrl").value = ""; variants = {}; currentDraftId = null; uploadedMediaIds = []; document.getElementById("mediaStatus").textContent = ""; document.getElementById("draftArea").classList.add("hidden"); }
+function clearComposer() { document.getElementById("brief").value = ""; document.getElementById("instruction").value = ""; document.getElementById("linkUrl").value = ""; document.getElementById("mediaInput").value = ""; variants = {}; currentDraftId = null; uploadedMediaIds = []; uploadedMediaKind = null; document.getElementById("mediaStatus").textContent = ""; document.getElementById("draftArea").classList.add("hidden"); }
 
 async function loadSidebar() {
   try {

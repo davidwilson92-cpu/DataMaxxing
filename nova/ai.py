@@ -176,15 +176,17 @@ Do not invent facts, figures, quotes, links, names or events not present in the 
     return result
 
 
-def rewrite_variant(*, platform: str, posts: list[str], action: str, preferences: Any) -> list[str]:
+def rewrite_variant(*, platform: str, posts: list[str], action: str, preferences: Any, instruction: str = "") -> list[str]:
     if platform not in PLATFORM_GUIDANCE:
         raise RuntimeError("Unknown platform")
-    if action not in REWRITE_GUIDANCE:
+    instruction = instruction.strip()
+    if not instruction and action not in REWRITE_GUIDANCE:
         raise RuntimeError("Unknown rewrite action")
+    rewrite_instruction = instruction or REWRITE_GUIDANCE[action]
     prompt = f"""Rewrite the following {platform} content.
 Return ONLY valid JSON of the form {{"posts":["..."]}}.
 {PLATFORM_GUIDANCE[platform]}
-Rewrite instruction: {REWRITE_GUIDANCE[action]}
+Rewrite instruction: {rewrite_instruction}
 Creator tone: {getattr(preferences, 'writing_tone', '') or 'not specified'}
 Audience: {getattr(preferences, 'audience', '') or 'not specified'}
 Things to avoid: {getattr(preferences, 'things_to_avoid', '') or 'not specified'}

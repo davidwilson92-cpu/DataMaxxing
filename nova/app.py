@@ -430,7 +430,7 @@ class GenerateRequest(BaseModel):
     @field_validator("thread_length")
     @classmethod
     def valid_thread(cls,v:int): return v if v in {1,3,5} else 1
-class RewriteRequest(BaseModel): platform:str; posts:list[str]; action:str
+class RewriteRequest(BaseModel): platform:str; posts:list[str]; action:str=""; instruction:str=Field(default="",max_length=1000)
 class ScheduleSuggestRequest(BaseModel): platforms:list[str]; context:str=""
 class VoiceLearnRequest(BaseModel): content:str=Field(min_length=80,max_length=30000)
 class PreviewRequest(BaseModel): platforms:list[str]; variants:dict[str,Any]
@@ -471,15 +471,32 @@ def _user_assets(db:Session,user_id:int,ids:list[int])->list[MediaAsset]:
         if row and row.user_id==user_id:assets.append(row)
     return assets
 
+def _validate_media_targets(platforms:list[str],assets:list[MediaAsset])->None:
+    videos=[asset for asset in assets if asset.mime_type.startswith("video/")]
+    if not videos:return
+    if len(videos)>1 or len(assets)>1:
+        raise HTTPException(400,"Add one video per post and do not mix video with images")
+    unsupported=[p for p in platforms if p not in {"instagram","tiktok"}]
+    if unsupported:
+        names=["X" if p=="x" else p.title() for p in unsupported]
+        raise HTTPException(400,f"Videos can only be published to Instagram and TikTok. Remove {', '.join(names)}.")
+
 @app.post("/api/media")
 async def upload_media(request:Request,files:list[UploadFile]=File(...),db:Session=Depends(get_db)):
     user=current_user(request); subscription_guard(user); result=[]
+    content_types=[(f.content_type or "").lower() for f in files[:10]]
+    videos=[kind for kind in content_types if kind.startswith("video/")]
+    if videos and (len(videos)>1 or len(content_types)>1):raise HTTPException(400,"Add one video per post and do not mix video with images")
     for f in files[:10]:
         data=await f.read();
-        if len(data)>15*1024*1024:raise HTTPException(413,"Each image must be 15 MB or smaller")
-        if not (f.content_type or "").startswith("image/"):raise HTTPException(400,"This build accepts image uploads only")
-        stored=save_bytes(data,f.filename or "image",f.content_type or "application/octet-stream",base_url())
-        row=MediaAsset(user_id=user.id,filename=f.filename or "image",mime_type=f.content_type or "application/octet-stream",storage_key=stored.storage_key,public_url=stored.public_url,size_bytes=len(data));db.add(row);db.commit();db.refresh(row);result.append({"id":row.id,"filename":row.filename})
+        mime=(f.content_type or "").lower()
+        is_video=mime in {"video/mp4","video/quicktime","video/webm"}
+        is_image=mime.startswith("image/")
+        if not (is_image or is_video):raise HTTPException(400,"Upload an image, MP4, MOV or WebM video")
+        limit=100*1024*1024 if is_video else 15*1024*1024
+        if len(data)>limit:raise HTTPException(413,"Videos must be 100 MB or smaller" if is_video else "Images must be 15 MB or smaller")
+        stored=save_bytes(data,f.filename or "media",mime,base_url())
+        row=MediaAsset(user_id=user.id,filename=f.filename or "media",mime_type=mime,storage_key=stored.storage_key,public_url=stored.public_url,size_bytes=len(data));db.add(row);db.commit();db.refresh(row);result.append({"id":row.id,"filename":row.filename,"kind":"video" if is_video else "image","mime_type":mime})
     return {"assets":result}
 
 @app.get("/media/raw/{filename}")
@@ -499,7 +516,7 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
 @app.post("/api/ai/rewrite")
 def api_rewrite(body:RewriteRequest,request:Request,db:Session=Depends(get_db)):
     user=current_user(request);subscription_guard(user);prefs=get_preferences(db,user.id)
-    try:posts=ai.rewrite_variant(platform=body.platform,posts=body.posts,action=body.action,preferences=prefs)
+    try:posts=ai.rewrite_variant(platform=body.platform,posts=body.posts,action=body.action,instruction=body.instruction,preferences=prefs)
     except RuntimeError as exc:raise HTTPException(502,str(exc))
     return {"posts":posts}
 
@@ -522,7 +539,7 @@ def api_preview(body:PreviewRequest,request:Request):
 
 @app.post("/api/publish")
 def api_publish(body:PublishRequest,request:Request,db:Session=Depends(get_db)):
-    user=current_user(request);subscription_guard(user);platforms=_validate_platforms(body.platforms);assets=_user_assets(db,user.id,body.media_asset_ids);results={};successes=0
+    user=current_user(request);subscription_guard(user);platforms=_validate_platforms(body.platforms);assets=_user_assets(db,user.id,body.media_asset_ids);_validate_media_targets(platforms,assets);results={};successes=0
     for p in platforms:
         posts=((body.variants.get(p) or {}).get("posts") or [])
         if not posts:results[p]={"status":"failed","error":"No draft supplied"};continue
@@ -539,7 +556,7 @@ def api_publish(body:PublishRequest,request:Request,db:Session=Depends(get_db)):
 
 @app.post("/api/schedule")
 def api_schedule(body:ScheduleRequest,request:Request,db:Session=Depends(get_db)):
-    user=current_user(request);subscription_guard(user);platforms=_validate_platforms(body.platforms);prefs=get_preferences(db,user.id)
+    user=current_user(request);subscription_guard(user);platforms=_validate_platforms(body.platforms);prefs=get_preferences(db,user.id);assets=_user_assets(db,user.id,body.media_asset_ids);_validate_media_targets(platforms,assets)
     try:
         local=datetime.fromisoformat(body.scheduled_local); local=local.replace(tzinfo=ZoneInfo(prefs.timezone)) if local.tzinfo is None else local; scheduled=local.astimezone(timezone.utc)
     except Exception:raise HTTPException(400,"Invalid schedule time")

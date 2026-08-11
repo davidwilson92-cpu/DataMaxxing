@@ -16,7 +16,8 @@
         <section class="composer intent-card">
           <div class="intent-head"><span class="intent-status"><i></i>Zova knows your voice</span></div>
           <textarea id="brief" rows="6" placeholder="I want to say something about..."></textarea>
-          <div class="intent-tools"><label class="tool-button">Add images<input id="mediaInput" type="file" accept="image/*" multiple hidden></label><input id="linkUrl" type="url" placeholder="Paste a source link"><span id="mediaStatus" class="muted"></span></div>
+          <div class="intent-tools"><label class="tool-button">Add images or video<input id="mediaInput" type="file" accept="image/*,video/mp4,video/quicktime,video/webm" multiple hidden></label><input id="linkUrl" type="url" placeholder="Paste a source link"><span id="mediaStatus" class="muted"></span></div>
+          <p class="media-guidance">Images work across supported platforms. Videos publish to Instagram and TikTok only. Add one video per post.</p>
           <div class="creative-controls"><div class="grow"><label>Creative direction <span>Optional</span></label><input id="instruction" placeholder="Add a goal, angle, audience or call to action"></div><div><label>X format</label><select id="threadLength"><option value="1">Single post</option><option value="3">3-post thread</option><option value="5">5-post thread</option></select></div></div>
           <div class="platform-row">
             <div class="platform-options"><small>CREATE FOR</small><div class="platform-picker">
@@ -30,7 +31,7 @@
         </section>
         <section id="draftArea" class="panel draft-panel hidden">
           <div class="draft-top"><div><div class="eyebrow">NATIVE DRAFTS</div><h2>Distinct by design.</h2><p class="muted">Each version is shaped around how people use that platform.</p></div><div id="platformTabs" class="tabs"></div></div><div id="variantEditor"></div>
-          <div class="rewrite-bar"><span>REFINE</span><button onclick="rewrite('shorter')">Shorter</button><button onclick="rewrite('punchier')">Punchier</button><button onclick="rewrite('serious')">More serious</button><button onclick="rewrite('humorous')">More humorous</button><button onclick="rewrite('controversial')">Bolder</button><button onclick="rewrite('data-driven')">More data-driven</button></div>
+          <div class="rewrite-bar"><span>REFINE</span><div class="rewrite-shortcuts"><button onclick="rewrite('shorter')">Shorter</button><button onclick="rewrite('punchier')">Punchier</button><button onclick="rewrite('serious')">More serious</button><button onclick="rewrite('humorous')">More humorous</button><button onclick="rewrite('controversial')">Bolder</button><button onclick="rewrite('data-driven')">More data-driven</button></div><div class="custom-refine"><input id="refineInstruction" maxlength="1000" placeholder="Or tell Zova exactly how to refine it"><button type="button" onclick="refineCustom()">Apply</button></div></div>
           <div class="preview-strip"><button class="button ghost" onclick="previewCurrent()">Preview selected</button><span id="previewResult" class="muted"></span></div>
           <div class="publish-zone"><div class="schedule-box"><label>Schedule <span>Optional</span></label><input id="scheduleAt" type="datetime-local"><button class="mini-button" onclick="suggestSchedule()">Suggest the right time</button><div id="scheduleSuggestions" class="suggestions"></div></div><div class="publish-actions"><button class="button ghost" onclick="scheduleSelected()">Schedule</button><button class="button primary" onclick="publishSelected()">Publish now</button></div></div>
         </section>
@@ -43,5 +44,5 @@
     </main>
   </div>
 </div>
-<script src="/static/studio.js?v=5.6"></script>
+<script src="/static/studio.js?v=5.7"></script>
 {% endblock %}
