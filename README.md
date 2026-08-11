@@ -7,10 +7,12 @@ Zova V5.1 is an AI social manager for content creators. It turns one piece of in
 - Zova landing page and branding layer
 - Sign in / sign up with Apple
 - Minimal email/password signup with password confirmation
+- Production-oriented user profile data (name, normalized email, country, consent and account timestamps)
 - Guided onboarding: Account -> Socials -> Writing style -> Studio
 - Stripe subscription checkout + Stripe Customer Portal
 - Apple Pay support through Stripe Checkout when Stripe/device/region eligibility allows it
 - Account management and social unlinking
+- Discreet, allowlisted `/admin/users` account dashboard
 - X OAuth 2.0 connection
 - Meta OAuth connection for Facebook Pages and linked professional Instagram accounts
 - TikTok Login Kit OAuth connection
@@ -77,6 +79,10 @@ REQUIRE_SUBSCRIPTION=true
 
 Then AI generation, image upload, preview/publish and scheduling require an `active` or `trialing` Stripe subscription.
 
+## Admin dashboard
+
+Set `ADMIN_EMAILS` to a comma-separated list of existing Zova account emails, sign in with one of those accounts, then visit `/admin/users` directly. The route is intentionally omitted from navigation and API documentation. Unauthorized visitors receive a generic 404. The page is read-only and never exposes password hashes, provider tokens, or payment details.
+
 ## Scheduling
 
 Zova runs an in-process scheduler every 60 seconds while the Render service is awake. There is also a protected endpoint:
@@ -120,4 +126,4 @@ The exact Zova/Zova brand-profile attachment was not available in the working fi
 
 ## Security
 
-See `SECURITY.md` and the in-product `/security` page. Before a public launch, obtain appropriate legal/privacy review for your company, data retention policy and target regions.
+See `SECURITY.md`, `USER_DATA.md` and the in-product `/security` page. Before a public launch, obtain appropriate legal/privacy review for your company, data retention policy and target regions.
