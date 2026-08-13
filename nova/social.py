@@ -320,7 +320,6 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
     media_url = get_public_url(assets[0].storage_key, assets[0].public_url)
     is_video = assets[0].mime_type.startswith("video/")
     create_data = {"caption": caption, "access_token": token}
-    upload_as_draft = os.environ.get("TIKTOK_SEND_TO_INBOX", "false").lower() in {"1", "true", "yes"}
     if is_video:
         create_data.update({"media_type": "REELS", "video_url": media_url, "share_to_feed": "true"})
     else:
@@ -381,6 +380,7 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
     if not assets:
         raise RuntimeError("TikTok publishing requires visual media in this Zova build")
     token = access_token(conn, db)
+    upload_as_draft = os.environ.get("TIKTOK_SEND_TO_INBOX", "false").lower() in {"1", "true", "yes"}
     info = _tiktok_creator_info(token)
     settings = options or {}
     privacy_options = info.get("privacy_level_options") or ["SELF_ONLY"]
