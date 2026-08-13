@@ -391,19 +391,22 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
     if create.status_code >= 400:
         raise RuntimeError(f"Instagram media container failed: {create.text}")
     creation_id = str(create.json()["id"])
-    if is_video:
-        for _ in range(15):
-            status = httpx.get(f"{graph}/{creation_id}", params={"fields": "status_code,status", "access_token": token}, timeout=20.0)
-            if status.status_code >= 400:
-                raise RuntimeError(f"Instagram video processing failed: {status.text}")
-            status_code = status.json().get("status_code")
-            if status_code == "FINISHED":
-                break
-            if status_code in {"ERROR", "EXPIRED"}:
-                raise RuntimeError(f"Instagram could not process this video: {status.json().get('status') or status_code}")
-            time.sleep(2)
-        else:
-            raise RuntimeError("Instagram is still processing the video. Try publishing again shortly.")
+    # Instagram creates an asynchronous media container for both images and
+    # videos. Publishing before that container is FINISHED intermittently
+    # fails, especially just after Meta has fetched a newly uploaded image.
+    attempts = 30 if is_video else 15
+    for _ in range(attempts):
+        status = httpx.get(f"{graph}/{creation_id}", params={"fields": "status_code,status", "access_token": token}, timeout=20.0)
+        if status.status_code >= 400:
+            raise RuntimeError(f"Instagram media processing failed: {status.text}")
+        status_code = status.json().get("status_code")
+        if status_code == "FINISHED":
+            break
+        if status_code in {"ERROR", "EXPIRED"}:
+            raise RuntimeError(f"Instagram could not process this media: {status.json().get('status') or status_code}")
+        time.sleep(2)
+    else:
+        raise RuntimeError("Instagram is still processing the media. Try publishing again shortly.")
     publish = httpx.post(f"{graph}/{conn.account_id}/media_publish", data={"creation_id": creation_id, "access_token": token}, timeout=45.0)
     if publish.status_code >= 400:
         raise RuntimeError(f"Instagram publish failed: {publish.text}")
