@@ -20,7 +20,37 @@ X_OAUTH2_REDIRECT_URI
 
 Requested scopes are `tweet.read tweet.write users.read offline.access`.
 
-## 2. Meta: Facebook + Instagram
+## 2. Instagram Login (recommended for creators)
+
+Use direct Instagram Login so creators do not need to create or link a Facebook Page. In the Meta developer dashboard, add Instagram API with Instagram Login and register:
+
+```text
+https://YOUR-DOMAIN/oauth/instagram/callback
+```
+
+Render variables:
+
+```text
+INSTAGRAM_APP_ID
+INSTAGRAM_APP_SECRET
+INSTAGRAM_REDIRECT_URI=https://YOUR-DOMAIN/oauth/instagram/callback
+INSTAGRAM_SCOPES=instagram_business_basic,instagram_business_content_publish
+```
+
+Meta review URLs:
+
+```text
+Privacy policy: https://YOUR-DOMAIN/privacy-policy
+Terms: https://YOUR-DOMAIN/terms-of-service
+Data deletion instructions: https://YOUR-DOMAIN/data-deletion
+Data deletion callback: https://YOUR-DOMAIN/data-deletion/callback
+```
+
+Request Advanced Access for `instagram_business_basic` and `instagram_business_content_publish`. Add an insights permission only after its direct-login UI is ready for reviewer testing. The connecting account must be an Instagram Professional account (Creator or Business).
+
+See `META_REVIEW.md` for the prepared use-case text, reviewer journey and screencast checklist.
+
+## 2b. Meta: optional Facebook publishing
 
 Create/configure a Meta developer app for Facebook Login and the Instagram API.
 
@@ -39,18 +69,17 @@ META_GRAPH_VERSION=v23.0
 META_REDIRECT_URI=https://YOUR-DOMAIN/oauth/meta/callback
 ```
 
-Zova requests:
+The older Facebook Login flow requests:
 
 ```text
 pages_show_list
 pages_read_engagement
-pages_manage_posts
 instagram_basic
 instagram_content_publish
-instagram_manage_insights
+business_management
 ```
 
-The callback reads Pages the user manages. Each Page becomes a Facebook connection. If the Page has a linked Instagram professional account, Zova creates an Instagram connection too.
+The callback reads Pages the user manages. Each Page becomes a Facebook connection. Instagram now has its own direct connection route above.
 
 For external customers rather than app-role test users, expect Meta App Review / Advanced Access requirements for permissions.
 
