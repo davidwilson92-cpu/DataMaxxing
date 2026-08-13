@@ -387,7 +387,6 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
     if requested_privacy not in privacy_options:
         raise RuntimeError("The selected TikTok privacy setting is no longer available. Review the post again.")
     privacy = requested_privacy
-    urls = [get_public_url(a.storage_key, a.public_url) for a in assets[:10]]
     is_video = assets[0].mime_type.startswith("video/")
     if is_video:
         duration = float(settings.get("video_duration_sec") or 0)
@@ -400,12 +399,24 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
     if link_url and link_url not in description:
         description = (description + " " + link_url).strip()
     if is_video:
+        video = get_bytes(assets[0].storage_key)
+        video_size = len(video)
+        if not video_size:
+            raise RuntimeError("The selected TikTok video is empty. Remove and re-add it.")
+        # TikTok accepts chunks between 5 MiB and 64 MiB (the final chunk may
+        # be smaller), with no more than 1,000 chunks per upload.
+        min_chunk = 5 * 1024 * 1024
+        max_chunk = 64 * 1024 * 1024
+        chunk_size = min(max_chunk, max(min_chunk, (video_size + 999) // 1000))
+        chunk_size = min(chunk_size, video_size)
+        total_chunks = (video_size + chunk_size - 1) // chunk_size
         body = {
             "post_info": {"title": description[:2200], "privacy_level": privacy, "disable_duet": not bool(settings.get("allow_duet")), "disable_comment": not bool(settings.get("allow_comment")), "disable_stitch": not bool(settings.get("allow_stitch")), "video_cover_timestamp_ms": 1000, "brand_content_toggle": bool(settings.get("brand_content")), "brand_organic_toggle": bool(settings.get("your_brand"))},
-            "source_info": {"source": "PULL_FROM_URL", "video_url": urls[0]},
+            "source_info": {"source": "FILE_UPLOAD", "video_size": video_size, "chunk_size": chunk_size, "total_chunk_count": total_chunks},
         }
         endpoint = "https://open.tiktokapis.com/v2/post/publish/video/init/"
     else:
+        urls = [get_public_url(a.storage_key, a.public_url) for a in assets[:10]]
         body = {
         "post_info": {"title": description[:90], "description": description[:4000], "privacy_level": privacy, "disable_comment": not bool(settings.get("allow_comment")), "auto_add_music": True, "brand_content_toggle": bool(settings.get("brand_content")), "brand_organic_toggle": bool(settings.get("your_brand"))},
         "source_info": {"source": "PULL_FROM_URL", "photo_cover_index": 0, "photo_images": urls},
@@ -416,7 +427,28 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
     r = httpx.post(endpoint, headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json; charset=UTF-8"}, json=body, timeout=45.0)
     if r.status_code >= 400 or (r.json().get("error") or {}).get("code") not in {None, "ok", 0}:
         raise RuntimeError(f"TikTok publish failed: {r.text}")
-    publish_id = str(r.json()["data"]["publish_id"])
+    response_data = r.json()["data"]
+    publish_id = str(response_data["publish_id"])
+    if is_video:
+        upload_url = response_data.get("upload_url")
+        if not upload_url:
+            raise RuntimeError("TikTok did not provide a video upload URL")
+        for index in range(total_chunks):
+            start = index * chunk_size
+            chunk = video[start : start + chunk_size]
+            end = start + len(chunk) - 1
+            upload = httpx.put(
+                upload_url,
+                content=chunk,
+                headers={
+                    "Content-Type": assets[0].mime_type or "video/mp4",
+                    "Content-Length": str(len(chunk)),
+                    "Content-Range": f"bytes {start}-{end}/{video_size}",
+                },
+                timeout=120.0,
+            )
+            if upload.status_code >= 400:
+                raise RuntimeError(f"TikTok video upload failed ({upload.status_code}): {upload.text}")
     return {"post_id": publish_id, "post_ids": [publish_id], "url": None, "pending": True, "privacy_level": privacy}
 
 
