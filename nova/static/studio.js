@@ -172,7 +172,7 @@ async function confirmReviewedPublish() {
   const publishOptions = collectPublishOptions(platforms); const payload = {draft_id:currentDraftId,platforms,variants,media_asset_ids:uploadedMediaIds,link_url:document.getElementById("linkUrl").value,publish_options:publishOptions};
   if (reviewMode === "schedule") payload.scheduled_local = document.getElementById("scheduleAt").value;
   busy(button,true,reviewMode === "schedule" ? "Scheduling..." : "Publishing...");
-  try { const result = await api(reviewMode === "schedule" ? "/api/schedule" : "/api/publish",{method:"POST",headers,body:JSON.stringify(payload)}); document.getElementById("publishReview").close(); alert(result.summary + (reviewMode === "publish" && result.results?.tiktok?.pending ? " TikTok is processing the post; follow its status in Activity." : "")); loadSidebar(); loadHistory(); }
+  try { const result = await api(reviewMode === "schedule" ? "/api/schedule" : "/api/publish",{method:"POST",headers,body:JSON.stringify(payload)}); document.getElementById("publishReview").close(); const tiktok = result.results?.tiktok; alert(result.summary + (tiktok?.requires_tiktok_completion ? " Open TikTok, tap the inbox notification, review the video and finish publishing it there." : reviewMode === "publish" && tiktok?.pending ? " TikTok is processing the post; follow its status in Activity." : "")); loadSidebar(); loadHistory(); }
   catch (problem) { error.textContent = problem.message; error.classList.remove("hidden"); }
   finally { busy(button,false); }
 }
