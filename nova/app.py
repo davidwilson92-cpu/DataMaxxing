@@ -36,13 +36,16 @@ from .scheduler import loop as scheduler_loop, process_due
 from .security import current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password
 from .user_data import normalize_country, normalize_email, normalize_name
 from .social import (
-    META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, meta_authorize_url, meta_exchange,
+    INSTAGRAM_SCOPES, META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, instagram_authorize_url, instagram_exchange, meta_authorize_url, meta_exchange,
     publish_platform, publishing_context, recent_content_for_user, recent_posts_for_user, resolve_tiktok_post, tiktok_authorize_url, tiktok_exchange, upsert_connection, x_authorize_url, x_exchange,
 )
 from .storage import UPLOAD_DIR, save_bytes
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("nova")
+# OAuth exchanges put secrets and short-lived codes in query parameters. Never
+# allow the HTTP client to print those request URLs into provider logs.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 HERE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
@@ -318,6 +321,35 @@ def terms_of_service(request:Request):
     except HTTPException:user=None
     return templates.TemplateResponse("terms.html",template_context(request,user,contact_email=os.environ.get("LEGAL_CONTACT_EMAIL") or os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@example.com"),legal_name=os.environ.get("LEGAL_ENTITY_NAME","Zova")))
 
+@app.get("/data-deletion",response_class=HTMLResponse)
+def data_deletion_instructions(request:Request):
+    try:user=current_user(request)
+    except HTTPException:user=None
+    return templates.TemplateResponse("data_deletion.html",template_context(request,user,contact_email=os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@example.com")))
+
+@app.post("/data-deletion/callback")
+async def meta_data_deletion_callback(request:Request,db:Session=Depends(get_db)):
+    form=await request.form(); signed=str(form.get("signed_request") or "")
+    try:
+        encoded_sig,encoded_payload=signed.split(".",1)
+        decode=lambda value:base64.urlsafe_b64decode(value+"="*(-len(value)%4))
+        payload=json.loads(decode(encoded_payload))
+        secrets_to_try=[value.encode() for value in (os.environ.get("INSTAGRAM_APP_SECRET"),os.environ.get("META_APP_SECRET")) if value]
+        supplied=decode(encoded_sig)
+        if not secrets_to_try or not any(hmac.compare_digest(supplied,hmac.new(secret,encoded_payload.encode(),hashlib.sha256).digest()) for secret in secrets_to_try):raise ValueError("signature")
+        external_id=str(payload.get("user_id") or "")
+        if not external_id:raise ValueError("user")
+    except Exception:raise HTTPException(400,"Invalid deletion request")
+    rows=db.scalars(select(SocialConnection).where(SocialConnection.account_id==external_id,SocialConnection.platform.in_(("instagram","facebook")))).all()
+    for row in rows:db.delete(row)
+    db.commit()
+    confirmation=hashlib.sha256(f"{external_id}:{os.environ.get('SESSION_SECRET','zova')}".encode()).hexdigest()[:24]
+    return {"url":f"{base_url()}/data-deletion/status/{confirmation}","confirmation_code":confirmation}
+
+@app.get("/data-deletion/status/{confirmation_code}",response_class=HTMLResponse)
+def data_deletion_status(request:Request,confirmation_code:str):
+    return templates.TemplateResponse("data_deletion_status.html",template_context(request,None,confirmation_code=confirmation_code[:64]))
+
 @app.get("/studio",response_class=HTMLResponse)
 def studio(request:Request):
     user=current_user(request)
@@ -467,6 +499,28 @@ def oauth_meta_callback(request:Request,code:str|None=None,state:str|None=None,e
     try: learn_voice_from_socials(db, row.user_id)
     except Exception as exc: log.warning("Automatic Meta voice learning failed: %s", exc)
     return RedirectResponse("/onboarding/socials?connected=meta" if request.cookies.get("zova_onboarding") else "/account?connected=meta",303)
+
+@app.get("/oauth/instagram/start")
+def oauth_instagram_start(request:Request,db:Session=Depends(get_db)):
+    user=current_user(request)
+    try:url=instagram_authorize_url(_new_state(db,user.id,"instagram"))
+    except RuntimeError as exc:raise HTTPException(503,str(exc))
+    return RedirectResponse(url,302)
+
+@app.get("/oauth/instagram/callback")
+def oauth_instagram_callback(request:Request,code:str|None=None,state:str|None=None,error:str|None=None,error_description:str|None=None,db:Session=Depends(get_db)):
+    if error:return RedirectResponse(f"/account?error=instagram_connection_cancelled",303)
+    if not code or not state:raise HTTPException(400,"Missing Instagram OAuth code or state")
+    row=_state_row(db,state,"instagram")
+    try:result=instagram_exchange(code)
+    except RuntimeError as exc:
+        log.warning("Direct Instagram connection failed: %s",exc)
+        return RedirectResponse("/account?error=instagram_connection_failed",303)
+    profile=result["profile"]
+    upsert_connection(db,user_id=row.user_id,platform="instagram",account_id=str(profile["id"]),username=profile.get("username","") or "",display_name=profile.get("name","") or profile.get("username","") or "",access=result["access_token"],expires_in=result.get("expires_in"),scope=os.environ.get("INSTAGRAM_SCOPES",INSTAGRAM_SCOPES),metadata={"auth_provider":"instagram_login","profile_picture_url":profile.get("profile_picture_url")})
+    try:learn_voice_from_socials(db,row.user_id)
+    except Exception as exc:log.warning("Automatic Instagram voice learning failed: %s",exc)
+    return RedirectResponse("/onboarding/socials?connected=instagram" if request.cookies.get("zova_onboarding") else "/account?connected=instagram",303)
 
 @app.get("/oauth/tiktok/start")
 def oauth_tiktok_start(request:Request,db:Session=Depends(get_db)):

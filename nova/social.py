@@ -24,6 +24,7 @@ log = logging.getLogger("nova.social")
 
 X_SCOPES = "tweet.read tweet.write users.read offline.access"
 META_SCOPES = "pages_show_list,pages_read_engagement,business_management,instagram_basic,instagram_content_publish"
+INSTAGRAM_SCOPES = "instagram_business_basic,instagram_business_content_publish"
 TIKTOK_SCOPES = "user.info.basic,user.info.stats,video.list,video.publish,video.upload"
 
 
@@ -145,6 +146,68 @@ def meta_exchange(code: str) -> list[dict[str, Any]]:
     if pages_r.status_code >= 400:
         raise RuntimeError(f"Could not read managed Facebook Pages: {pages_r.text}")
     return pages_r.json().get("data", [])
+
+
+# ---------- Instagram OAuth (direct Instagram Login) ----------
+
+def instagram_authorize_url(state: str) -> str:
+    app_id = os.environ.get("INSTAGRAM_APP_ID")
+    if not app_id:
+        raise RuntimeError("Direct Instagram Login is not configured")
+    redirect = os.environ.get("INSTAGRAM_REDIRECT_URI") or f"{public_base()}/oauth/instagram/callback"
+    scopes = os.environ.get("INSTAGRAM_SCOPES", INSTAGRAM_SCOPES)
+    params = {
+        "client_id": app_id,
+        "redirect_uri": redirect,
+        "response_type": "code",
+        "scope": scopes,
+        "state": state,
+        "enable_fb_login": "0",
+        "force_authentication": "1",
+    }
+    return "https://www.instagram.com/oauth/authorize?" + urlencode(params)
+
+
+def instagram_exchange(code: str) -> dict[str, Any]:
+    app_id = os.environ.get("INSTAGRAM_APP_ID")
+    secret = os.environ.get("INSTAGRAM_APP_SECRET")
+    if not app_id or not secret:
+        raise RuntimeError("Direct Instagram Login is not configured")
+    redirect = os.environ.get("INSTAGRAM_REDIRECT_URI") or f"{public_base()}/oauth/instagram/callback"
+    token_r = httpx.post(
+        "https://api.instagram.com/oauth/access_token",
+        data={"client_id": app_id, "client_secret": secret, "grant_type": "authorization_code", "redirect_uri": redirect, "code": code},
+        timeout=30.0,
+    )
+    if token_r.status_code >= 400:
+        raise RuntimeError(f"Instagram token exchange failed: {token_r.text}")
+    short = token_r.json()
+    access = short.get("access_token")
+    if not access:
+        raise RuntimeError("Instagram did not return an access token")
+    long_r = httpx.get(
+        "https://graph.instagram.com/access_token",
+        params={"grant_type": "ig_exchange_token", "client_secret": secret, "access_token": access},
+        timeout=30.0,
+    )
+    token = long_r.json() if long_r.status_code < 400 and long_r.json().get("access_token") else short
+    access = token["access_token"]
+    profile_r = httpx.get(
+        "https://graph.instagram.com/me",
+        params={"fields": "user_id,username,name,profile_picture_url", "access_token": access},
+        timeout=30.0,
+    )
+    if profile_r.status_code >= 400:
+        raise RuntimeError(f"Could not read the Instagram profile: {profile_r.text}")
+    profile = profile_r.json()
+    account_id = str(profile.get("user_id") or profile.get("id") or short.get("user_id") or "")
+    if not account_id:
+        raise RuntimeError("Instagram did not return an account identifier")
+    return {"access_token": access, "expires_in": token.get("expires_in"), "profile": {**profile, "id": account_id}}
+
+
+def instagram_graph_base(conn: SocialConnection) -> str:
+    return "https://graph.instagram.com" if json_meta(conn).get("auth_provider") == "instagram_login" else f"https://graph.facebook.com/{os.environ.get('META_GRAPH_VERSION', 'v23.0')}"
 
 
 # ---------- TikTok OAuth ----------
@@ -313,7 +376,7 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
     if not assets:
         raise RuntimeError("Instagram publishing requires an image or video")
     token = access_token(conn, db)
-    version = os.environ.get("META_GRAPH_VERSION", "v23.0")
+    graph = instagram_graph_base(conn)
     caption = posts[0]
     if link_url and link_url not in caption:
         caption = (caption + "\n\n" + link_url).strip()
@@ -324,13 +387,13 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
         create_data.update({"media_type": "REELS", "video_url": media_url, "share_to_feed": "true"})
     else:
         create_data["image_url"] = media_url
-    create = httpx.post(f"https://graph.facebook.com/{version}/{conn.account_id}/media", data=create_data, timeout=45.0)
+    create = httpx.post(f"{graph}/{conn.account_id}/media", data=create_data, timeout=45.0)
     if create.status_code >= 400:
         raise RuntimeError(f"Instagram media container failed: {create.text}")
     creation_id = str(create.json()["id"])
     if is_video:
         for _ in range(15):
-            status = httpx.get(f"https://graph.facebook.com/{version}/{creation_id}", params={"fields": "status_code,status", "access_token": token}, timeout=20.0)
+            status = httpx.get(f"{graph}/{creation_id}", params={"fields": "status_code,status", "access_token": token}, timeout=20.0)
             if status.status_code >= 400:
                 raise RuntimeError(f"Instagram video processing failed: {status.text}")
             status_code = status.json().get("status_code")
@@ -341,12 +404,12 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
             time.sleep(2)
         else:
             raise RuntimeError("Instagram is still processing the video. Try publishing again shortly.")
-    publish = httpx.post(f"https://graph.facebook.com/{version}/{conn.account_id}/media_publish", data={"creation_id": creation_id, "access_token": token}, timeout=45.0)
+    publish = httpx.post(f"{graph}/{conn.account_id}/media_publish", data={"creation_id": creation_id, "access_token": token}, timeout=45.0)
     if publish.status_code >= 400:
         raise RuntimeError(f"Instagram publish failed: {publish.text}")
     post_id = str(publish.json()["id"])
     # Resolve permalink when available.
-    detail = httpx.get(f"https://graph.facebook.com/{version}/{post_id}", params={"fields": "permalink", "access_token": token}, timeout=20.0)
+    detail = httpx.get(f"{graph}/{post_id}", params={"fields": "permalink", "access_token": token}, timeout=20.0)
     url = detail.json().get("permalink") if detail.status_code < 400 else None
     return {"post_id": post_id, "post_ids": [post_id], "url": url or "https://www.instagram.com/"}
 
@@ -514,10 +577,10 @@ def analytics_x(db: Session, conn: SocialConnection, ids: list[str]) -> dict[str
 def analytics_instagram(db: Session, conn: SocialConnection, ids: list[str]) -> dict[str, Any]:
     if not ids:
         return {"posts": 0, "likes": 0, "comments": 0}
-    token = access_token(conn, db); version = os.environ.get("META_GRAPH_VERSION", "v23.0")
+    token = access_token(conn, db); graph = instagram_graph_base(conn)
     out = {"posts": 0, "likes": 0, "comments": 0}
     for pid in ids[:10]:
-        r = httpx.get(f"https://graph.facebook.com/{version}/{pid}", params={"fields": "like_count,comments_count", "access_token": token}, timeout=20.0)
+        r = httpx.get(f"{graph}/{pid}", params={"fields": "like_count,comments_count", "access_token": token}, timeout=20.0)
         if r.status_code < 400:
             data = r.json(); out["posts"] += 1; out["likes"] += int(data.get("like_count", 0)); out["comments"] += int(data.get("comments_count", 0))
     return out
@@ -564,7 +627,8 @@ def follower_count(db: Session, conn: SocialConnection) -> int:
     if conn.platform in {"instagram", "facebook"}:
         version = os.environ.get("META_GRAPH_VERSION", "v23.0")
         fields = "followers_count" if conn.platform == "instagram" else "followers_count,fan_count"
-        r = httpx.get(f"https://graph.facebook.com/{version}/{conn.account_id}", params={"fields": fields, "access_token": token}, timeout=20.0)
+        graph = instagram_graph_base(conn) if conn.platform == "instagram" else f"https://graph.facebook.com/{version}"
+        r = httpx.get(f"{graph}/{conn.account_id}", params={"fields": fields, "access_token": token}, timeout=20.0)
         data = r.json() if r.status_code < 400 else {}
         return int(data.get("followers_count", data.get("fan_count", 0)) or 0)
     if conn.platform == "tiktok":
@@ -618,8 +682,8 @@ def recent_posts_for_user(db: Session, user_id: int, limit: int = 12) -> dict[st
                     metrics = item.get("public_metrics") or {}; keys = (item.get("attachments") or {}).get("media_keys") or []; visual = media.get(keys[0], {}) if keys else {}
                     posts.append({"platform":"x","id":str(item.get("id")),"text":item.get("text") or "","created_at":item.get("created_at") or "","url":f"https://x.com/{conn.username or 'i'}/status/{item.get('id')}","image_url":visual.get("preview_image_url") or visual.get("url") or "","likes":metrics.get("like_count",0),"comments":metrics.get("reply_count",0),"shares":metrics.get("retweet_count",0),"views":metrics.get("impression_count",0)})
             elif platform == "instagram":
-                version = os.environ.get("META_GRAPH_VERSION", "v23.0")
-                response = httpx.get(f"https://graph.facebook.com/{version}/{conn.account_id}/media", params={"fields":"id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count","limit":10,"access_token":token}, timeout=30.0)
+                graph = instagram_graph_base(conn)
+                response = httpx.get(f"{graph}/{conn.account_id}/media", params={"fields":"id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count","limit":10,"access_token":token}, timeout=30.0)
                 if response.status_code >= 400: raise RuntimeError("Instagram feed unavailable")
                 for item in response.json().get("data", []):posts.append({"platform":"instagram","id":str(item.get("id")),"text":item.get("caption") or "","created_at":item.get("timestamp") or "","url":item.get("permalink") or "","image_url":item.get("thumbnail_url") or item.get("media_url") or "","likes":item.get("like_count",0),"comments":item.get("comments_count",0),"shares":0,"views":0})
             elif platform == "facebook":
@@ -652,7 +716,8 @@ def recent_content_for_connection(db: Session, conn: SocialConnection, limit: in
         version = os.environ.get("META_GRAPH_VERSION", "v23.0")
         edge = "media" if conn.platform == "instagram" else "posts"
         fields = "caption,timestamp" if conn.platform == "instagram" else "message,created_time"
-        r = httpx.get(f"https://graph.facebook.com/{version}/{conn.account_id}/{edge}", params={"fields": fields, "limit": limit, "access_token": token}, timeout=30.0)
+        graph = instagram_graph_base(conn) if conn.platform == "instagram" else f"https://graph.facebook.com/{version}"
+        r = httpx.get(f"{graph}/{conn.account_id}/{edge}", params={"fields": fields, "limit": limit, "access_token": token}, timeout=30.0)
         if r.status_code >= 400: raise RuntimeError(f"{conn.platform.title()} recent posts are unavailable")
         key = "caption" if conn.platform == "instagram" else "message"
         return [str(x.get(key, "")).strip() for x in r.json().get("data", []) if x.get(key)]
