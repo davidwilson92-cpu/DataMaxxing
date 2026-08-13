@@ -187,6 +187,10 @@ def bootstrap_legacy_account() -> None:
 @app.get("/health")
 def health() -> dict[str, str]: return {"status":"ok","version":"5.1.0","brand":"Zova"}
 
+@app.get("/tiktokH8OfSOj6UphrBG5ccohezZ2qB7ZV5Oig.txt", response_class=HTMLResponse)
+def tiktok_site_verification():
+    return HTMLResponse("tiktok-developers-site-verification=H8OfSOj6UphrBG5ccohezZ2qB7ZV5Oig", media_type="text/plain")
+
 @app.get("/", response_class=HTMLResponse)
 def landing(request: Request):
     try: user = current_user(request)
@@ -237,7 +241,7 @@ def apple_start(intent: str = "login", db: Session = Depends(get_db)):
 
 
 @app.post("/auth/apple/callback")
-def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotated[str | None, Form()] = None, state: Annotated[str | None, Form()] = None, error: Annotated[str | None, Form()] = None, db: Session = Depends(get_db)):
+def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotated[str | None, Form()] = None, state: Annotated[str | None, Form()] = None, error: Annotated[str | None, Form()] = None, user: Annotated[str | None, Form()] = None, db: Session = Depends(get_db)):
     if error or not code or not id_token or not state: return RedirectResponse("/login?error=Apple+sign-in+was+cancelled", 303)
     row = db.scalar(select(AuthState).where(AuthState.state_hash == hash_api_key(state), AuthState.provider == "apple", AuthState.used.is_(False)))
     if not row or row.created_at.replace(tzinfo=row.created_at.tzinfo or timezone.utc) < utcnow() - timedelta(minutes=10): raise HTTPException(400, "Invalid or expired Apple sign-in state")
@@ -248,11 +252,25 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
     claims = jwt.decode(id_token, jwks.get_signing_key_from_jwt(id_token).key, algorithms=["RS256"], audience=os.environ["APPLE_CLIENT_ID"], issuer="https://appleid.apple.com")
     if hash_api_key(str(claims.get("nonce", ""))) != row.nonce_hash: raise HTTPException(400, "Invalid Apple sign-in nonce")
     subject, email = str(claims["sub"]), str(claims.get("email") or "").strip().lower()
+    display_name = ""
+    if user:
+        try:
+            apple_user = json.loads(user)
+            apple_name = apple_user.get("name") or {}
+            display_name = normalize_name(" ".join(filter(None, (apple_name.get("firstName"), apple_name.get("lastName")))))
+        except (json.JSONDecodeError, TypeError, ValueError):
+            display_name = ""
     identity = db.scalar(select(AuthIdentity).where(AuthIdentity.provider == "apple", AuthIdentity.subject == subject))
     user = db.get(User, identity.user_id) if identity else (db.scalar(select(User).where(User.email == email)) if email else None)
     created = user is None
     if created:
-        user = User(email=email or f"apple-{hash_api_key(subject)[:20]}@private.zova.invalid", password_hash=hash_password(secrets.token_urlsafe(48))); db.add(user); db.commit(); db.refresh(user); get_preferences(db, user.id)
+        now = utcnow()
+        user = User(email=email or f"apple-{hash_api_key(subject)[:20]}@private.zova.invalid", display_name=display_name, password_hash=hash_password(secrets.token_urlsafe(48)), email_verified_at=now if claims.get("email_verified") in {True, "true"} else None, last_login_at=now, terms_accepted_at=now); db.add(user); db.commit(); db.refresh(user); get_preferences(db, user.id)
+    else:
+        if display_name and not user.display_name:
+            user.display_name = display_name
+        user.last_login_at = utcnow()
+        db.commit()
     if not identity: db.add(AuthIdentity(user_id=user.id, provider="apple", subject=subject)); db.commit()
     resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303); set_user_cookie(resp, user); return resp
 
