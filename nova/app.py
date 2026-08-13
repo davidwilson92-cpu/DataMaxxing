@@ -503,7 +503,9 @@ def oauth_meta_callback(request:Request,code:str|None=None,state:str|None=None,e
 @app.get("/oauth/instagram/start")
 def oauth_instagram_start(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
-    try:url=instagram_authorize_url(_new_state(db,user.id,"instagram"))
+    direct=bool(os.environ.get("INSTAGRAM_APP_ID") and os.environ.get("INSTAGRAM_APP_SECRET"))
+    platform="instagram" if direct else "meta"
+    try:url=instagram_authorize_url(_new_state(db,user.id,platform)) if direct else meta_authorize_url(_new_state(db,user.id,platform))
     except RuntimeError as exc:raise HTTPException(503,str(exc))
     return RedirectResponse(url,302)
 
