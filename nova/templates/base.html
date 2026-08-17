@@ -1,24 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{% block title %}Zova{% endblock %}</title>
-  <link rel="stylesheet" href="/static/nova.css?v=5.11">
-  {% block head %}{% endblock %}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="facebook-domain-verification" content="gc093o7nv5q19ykf4y2sxm82ujegg9">
+<title>{% block title %}Zova{% endblock %}</title>
+<link rel="stylesheet" href="/static/nova.css?v=5.11">
+{% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
 {% block site_header %}
 <header class="site-header">
-  <a class="brand" href="/">{% include "logo_mark.html" %}<span>zova</span></a>
-  <nav>
-    {% if user %}
-      <a href="/studio">Studio</a><a href="/account">Account</a><a href="/security">Security</a>
-      <form method="post" action="/logout" class="inline"><button class="nav-button">Sign out</button></form>
-    {% else %}
-      <a href="/security">Security</a><a href="/login">Log in</a><a class="pill" href="/signup">Start creating</a>
-    {% endif %}
-  </nav>
+<a class="brand" href="/">{% include "logo_mark.html" %}<span>zova</span></a>
+<nav>
+{% if user %}
+<a href="/studio">Studio</a><a href="/account">Account</a><a href="/security">Security</a>
+<form method="post" action="/logout" class="inline"><button class="nav-button">Sign out</button></form>
+{% else %}
+<a href="/security">Security</a><a href="/login">Log in</a><a class="pill" href="/signup">Start creating</a>
+{% endif %}
+</nav>
 </header>
 {% endblock %}
 {% block body %}{% endblock %}
