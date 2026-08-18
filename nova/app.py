@@ -567,6 +567,7 @@ class GenerateRequest(BaseModel):
     def valid_thread(cls,v:int): return v if v in {1,3,5} else 1
 class RewriteRequest(BaseModel): platform:str; posts:list[str]; action:str=""; instruction:str=Field(default="",max_length=1000)
 class ScheduleSuggestRequest(BaseModel): platforms:list[str]; context:str=""
+class InsightRequest(BaseModel): question:str=Field(min_length=1,max_length=2000)
 class VoiceLearnRequest(BaseModel): content:str=Field(min_length=80,max_length=30000)
 class PreviewRequest(BaseModel): platforms:list[str]; variants:dict[str,Any]
 class PublishRequest(BaseModel): draft_id:int|None=None; platforms:list[str]; variants:dict[str,Any]; media_asset_ids:list[int]=[]; link_url:str=""; publish_options:dict[str,Any]={}
@@ -744,6 +745,38 @@ def api_activity(request:Request,db:Session=Depends(get_db)):
 @app.get("/api/analytics")
 def api_analytics(request:Request,db:Session=Depends(get_db)):
     user=current_user(request);return analytics_for_user(db,user.id)
+
+@app.post("/api/insights")
+def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db)):
+    user=current_user(request); data=analytics_for_user(db,user.id); feed=recent_posts_for_user(db,user.id); summary=data.get("_summary") or {}; question=body.question.lower()
+    connected=[(name,value) for name,value in data.items() if name!="_summary" and isinstance(value,dict) and value.get("connected")]
+    score=lambda value:int(value.get("likes") or value.get("reactions") or 0)+int(value.get("comments") or value.get("replies") or 0)+int(value.get("shares") or value.get("reposts") or 0)
+    leader=max(connected,key=lambda item:score(item[1]),default=None)
+    posts=(feed or {}).get("posts") or []
+    top=max(posts,key=lambda item:int(item.get("likes") or 0)+int(item.get("comments") or 0)+int(item.get("shares") or 0),default=None)
+    def number(key:str)->str:return f"{int(summary.get(key) or 0):,}"
+    if not connected:
+        answer="I don't have enough account data yet. Connect a social account and Zova will start reading the available performance signals."
+    elif any(word in question for word in ("trend","working","best","perform","improve","strategy")):
+        lead=f"{leader[0].title()} has the strongest engagement signal in the available data" if leader else "There is not yet a clear platform leader"
+        detail=f" Your strongest recent post is on {str(top.get('platform') or '').title()} with {int(top.get('likes') or 0):,} likes, {int(top.get('comments') or 0):,} comments and {int(top.get('shares') or 0):,} shares." if top else " Publish a few more posts so I can compare formats and topics."
+        answer=lead+"."+detail
+    elif "impression" in question or "view" in question:
+        answer=f"Your connected accounts recorded {number('impressions')} impressions in the latest available seven-day view."
+    elif "like" in question:
+        answer=f"Your connected accounts recorded {number('likes')} likes in the latest available seven-day view."
+    elif "comment" in question or "reply" in question:
+        answer=f"Your connected accounts recorded {number('comments')} comments or replies in the latest available seven-day view."
+    elif "share" in question or "repost" in question:
+        answer=f"Your connected accounts recorded {number('shares')} shares or reposts in the latest available seven-day view."
+    elif "follower" in question:
+        answer=f"Your connected accounts currently report {number('followers')} followers in total."
+    elif "recent" in question or "last post" in question:
+        answer=(f"Your latest available post was on {str(posts[0].get('platform') or '').title()}: “{str(posts[0].get('text') or 'Media post')[:180]}”" if posts else "No recent connected-account posts are available yet.")
+    else:
+        lead=f" {leader[0].title()} currently has the strongest engagement signal." if leader else ""
+        answer=f"In the latest available seven-day view: {number('impressions')} impressions, {number('likes')} likes, {number('comments')} comments and {number('shares')} shares or reposts.{lead}"
+    return {"answer":answer,"summary":summary,"has_signal":bool(connected)}
 
 @app.get("/api/recent-posts")
 def api_recent_posts(request:Request,db:Session=Depends(get_db)):
