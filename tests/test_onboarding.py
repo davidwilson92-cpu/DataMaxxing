@@ -81,19 +81,21 @@ def test_studio_has_premium_application_shell():
     signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     page = client.get("/studio", cookies=signup.cookies)
     assert page.status_code == 200
-    assert "ACCOUNT ANALYTICS" in page.text
-    assert "Shape for every platform" in page.text
-    assert 'src="/static/studio.js?v=5.11"' in page.text
+    assert "Your social manager" in page.text
+    assert "Ask about your socials or describe what you want to post" in page.text
+    assert "LIVE CONTEXT" in page.text
+    assert "What are we working on?" in page.text
+    assert 'src="/static/studio.js?v=6.0"' in page.text
     assert 'href="/static/nova.css?v=5.11"' in page.text
     assert 'accept="image/*,video/mp4,video/quicktime,video/webm"' in page.text
-    assert "Videos publish to Instagram and TikTok only" in page.text
-    assert 'id="refineInstruction"' in page.text
-    assert 'class="rewrite-shortcuts"' in page.text
+    assert "Zova uses connected-account data to answer performance questions" in page.text
+    assert 'id="chatFeed"' in page.text
+    assert 'class="starter-prompts"' in page.text
     assert 'id="publishReview"' in page.text
-    assert "Review and publish" in page.text
+    assert "Confirm and publish" in page.text
     assert "Distinct by design" not in page.text
     assert "NATIVE DRAFTS" not in page.text
-    assert "<summary><span>Recent work</span>" in page.text
+    assert "Recent chats" in page.text
     assert "Across your socials" in page.text
     assert "What Zova has done" not in page.text
     assert "Ã" not in page.text and "â" not in page.text
@@ -102,8 +104,16 @@ def test_studio_has_premium_application_shell():
     assert 'href="/account#voice"' in page.text
     assert "Calendar" not in page.text
     assert "zova-symbol" in page.text
-    assert "ACCOUNT ANALYTICS" in page.text
+    assert "Your social pulse" in page.text
     assert "ZOVA INTELLIGENCE" not in page.text
+
+
+def test_studio_answers_account_questions_without_external_ai():
+    email = f"insight-{secrets.token_hex(5)}@example.com"
+    signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
+    response = client.post("/api/insights", cookies=signup.cookies, json={"question": "What is working?"})
+    assert response.status_code == 200
+    assert "account data" in response.json()["answer"]
 
 
 def test_account_management_and_social_voice_waiting_state():
