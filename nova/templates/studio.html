@@ -1,49 +1,51 @@
 {% extends "base.html" %}
-{% block title %}Zova Studio | Your idea, native everywhere{% endblock %}
-{% block body_class %}app-body{% endblock %}
+{% block title %}Zova Studio | Your AI social manager{% endblock %}
+{% block body_class %}app-body conversation-body{% endblock %}
 {% block site_header %}{% endblock %}{% block site_footer %}{% endblock %}
 {% block body %}
-<div class="app-shell">
+<div class="app-shell conversation-app">
   {% set active_page = 'studio' %}{% include "app_nav.html" %}
-  <div class="app-workspace">
-    <header class="app-topbar">
-      <div><div class="eyebrow">ZOVA STUDIO</div><h1>What do you want to say?</h1><p>Start with an idea. Zova shapes it for every platform.</p></div>
-      <div class="topbar-actions"><a class="icon-button account-button" href="/account">Account</a><button class="button primary" type="button" onclick="document.getElementById('brief').focus()">New idea</button></div>
+  <div class="app-workspace conversation-workspace">
+    <header class="conversation-topbar">
+      <div><div class="eyebrow">ZOVA STUDIO</div><h1>Your social manager</h1></div>
+      <div class="topbar-actions"><span id="connectionPulse" class="connection-pulse"><i></i>Reading your socials</span><a class="icon-button account-button" href="/account">Account</a><button class="button primary" type="button" onclick="newConversation()">New chat</button></div>
     </header>
-    <main class="studio-shell">
-      <section class="studio-main">
-        {% if subscription_blocked %}<div class="alert error">Your subscription is not active. <a href="/subscribe">Subscribe to continue.</a></div>{% endif %}
-        <section class="composer intent-card">
-          <div class="intent-head"><span class="intent-status"><i></i>Zova knows your voice</span></div>
-          <textarea id="brief" rows="6" placeholder="I want to say something about..."></textarea>
-          <div class="intent-tools"><label class="tool-button">Add images or video<input id="mediaInput" type="file" accept="image/*,video/mp4,video/quicktime,video/webm" multiple hidden></label><input id="linkUrl" type="url" placeholder="Paste a source link"><span id="mediaStatus" class="muted"></span></div>
-          <p class="media-guidance">Images work across supported platforms. Videos publish to Instagram and TikTok only. Add one video per post.</p>
-          <div class="creative-controls"><div class="grow"><label>Creative direction <span>Optional</span></label><input id="instruction" placeholder="Add a goal, angle, audience or call to action"></div><div><label>X format</label><select id="threadLength"><option value="1">Single post</option><option value="3">3-post thread</option><option value="5">5-post thread</option></select></div></div>
-          <div class="platform-row">
-            <div class="platform-options"><small>CREATE FOR</small><div class="platform-picker">
-              <div class="platform-check"><input id="px" type="checkbox" value="x" checked><label for="px"><svg class="social-badge x-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.67l7.74-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg>X</label></div>
-              <div class="platform-check"><input id="pig" type="checkbox" value="instagram"><label for="pig"><b class="social-badge instagram">IG</b>Instagram</label></div>
-              <div class="platform-check"><input id="pfb" type="checkbox" value="facebook"><label for="pfb"><b class="social-badge facebook">f</b>Facebook</label></div>
-              <div class="platform-check"><input id="ptt" type="checkbox" value="tiktok"><label for="ptt"><b class="social-badge tiktok">T</b>TikTok</label></div>
-            </div></div>
-            <div class="composer-actions"><button class="button quiet" type="button" onclick="clearComposer()">Clear</button><button id="generateBtn" class="button primary generate-button" type="button" onclick="generateDraft()">Shape for every platform</button></div>
+    {% if subscription_blocked %}<div class="alert error conversation-alert">Your subscription is not active. <a href="/subscribe">Subscribe to continue.</a></div>{% endif %}
+    <main class="conversation-layout">
+      <section class="conversation-stage">
+        <div id="chatFeed" class="chat-feed" aria-live="polite">
+          <article class="chat-message assistant-message welcome-message">
+            <div class="assistant-avatar">{% include "logo_mark.html" %}</div>
+            <div class="message-content"><div class="message-name">Zova</div><h2>What are we working on?</h2><p>Ask about your account performance, turn an idea into native posts, or refine something we already made.</p><div class="starter-prompts"><button onclick="useStarter(this)">What is working across my accounts?</button><button onclick="useStarter(this)">Create posts from an idea</button><button onclick="useStarter(this)">Show me my recent performance</button></div></div>
+          </article>
+        </div>
+        <section class="chat-composer" aria-label="Message Zova">
+          <div id="attachmentTray" class="attachment-tray hidden"></div>
+          <textarea id="brief" rows="2" placeholder="Ask about your socials or describe what you want to post..."></textarea>
+          <div class="composer-lower">
+            <div class="composer-tools">
+              <label class="round-tool" title="Add images or video">+<input id="mediaInput" type="file" accept="image/*,video/mp4,video/quicktime,video/webm" multiple hidden></label>
+              <input id="linkUrl" class="source-input" type="url" placeholder="Add source link">
+              <select id="threadLength" class="compact-select" aria-label="X format"><option value="1">Single X post</option><option value="3">3-post X thread</option><option value="5">5-post X thread</option></select>
+            </div>
+            <div class="send-group"><div class="platform-picker compact-platforms" aria-label="Post platforms">
+              <div class="platform-check"><input id="px" type="checkbox" value="x" checked><label for="px"><svg class="social-badge x-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.67l7.74-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></label></div>
+              <div class="platform-check"><input id="pig" type="checkbox" value="instagram"><label for="pig"><b class="social-badge instagram">IG</b></label></div>
+              <div class="platform-check"><input id="pfb" type="checkbox" value="facebook"><label for="pfb"><b class="social-badge facebook">f</b></label></div>
+              <div class="platform-check"><input id="ptt" type="checkbox" value="tiktok"><label for="ptt"><b class="social-badge tiktok">T</b></label></div>
+            </div><button id="generateBtn" class="send-button" type="button" onclick="sendMessage()" aria-label="Send message">↑</button></div>
           </div>
+          <div class="composer-note"><span id="mediaStatus">Zova uses connected-account data to answer performance questions.</span><span>Enter to send · Shift+Enter for a new line</span></div>
         </section>
-        <section id="draftArea" class="panel draft-panel hidden">
-          <div class="draft-top"><h2>Drafts</h2><div id="platformTabs" class="tabs"></div></div><div id="variantEditor"></div>
-          <div class="rewrite-bar"><span>REFINE</span><div class="rewrite-shortcuts"><button onclick="rewrite('shorter')">Shorter</button><button onclick="rewrite('punchier')">Punchier</button><button onclick="rewrite('serious')">More serious</button><button onclick="rewrite('humorous')">More humorous</button><button onclick="rewrite('controversial')">Bolder</button><button onclick="rewrite('data-driven')">More data-driven</button></div><div class="custom-refine"><input id="refineInstruction" maxlength="1000" placeholder="Or tell Zova exactly how to refine it"><button type="button" onclick="refineCustom()">Apply</button></div></div>
-          <div class="preview-strip"><button class="button ghost" onclick="previewCurrent()">Preview selected</button><span id="previewResult" class="muted"></span></div>
-          <div class="publish-zone"><div class="schedule-box"><label>Schedule <span>Optional</span></label><input id="scheduleAt" type="datetime-local"><button class="mini-button" onclick="suggestSchedule()">Suggest the right time</button><div id="scheduleSuggestions" class="suggestions"></div></div><div class="publish-actions"><button class="button ghost" onclick="scheduleSelected()">Review schedule</button><button class="button primary" onclick="publishSelected()">Review and publish</button></div></div>
-        </section>
-        <details class="panel history-panel"><summary><span>Recent work</span><small>Show</small></summary><div id="draftHistory" class="history-table"><div class="muted">Loading...</div></div></details>
       </section>
-      <aside class="studio-side">
-        <section class="intelligence-card account-analytics-card"><div class="orbit-mini" aria-hidden="true"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><span class="orbit-dot d1"></span><span class="orbit-dot d2"></span><span class="orbit-dot d3"></span><span class="orbit-core">{% include "logo_mark.html" %}</span></div><div class="eyebrow">ACCOUNT ANALYTICS</div><h2>Your last 7 days</h2><p>Performance across connected accounts and content published through Zova.</p><div id="analytics"><div class="skeleton-lines"><i></i><i></i><i></i></div></div></section>
-        <section class="side-card activity-card"><div class="eyebrow">RECENT POSTS</div><h2>Across your socials</h2><div id="recentActivity"><div class="muted">Loading...</div></div></section>
+      <aside class="conversation-context">
+        <section class="context-orbit"><div class="orbit-mini" aria-hidden="true"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><span class="orbit-dot d1"></span><span class="orbit-dot d2"></span><span class="orbit-dot d3"></span><span class="orbit-core">{% include "logo_mark.html" %}</span></div><div class="eyebrow">LIVE CONTEXT</div><h2>Your social pulse</h2><div id="analytics"><div class="skeleton-lines"><i></i><i></i><i></i></div></div></section>
+        <details class="context-drawer" open><summary>Recent posts <span>Across your socials</span></summary><div id="recentActivity"><div class="muted">Loading...</div></div></details>
+        <details class="context-drawer"><summary>Recent chats <span>Your drafts</span></summary><div id="draftHistory" class="compact-history"><div class="muted">Loading...</div></div></details>
       </aside>
     </main>
   </div>
 </div>
 <dialog id="publishReview" class="publish-review"><form method="dialog" class="review-dialog"><header><div><div class="eyebrow">FINAL REVIEW</div><h2 id="reviewTitle">Ready to publish?</h2><p>Check every version and confirm exactly what Zova will send.</p></div><button class="review-close" value="cancel" aria-label="Close">&times;</button></header><div id="reviewBody" class="review-body"></div><div id="reviewError" class="alert error hidden"></div><footer><button class="button ghost" value="cancel">Back to editing</button><button id="confirmPublishBtn" class="button primary" type="button" onclick="confirmReviewedPublish()">Confirm and publish</button></footer></form></dialog>
-<script src="/static/studio.js?v=5.11"></script>
+<script src="/static/studio.js?v=6.0"></script>
 {% endblock %}
