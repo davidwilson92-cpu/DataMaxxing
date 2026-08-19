@@ -29,10 +29,10 @@
               <select id="threadLength" class="compact-select" aria-label="X format"><option value="1">Single X post</option><option value="3">3-post X thread</option><option value="5">5-post X thread</option></select>
             </div>
             <div class="send-group"><div class="platform-picker compact-platforms" aria-label="Post platforms">
-              <div class="platform-check"><input id="px" type="checkbox" value="x" checked><label for="px"><svg class="social-badge x-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.67l7.74-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg></label></div>
-              <div class="platform-check"><input id="pig" type="checkbox" value="instagram"><label for="pig"><b class="social-badge instagram">IG</b></label></div>
-              <div class="platform-check"><input id="pfb" type="checkbox" value="facebook"><label for="pfb"><b class="social-badge facebook">f</b></label></div>
-              <div class="platform-check"><input id="ptt" type="checkbox" value="tiktok"><label for="ptt"><b class="social-badge tiktok">T</b></label></div>
+              <div class="platform-check"><input id="px" type="checkbox" value="x" checked><label for="px" title="Include X"><svg class="social-badge x-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.67l7.74-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg><span>X</span></label></div>
+              <div class="platform-check"><input id="pig" type="checkbox" value="instagram" checked><label for="pig" title="Include Instagram"><b class="social-badge instagram">IG</b><span>Instagram</span></label></div>
+              <div class="platform-check"><input id="pfb" type="checkbox" value="facebook" checked><label for="pfb" title="Include Facebook"><b class="social-badge facebook">f</b><span>Facebook</span></label></div>
+              <div class="platform-check"><input id="ptt" type="checkbox" value="tiktok" checked><label for="ptt" title="Include TikTok"><b class="social-badge tiktok">T</b><span>TikTok</span></label></div>
             </div><button id="generateBtn" class="send-button" type="button" onclick="sendMessage()" aria-label="Send message">↑</button></div>
           </div>
           <div class="composer-note"><span id="mediaStatus">Zova uses connected-account data to answer performance questions.</span><span>Enter to send · Shift+Enter for a new line</span></div>
@@ -46,6 +46,5 @@
     </main>
   </div>
 </div>
-<dialog id="publishReview" class="publish-review"><form method="dialog" class="review-dialog"><header><div><div class="eyebrow">FINAL REVIEW</div><h2 id="reviewTitle">Ready to publish?</h2><p>Check every version and confirm exactly what Zova will send.</p></div><button class="review-close" value="cancel" aria-label="Close">&times;</button></header><div id="reviewBody" class="review-body"></div><div id="reviewError" class="alert error hidden"></div><footer><button class="button ghost" value="cancel">Back to editing</button><button id="confirmPublishBtn" class="button primary" type="button" onclick="confirmReviewedPublish()">Confirm and publish</button></footer></form></dialog>
-<script src="/static/studio.js?v=6.0"></script>
+<script src="/static/studio.js?v=6.1"></script>
 {% endblock %}
