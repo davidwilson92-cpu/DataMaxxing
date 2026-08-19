@@ -85,14 +85,16 @@ def test_studio_has_premium_application_shell():
     assert "Ask about your socials or describe what you want to post" in page.text
     assert "LIVE CONTEXT" in page.text
     assert "What are we working on?" in page.text
-    assert 'src="/static/studio.js?v=6.0"' in page.text
+    assert 'src="/static/studio.js?v=6.1"' in page.text
+    assert "Review and publish" not in page.text
+    assert "Include Instagram" in page.text
     assert 'href="/static/nova.css?v=5.11"' in page.text
     assert 'accept="image/*,video/mp4,video/quicktime,video/webm"' in page.text
     assert "Zova uses connected-account data to answer performance questions" in page.text
     assert 'id="chatFeed"' in page.text
     assert 'class="starter-prompts"' in page.text
-    assert 'id="publishReview"' in page.text
-    assert "Confirm and publish" in page.text
+    assert 'id="publishReview"' not in page.text
+    assert "Confirm and publish" not in page.text
     assert "Distinct by design" not in page.text
     assert "NATIVE DRAFTS" not in page.text
     assert "Recent chats" in page.text
