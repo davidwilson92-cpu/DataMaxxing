@@ -220,3 +220,39 @@ Platforms: {', '.join(platforms)}
     if not isinstance(data, dict):
         raise RuntimeError("AI returned invalid scheduling suggestions")
     return {p: data.get(p, []) for p in platforms}
+
+
+def analyse_performance(*, question: str, dashboard: dict[str, Any], preferences: Any) -> str:
+    """Answer a creator's analytics question using only verified account signals."""
+    compact = {
+        "period": dashboard.get("period"),
+        "summary": dashboard.get("summary"),
+        "platforms": dashboard.get("platforms"),
+        "top_posts": [
+            {
+                "platform": post.get("platform"),
+                "text": str(post.get("text") or "")[:500],
+                "likes": post.get("likes", 0),
+                "comments": post.get("comments", 0),
+                "shares": post.get("shares", 0),
+                "views": post.get("views", 0),
+            }
+            for post in (dashboard.get("top_posts") or [])[:6]
+        ],
+    }
+    prompt = f"""You are Zova, an AI social performance analyst for content creators.
+Answer the creator's question using ONLY the supplied account data. Be concise, candid and practical.
+Lead with the clearest finding, support it with available numbers, then recommend one or two next actions.
+Do not describe correlation as causation. Do not invent benchmarks, trends, demographics, reach or historical comparisons.
+When the data is sparse or a metric is unavailable, say so plainly. Avoid generic marketing language.
+
+Creator context:
+Audience: {getattr(preferences, 'audience', '') or 'not specified'}
+Topics: {getattr(preferences, 'topics', '') or 'not specified'}
+
+Question: {question}
+
+Verified account data:
+{json.dumps(compact, ensure_ascii=False)}
+"""
+    return _responses(prompt, max_output_tokens=700)

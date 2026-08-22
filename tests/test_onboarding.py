@@ -32,12 +32,16 @@ def test_health_and_branding():
 def test_public_legal_pages_and_footer_links():
     privacy = client.get("/privacy-policy")
     terms = client.get("/terms-of-service")
+    refunds = client.get("/refund-policy")
     assert privacy.status_code == 200 and "TikTok and other platform data" in privacy.text
     assert terms.status_code == 200 and "Connected platforms" in terms.text
+    assert refunds.status_code == 200 and "Cancelling a subscription" in refunds.text
     assert 'href="/privacy-policy"' in privacy.text
     assert 'href="/terms-of-service"' in terms.text
+    assert 'href="/refund-policy"' in terms.text
     assert client.get("/privacy").status_code == 200
     assert client.get("/terms").status_code == 200
+    assert client.get("/refunds").status_code == 200
 
 
 def test_password_confirmation_is_required_server_side():
@@ -85,7 +89,7 @@ def test_studio_has_premium_application_shell():
     assert "Ask about your socials or describe what you want to post" in page.text
     assert "LIVE CONTEXT" in page.text
     assert "What are we working on?" in page.text
-    assert 'src="/static/studio.js?v=6.1"' in page.text
+    assert 'src="/static/studio.js?v=6.2"' in page.text
     assert "Review and publish" not in page.text
     assert "Include Instagram" in page.text
     assert 'href="/static/nova.css?v=5.11"' in page.text
@@ -108,6 +112,9 @@ def test_studio_has_premium_application_shell():
     assert "zova-symbol" in page.text
     assert "Your social pulse" in page.text
     assert "ZOVA INTELLIGENCE" not in page.text
+    assert 'href="/drafts"' in page.text
+    assert 'href="/analytics"' in page.text
+    assert 'href="/refund-policy"' in page.text
 
 
 def test_studio_answers_account_questions_without_external_ai():
@@ -116,6 +123,39 @@ def test_studio_answers_account_questions_without_external_ai():
     response = client.post("/api/insights", cookies=signup.cookies, json={"question": "What is working?"})
     assert response.status_code == 200
     assert "account data" in response.json()["answer"]
+
+
+def test_drafts_are_saved_reopened_and_listed():
+    email = f"draft-{secrets.token_hex(5)}@example.com"
+    signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
+    from nova.db import Draft, SessionLocal, User
+    from sqlalchemy import select
+    import json
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == email))
+        row = Draft(user_id=user.id, brief="A saved creator idea", platforms_json='["x"]', variants_json='{"x":{"posts":["Original draft"]}}')
+        db.add(row); db.commit(); db.refresh(row); draft_id = row.id
+    updated = client.patch(f"/api/drafts/{draft_id}", cookies=signup.cookies, json={"brief":"A saved creator idea","platforms":["x","instagram"],"variants":{"x":{"posts":["Edited and saved"]},"instagram":{"posts":["Native Instagram caption"]}},"thread_length":1})
+    assert updated.status_code == 200 and updated.json()["saved"] is True
+    detail = client.get(f"/api/drafts/{draft_id}", cookies=signup.cookies)
+    assert detail.json()["variants"]["x"]["posts"] == ["Edited and saved"]
+    library = client.get("/drafts", cookies=signup.cookies)
+    assert library.status_code == 200 and "A saved creator idea" in library.text
+    assert f'/studio?draft={draft_id}' in library.text
+
+
+def test_separate_analytics_workspace_and_dashboard():
+    email = f"analytics-{secrets.token_hex(5)}@example.com"
+    signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
+    page = client.get("/analytics", cookies=signup.cookies)
+    assert page.status_code == 200
+    assert "CROSS-PLATFORM ANALYTICS" in page.text
+    assert "Analyse my accounts" in page.text
+    dashboard = client.get("/api/analytics/dashboard", cookies=signup.cookies)
+    assert dashboard.status_code == 200
+    assert dashboard.json()["period"] == "Last 7 days"
+    assert "engagement_rate" in dashboard.json()["summary"]
+    assert dashboard.json()["recommendations"][0]["title"] == "Connect your first account"
 
 
 def test_account_management_and_social_voice_waiting_state():

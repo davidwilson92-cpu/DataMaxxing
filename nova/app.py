@@ -323,27 +323,34 @@ async def billing_webhook(request:Request,db:Session=Depends(get_db)):
 def security_page(request:Request):
     try:user=current_user(request)
     except HTTPException:user=None
-    return templates.TemplateResponse("security.html",template_context(request,user,contact_email=os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@example.com")))
+    return templates.TemplateResponse("security.html",template_context(request,user,contact_email=os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@zova-social.com")))
 
 @app.get("/privacy",response_class=HTMLResponse)
 @app.get("/privacy-policy",response_class=HTMLResponse)
 def privacy_policy(request:Request):
     try:user=current_user(request)
     except HTTPException:user=None
-    return templates.TemplateResponse("privacy.html",template_context(request,user,contact_email=os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@example.com"),legal_name=os.environ.get("LEGAL_ENTITY_NAME","Zova")))
+    return templates.TemplateResponse("privacy.html",template_context(request,user,contact_email=os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@zova-social.com"),legal_name=os.environ.get("LEGAL_ENTITY_NAME","Zova Social Limited")))
 
 @app.get("/terms",response_class=HTMLResponse)
 @app.get("/terms-of-service",response_class=HTMLResponse)
 def terms_of_service(request:Request):
     try:user=current_user(request)
     except HTTPException:user=None
-    return templates.TemplateResponse("terms.html",template_context(request,user,contact_email=os.environ.get("LEGAL_CONTACT_EMAIL") or os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@example.com"),legal_name=os.environ.get("LEGAL_ENTITY_NAME","Zova")))
+    return templates.TemplateResponse("terms.html",template_context(request,user,contact_email=os.environ.get("LEGAL_CONTACT_EMAIL") or os.environ.get("PRIVACY_CONTACT_EMAIL","legal@zova-social.com"),legal_name=os.environ.get("LEGAL_ENTITY_NAME","Zova Social Limited")))
+
+@app.get("/refunds",response_class=HTMLResponse)
+@app.get("/refund-policy",response_class=HTMLResponse)
+def refund_policy(request:Request):
+    try:user=current_user(request)
+    except HTTPException:user=None
+    return templates.TemplateResponse("refunds.html",template_context(request,user,contact_email=os.environ.get("REFUND_CONTACT_EMAIL") or os.environ.get("BILLING_CONTACT_EMAIL","billing@zova-social.com"),legal_name=os.environ.get("LEGAL_ENTITY_NAME","Zova Social Limited")))
 
 @app.get("/data-deletion",response_class=HTMLResponse)
 def data_deletion_instructions(request:Request):
     try:user=current_user(request)
     except HTTPException:user=None
-    return templates.TemplateResponse("data_deletion.html",template_context(request,user,contact_email=os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@example.com")))
+    return templates.TemplateResponse("data_deletion.html",template_context(request,user,contact_email=os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@zova-social.com")))
 
 @app.post("/data-deletion/callback")
 async def meta_data_deletion_callback(request:Request,db:Session=Depends(get_db)):
@@ -372,6 +379,22 @@ def data_deletion_status(request:Request,confirmation_code:str):
 def studio(request:Request):
     user=current_user(request)
     return templates.TemplateResponse("studio.html",template_context(request,user,subscription_blocked=not billing.has_access(user)))
+
+@app.get("/drafts",response_class=HTMLResponse)
+def drafts_page(request:Request,db:Session=Depends(get_db)):
+    user=current_user(request)
+    rows=db.scalars(select(Draft).where(Draft.user_id==user.id).order_by(Draft.updated_at.desc(),Draft.id.desc()).limit(100)).all()
+    drafts=[]
+    for row in rows:
+        try:platforms=json.loads(row.platforms_json or "[]")
+        except (TypeError,json.JSONDecodeError):platforms=[]
+        drafts.append({"id":row.id,"brief":row.brief,"platforms":platforms,"status":row.status,"created_at":row.created_at,"updated_at":row.updated_at})
+    return templates.TemplateResponse("drafts.html",template_context(request,user,drafts=drafts))
+
+@app.get("/analytics",response_class=HTMLResponse)
+def analytics_page(request:Request):
+    user=current_user(request)
+    return templates.TemplateResponse("analytics.html",template_context(request,user))
 
 @app.get("/onboarding/socials", response_class=HTMLResponse)
 def onboarding_socials(request: Request, db: Session = Depends(get_db)):
@@ -561,7 +584,7 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
 
 # ---------- API models ----------
 class GenerateRequest(BaseModel):
-    brief:str=Field(min_length=1,max_length=12000); instruction:str=Field(default="",max_length=5000); platforms:list[str]; thread_length:int=1; link_url:str=""
+    brief:str=Field(min_length=1,max_length=12000); instruction:str=Field(default="",max_length=5000); platforms:list[str]; thread_length:int=1; link_url:str=""; draft_id:int|None=None
     @field_validator("thread_length")
     @classmethod
     def valid_thread(cls,v:int): return v if v in {1,3,5} else 1
@@ -572,6 +595,12 @@ class VoiceLearnRequest(BaseModel): content:str=Field(min_length=80,max_length=3
 class PreviewRequest(BaseModel): platforms:list[str]; variants:dict[str,Any]
 class PublishRequest(BaseModel): draft_id:int|None=None; platforms:list[str]; variants:dict[str,Any]; media_asset_ids:list[int]=[]; link_url:str=""; publish_options:dict[str,Any]={}
 class ScheduleRequest(PublishRequest): scheduled_local:str
+class DraftSaveRequest(BaseModel):
+    brief:str=Field(default="",max_length=12000)
+    instruction:str=Field(default="",max_length=5000)
+    platforms:list[str]=[]
+    variants:dict[str,Any]={}
+    thread_length:int=1
 class LegacyPostRequest(BaseModel):
     text:str=Field(min_length=1,max_length=280); approved:bool=False
 
@@ -646,8 +675,17 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
     user=current_user(request); subscription_guard(user); platforms=_validate_platforms(body.platforms); prefs=get_preferences(db,user.id)
     try:variants=ai.generate_variants(brief=body.brief,instruction=body.instruction,platforms=platforms,thread_length=body.thread_length,preferences=prefs,link_url=body.link_url)
     except RuntimeError as exc:raise HTTPException(502,str(exc))
-    row=Draft(user_id=user.id,brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(platforms),variants_json=json.dumps(variants,ensure_ascii=False),thread_length=body.thread_length,status="draft");db.add(row);db.commit();db.refresh(row)
-    return {"draft_id":row.id,"variants":variants}
+    row=db.get(Draft,body.draft_id) if body.draft_id else None
+    if row and row.user_id!=user.id:raise HTTPException(404,"Draft not found")
+    if row and row.status not in {"draft","failed","partial"}:raise HTTPException(409,"Published or scheduled drafts cannot be changed")
+    if row:
+        try:existing=json.loads(row.variants_json or "{}")
+        except (TypeError,json.JSONDecodeError):existing={}
+        existing.update(variants);variants=existing;all_platforms=list(dict.fromkeys(json.loads(row.platforms_json or "[]")+platforms));row.brief=body.brief or row.brief;row.instruction=body.instruction;row.platforms_json=json.dumps(all_platforms);row.variants_json=json.dumps(variants,ensure_ascii=False);row.thread_length=body.thread_length;row.status="draft";row.updated_at=utcnow()
+    else:
+        row=Draft(user_id=user.id,brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(platforms),variants_json=json.dumps(variants,ensure_ascii=False),thread_length=body.thread_length,status="draft");db.add(row)
+    db.commit();db.refresh(row)
+    return {"draft_id":row.id,"variants":variants,"saved":True}
 
 @app.post("/api/ai/rewrite")
 def api_rewrite(body:RewriteRequest,request:Request,db:Session=Depends(get_db)):
@@ -683,7 +721,7 @@ def api_publish_context(body:PreviewRequest,request:Request,db:Session=Depends(g
 
 @app.post("/api/publish")
 def api_publish(body:PublishRequest,request:Request,db:Session=Depends(get_db)):
-    user=current_user(request);subscription_guard(user);platforms=_validate_platforms(body.platforms);assets=_user_assets(db,user.id,body.media_asset_ids);_validate_media_targets(platforms,assets);results={};successes=0
+    user=current_user(request);subscription_guard(user);platforms=_validate_platforms(body.platforms);assets=_user_assets(db,user.id,body.media_asset_ids);_validate_media_targets(platforms,assets);results={};successes=0;draft_status=None
     for p in platforms:
         posts=((body.variants.get(p) or {}).get("posts") or [])
         if not posts:results[p]={"status":"failed","error":"No draft supplied"};continue
@@ -694,9 +732,9 @@ def api_publish(body:PublishRequest,request:Request,db:Session=Depends(get_db)):
         db.commit()
     if body.draft_id:
         d=db.get(Draft,body.draft_id)
-        if d and d.user_id==user.id:d.variants_json=json.dumps(body.variants,ensure_ascii=False);d.status="published" if successes==len(platforms) else ("partial" if successes else "failed");db.commit()
+        if d and d.user_id==user.id:d.variants_json=json.dumps(body.variants,ensure_ascii=False);d.status="published" if successes==len(platforms) else ("partial" if successes else "failed");draft_status=d.status;db.commit()
     failed=len(platforms)-successes;summary=f"Published to {successes} platform{'s' if successes!=1 else ''}."+(f" {failed} failed. Check the details below." if failed else "")
-    return {"summary":summary,"results":results}
+    return {"summary":summary,"results":results,"draft_status":draft_status}
 
 @app.post("/api/schedule")
 def api_schedule(body:ScheduleRequest,request:Request,db:Session=Depends(get_db)):
@@ -714,17 +752,51 @@ def api_schedule(body:ScheduleRequest,request:Request,db:Session=Depends(get_db)
     if body.draft_id:
         d=db.get(Draft,body.draft_id)
         if d and d.user_id==user.id:d.status="scheduled"
-    db.commit();return {"summary":f"Scheduled {len(rows)} platform post{'s' if len(rows)!=1 else ''} for {local.strftime('%d %b %Y %H:%M')} {prefs.timezone}."}
+    db.commit();return {"summary":f"Scheduled {len(rows)} platform post{'s' if len(rows)!=1 else ''} for {local.strftime('%d %b %Y %H:%M')} {prefs.timezone}.","draft_status":"scheduled" if body.draft_id else None}
 
 @app.get("/api/drafts")
 def api_drafts(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
-    rows=db.scalars(select(Draft).where(Draft.user_id==user.id).order_by(Draft.id.desc()).limit(30)).all()
+    rows=db.scalars(select(Draft).where(Draft.user_id==user.id).order_by(Draft.updated_at.desc(),Draft.id.desc()).limit(100)).all()
     output=[]
     for r in rows:
         acts=db.scalars(select(Activity).where(Activity.user_id==user.id,Activity.draft_id==r.id,Activity.url.is_not(None)).order_by(Activity.id.desc())).all()
-        output.append({"id":r.id,"brief":r.brief,"platforms":json.loads(r.platforms_json or "[]"),"status":r.status,"created_at":r.created_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
+        output.append({"id":r.id,"brief":r.brief,"platforms":json.loads(r.platforms_json or "[]"),"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
     return output
+
+@app.get("/api/drafts/{draft_id}")
+def api_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
+    user=current_user(request); row=db.get(Draft,draft_id)
+    if not row or row.user_id!=user.id:raise HTTPException(404,"Draft not found")
+    return {"id":row.id,"brief":row.brief,"instruction":row.instruction,"platforms":json.loads(row.platforms_json or "[]"),"variants":json.loads(row.variants_json or "{}"),"thread_length":row.thread_length,"status":row.status,"created_at":row.created_at.isoformat(),"updated_at":row.updated_at.isoformat()}
+
+@app.patch("/api/drafts/{draft_id}")
+def api_save_draft(draft_id:int,body:DraftSaveRequest,request:Request,db:Session=Depends(get_db)):
+    user=current_user(request); row=db.get(Draft,draft_id)
+    if not row or row.user_id!=user.id:raise HTTPException(404,"Draft not found")
+    if row.status not in {"draft","failed","partial"}:raise HTTPException(409,"Published or scheduled drafts cannot be changed")
+    platforms=_validate_platforms(body.platforms) if body.platforms else []
+    clean_variants={platform:body.variants.get(platform) for platform in platforms if isinstance(body.variants.get(platform),dict)}
+    for platform,value in clean_variants.items():
+        posts=value.get("posts") if isinstance(value,dict) else None
+        if not isinstance(posts,list):raise HTTPException(400,f"{platform}: invalid draft content")
+        value["posts"]=[str(post)[:5000] for post in posts[:5]]
+    row.brief=body.brief;row.instruction=body.instruction;row.platforms_json=json.dumps(platforms);row.variants_json=json.dumps(clean_variants,ensure_ascii=False);row.thread_length=body.thread_length if body.thread_length in {1,3,5} else 1;row.status="draft";row.updated_at=utcnow();db.commit()
+    return {"id":row.id,"saved":True,"updated_at":row.updated_at.isoformat()}
+
+@app.delete("/api/drafts/{draft_id}",status_code=204)
+def api_delete_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
+    user=current_user(request);row=db.get(Draft,draft_id)
+    if not row or row.user_id!=user.id:raise HTTPException(404,"Draft not found")
+    if row.status in {"published","scheduled"}:raise HTTPException(409,"Published or scheduled drafts are retained in your history")
+    db.delete(row);db.commit();return JSONResponse(status_code=204,content=None)
+
+@app.post("/drafts/{draft_id}/delete")
+def delete_draft_page(draft_id:int,request:Request,db:Session=Depends(get_db)):
+    user=current_user(request);row=db.get(Draft,draft_id)
+    if not row or row.user_id!=user.id:raise HTTPException(404,"Draft not found")
+    if row.status in {"published","scheduled"}:return RedirectResponse("/drafts?error=Published+and+scheduled+items+remain+in+your+history",303)
+    db.delete(row);db.commit();return RedirectResponse("/drafts?deleted=1",303)
 
 @app.get("/api/activity")
 def api_activity(request:Request,db:Session=Depends(get_db)):
@@ -746,9 +818,43 @@ def api_activity(request:Request,db:Session=Depends(get_db)):
 def api_analytics(request:Request,db:Session=Depends(get_db)):
     user=current_user(request);return analytics_for_user(db,user.id)
 
+def _analytics_dashboard(data:dict[str,Any],feed:dict[str,Any])->dict[str,Any]:
+    posts=list(feed.get("posts") or [])
+    by_platform:dict[str,dict[str,Any]]={}
+    for platform in ("x","instagram","facebook","tiktok"):
+        account=dict(data.get(platform) or {})
+        platform_posts=[post for post in posts if post.get("platform")==platform]
+        likes=sum(int(post.get("likes") or 0) for post in platform_posts)
+        comments=sum(int(post.get("comments") or 0) for post in platform_posts)
+        shares=sum(int(post.get("shares") or 0) for post in platform_posts)
+        impressions=sum(int(post.get("views") or 0) for post in platform_posts)
+        engagements=likes+comments+shares
+        by_platform[platform]={**account,"posts":max(int(account.get("posts") or 0),len(platform_posts)),"impressions":max(int(account.get("impressions",account.get("views",0)) or 0),impressions),"likes":max(int(account.get("likes",account.get("reactions",0)) or 0),likes),"comments":max(int(account.get("comments",account.get("replies",0)) or 0),comments),"shares":max(int(account.get("shares",account.get("reposts",0)) or 0),shares)}
+        by_platform[platform]["engagements"]=by_platform[platform]["likes"]+by_platform[platform]["comments"]+by_platform[platform]["shares"]
+        denominator=by_platform[platform]["impressions"]
+        by_platform[platform]["engagement_rate"]=round((by_platform[platform]["likes"]+by_platform[platform]["comments"]+by_platform[platform]["shares"])*100/denominator,2) if denominator else None
+    summary={key:sum(int(value.get(key) or 0) for value in by_platform.values() if value.get("connected")) for key in ("impressions","likes","comments","shares","followers","posts")}
+    summary["engagements"]=summary["likes"]+summary["comments"]+summary["shares"]
+    summary["engagement_rate"]=round(summary["engagements"]*100/summary["impressions"],2) if summary["impressions"] else None
+    scored=sorted(posts,key=lambda post:int(post.get("likes") or 0)+int(post.get("comments") or 0)*2+int(post.get("shares") or 0)*3,reverse=True)
+    connected=[(name,value) for name,value in by_platform.items() if value.get("connected")]
+    leader=max(connected,key=lambda item:int(item[1].get("engagements") or 0),default=None)
+    recommendations=[]
+    if not connected:recommendations.append({"title":"Connect your first account","detail":"Connect a social account so Zova can establish a performance baseline and learn what resonates."})
+    else:
+        if leader:recommendations.append({"title":f"Build on {leader[0].title()}","detail":f"It currently has the strongest engagement signal. Reuse the winning topic or format without copying the post word for word."})
+        if scored:recommendations.append({"title":"Extend your strongest idea","detail":f"Your leading recent post is on {str(scored[0].get('platform') or '').title()}. Turn its core idea into a distinct follow-up for each connected platform."})
+        if summary["posts"]<4:recommendations.append({"title":"Create a steadier baseline","detail":"Publish consistently enough to compare topics and formats. Four to eight posts per week is a useful testing range, not a guarantee."})
+        if summary["comments"]<summary["likes"]*.03 and summary["likes"]:recommendations.append({"title":"Invite more conversation","detail":"Comments are low relative to likes. Test one clear opinion or direct question in the next post."})
+    return {"period":"Last 7 days","summary":summary,"platforms":by_platform,"top_posts":scored[:6],"recommendations":recommendations[:4],"unavailable":feed.get("unavailable") or []}
+
+@app.get("/api/analytics/dashboard")
+def api_analytics_dashboard(request:Request,db:Session=Depends(get_db)):
+    user=current_user(request);return _analytics_dashboard(analytics_for_user(db,user.id),recent_posts_for_user(db,user.id,limit=30))
+
 @app.post("/api/insights")
 def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db)):
-    user=current_user(request); data=analytics_for_user(db,user.id); feed=recent_posts_for_user(db,user.id); summary=data.get("_summary") or {}; question=body.question.lower()
+    user=current_user(request); data=analytics_for_user(db,user.id); feed=recent_posts_for_user(db,user.id); dashboard=_analytics_dashboard(data,feed); summary=dashboard.get("summary") or {}; question=body.question.lower()
     connected=[(name,value) for name,value in data.items() if name!="_summary" and isinstance(value,dict) and value.get("connected")]
     score=lambda value:int(value.get("likes") or value.get("reactions") or 0)+int(value.get("comments") or value.get("replies") or 0)+int(value.get("shares") or value.get("reposts") or 0)
     leader=max(connected,key=lambda item:score(item[1]),default=None)
@@ -776,7 +882,10 @@ def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db))
     else:
         lead=f" {leader[0].title()} currently has the strongest engagement signal." if leader else ""
         answer=f"In the latest available seven-day view: {number('impressions')} impressions, {number('likes')} likes, {number('comments')} comments and {number('shares')} shares or reposts.{lead}"
-    return {"answer":answer,"summary":summary,"has_signal":bool(connected)}
+    if connected and os.environ.get("OPENAI_API_KEY"):
+        try:answer=ai.analyse_performance(question=body.question,dashboard=dashboard,preferences=get_preferences(db,user.id))
+        except Exception as exc:log.warning("AI performance analysis failed; using account-data fallback: %s",exc)
+    return {"answer":answer,"summary":summary,"has_signal":bool(connected),"recommendations":dashboard.get("recommendations") or []}
 
 @app.get("/api/recent-posts")
 def api_recent_posts(request:Request,db:Session=Depends(get_db)):

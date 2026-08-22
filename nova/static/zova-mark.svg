@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Zova">
+  <defs>
+    <linearGradient id="zova-gradient" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9B6BFF"/>
+      <stop offset="1" stop-color="#5B21B6"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#zova-gradient)" d="M16 8h33c5 0 8 6 5 10L38 39H10c-5 0-8-6-5-10L16 8Z"/>
+  <path fill="url(#zova-gradient)" d="M26 25h28c5 0 8 6 5 10L48 56H15c-5 0-8-6-5-10l16-21Z"/>
+  <circle cx="32" cy="32" r="7" fill="#fff"/>
+</svg>
