@@ -6,6 +6,21 @@
 <div class="app-shell conversation-app">
   {% set active_page = 'studio' %}{% include "app_nav.html" %}
   <div class="app-workspace conversation-workspace">
+    <div class="studio-ambient-orbit" aria-hidden="true">
+      <div class="ambient-glow ambient-glow-one"></div>
+      <div class="ambient-glow ambient-glow-two"></div>
+      <div class="ambient-orbit ambient-orbit-outer">
+        <span class="ambient-node node-one"></span>
+        <span class="ambient-node node-two"></span>
+      </div>
+      <div class="ambient-orbit ambient-orbit-middle">
+        <span class="ambient-node node-three"></span>
+        <span class="ambient-node node-four"></span>
+      </div>
+      <div class="ambient-orbit ambient-orbit-inner">
+        <span class="ambient-node node-five"></span>
+      </div>
+    </div>
     <header class="conversation-topbar">
       <div><div class="eyebrow">ZOVA STUDIO</div><h1>Your social manager</h1></div>
       <div class="topbar-actions"><span id="connectionPulse" class="connection-pulse"><i></i>Reading your socials</span><a class="icon-button account-button" href="/account">Account</a><button class="button primary" type="button" onclick="newConversation()">New chat</button></div>

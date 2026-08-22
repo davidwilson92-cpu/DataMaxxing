@@ -92,7 +92,8 @@ def test_studio_has_premium_application_shell():
     assert 'src="/static/studio.js?v=6.2"' in page.text
     assert "Review and publish" not in page.text
     assert "Include Instagram" in page.text
-    assert 'href="/static/nova.css?v=5.11"' in page.text
+    assert 'href="/static/nova.css?v=6.3"' in page.text
+    assert 'class="studio-ambient-orbit"' in page.text
     assert 'accept="image/*,video/mp4,video/quicktime,video/webm"' in page.text
     assert "Zova uses connected-account data to answer performance questions" in page.text
     assert 'id="chatFeed"' in page.text
