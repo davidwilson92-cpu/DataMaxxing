@@ -19,6 +19,12 @@ MIGRATIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "marketing_consent_at TIMESTAMP NULL",
         ),
     ),
+    (
+        "20260829_reviewer_access",
+        (
+            "review_access BOOLEAN NOT NULL DEFAULT FALSE",
+        ),
+    ),
 )
 
 

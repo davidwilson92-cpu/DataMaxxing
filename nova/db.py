@@ -6,6 +6,8 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, cre
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///./nova.db')
+if os.environ.get('APP_ENV', '').lower() == 'production' and DATABASE_URL.startswith('sqlite'):
+    raise RuntimeError('Production requires a persistent PostgreSQL DATABASE_URL; SQLite is not allowed')
 if DATABASE_URL.startswith('postgres://'):
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql+psycopg://', 1)
 elif DATABASE_URL.startswith('postgresql://'):
@@ -75,6 +77,7 @@ class User(Base):
     stripe_customer_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     subscription_status: Mapped[str] = mapped_column(String(40), default='none')
+    review_access: Mapped[bool] = mapped_column(Boolean, default=False)
     terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     marketing_consent: Mapped[bool] = mapped_column(Boolean, default=False)
     marketing_consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

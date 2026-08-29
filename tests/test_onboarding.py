@@ -159,6 +159,30 @@ def test_separate_analytics_workspace_and_dashboard():
     assert dashboard.json()["recommendations"][0]["title"] == "Connect your first account"
 
 
+def test_reviewer_seed_is_isolated_and_has_sample_content(monkeypatch):
+    from nova.app import bootstrap_reviewer_account
+    from nova.db import Activity, Draft, SessionLocal, SocialConnection, User
+    from sqlalchemy import select
+
+    email = f"review-{secrets.token_hex(5)}@example.com"
+    monkeypatch.setenv("REVIEWER_SEED_ENABLED", "true")
+    monkeypatch.setenv("REVIEWER_EMAIL", email)
+    monkeypatch.setenv("REVIEWER_PASSWORD", "temporary-review-password")
+    bootstrap_reviewer_account()
+
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == email))
+        assert user and user.review_access and user.subscription_status == "review"
+        assert db.scalar(select(Draft).where(Draft.user_id == user.id))
+        assert db.scalar(select(Activity).where(Activity.user_id == user.id))
+        assert db.scalars(select(SocialConnection).where(SocialConnection.user_id == user.id)).all() == []
+
+    login = client.post("/login", data={"email": email, "password": "temporary-review-password"}, follow_redirects=False)
+    assert login.status_code == 303
+    dashboard = client.get("/api/analytics/dashboard", cookies=login.cookies).json()
+    assert dashboard["summary"]["impressions"] > 0
+
+
 def test_account_management_and_social_voice_waiting_state():
     email = f"account-{secrets.token_hex(5)}@example.com"
     signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)

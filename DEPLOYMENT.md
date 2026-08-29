@@ -30,6 +30,22 @@ If the host stores multiline secrets on one line, replace private-key line break
 
 Apple may provide a relay address when a user hides their email. Configure Apple's private email relay for any future transactional sender addresses before emailing those users.
 
+## TikTok reviewer workspace
+
+The production service can seed an isolated, repeatable reviewer workspace. It never creates a social connection or copies an existing user's OAuth credentials.
+
+Set these only in Render:
+
+```text
+REVIEWER_SEED_ENABLED=true
+REVIEWER_EMAIL=tiktok-review@zova-social.com
+REVIEWER_PASSWORD=<unique temporary password of at least 14 characters>
+```
+
+On the next deployment, Zova creates or refreshes the reviewer login, grants account-specific review access, and adds representative drafts and sample analytics. The reviewer must still use the real **Connect TikTok** action to exercise sandbox OAuth. After approval, set `REVIEWER_SEED_ENABLED=false`, remove `REVIEWER_PASSWORD`, and deactivate or delete the reviewer account through the normal administration process.
+
+Never add personal X, Meta or TikTok credentials to this account. Do not put the temporary password in source control, logs, screenshots or the TikTok Apply Reason until final submission has been explicitly approved.
+
 ## Compatibility and defaults
 
 Keep the existing V5 variables in `.env.example`. Pricing display variables are now `ZOVA_PRICE_LABEL` and `ZOVA_PRICE_NOTE`; the application still reads old `NOVA_*` names as a fallback. Existing database table names, Python package imports and storage prefixes intentionally remain unchanged for an in-place upgrade.

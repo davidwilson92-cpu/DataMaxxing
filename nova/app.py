@@ -160,6 +160,7 @@ def publish_legacy_creator(text: str, creator: Creator, db: Session) -> dict[str
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     bootstrap_legacy_account()
+    bootstrap_reviewer_account()
     task = asyncio.create_task(scheduler_loop())
     try:
         yield
@@ -181,6 +182,65 @@ def bootstrap_legacy_account() -> None:
         if db.scalar(select(Creator).where(Creator.x_username == username)): return
         db.add(Creator(name=os.environ.get("BOOTSTRAP_CREATOR_NAME") or username, x_username=username, api_key_hash=hash_api_key(os.environ["BOOTSTRAP_CREATOR_API_KEY"]), encrypted_x_api_key=encrypt(os.environ["X_API_KEY"]), encrypted_x_api_secret=encrypt(os.environ["X_API_SECRET"]), encrypted_x_access_token=encrypt(os.environ["X_ACCESS_TOKEN"]), encrypted_x_access_token_secret=encrypt(os.environ["X_ACCESS_TOKEN_SECRET"])))
         db.commit(); log.info("Bootstrapped legacy X creator @%s", username)
+
+
+def bootstrap_reviewer_account() -> None:
+    """Create or refresh the isolated review workspace without attaching social tokens."""
+    if os.environ.get("REVIEWER_SEED_ENABLED", "false").lower() not in {"1", "true", "yes"}:
+        return
+    password = os.environ.get("REVIEWER_PASSWORD", "")
+    try:
+        email = normalize_email(os.environ.get("REVIEWER_EMAIL", ""))
+    except ValueError:
+        email = ""
+    if not email or len(password) < 14:
+        log.warning("Reviewer seed skipped: REVIEWER_EMAIL and a 14+ character REVIEWER_PASSWORD are required")
+        return
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == email))
+        if user is None:
+            now = utcnow()
+            user = User(
+                email=email, display_name="TikTok Reviewer", country_code="GB",
+                password_hash=hash_password(password), active=True, review_access=True,
+                email_verified_at=now, terms_accepted_at=now, subscription_status="review",
+            )
+            db.add(user); db.commit(); db.refresh(user)
+        else:
+            user.active = True; user.review_access = True; user.subscription_status = "review"
+            user.password_hash = hash_password(password)
+            db.commit()
+        prefs = get_preferences(db, user.id)
+        if not prefs.writing_tone:
+            prefs.writing_tone = "Clear, warm and useful. Open with the practical value."
+            prefs.audience = "Independent creators building a consistent multi-platform presence."
+            prefs.topics = "Creator workflow, content strategy and sustainable publishing."
+            prefs.things_to_avoid = "Hype, invented claims and copying the same caption across platforms."
+        if not db.scalar(select(Draft).where(Draft.user_id == user.id)):
+            db.add(Draft(
+                user_id=user.id,
+                brief="Share three practical ways creators can turn one idea into native social content.",
+                instruction="Keep each platform version distinct and useful.",
+                platforms_json=json.dumps(["x", "instagram", "facebook", "tiktok"]),
+                variants_json=json.dumps({
+                    "x": {"posts": ["One strong idea should travel without becoming a copy-and-paste tour. Start with the point, then rebuild it for how each platform is actually used."]},
+                    "instagram": {"posts": ["One idea, four native stories. Start with the insight, choose the visual, then write for the way people pause, save and share on Instagram."]},
+                    "facebook": {"posts": ["Creators do not need four separate ideas for four platforms. They need one clear point, enough context for the audience, and a version shaped for each community."]},
+                    "tiktok": {"posts": ["Stop reposting the same caption everywhere. Here are three ways to turn one idea into a TikTok people will actually want to watch. #CreatorTips"]},
+                }, ensure_ascii=False),
+                thread_length=1, status="draft",
+            ))
+        if not db.scalar(select(Activity).where(Activity.user_id == user.id, Activity.platform_post_id.like("review-sample-%"))):
+            samples = [
+                ("tiktok", "review-sample-tiktok", "Three ways to make one idea feel native on every platform.", 18420, 1260, 74, 188),
+                ("instagram", "review-sample-instagram", "A practical carousel for adapting one idea without losing your voice.", 11240, 930, 48, 121),
+                ("x", "review-sample-x", "The best cross-platform strategy is translation, not duplication.", 7900, 540, 39, 86),
+            ]
+            for platform, post_id, text_value, views, likes, comments, shares in samples:
+                db.add(Activity(user_id=user.id, platform=platform, action="sample", status="published", text=text_value,
+                                platform_post_id=post_id, metrics_json=json.dumps({"views": views, "likes": likes, "comments": comments, "shares": shares})))
+        db.commit()
+        log.info("Reviewer workspace is ready for %s (no social connections were added)", email)
 
 
 # ---------- Pages + auth ----------
@@ -833,7 +893,7 @@ def _analytics_dashboard(data:dict[str,Any],feed:dict[str,Any])->dict[str,Any]:
         by_platform[platform]["engagements"]=by_platform[platform]["likes"]+by_platform[platform]["comments"]+by_platform[platform]["shares"]
         denominator=by_platform[platform]["impressions"]
         by_platform[platform]["engagement_rate"]=round((by_platform[platform]["likes"]+by_platform[platform]["comments"]+by_platform[platform]["shares"])*100/denominator,2) if denominator else None
-    summary={key:sum(int(value.get(key) or 0) for value in by_platform.values() if value.get("connected")) for key in ("impressions","likes","comments","shares","followers","posts")}
+    summary={key:sum(int(value.get(key) or 0) for value in by_platform.values()) for key in ("impressions","likes","comments","shares","followers","posts")}
     summary["engagements"]=summary["likes"]+summary["comments"]+summary["shares"]
     summary["engagement_rate"]=round(summary["engagements"]*100/summary["impressions"],2) if summary["impressions"] else None
     scored=sorted(posts,key=lambda post:int(post.get("likes") or 0)+int(post.get("comments") or 0)*2+int(post.get("shares") or 0)*3,reverse=True)

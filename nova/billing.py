@@ -24,7 +24,7 @@ def require_subscription() -> bool:
 
 
 def has_access(user: User) -> bool:
-    if not require_subscription():
+    if not require_subscription() or user.review_access:
         return True
     return user.subscription_status in {"active", "trialing"}
 

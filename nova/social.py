@@ -705,6 +705,17 @@ def recent_posts_for_user(db: Session, user_id: int, limit: int = 12) -> dict[st
         except Exception as exc:
             log.warning("%s recent posts error: %s", platform, exc); unavailable.append(platform)
     posts.sort(key=lambda item: item.get("created_at") or "", reverse=True)
+    sample_rows = db.scalars(select(Activity).where(
+        Activity.user_id == user_id,
+        Activity.platform_post_id.like("review-sample-%"),
+    ).order_by(Activity.id.desc())).all()
+    for row in sample_rows:
+        metrics = json.loads(row.metrics_json or "{}")
+        posts.append({"platform": row.platform, "id": row.platform_post_id, "text": row.text,
+                      "created_at": row.created_at.isoformat(), "url": "", "image_url": "",
+                      "likes": metrics.get("likes", 0), "comments": metrics.get("comments", 0),
+                      "shares": metrics.get("shares", 0), "views": metrics.get("views", 0), "sample": True})
+    posts.sort(key=lambda item: item.get("created_at") or "", reverse=True)
     return {"posts":posts[:max(1,min(limit,30))],"unavailable":unavailable}
 
 
