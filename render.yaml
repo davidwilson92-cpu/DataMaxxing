@@ -2,7 +2,7 @@ services:
   - type: web
     name: x-chatgpt-poster
     runtime: docker
-    plan: free
+    plan: 0.5c-512mb
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
@@ -18,7 +18,9 @@ services:
       - key: CREDENTIAL_ENCRYPTION_KEY
         sync: false
       - key: PUBLIC_BASE_URL
-        value: https://x-chatgpt-poster.onrender.com
+        value: https://zova-social.com
+      - key: LEGAL_ENTITY_NAME
+        value: ZOVA SOCIAL LIMITED
       - key: PRIVACY_CONTACT_EMAIL
         sync: false
       - key: APPLE_CLIENT_ID
@@ -30,7 +32,7 @@ services:
       - key: APPLE_PRIVATE_KEY
         sync: false
       - key: APPLE_REDIRECT_URI
-        value: https://x-chatgpt-poster.onrender.com/auth/apple/callback
+        value: https://zova-social.com/auth/apple/callback
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL
@@ -40,7 +42,7 @@ services:
       - key: X_OAUTH2_CLIENT_SECRET
         sync: false
       - key: X_OAUTH2_REDIRECT_URI
-        value: https://x-chatgpt-poster.onrender.com/callback/x
+        value: https://zova-social.com/callback/x
       - key: META_APP_ID
         sync: false
       - key: META_APP_SECRET
@@ -48,13 +50,13 @@ services:
       - key: META_GRAPH_VERSION
         value: v23.0
       - key: META_REDIRECT_URI
-        value: https://x-chatgpt-poster.onrender.com/oauth/meta/callback
+        value: https://zova-social.com/oauth/meta/callback
       - key: TIKTOK_CLIENT_KEY
         sync: false
       - key: TIKTOK_CLIENT_SECRET
         sync: false
       - key: TIKTOK_REDIRECT_URI
-        value: https://x-chatgpt-poster.onrender.com/oauth/tiktok/callback
+        value: https://zova-social.com/oauth/tiktok/callback
       - key: TIKTOK_DEFAULT_PRIVACY
         value: PUBLIC_TO_EVERYONE
       - key: STRIPE_SECRET_KEY
@@ -103,5 +105,5 @@ services:
 
 databases:
   - name: x-chatgpt-poster-db
-    plan: free
+    plan: 0.1c-256mb
     databaseName: x_poster
