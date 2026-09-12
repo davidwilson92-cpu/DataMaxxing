@@ -1,0 +1,8 @@
+<div class="connection-list seamless social-connect-list">
+{% for p in ['instagram','facebook','tiktok','x'] %}{% set option=connections[p] %}{% set rows=by_platform.get(p,[]) %}
+<div class="connection-row"><div>{% with platform=p %}{% include "social_icon.html" %}{% endwith %}<b>{{ option.name }}</b>
+<small>{{ option.detail }}</small>
+{% for row in rows %}<small><strong>{{ row.username or row.display_name or 'Connected account' }}</strong> · Connected{% if p == 'instagram' and 'instagram_business_basic' not in (row.scope or '') %} via Facebook (existing connection){% endif %}</small>{% if manage_connections %}<form method="post" action="/account/connections/{{ row.id }}/unlink"><button class="link-danger" type="submit" aria-label="Unlink {{ option.name }} {{ row.username or row.display_name }}">Unlink</button></form>{% endif %}{% endfor %}
+{% if not rows %}<small>{% if option.ready %}Not connected{% else %}Connection setup in progress. You can use Studio meanwhile.{% endif %}</small>{% endif %}</div>
+{% if rows %}<span class="connected-label">Connected</span>{% else %}<a class="mini-button" href="/connect/{{ p }}">{% if option.ready %}Connect {{ option.name }}{% else %}View setup status{% endif %}</a>{% endif %}</div>
+{% endfor %}</div>

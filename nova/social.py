@@ -23,9 +23,9 @@ from .storage import get_bytes, get_public_url
 log = logging.getLogger("nova.social")
 
 X_SCOPES = "tweet.read tweet.write users.read offline.access"
-META_SCOPES = "pages_show_list,pages_read_engagement,business_management,instagram_basic,instagram_content_publish"
+META_SCOPES = "pages_show_list,pages_read_engagement,business_management"
 INSTAGRAM_SCOPES = "instagram_business_basic,instagram_business_content_publish"
-TIKTOK_SCOPES = "user.info.basic,user.info.stats,video.list,video.publish,video.upload"
+TIKTOK_SCOPES = "user.info.basic,user.info.stats,video.list,video.upload"
 
 
 def json_meta(conn: SocialConnection) -> dict[str, Any]:
@@ -140,7 +140,7 @@ def meta_exchange(code: str) -> list[dict[str, Any]]:
         user_token = long_r.json()["access_token"]
     pages_r = httpx.get(
         f"https://graph.facebook.com/{version}/me/accounts",
-        params={"fields": "name,access_token,tasks,instagram_business_account{id,username,name,profile_picture_url}", "access_token": user_token},
+        params={"fields": "name,access_token,tasks", "access_token": user_token},
         timeout=30.0,
     )
     if pages_r.status_code >= 400:

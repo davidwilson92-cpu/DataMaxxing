@@ -45,6 +45,12 @@ services:
         value: https://zova-social.com/callback/x
       - key: META_APP_ID
         sync: false
+      - key: INSTAGRAM_APP_ID
+        sync: false
+      - key: INSTAGRAM_APP_SECRET
+        sync: false
+      - key: INSTAGRAM_REDIRECT_URI
+        value: https://zova-social.com/oauth/instagram/callback
       - key: META_APP_SECRET
         sync: false
       - key: META_GRAPH_VERSION

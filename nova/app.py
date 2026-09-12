@@ -29,6 +29,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from . import ai, billing
+from .connections import connection_options, safe_login_next
 from .db import (
     Activity, AuthIdentity, AuthState, Creator, CreatorPreferences, Draft, MediaAsset, OAuth2Connection, OAuthState,
     PostLog, ScheduledPost, SessionLocal, SocialConnection, User, get_db, get_preferences, utcnow,
@@ -63,7 +64,7 @@ def subscription_guard(user: User) -> None:
 
 
 def template_context(request: Request, user: User | None = None, **kwargs: Any) -> dict[str, Any]:
-    return {"request": request, "user": user, "operator_name": os.environ.get("LEGAL_ENTITY_NAME", "Zova Social Limited"), **kwargs}
+    return {"request": request, "user": user, "connections": connection_options(), "operator_name": os.environ.get("LEGAL_ENTITY_NAME", "Zova Social Limited"), **kwargs}
 
 
 def set_user_cookie(response: RedirectResponse | JSONResponse, user: User) -> None:
@@ -179,6 +180,11 @@ async def authentication_error(request: Request, exc: HTTPException):
     # Only browser pages redirect. APIs and OAuth callbacks retain their errors.
     private_pages = {"/studio", "/account", "/analytics", "/drafts", "/subscribe",
                      "/onboarding/socials", "/onboarding/writing-style", "/onboarding/complete"}
+    connection_path = request.url.path
+    oauth_starts = {value["start"]: f"/connect/{key}" for key, value in connection_options().items()}
+    if exc.status_code == 401 and request.method == "GET" and (connection_path.startswith("/connect/") or connection_path in oauth_starts):
+        destination = safe_login_next(oauth_starts.get(connection_path, connection_path))
+        return RedirectResponse("/login?next=" + quote_plus(destination), status_code=303)
     if exc.status_code == 401 and request.method == "GET" and request.url.path in private_pages:
         return RedirectResponse("/login", status_code=303)
     return await http_exception_handler(request, exc)
@@ -210,7 +216,7 @@ def landing(request: Request):
 
 @app.get("/signup", response_class=HTMLResponse)
 def signup_page(request: Request, error: str | None = None):
-    return templates.TemplateResponse("auth.html", template_context(request, heading="Create your account", subheading="Start with Apple or use your email. You’ll connect socials next.", action="/signup", button="Create account", error=error, apple_ready=apple_configured()))
+    return templates.TemplateResponse("auth.html", template_context(request, heading="Create your Zova account", subheading="Use your email to create a workspace. Connect your social accounts afterwards, or skip that step.", action="/signup", button="Create Zova account", error=error, apple_ready=apple_configured()))
 
 @app.post("/signup")
 def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str, Form()], country: Annotated[str, Form()], password: Annotated[str, Form()], password_confirmation: Annotated[str, Form()], accept_terms: Annotated[str | None, Form()] = None, marketing_consent: Annotated[str | None, Form()] = None, db: Session=Depends(get_db)):
@@ -229,7 +235,7 @@ def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str,
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, error: str | None = None):
-    return templates.TemplateResponse("auth.html", template_context(request, heading="Welcome back", subheading="Sign in to your Zova workspace.", action="/login", button="Log in", error=error, apple_ready=apple_configured()))
+    return templates.TemplateResponse("auth.html", template_context(request, heading="Welcome back", subheading="Sign in with your Zova email and password, not your social account password.", action="/login", button="Log in to Zova", error=error, login_next=safe_login_next(request.query_params.get("next")), apple_ready=apple_configured()))
 
 
 def apple_configured() -> bool:
@@ -286,11 +292,12 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
     resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303); set_user_cookie(resp, user); return resp
 
 @app.post("/login")
-def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Form()],db:Session=Depends(get_db)):
+def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Form()],next:Annotated[str,Form()]="/studio",db:Session=Depends(get_db)):
     user=db.scalar(select(User).where(User.email==email.strip().lower()))
-    if not user or not verify_password(password,user.password_hash): return RedirectResponse("/login?error=Incorrect+email+or+password",303)
+    destination=safe_login_next(next)
+    if not user or not user.active or not verify_password(password,user.password_hash): return RedirectResponse("/login?error=Incorrect+email+or+password&next="+quote_plus(destination),303)
     user.last_login_at=utcnow(); db.commit()
-    resp=RedirectResponse("/studio",303); set_user_cookie(resp,user); return resp
+    resp=RedirectResponse(destination,303); set_user_cookie(resp,user); return resp
 
 @app.post("/logout")
 def logout():
@@ -432,7 +439,9 @@ def onboarding_complete(request: Request):
 def account(request:Request,db:Session=Depends(get_db)):
     user=current_user(request); prefs=get_preferences(db,user.id); rows=db.scalars(select(SocialConnection).where(SocialConnection.user_id==user.id,SocialConnection.active.is_(True)).order_by(SocialConnection.id.desc())).all(); by={}
     for r in rows: by.setdefault(r.platform,[]).append(r)
-    return templates.TemplateResponse("account.html",template_context(request,user,prefs=prefs,by_platform=by,billing_ready=billing.configured()))
+    response=templates.TemplateResponse("account.html",template_context(request,user,prefs=prefs,by_platform=by,billing_ready=billing.configured()))
+    response.delete_cookie("zova_onboarding",path="/")
+    return response
 
 
 def require_admin(request: Request) -> User:
@@ -513,18 +522,49 @@ def unlink(connection_id:int,request:Request,db:Session=Depends(get_db)):
 
 
 # ---------- OAuth connections ----------
+@app.get("/connect/{platform}", response_class=HTMLResponse)
+def connect_platform(platform: str, request: Request):
+    user = current_user(request)
+    options = connection_options()
+    if platform not in options:
+        raise HTTPException(404, "Unknown social platform")
+    return templates.TemplateResponse("connect.html", template_context(request, user, platform=platform, connection=options[platform]))
+
+
+def connection_return(request: Request, platform: str, outcome: str = "connected"):
+    destination = "/onboarding/socials" if request.cookies.get("zova_onboarding") else "/account"
+    return RedirectResponse(f"{destination}?{outcome}={platform}", 303)
+
+
+def connection_state(db: Session, request: Request, state: str, platform: str):
+    # Bind authorisation to the same signed-in Zova workspace that started it.
+    user = current_user(request)
+    owner = db.scalar(select(OAuthState.user_id).where(OAuthState.state_hash == hash_api_key(state), OAuthState.platform == platform))
+    if owner != user.id:
+        raise HTTPException(400, "Return to the Zova workspace where you started connecting and try again.")
+    return _state_row(db, state, platform)
+
+
+def ensure_connection_ready(request: Request, platform: str):
+    if not connection_options()[platform]["ready"]:
+        return RedirectResponse(f"/connect/{platform}?error=unavailable", 303)
+    return None
+
+
 @app.get("/oauth/x/start")
 def oauth_x_start(request:Request,db:Session=Depends(get_db)):
-    user=current_user(request); verifier=secrets.token_urlsafe(64); state=_new_state(db,user.id,"x",verifier); return RedirectResponse(x_authorize_url(state,verifier),302)
+    user=current_user(request)
+    if unavailable := ensure_connection_ready(request,"x"): return unavailable
+    verifier=secrets.token_urlsafe(64); state=_new_state(db,user.id,"x",verifier); return RedirectResponse(x_authorize_url(state,verifier),302)
 
 @app.get("/callback/x")
 @app.get("/oauth/x/callback")
 def oauth_x_callback(request:Request,code:str|None=None,state:str|None=None,error:str|None=None,db:Session=Depends(get_db)):
-    if error:return RedirectResponse("/account?error=x_connection_cancelled",303)
+    if error:return connection_return(request,"x","cancelled")
     if not code or not state:raise HTTPException(400,"Missing OAuth code or state")
-    row=_state_row(db,state,"x"); verifier=decrypt(row.encrypted_code_verifier) if row.encrypted_code_verifier else ""
+    row=connection_state(db,request,state,"x"); verifier=decrypt(row.encrypted_code_verifier) if row.encrypted_code_verifier else ""
     try:token,user_info=x_exchange(code,verifier)
-    except RuntimeError as exc:raise HTTPException(502,str(exc))
+    except (RuntimeError, httpx.HTTPError):return connection_return(request,"x","connection_failed")
     upsert_connection(db,user_id=row.user_id,platform="x",account_id=str(user_info["id"]),username=user_info.get("username","") or "",display_name=user_info.get("name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",X_SCOPES),metadata={"profile_image_url":user_info.get("profile_image_url")})
     try: learn_voice_from_socials(db, row.user_id)
     except Exception as exc: log.warning("Automatic X voice learning failed: %s", exc)
@@ -532,44 +572,45 @@ def oauth_x_callback(request:Request,code:str|None=None,state:str|None=None,erro
 
 @app.get("/oauth/meta/start")
 def oauth_meta_start(request:Request,db:Session=Depends(get_db)):
-    user=current_user(request); state=_new_state(db,user.id,"meta"); return RedirectResponse(meta_authorize_url(state),302)
+    user=current_user(request)
+    if unavailable := ensure_connection_ready(request,"facebook"): return unavailable
+    state=_new_state(db,user.id,"meta"); return RedirectResponse(meta_authorize_url(state),302)
 
 @app.get("/oauth/meta/callback")
 def oauth_meta_callback(request:Request,code:str|None=None,state:str|None=None,error:str|None=None,db:Session=Depends(get_db)):
-    if error:return RedirectResponse("/account?error=meta_connection_cancelled",303)
+    if error:return connection_return(request,"facebook","cancelled")
     if not code or not state:raise HTTPException(400,"Missing Meta OAuth code or state")
-    row=_state_row(db,state,"meta")
+    row=connection_state(db,request,state,"meta")
     try:pages=meta_exchange(code)
-    except RuntimeError as exc:raise HTTPException(502,str(exc))
+    except (RuntimeError, httpx.HTTPError):return connection_return(request,"facebook","connection_failed")
+    pages=[page for page in pages if page.get("id") and page.get("access_token")]
+    if not pages:return connection_return(request,"facebook","no_pages")
     for page in pages:
         page_token=page.get("access_token"); page_id=str(page.get("id")); name=page.get("name","")
         if not page_token or not page_id:continue
         upsert_connection(db,user_id=row.user_id,platform="facebook",account_id=page_id,username=name,display_name=name,access=page_token,scope=META_SCOPES,metadata={"tasks":page.get("tasks",[])})
-        ig=page.get("instagram_business_account") or {}
-        if ig.get("id"):
-            upsert_connection(db,user_id=row.user_id,platform="instagram",account_id=str(ig["id"]),username=ig.get("username","") or "",display_name=ig.get("name","") or ig.get("username","") or "",access=page_token,scope=META_SCOPES,metadata={"facebook_page_id":page_id,"profile_picture_url":ig.get("profile_picture_url")})
+        # Facebook authorisation must never create or overwrite an Instagram connection.
     try: learn_voice_from_socials(db, row.user_id)
     except Exception as exc: log.warning("Automatic Meta voice learning failed: %s", exc)
-    return RedirectResponse("/onboarding/socials?connected=meta" if request.cookies.get("zova_onboarding") else "/account?connected=meta",303)
+    return connection_return(request,"facebook")
 
 @app.get("/oauth/instagram/start")
 def oauth_instagram_start(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
-    direct=bool(os.environ.get("INSTAGRAM_APP_ID") and os.environ.get("INSTAGRAM_APP_SECRET"))
-    platform="instagram" if direct else "meta"
-    try:url=instagram_authorize_url(_new_state(db,user.id,platform)) if direct else meta_authorize_url(_new_state(db,user.id,platform))
-    except RuntimeError as exc:raise HTTPException(503,str(exc))
+    if unavailable := ensure_connection_ready(request,"instagram"): return unavailable
+    try:url=instagram_authorize_url(_new_state(db,user.id,"instagram"))
+    except RuntimeError: return RedirectResponse("/connect/instagram?error=unavailable",303)
     return RedirectResponse(url,302)
 
 @app.get("/oauth/instagram/callback")
 def oauth_instagram_callback(request:Request,code:str|None=None,state:str|None=None,error:str|None=None,error_description:str|None=None,db:Session=Depends(get_db)):
-    if error:return RedirectResponse(f"/account?error=instagram_connection_cancelled",303)
+    if error:return connection_return(request,"instagram","cancelled")
     if not code or not state:raise HTTPException(400,"Missing Instagram OAuth code or state")
-    row=_state_row(db,state,"instagram")
+    row=connection_state(db,request,state,"instagram")
     try:result=instagram_exchange(code)
-    except RuntimeError as exc:
-        log.warning("Direct Instagram connection failed: %s",exc)
-        return RedirectResponse("/account?error=instagram_connection_failed",303)
+    except (RuntimeError, httpx.HTTPError):
+        log.warning("Direct Instagram connection failed")
+        return connection_return(request,"instagram","connection_failed")
     profile=result["profile"]
     upsert_connection(db,user_id=row.user_id,platform="instagram",account_id=str(profile["id"]),username=profile.get("username","") or "",display_name=profile.get("name","") or profile.get("username","") or "",access=result["access_token"],expires_in=result.get("expires_in"),scope=os.environ.get("INSTAGRAM_SCOPES",INSTAGRAM_SCOPES),metadata={"auth_provider":"instagram_login","profile_picture_url":profile.get("profile_picture_url")})
     try:learn_voice_from_socials(db,row.user_id)
@@ -578,15 +619,17 @@ def oauth_instagram_callback(request:Request,code:str|None=None,state:str|None=N
 
 @app.get("/oauth/tiktok/start")
 def oauth_tiktok_start(request:Request,db:Session=Depends(get_db)):
-    user=current_user(request); state=_new_state(db,user.id,"tiktok"); return RedirectResponse(tiktok_authorize_url(state),302)
+    user=current_user(request)
+    if unavailable := ensure_connection_ready(request,"tiktok"): return unavailable
+    state=_new_state(db,user.id,"tiktok"); return RedirectResponse(tiktok_authorize_url(state),302)
 
 @app.get("/oauth/tiktok/callback")
 def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None,error:str|None=None,db:Session=Depends(get_db)):
-    if error:return RedirectResponse("/account?error=tiktok_connection_cancelled",303)
+    if error:return connection_return(request,"tiktok","cancelled")
     if not code or not state:raise HTTPException(400,"Missing TikTok OAuth code or state")
-    row=_state_row(db,state,"tiktok")
+    row=connection_state(db,request,state,"tiktok")
     try:token,info=tiktok_exchange(code)
-    except RuntimeError as exc:raise HTTPException(502,str(exc))
+    except (RuntimeError, httpx.HTTPError):return connection_return(request,"tiktok","connection_failed")
     upsert_connection(db,user_id=row.user_id,platform="tiktok",account_id=str(info.get("open_id")),username=info.get("display_name","") or "",display_name=info.get("display_name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",TIKTOK_SCOPES),metadata={"avatar_url":info.get("avatar_url")})
     try: learn_voice_from_socials(db, row.user_id)
     except Exception as exc: log.warning("Automatic TikTok voice learning failed: %s", exc)
