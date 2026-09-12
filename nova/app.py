@@ -20,6 +20,7 @@ import httpx
 import jwt
 import tweepy
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -62,7 +63,7 @@ def subscription_guard(user: User) -> None:
 
 
 def template_context(request: Request, user: User | None = None, **kwargs: Any) -> dict[str, Any]:
-    return {"request": request, "user": user, **kwargs}
+    return {"request": request, "user": user, "operator_name": os.environ.get("LEGAL_ENTITY_NAME", "Zova Social Limited"), **kwargs}
 
 
 def set_user_cookie(response: RedirectResponse | JSONResponse, user: User) -> None:
@@ -171,6 +172,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Zova Social Publishing", version="5.1.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
+
+
+@app.exception_handler(HTTPException)
+async def authentication_error(request: Request, exc: HTTPException):
+    # Only browser pages redirect. APIs and OAuth callbacks retain their errors.
+    private_pages = {"/studio", "/account", "/analytics", "/drafts", "/subscribe",
+                     "/onboarding/socials", "/onboarding/writing-style", "/onboarding/complete"}
+    if exc.status_code == 401 and request.method == "GET" and request.url.path in private_pages:
+        return RedirectResponse("/login", status_code=303)
+    return await http_exception_handler(request, exc)
 
 
 def bootstrap_legacy_account() -> None:
