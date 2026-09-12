@@ -5,10 +5,17 @@
 <div class="eyebrow">CONNECT A SOCIAL ACCOUNT</div><h1>Connect {{ connection.name }}</h1>
 <p>You are signed in to Zova as {{ user.email }}. This step connects a social account to this workspace; it does not create another Zova login.</p>
 <p>{{ connection.detail }}</p>
-{% if platform == 'instagram' %}<p>Use a Business or Creator account. You will approve account information and content-publishing access on Instagram itself.</p>{% endif %}
+{% if platform == 'instagram' %}<p>Use an Instagram Business or Creator account. Choose how you want to connect it below.</p>{% endif %}
 {% if platform == 'facebook' %}<p>Use the Facebook profile that manages your Page. Facebook and Instagram are separate connections. Available features depend on Meta permissions and approval.</p>{% endif %}
 <p>Check the account name before approving access. Never enter a social platform password into Zova. Connecting does not publish a post.</p>
-{% if connection.ready %}<a class="button primary" href="{{ connection.start }}">Continue to {{ connection.provider }}</a>
+{% if platform == 'instagram' %}
+<div class="connection-methods">
+<section><h2>Use Instagram</h2><p>Sign in directly with your Instagram account. No Facebook Page is needed.</p>
+{% if connection.direct_ready %}<a class="button primary" href="/oauth/instagram/start">Continue to Instagram</a>{% else %}<p class="account-notice" role="status">Direct Instagram login is not available yet. You can use Facebook below if your Instagram account is linked to a Page.</p>{% endif %}</section>
+<section><h2>Use Facebook</h2><p>Sign in with the Facebook profile that manages the Page linked to your Instagram professional account. This connects Instagram only; it does not add a Facebook Page to Zova.</p>
+{% if connection.facebook_ready %}<a class="button primary" href="/oauth/instagram/facebook/start">Connect Instagram through Facebook</a>{% else %}<p class="account-notice" role="status">Facebook connection is not available yet. Use direct Instagram login if available above.</p>{% endif %}</section>
+</div>
+{% elif connection.ready %}<a class="button primary" href="{{ connection.start }}">Continue to {{ connection.provider }}</a>
 {% else %}<div class="account-notice" role="status">{{ connection.name }} connection is not available yet. Zova's platform setup needs to be completed. You do not need to change your password or use another social login.</div>{% endif %}
 <div class="onboarding-actions"><a class="button quiet" href="{% if request.cookies.get('zova_onboarding') %}/onboarding/socials{% else %}/account#socials{% endif %}">Back to connections</a><a class="button quiet" href="/studio">Continue to Studio</a></div>
 </section></main>{% endblock %}

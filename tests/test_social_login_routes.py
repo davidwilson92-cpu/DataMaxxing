@@ -164,3 +164,56 @@ def test_other_platform_authorisation_destinations(signed_in):
         if platform=="tiktok":
             scopes=parse_qs(parsed.query)["scope"][0].split(",")
             assert "video.upload" in scopes and "video.publish" not in scopes
+
+
+def test_instagram_facebook_is_explicit_and_connects_only_instagram(signed_in, monkeypatch):
+    client,user_id=signed_in
+    monkeypatch.delenv("INSTAGRAM_APP_SECRET")
+    page=client.get("/connect/instagram").text
+    assert "Use Instagram" in page and "Use Facebook" in page
+    assert 'href="/oauth/instagram/start"' not in page
+    assert 'href="/oauth/instagram/facebook/start"' in page
+    start=client.get("/oauth/instagram/facebook/start",follow_redirects=False)
+    parsed=urlsplit(start.headers["location"])
+    assert parsed.hostname == "www.facebook.com"
+    scopes=parse_qs(parsed.query)["scope"][0].split(",")
+    assert "instagram_basic" in scopes and "instagram_content_publish" in scopes
+    assert "instagram_business_basic" not in scopes
+    def exchange(code, *, include_instagram=False):
+        assert include_instagram
+        return [{"id":"page-route", "access_token":"synthetic-page-token", "name":"Page", "instagram_business_account":{"id":"ig-route", "username":"correct_instagram"}}]
+    monkeypatch.setattr(module,"meta_exchange",exchange)
+    result=client.get("/oauth/meta/callback",params={"code":"synthetic","state":state_from(start)},follow_redirects=False)
+    assert result.headers["location"] == "/account?connected=instagram"
+    with SessionLocal() as db:
+        rows=db.scalars(select(SocialConnection).where(SocialConnection.user_id==user_id)).all()
+        assert len(rows)==1 and rows[0].platform=="instagram"
+        assert rows[0].username=="correct_instagram"
+    assert "Connection options" in client.get("/account").text
+
+
+def test_instagram_facebook_requires_linked_account_and_preserves_direct(signed_in, monkeypatch):
+    client,user_id=signed_in
+    monkeypatch.setattr(module,"meta_exchange",lambda code, **kwargs: [{"id":"page-only","access_token":"synthetic"}])
+    raw=state_from(client.get("/oauth/instagram/facebook/start",follow_redirects=False))
+    result=client.get("/oauth/meta/callback",params={"code":"synthetic","state":raw},follow_redirects=False)
+    assert result.headers["location"] == "/account?no_pages=instagram"
+    with SessionLocal() as db:
+        module.upsert_connection(db,user_id=user_id,platform="instagram",account_id="ig-direct",username="kept",display_name="Kept",access="synthetic-direct-token",scope="instagram_business_basic",metadata={"auth_provider":"instagram_login"})
+    monkeypatch.setattr(module,"meta_exchange",lambda code, **kwargs: [{"id":"page","access_token":"synthetic-facebook-token","instagram_business_account":{"id":"ig-direct","username":"other"}}])
+    raw=state_from(client.get("/oauth/instagram/facebook/start",follow_redirects=False))
+    client.get("/oauth/meta/callback",params={"code":"synthetic","state":raw})
+    with SessionLocal() as db:
+        row=db.scalar(select(SocialConnection).where(SocialConnection.user_id==user_id))
+        assert row.username=="kept" and decrypt(row.encrypted_access_token)=="synthetic-direct-token"
+
+
+def test_instagram_facebook_cancel_and_signed_out_return(signed_in):
+    client,_=signed_in
+    client.get("/onboarding/socials")
+    raw=state_from(client.get("/oauth/instagram/facebook/start",follow_redirects=False))
+    response=client.get("/oauth/meta/callback",params={"error":"access_denied","state":raw},follow_redirects=False)
+    assert response.headers["location"]=="/onboarding/socials?cancelled=instagram"
+    client.cookies.clear()
+    response=client.get("/oauth/instagram/facebook/start",follow_redirects=False)
+    assert response.headers["location"]=="/login?next=%2Fconnect%2Finstagram"

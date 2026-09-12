@@ -38,7 +38,7 @@ from .scheduler import loop as scheduler_loop, process_due
 from .security import current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password
 from .user_data import normalize_country, normalize_email, normalize_name
 from .social import (
-    INSTAGRAM_SCOPES, META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, instagram_authorize_url, instagram_exchange, meta_authorize_url, meta_exchange,
+    INSTAGRAM_SCOPES, INSTAGRAM_FACEBOOK_SCOPES, META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, instagram_authorize_url, instagram_exchange, meta_authorize_url, meta_exchange,
     publish_platform, publishing_context, recent_content_for_user, recent_posts_for_user, resolve_tiktok_post, tiktok_authorize_url, tiktok_exchange, upsert_connection, x_authorize_url, x_exchange,
 )
 from .storage import UPLOAD_DIR, save_bytes
@@ -182,6 +182,7 @@ async def authentication_error(request: Request, exc: HTTPException):
                      "/onboarding/socials", "/onboarding/writing-style", "/onboarding/complete"}
     connection_path = request.url.path
     oauth_starts = {value["start"]: f"/connect/{key}" for key, value in connection_options().items()}
+    oauth_starts["/oauth/instagram/facebook/start"] = "/connect/instagram"
     if exc.status_code == 401 and request.method == "GET" and (connection_path.startswith("/connect/") or connection_path in oauth_starts):
         destination = safe_login_next(oauth_starts.get(connection_path, connection_path))
         return RedirectResponse("/login?next=" + quote_plus(destination), status_code=303)
@@ -576,28 +577,50 @@ def oauth_meta_start(request:Request,db:Session=Depends(get_db)):
     if unavailable := ensure_connection_ready(request,"facebook"): return unavailable
     state=_new_state(db,user.id,"meta"); return RedirectResponse(meta_authorize_url(state),302)
 
+@app.get("/oauth/instagram/facebook/start")
+def oauth_instagram_facebook_start(request:Request,db:Session=Depends(get_db)):
+    user=current_user(request)
+    if not connection_options()["instagram"]["facebook_ready"]:
+        return RedirectResponse("/connect/instagram?error=facebook_unavailable",303)
+    state=_new_state(db,user.id,"instagram_facebook")
+    return RedirectResponse(meta_authorize_url(state,include_instagram=True),302)
+
 @app.get("/oauth/meta/callback")
 def oauth_meta_callback(request:Request,code:str|None=None,state:str|None=None,error:str|None=None,db:Session=Depends(get_db)):
-    if error:return connection_return(request,"facebook","cancelled")
+    # The stored, unguessable state chooses the intent, never an arbitrary query parameter.
+    state_platform=db.scalar(select(OAuthState.platform).where(OAuthState.state_hash==hash_api_key(state))) if state else None
+    instagram_intent=state_platform=="instagram_facebook"
+    target="instagram" if instagram_intent else "facebook"
+    if error:return connection_return(request,target,"cancelled")
     if not code or not state:raise HTTPException(400,"Missing Meta OAuth code or state")
-    row=connection_state(db,request,state,"meta")
-    try:pages=meta_exchange(code)
-    except (RuntimeError, httpx.HTTPError):return connection_return(request,"facebook","connection_failed")
+    row=connection_state(db,request,state,"instagram_facebook" if instagram_intent else "meta")
+    try:pages=meta_exchange(code,include_instagram=True) if instagram_intent else meta_exchange(code)
+    except (RuntimeError, httpx.HTTPError):return connection_return(request,target,"connection_failed")
     pages=[page for page in pages if page.get("id") and page.get("access_token")]
-    if not pages:return connection_return(request,"facebook","no_pages")
+    if instagram_intent:
+        pages=[page for page in pages if (page.get("instagram_business_account") or {}).get("id")]
+    if not pages:return connection_return(request,target,"no_pages")
     for page in pages:
         page_token=page.get("access_token"); page_id=str(page.get("id")); name=page.get("name","")
         if not page_token or not page_id:continue
-        upsert_connection(db,user_id=row.user_id,platform="facebook",account_id=page_id,username=name,display_name=name,access=page_token,scope=META_SCOPES,metadata={"tasks":page.get("tasks",[])})
-        # Facebook authorisation must never create or overwrite an Instagram connection.
+        if instagram_intent:
+            ig=page["instagram_business_account"]
+            existing=db.scalar(select(SocialConnection).where(SocialConnection.user_id==row.user_id,SocialConnection.platform=="instagram",SocialConnection.account_id==str(ig["id"]),SocialConnection.active.is_(True)))
+            # A Page login must not downgrade a working direct Instagram grant.
+            if existing and "instagram_business_basic" in (existing.scope or ""):
+                continue
+            upsert_connection(db,user_id=row.user_id,platform="instagram",account_id=str(ig["id"]),username=ig.get("username","") or "",display_name=ig.get("name","") or ig.get("username","") or "",access=page_token,scope=INSTAGRAM_FACEBOOK_SCOPES,metadata={"auth_provider":"facebook_login","facebook_page_id":page_id,"profile_picture_url":ig.get("profile_picture_url")})
+        else:
+            upsert_connection(db,user_id=row.user_id,platform="facebook",account_id=page_id,username=name,display_name=name,access=page_token,scope=META_SCOPES,metadata={"tasks":page.get("tasks",[])})
     try: learn_voice_from_socials(db, row.user_id)
     except Exception as exc: log.warning("Automatic Meta voice learning failed: %s", exc)
-    return connection_return(request,"facebook")
+    return connection_return(request,target)
 
 @app.get("/oauth/instagram/start")
 def oauth_instagram_start(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
-    if unavailable := ensure_connection_ready(request,"instagram"): return unavailable
+    if not connection_options()["instagram"]["direct_ready"]:
+        return RedirectResponse("/connect/instagram?error=unavailable",303)
     try:url=instagram_authorize_url(_new_state(db,user.id,"instagram"))
     except RuntimeError: return RedirectResponse("/connect/instagram?error=unavailable",303)
     return RedirectResponse(url,302)
