@@ -10,10 +10,11 @@
 .connection-explainer p { line-height:1.65; overflow-wrap:anywhere; }
 .connection-explainer .onboarding-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
 .connection-explainer .button { display:inline-flex; margin-top:12px; }
-.connection-methods { display:grid; gap:22px; margin-top:24px; }
-.connection-methods section { border-top:1px solid rgba(90,65,135,.2); padding-top:18px; }
+.connection-methods { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; margin-top:24px; }
+.connection-methods section { border:1px solid rgba(90,65,135,.2); border-radius:16px; padding:20px; }
 .connection-methods h2 { font-size:22px; margin:0; }
 @media(max-width:600px) {
+  .connection-methods { grid-template-columns:minmax(0,1fr); }
   .social-connect-list .connection-row { grid-template-columns:minmax(0,1fr); gap:12px; }
   .social-connect-list .mini-button,.social-connect-list .connected-label { justify-self:start; margin-left:38px; }
 }

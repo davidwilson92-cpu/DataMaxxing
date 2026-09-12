@@ -3,16 +3,15 @@
 {% block body_class %}voice-body{% endblock %}
 {% block body %}<main class="voice-onboarding"><section class="connection-explainer">
 <div class="eyebrow">CONNECT A SOCIAL ACCOUNT</div><h1>Connect {{ connection.name }}</h1>
-<p>You are signed in to Zova as {{ user.email }}. This step connects a social account to this workspace; it does not create another Zova login.</p>
-<p>{{ connection.detail }}</p>
-{% if platform == 'instagram' %}<p>Use an Instagram Business or Creator account. Choose how you want to connect it below.</p>{% endif %}
+<p class="fine">Zova workspace: {{ user.email }}</p>
+{% if platform == 'instagram' %}<p>Choose how to connect your Instagram Business or Creator account.</p>{% else %}<p>{{ connection.detail }}</p>{% endif %}
 {% if platform == 'facebook' %}<p>Use the Facebook profile that manages your Page. Facebook and Instagram are separate connections. Available features depend on Meta permissions and approval.</p>{% endif %}
-<p>Check the account name before approving access. Never enter a social platform password into Zova. Connecting does not publish a post.</p>
+<p class="fine">You will sign in on the platform itself. Connecting does not publish anything.</p>
 {% if platform == 'instagram' %}
 <div class="connection-methods">
-<section><h2>Use Instagram</h2><p>Sign in directly with your Instagram account. No Facebook Page is needed.</p>
-{% if connection.direct_ready %}<a class="button primary" href="/oauth/instagram/start">Continue to Instagram</a>{% else %}<p class="account-notice" role="status">Direct Instagram login is not available yet. You can use Facebook below if your Instagram account is linked to a Page.</p>{% endif %}</section>
-<section><h2>Use Facebook</h2><p>Sign in with the Facebook profile that manages the Page linked to your Instagram professional account. This connects Instagram only; it does not add a Facebook Page to Zova.</p>
+<section><h2>Use Instagram</h2><p>Sign in directly. No Facebook Page needed.</p>
+{% if connection.direct_ready %}<a class="button primary" href="/oauth/instagram/start">Continue to Instagram</a>{% else %}<p class="account-notice" role="status">Direct Instagram login is not available yet. Use Facebook if your account is linked to a Page.</p>{% endif %}</section>
+<section><h2>Use Facebook</h2><p>For an Instagram account linked to a Facebook Page you manage. This connects Instagram only.</p>
 {% if connection.facebook_ready %}<a class="button primary" href="/oauth/instagram/facebook/start">Connect Instagram through Facebook</a>{% else %}<p class="account-notice" role="status">Facebook connection is not available yet. Use direct Instagram login if available above.</p>{% endif %}</section>
 </div>
 {% elif connection.ready %}<a class="button primary" href="{{ connection.start }}">Continue to {{ connection.provider }}</a>
