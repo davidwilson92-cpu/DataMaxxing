@@ -26,6 +26,8 @@ Keep REQUIRE_SUBSCRIPTION=false. No schema/data migration, user deletion, OAuth 
 
 ## Validation
 
+12 September: 31 tests passed (existing regression tests plus login-routing, cancellation, expiry, replay, cross-workspace ownership, missing-key handling, safe return destinations and connection-preservation tests). Desktop onboarding and Instagram preflight templates were inspected in a local read-only preview; spacing and explanation layout were corrected. This is not a live OAuth grant test. CLI GitHub authentication is unavailable; release is committed locally and has not been pushed or deployed.
+
 Tests run against new synthetic SQLite files in the OS temporary directory, never production. Live external grant/publishing tests still require configured credentials and user approval. A successful unit test is not proof that Meta has granted production permissions.
 
 Rollback: revert the isolated release commit, retaining all existing environment secrets, persistent disk, PostgreSQL data and connection rows. Do not reset the dirty development worktree.
