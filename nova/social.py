@@ -23,9 +23,10 @@ from .storage import get_bytes, get_public_url
 log = logging.getLogger("nova.social")
 
 X_SCOPES = "tweet.read tweet.write users.read offline.access"
-META_SCOPES = "pages_show_list,pages_read_engagement,business_management,instagram_basic,instagram_content_publish"
+META_SCOPES = "pages_show_list,pages_read_engagement,business_management"
+INSTAGRAM_FACEBOOK_SCOPES = META_SCOPES + ",instagram_basic,instagram_content_publish"
 INSTAGRAM_SCOPES = "instagram_business_basic,instagram_business_content_publish"
-TIKTOK_SCOPES = "user.info.basic,user.info.stats,video.list,video.publish,video.upload"
+TIKTOK_SCOPES = "user.info.basic,user.info.stats,video.list,video.upload"
 
 
 def json_meta(conn: SocialConnection) -> dict[str, Any]:
@@ -112,17 +113,18 @@ def _x_refresh(conn: SocialConnection, db: Session) -> str:
 
 # ---------- Meta OAuth (Facebook + Instagram) ----------
 
-def meta_authorize_url(state: str) -> str:
+def meta_authorize_url(state: str, *, include_instagram: bool = False) -> str:
     app_id = os.environ.get("META_APP_ID")
     if not app_id:
         raise RuntimeError("Meta OAuth is not configured")
     version = os.environ.get("META_GRAPH_VERSION", "v23.0")
     redirect = os.environ.get("META_REDIRECT_URI") or f"{public_base()}/oauth/meta/callback"
-    params = {"client_id": app_id, "redirect_uri": redirect, "state": state, "scope": META_SCOPES, "response_type": "code"}
+    scopes = INSTAGRAM_FACEBOOK_SCOPES if include_instagram else META_SCOPES
+    params = {"client_id": app_id, "redirect_uri": redirect, "state": state, "scope": scopes, "response_type": "code"}
     return f"https://www.facebook.com/{version}/dialog/oauth?{urlencode(params)}"
 
 
-def meta_exchange(code: str) -> list[dict[str, Any]]:
+def meta_exchange(code: str, *, include_instagram: bool = False) -> list[dict[str, Any]]:
     version = os.environ.get("META_GRAPH_VERSION", "v23.0")
     redirect = os.environ.get("META_REDIRECT_URI") or f"{public_base()}/oauth/meta/callback"
     params = {"client_id": os.environ.get("META_APP_ID"), "client_secret": os.environ.get("META_APP_SECRET"), "redirect_uri": redirect, "code": code}
@@ -140,7 +142,7 @@ def meta_exchange(code: str) -> list[dict[str, Any]]:
         user_token = long_r.json()["access_token"]
     pages_r = httpx.get(
         f"https://graph.facebook.com/{version}/me/accounts",
-        params={"fields": "name,access_token,tasks,instagram_business_account{id,username,name,profile_picture_url}", "access_token": user_token},
+        params={"fields": "name,access_token,tasks" + (",instagram_business_account{id,username,name,profile_picture_url}" if include_instagram else ""), "access_token": user_token},
         timeout=30.0,
     )
     if pages_r.status_code >= 400:
