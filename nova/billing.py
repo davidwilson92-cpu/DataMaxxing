@@ -131,7 +131,7 @@ def create_checkout(db,user,base_url,plan='monthly'):
             if json.loads(row.checkout_payload)['line_items[0][price]']!=plans()[plan]:
                 raise ValueError('An existing checkout is open. Complete it or wait for it to expire before changing plans.')
             url=_url(session.get('url'),'checkout.stripe.com');db.commit();return url
-        if session.get('status')!='expired':
+        if session.get('status')!='expired' and not (session.get('status')=='complete' and row.subscription_id and row.status in {'canceled','incomplete_expired'}):
             db.commit();raise ValueError('Checkout is processing. Refresh your billing status shortly.')
         row.checkout_key=None;row.checkout_session=None;row.checkout_payload=None
     if row.checkout_key and int(time.time())-(row.checkout_started or 0)>23*3600:

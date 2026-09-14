@@ -205,3 +205,14 @@ def test_live_sync_updates_existing_entitlements_only_after_provider_verificatio
         assert db.get(User,uid).subscription_status=='past_due'
         assert db.get(BillingAccount,f'{uid}:live').customer_id=='cus_live_existing'
     assert billing.has_access(User(subscription_status='past_due'))  # Testing gate remains disabled.
+
+
+def test_expired_checkout_and_cancelled_subscription_allow_new_attempt(stripe):
+    client,uid,*_=account();checkout(client)
+    first=next(iter(stripe['sessions'].values()));first['status']='expired'
+    assert checkout(client).headers['location'].startswith('https://checkout.stripe.com')
+    assert len(stripe['sessions'])==2
+    second=list(stripe['sessions'].values())[-1];second['status']='complete'
+    stripe['subscriptions']=[subscription(second['customer'],'canceled')]
+    assert checkout(client).headers['location'].startswith('https://checkout.stripe.com')
+    assert len(stripe['sessions'])==3
