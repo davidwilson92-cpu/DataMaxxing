@@ -1,0 +1,11 @@
+# Prompt for the next validation increment
+
+Continue the existing Zova candidate in `work/zova-studio-ux`. Read the workspace `ZOVA_CONTINUE_HERE.md` first, then `docs/ZOVA_PRODUCT_AUDIT_FOLLOWUP.md`, `docs/ZOVA_FEATURE_MATRIX.md` and `docs/OPERATIONS_AND_ROLLBACK.md`. Reproduce the recorded evidence against the current files before changing them. Inspect other worktrees and preserve their independent work.
+
+Prioritise the remaining release gates: isolated PostgreSQL migration, concurrency and restore validation; upload-volume restore/hash checks; hosting-image compatibility for the patched dependencies and media decoder; recovery-email delivery and timing behaviour; real-device keyboard/zoom/landscape and screen-reader testing; and actual platform capability/approval reconciliation. Use only synthetic data and mocked providers unless a separate instruction authorises a specific external validation. Keep both Instagram routes, reviewer login and explicit final publishing confirmation stable.
+
+Do not treat a scope in code as a granted or approved permission. Do not treat a mocked post as live-provider evidence. Do not resend unknown outcomes or remove publication records to force a retry. Keep subscription enforcement and checkout disabled for testing. Preserve PostgreSQL users/data, uploads, session/encryption secrets, revocations and encrypted social connections.
+
+Address the documented engineering risks in small tested increments: nonce-compatible CSP, isolated decoding/retention controls, queued recovery delivery, voice-scan concurrency, complete and comparable analytics history, and any issues actually reproduced in staging. Retain existing content on every recoverable failure. Confirm that the text/media/account/settings sent are precisely those reviewed, including appended links and partial-platform retry behaviour.
+
+Update the feature matrix, evidence, rollback plan and handoff. Re-score all original audit areas using the original rubric, aiming for 8/10 only where demonstrated. Separate implementation, local tests, PostgreSQL staging, provider validation, CI and deployment. Report blockers explicitly. This prompt does not authorise production deployment, real posts, permission changes, review submission or charges.

@@ -34,7 +34,8 @@ def _s3_client():
 
 
 def save_bytes(data: bytes, filename: str, content_type: str, base_url: str) -> StoredObject:
-    safe = pathlib.Path(filename or "upload.bin").name
+    extensions={"image/jpeg":".jpg","image/png":".png","image/gif":".gif","image/webp":".webp","video/mp4":".mp4","video/quicktime":".mov","video/webm":".webm"}
+    safe = "media" + extensions.get(content_type,".bin")
     key = f"nova/{uuid.uuid4().hex}-{safe}"
     client = _s3_client()
     bucket = os.environ.get("S3_BUCKET")

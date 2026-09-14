@@ -280,6 +280,13 @@ def connection_for(db: Session, user_id: int, platform: str) -> SocialConnection
     return conn
 
 
+def selected_connection(db, user_id, platform, connection_id=None):
+    conn = db.get(SocialConnection,connection_id) if connection_id else connection_for(db,user_id,platform)
+    if not conn or conn.user_id!=user_id or conn.platform!=platform or not conn.active:
+        raise RuntimeError('The reviewed account is no longer connected. Review the destination again.')
+    return conn
+
+
 def upsert_connection(
     db: Session,
     *, user_id: int,
@@ -426,9 +433,9 @@ def _tiktok_creator_info(token: str) -> dict[str, Any]:
     return r.json().get("data", {})
 
 
-def publishing_context(db: Session, user_id: int, platform: str) -> dict[str, Any]:
-    conn = connection_for(db, user_id, platform)
-    result = {"platform": platform, "username": conn.username, "display_name": conn.display_name or conn.username or conn.account_id}
+def publishing_context(db: Session, user_id: int, platform: str, connection_id: int | None = None) -> dict[str, Any]:
+    conn = selected_connection(db,user_id,platform,connection_id)
+    result = {"platform": platform, "connection_id":conn.id,"account_id":conn.account_id,"scope":conn.scope,"username": conn.username, "display_name": conn.display_name or conn.username or conn.account_id}
     if platform == "tiktok":
         info = _tiktok_creator_info(access_token(conn, db))
         result.update({
@@ -453,7 +460,7 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
     settings = options or {}
     privacy_options = info.get("privacy_level_options") or ["SELF_ONLY"]
     forced_privacy = str(os.environ.get("TIKTOK_DEFAULT_PRIVACY") or "").strip()
-    requested_privacy = forced_privacy or str(settings.get("privacy_level") or "")
+    requested_privacy = str(settings.get("privacy_level") or "")
     if requested_privacy not in privacy_options:
         raise RuntimeError("The selected TikTok privacy setting is no longer available. Review the post again.")
     privacy = requested_privacy
@@ -537,8 +544,8 @@ def resolve_tiktok_post(db: Session, conn: SocialConnection, publish_id: str) ->
     return {"status": data.get("status", "unknown"), "public_ids": [str(x) for x in post_ids], "fail_reason": data.get("fail_reason")}
 
 
-def publish_platform(db: Session, *, user_id: int, platform: str, posts: list[str], assets: list[MediaAsset], link_url: str = "", options: dict[str, Any] | None = None) -> dict[str, Any]:
-    conn = connection_for(db, user_id, platform)
+def publish_platform(db: Session, *, user_id: int, platform: str, posts: list[str], assets: list[MediaAsset], link_url: str = "", options: dict[str, Any] | None = None, connection_id: int | None = None) -> dict[str, Any]:
+    conn = selected_connection(db,user_id,platform,connection_id)
     if platform == "x":
         return publish_x(db, conn, posts, assets, link_url)
     if platform == "facebook":
@@ -658,8 +665,8 @@ def analytics_for_user(db: Session, user_id: int) -> dict[str, Any]:
             else: metrics = analytics_tiktok(db, conn, ids)
             result[platform] = {"connected": True, "account": conn.username or conn.display_name, "followers": follower_count(db, conn), **metrics}
         except Exception as exc:
-            log.warning("%s analytics error: %s", platform, exc)
-            result[platform] = {"connected": True, "account": conn.username or conn.display_name, "error": str(exc)}
+            log.warning("%s analytics unavailable", platform)
+            result[platform] = {"connected": True, "account": conn.username or conn.display_name, "error": "Platform metrics unavailable"}
     totals = {"impressions": 0, "likes": 0, "comments": 0, "shares": 0, "followers": 0, "posts": 0}
     for platform, values in result.items():
         if not values.get("connected"): continue
@@ -678,6 +685,7 @@ def recent_posts_for_user(db: Session, user_id: int, limit: int = 12) -> dict[st
     unavailable: list[str] = []
     for platform in ["x", "instagram", "facebook", "tiktok"]:
         try:
+            conn = None
             conn = connection_for(db, user_id, platform); token = access_token(conn, db)
             if platform == "x":
                 response = httpx.get(f"https://api.x.com/2/users/{conn.account_id}/tweets", headers={"Authorization": f"Bearer {token}"}, params={"max_results": 10, "exclude": "retweets,replies", "tweet.fields": "created_at,public_metrics,attachments", "expansions": "attachments.media_keys", "media.fields": "url,preview_image_url,type"}, timeout=30.0)
@@ -685,27 +693,28 @@ def recent_posts_for_user(db: Session, user_id: int, limit: int = 12) -> dict[st
                 media = {item.get("media_key"): item for item in response.json().get("includes", {}).get("media", [])}
                 for item in response.json().get("data", []):
                     metrics = item.get("public_metrics") or {}; keys = (item.get("attachments") or {}).get("media_keys") or []; visual = media.get(keys[0], {}) if keys else {}
-                    posts.append({"platform":"x","id":str(item.get("id")),"text":item.get("text") or "","created_at":item.get("created_at") or "","url":f"https://x.com/{conn.username or 'i'}/status/{item.get('id')}","image_url":visual.get("preview_image_url") or visual.get("url") or "","likes":metrics.get("like_count",0),"comments":metrics.get("reply_count",0),"shares":metrics.get("retweet_count",0),"views":metrics.get("impression_count",0)})
+                    posts.append({"platform":"x","id":str(item.get("id")),"text":item.get("text") or "","created_at":item.get("created_at") or "","url":f"https://x.com/{conn.username or 'i'}/status/{item.get('id')}","image_url":visual.get("preview_image_url") or visual.get("url") or "","likes":metrics.get("like_count"),"comments":metrics.get("reply_count"),"shares":metrics.get("retweet_count"),"views":metrics.get("impression_count")})
             elif platform == "instagram":
                 graph = instagram_graph_base(conn)
                 response = httpx.get(f"{graph}/{conn.account_id}/media", params={"fields":"id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count","limit":10,"access_token":token}, timeout=30.0)
                 if response.status_code >= 400: raise RuntimeError("Instagram feed unavailable")
-                for item in response.json().get("data", []):posts.append({"platform":"instagram","id":str(item.get("id")),"text":item.get("caption") or "","created_at":item.get("timestamp") or "","url":item.get("permalink") or "","image_url":item.get("thumbnail_url") or item.get("media_url") or "","likes":item.get("like_count",0),"comments":item.get("comments_count",0),"shares":0,"views":0})
+                for item in response.json().get("data", []):posts.append({"platform":"instagram","id":str(item.get("id")),"text":item.get("caption") or "","created_at":item.get("timestamp") or "","url":item.get("permalink") or "","image_url":item.get("thumbnail_url") or item.get("media_url") or "","likes":item.get("like_count"),"comments":item.get("comments_count"),"shares":None,"views":None})
             elif platform == "facebook":
                 version = os.environ.get("META_GRAPH_VERSION", "v23.0")
                 response = httpx.get(f"https://graph.facebook.com/{version}/{conn.account_id}/posts", params={"fields":"id,message,created_time,permalink_url,full_picture,reactions.limit(0).summary(true),comments.limit(0).summary(true),shares","limit":10,"access_token":token}, timeout=30.0)
                 if response.status_code >= 400: raise RuntimeError("Facebook feed unavailable")
-                for item in response.json().get("data", []):posts.append({"platform":"facebook","id":str(item.get("id")),"text":item.get("message") or "","created_at":item.get("created_time") or "","url":item.get("permalink_url") or "","image_url":item.get("full_picture") or "","likes":((item.get("reactions") or {}).get("summary") or {}).get("total_count",0),"comments":((item.get("comments") or {}).get("summary") or {}).get("total_count",0),"shares":(item.get("shares") or {}).get("count",0),"views":0})
+                for item in response.json().get("data", []):posts.append({"platform":"facebook","id":str(item.get("id")),"text":item.get("message") or "","created_at":item.get("created_time") or "","url":item.get("permalink_url") or "","image_url":item.get("full_picture") or "","likes":((item.get("reactions") or {}).get("summary") or {}).get("total_count"),"comments":((item.get("comments") or {}).get("summary") or {}).get("total_count"),"shares":(item.get("shares") or {}).get("count"),"views":None})
             else:
                 response = httpx.post("https://open.tiktokapis.com/v2/video/list/", headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"}, params={"fields":"id,title,video_description,cover_image_url,share_url,create_time,like_count,comment_count,share_count,view_count"}, json={"max_count":10}, timeout=30.0)
                 if response.status_code >= 400: raise RuntimeError("TikTok feed unavailable")
                 for item in response.json().get("data", {}).get("videos", []):
                     created = datetime.fromtimestamp(int(item.get("create_time") or 0),tz=timezone.utc).isoformat() if item.get("create_time") else ""
-                    posts.append({"platform":"tiktok","id":str(item.get("id")),"text":item.get("video_description") or item.get("title") or "","created_at":created,"url":item.get("share_url") or "","image_url":item.get("cover_image_url") or "","likes":item.get("like_count",0),"comments":item.get("comment_count",0),"shares":item.get("share_count",0),"views":item.get("view_count",0)})
+                    posts.append({"platform":"tiktok","id":str(item.get("id")),"text":item.get("video_description") or item.get("title") or "","created_at":created,"url":item.get("share_url") or "","image_url":item.get("cover_image_url") or "","likes":item.get("like_count"),"comments":item.get("comment_count"),"shares":item.get("share_count"),"views":item.get("view_count")})
         except RuntimeError:
+            if conn is not None: unavailable.append(platform)
             continue
         except Exception as exc:
-            log.warning("%s recent posts error: %s", platform, exc); unavailable.append(platform)
+            log.warning("%s recent posts unavailable", platform); unavailable.append(platform)
     posts.sort(key=lambda item: item.get("created_at") or "", reverse=True)
     return {"posts":posts[:max(1,min(limit,30))],"unavailable":unavailable}
 

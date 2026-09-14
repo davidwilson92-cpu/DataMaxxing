@@ -82,7 +82,7 @@ def test_instagram_success_replay_and_owner_binding(signed_in, monkeypatch):
     monkeypatch.setattr(module,"instagram_exchange",lambda code: {"profile":{"id":"ig-new","username":"demo"},"access_token":"synthetic-ig-token","expires_in":3600})
     raw = state_from(client.get("/oauth/instagram/start", follow_redirects=False))
     other = TestClient(module.app)
-    other.cookies.set("nova_session", make_user_session(user_id+999999))
+    other.cookies.set("nova_session", "invalid-user-session")
     assert other.get("/oauth/instagram/callback",params={"code":"synthetic","state":raw}).status_code == 401
     with SessionLocal() as db:
         other_user=User(email=f"other-{secrets.token_hex(6)}@example.test",password_hash="unused",display_name="Other workspace")

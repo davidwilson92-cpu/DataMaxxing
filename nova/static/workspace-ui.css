@@ -1,0 +1,47 @@
+/* Shared usability refinements; retain Zova's existing colour and type system. */
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #7c3aed!important;outline-offset:3px}
+.mobile-menu-toggle{display:none}
+.save-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;color:#5b5268;padding:8px 4px}
+.save-controls button{border:0;background:transparent;text-decoration:underline;color:#5b21b6;cursor:pointer;padding:6px}
+.composer-note{font-size:11px;color:#62596d;line-height:1.5}
+.source-input,.compact-select{font-size:12px!important;min-height:36px}
+.round-tool,.send-button{min-width:40px;min-height:40px}
+.compact-platforms .platform-check label{min-width:40px;min-height:40px}
+.platform-check input{position:absolute!important;opacity:0!important;display:block!important;width:1px!important;height:1px!important}
+.platform-check input:focus-visible+label{outline:3px solid #7c3aed;outline-offset:2px}
+.platform-check input:checked+label{box-shadow:inset 0 0 0 2px #7c3aed}
+.starter-prompts button,.refine-chips button,.add-platforms button{font-size:12px;min-height:36px}
+.draft-tabs{flex-wrap:wrap}.draft-tab{min-height:42px}.post-copy textarea{font-size:15px;line-height:1.6}
+.chat-confirmation{margin:18px auto;padding:22px;width:calc(100% - 32px);max-width:760px;box-sizing:border-box;border:1px solid #ddd4eb;border-radius:16px;background:#fff;color:#20182c}
+.chat-confirmation h3{margin-top:0}.chat-confirmation h4{margin:12px 0 4px}.chat-confirmation p{font-size:14px;line-height:1.6}
+.chat-confirmation label{display:block;font-size:14px;margin:14px 0}.chat-confirmation select,.chat-confirmation input[type=datetime-local]{display:block;width:100%;margin:8px 0}
+.chat-confirmation input[type=checkbox]{width:auto}.chat-confirmation button,.chat-confirmation a{margin:6px;min-height:40px}.review-copy{white-space:pre-wrap}
+.review-media{display:flex;gap:10px;flex-wrap:wrap}.review-media img,.review-media video{width:160px;height:130px;object-fit:contain;background:#f5f1fa}
+.attachment-placeholder{height:94px;display:grid;place-items:center;color:#665876;font-size:12px}
+.analytics-period-control{max-width:350px;font-size:12px}.analytics-period-control span{white-space:normal}
+.account-hero{min-height:180px!important;padding-top:20px!important;padding-bottom:20px!important}.account-hero h1{font-size:40px!important}.account-orbit{max-height:150px}
+.support-note{font-size:13px;line-height:1.6}.voice-edit{padding:12px 0}.voice-edit summary{cursor:pointer;padding:12px;color:#5b21b6}
+.schedule-list{margin:16px 0}.schedule-item{padding:14px;border-bottom:1px solid #e5deed}.schedule-item input{max-width:230px}.schedule-item button{margin:6px;min-height:40px}
+.draft-search{max-width:320px!important}.filtered-empty{padding:24px;color:#62596d}
+@media(max-width:1050px){.chat-composer{width:calc(100% - 32px)}.chat-feed{padding-left:24px;padding-right:24px}}
+@media(max-width:760px){
+ .app-nav{position:relative!important;height:60px!important;min-height:60px;box-sizing:border-box;justify-content:space-between}
+ .mobile-menu-toggle{display:block;background:#231535;color:#fff;border:1px solid #9e74d1;border-radius:8px;min-height:42px;padding:8px 16px}
+ .app-nav .app-menu{display:none}.app-nav.nav-open .app-menu{display:flex;position:absolute;top:60px;left:0;right:0;background:#140d20;z-index:100;max-height:calc(100dvh - 75px);overflow-y:auto;padding:12px;box-shadow:0 12px 24px #0005}
+ .app-nav .app-menu a{min-height:44px;font-size:15px}.app-nav .app-legal,.app-nav>.nav-spacer{display:none}.app-brand span{display:inline!important}
+ .conversation-body{overflow:hidden}.conversation-app{height:100dvh;display:flex;flex-direction:column}.conversation-workspace{height:auto!important;min-height:0;flex:1;display:flex;flex-direction:column}
+ .conversation-topbar{height:64px;min-height:64px;gap:8px;padding:8px 12px;box-sizing:border-box}.conversation-topbar h1{font-size:18px}.conversation-topbar .eyebrow{font-size:10px}.conversation-topbar .account-button{display:inline-flex;font-size:12px;min-height:40px;align-items:center}
+ .conversation-layout{flex:1;min-height:0;height:auto!important}.conversation-stage{min-height:0;height:100%;display:flex;flex-direction:column}.chat-feed{min-height:0;flex:1;overflow-y:auto;padding:18px 14px}
+ .welcome-message{padding-top:0}.welcome-message h2{font-size:25px}.welcome-message p{font-size:14px}.starter-prompts{gap:6px}
+ .chat-composer{width:calc(100% - 16px);padding:8px;margin:0 auto max(8px,env(safe-area-inset-bottom));max-height:55dvh;overflow-y:auto;box-sizing:border-box}
+ .chat-composer textarea{font-size:16px;min-height:54px}.composer-lower{display:flex;flex-wrap:wrap;gap:8px}.composer-tools{flex-wrap:wrap;flex:1 1 100%}.source-input,.compact-select{display:block!important;font-size:12px!important}.source-input{width:125px!important}.send-group{width:100%;justify-content:space-between}
+ .compact-platforms{flex-wrap:wrap}.compact-platforms .platform-check label{min-width:42px;min-height:42px}.composer-note span:last-child{display:none}.composer-note{font-size:11px}.save-controls{gap:6px;font-size:11px;padding:3px}
+ .chat-confirmation{padding:14px;width:calc(100% - 8px)}.chat-confirmation .button{width:100%;margin:6px 0}.review-media img,.review-media video{max-width:100%}
+ .account-hero h1{font-size:30px!important}.account-orbit{display:none}.draft-filters{flex-wrap:wrap}.library-toolbar{flex-wrap:wrap;gap:12px}.analytics-period-control{max-width:100%}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+.mobile-menu-extra{display:none}@media(max-width:760px){.mobile-menu-extra{display:block}.app-nav .mobile-menu-extra form{display:block!important}.mobile-menu-extra button{min-height:44px;background:transparent;color:white;border:1px solid #887599;border-radius:8px;width:100%}.platform-check label{font-size:13px}.schedule-row{padding:12px 0;border-bottom:1px solid #ddd}.schedule-row button{min-height:44px;margin:6px}.schedule-row input{max-width:100%}}
+
+@media(max-width:360px){.conversation-topbar h1{font-size:15px}.conversation-topbar .button{font-size:12px;white-space:nowrap;padding:10px}.conversation-topbar{gap:6px}.attachment-details button{min-height:40px}}

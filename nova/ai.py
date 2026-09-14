@@ -127,6 +127,7 @@ Schema:
   "tiktok": {{"posts": ["..."]}}
 }}
 Include only requested platforms. Every value in posts must be a finished publish-ready string.
+You have NOT seen attached images/videos or fetched source links. Do not describe unseen visuals, claim to have read a URL, or invent source facts. Ask the user for details if needed. Never include scene directions such as Photo: or Video: inside the caption.
 
 Platform rules:
 {guidance}
@@ -226,6 +227,8 @@ def analyse_performance(*, question: str, dashboard: dict[str, Any], preferences
     """Answer a creator's analytics question using only verified account signals."""
     compact = {
         "period": dashboard.get("period"),
+        "methodology": dashboard.get("note"),
+        "fetched_at": dashboard.get("fetched_at"),
         "summary": dashboard.get("summary"),
         "platforms": dashboard.get("platforms"),
         "top_posts": [
