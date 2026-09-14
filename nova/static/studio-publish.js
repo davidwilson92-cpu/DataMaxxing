@@ -53,7 +53,7 @@ function showPublicationResults(result){
   const remaining=Object.keys(variants).filter(p=>!Object.hasOwn(result.results||{},p));
   reviewHost().insertAdjacentHTML('beforeend',`<section data-publication-results class="chat-confirmation"><h3>Publication results</h3>${entries.map(([p,r])=>`<p><b>${platformName(p)}: ${esc(publicationStatus(r.status))}</b> ${r.requires_tiktok_completion?'Complete this video in TikTok; it is not published yet.':r.status==='pending'?'The platform is still processing this post.':''}${r.error?`<br>${esc(r.error)}`:''}${r.url&&/^https?:\/\//.test(r.url)?` <a target="_blank" rel="noopener" href="${esc(r.url)}">View post</a>`:''}${r.status==='failed'?` <button onclick="requestPublishConfirmation('publish',null,['${p}'])">Review and retry ${platformName(p)}</button>`:''}</p>`).join('')}${remaining.length?`<p>${remaining.map(platformName).join(', ')} were not submitted. Keep working on them in a separate idea.</p><button onclick="continueUnsubmitted(this,${esc(JSON.stringify(remaining))})">Continue unsubmitted versions</button>`:''}<button onclick="refreshPublicationResults()">Refresh results</button><a href="/drafts">Open drafts and schedules</a></section>`);openReview();
 }
-async function refreshPublicationResults(){const id=currentDraftId;try{const result=await api(`/api/publications/${id}`);if(id!==currentDraftId)return;currentDraftStatus=result.draft_status;refreshDraft();showPublicationResults(result);}catch(error){addAssistantMessage(error.message);}}
+async function refreshPublicationResults(){const id=currentDraftId;try{const result=await api(`/api/publications/${id}`);if(id!==currentDraftId)return;currentDraftStatus=result.draft_status;refreshDraft();showPublicationResults(result);rememberSavedPost();}catch(error){addAssistantMessage(error.message);}}
 async function confirmChatPublish(button){
   if(!pendingReview||mediaUploading||sendingMessage)return;
   const review=JSON.parse(JSON.stringify(pendingReview)),s=review.snapshot;
@@ -62,7 +62,7 @@ async function confirmChatPublish(button){
   if(s.scheduled_utc)body.scheduled_local=s.scheduled_utc;
   try{
     await saveDraftNow();const result=await api(s.scheduled_utc?'/api/schedule':'/api/publish',{method:'POST',headers,body:JSON.stringify(body)});
-    currentDraftStatus=result.draft_status;invalidateReview();refreshDraft();showPublicationResults(result);
+    currentDraftStatus=result.draft_status;invalidateReview();refreshDraft();showPublicationResults(result);rememberSavedPost();
   }catch(error){addAssistantMessage(error.message);}
   finally{studioBusy(false);busy(button,false);}
 }

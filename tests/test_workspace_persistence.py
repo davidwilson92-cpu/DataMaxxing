@@ -31,3 +31,15 @@ def test_library_search_finds_unsent_workspace_and_respects_ownership():
     own=client.get('/drafts?q=UniquelyFindableNote')
     assert f'/studio?draft={row["id"]}' in own.text
     assert f'/studio?draft={row["id"]}' not in other.get('/drafts?q=UniquelyFindableNote').text
+
+
+def test_recent_post_titles_are_bounded_persistent_and_account_owned():
+    client,*_=account();other,*_=account()
+    row=client.post('/api/drafts',json={}).json()
+    title='A private saved conversation '+('x'*150)
+    saved=client.patch(f"/api/drafts/{row['id']}",json={'workspace':{'composer':'Unsent continuation','conversation':[{'role':'user','content':title}]}})
+    assert saved.status_code==200
+    recent=client.get('/api/drafts').json()
+    assert recent[0]['id']==row['id'] and recent[0]['title']==title[:100]
+    assert all(r['id']!=row['id'] for r in other.get('/api/drafts').json())
+    assert client.get(f"/api/drafts/{row['id']}").json()['workspace']['conversation'][0]['content']==title

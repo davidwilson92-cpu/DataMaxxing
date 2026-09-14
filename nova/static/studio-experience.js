@@ -39,7 +39,8 @@ function renderReadiness(){
     const missing=['instagram','tiktok'].includes(p)&&!uploadedMedia.length;
     return `<li><b>${platformName(p)}</b><span>${accounts.length?accounts.map(a=>esc(a)).join(', '):'Draft only · connect before publishing'}${missing?' · '+(p==='tiktok'?'Video':'Media')+' required':''}</span></li>`;
   }).join('')||'<li>Choose platforms for your versions.</li>';
-  document.getElementById('postSettingsButton').textContent=platforms.length===1?platformName(platforms[0]):'Platforms · '+platforms.length;
+  document.getElementById('xFormat').hidden=!platforms.includes('x');
+  document.querySelectorAll('.composer-platforms input').forEach(input=>{input.closest('.platform-check').classList.toggle('is-selected',input.checked);input.closest('.platform-check').classList.toggle('is-connected',Boolean(connectionData[input.value]?.length));input.title=connectionData[input.value]?.length?'Connected':'Connect to publish; drafting is available';});
   document.getElementById('threadLength').disabled=!platforms.includes('x')||sendingMessage||!editableDraft();
 }
 function openReview(){document.getElementById('postSettings').close();const host=reviewHost();document.getElementById('chatFeed').append(host);host.scrollIntoView({block:'start',behavior:'smooth'});const heading=host.querySelector('.chat-confirmation:last-child h3');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}}
@@ -56,7 +57,7 @@ async function compareSaved(){
     threadHost('saveComparison').scrollIntoView({block:'start'});
   }catch(error){threadHost('saveComparison').textContent=error.message;}
 }
-document.querySelectorAll('.platform-check input').forEach(node=>node.addEventListener('change',renderReadiness));
+document.querySelectorAll('.platform-check input').forEach(node=>node.addEventListener('change',()=>{renderReadiness();if(node.checked&&!connectionData[node.value]?.length){connectionPlatform=node.value;document.getElementById('connectionTitle').textContent='Connect '+platformName(node.value);document.getElementById('connectionDescription').textContent='Select your '+platformName(node.value)+' account to publish there. You can also keep writing a draft without connecting yet.';document.getElementById('connectionPrompt').showModal();}}));
 
 let textHistory=[];
 function rememberTextRevision(){
@@ -81,3 +82,35 @@ function fitVisibleViewport(){const view=window.visualViewport;document.querySel
 window.visualViewport?.addEventListener('resize',fitVisibleViewport);
 window.addEventListener('resize',fitVisibleViewport);
 fitVisibleViewport();
+
+let connectionPlatform=null;
+async function connectSelectedPlatform(button){
+  if(!connectionPlatform)return;
+  button.disabled=true;
+  try{await saveDraftNow();location.href='/connect/'+encodeURIComponent(connectionPlatform);}
+  catch(error){document.getElementById('connectionDescription').textContent='Your work could not be saved. Close this prompt and retry saving before connecting.';button.disabled=false;}
+}
+let recentPosts=[];
+let historyRequest=0;
+function renderRecentPosts(){
+  const rows=recentPosts.slice(0,20);
+  document.querySelectorAll('.recent-posts').forEach(nav=>{nav.innerHTML=rows.length?rows.map(row=>`<a href="/studio?draft=${row.id}" ${Number(currentDraftId)===row.id?'aria-current="page"':''} onclick="openSavedPost(event,${row.id})"><span>${esc(row.title||row.brief||'Untitled conversation')}</span><small>${esc(row.status==='draft'?'Draft':publicationStatus(row.status))}</small></a>`).join(''):'<p>Your conversations and drafts will appear here as you write.</p>';});
+}
+async function loadRecentPosts(){
+  const request=++historyRequest;
+  try{const rows=await api('/api/drafts');if(request!==historyRequest)return;recentPosts=rows;renderRecentPosts();}
+  catch{document.querySelectorAll('.recent-posts').forEach(nav=>{nav.innerHTML='<p>Could not load saved posts.</p><button class="quiet-button" onclick="loadRecentPosts()">Retry</button>';});}
+}
+function rememberSavedPost(){
+  if(!currentDraftId)return;
+  historyRequest++;
+  const title=lastBrief||conversation.find(m=>m.role==='user')?.content||document.getElementById('brief').value||'Untitled conversation';
+  recentPosts=[{id:Number(currentDraftId),title:title.slice(0,100),status:currentDraftStatus},...recentPosts.filter(r=>r.id!==Number(currentDraftId))];renderRecentPosts();
+}
+async function openSavedPost(event,id){
+  if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+  event.preventDefault();if(sendingMessage||mediaUploading||studioLoading)return;
+  try{await saveDraftNow();location.href='/studio?draft='+id;}
+  catch{document.getElementById('navigationDialog').close();document.getElementById('undoStatus').textContent='Save this conversation before opening another. Retry save or download your work.';}
+}
+window.addEventListener('DOMContentLoaded',loadRecentPosts);
