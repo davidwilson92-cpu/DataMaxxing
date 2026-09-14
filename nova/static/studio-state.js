@@ -15,10 +15,11 @@ function setAutosaveStatus(text){
 let reviewEpoch=0;
 function invalidateReview(){reviewEpoch++;pendingReview=null;document.querySelectorAll('.chat-confirmation').forEach(node=>node.remove());}
 function addAssistantMessage(text,extra=''){
-  if(extra){renderCanvas(extra);canvasView('edit');}
+  const follow=stickToLatest;
   conversation.push({role:'assistant',content:text});
   document.getElementById('chatFeed').insertAdjacentHTML('beforeend',`<article class="chat-message assistant-message"><div class="assistant-avatar">Z</div><div class="message-content"><div class="message-name">Zova</div><p>${esc(text)}</p></div></article>`);
-  scrollChat();
+  if(extra){editingDraft=false;renderCanvas(draftWorkspace());}
+  if(extra&&follow)document.getElementById('draftResponse').scrollIntoView({block:'nearest'});else scrollChat();
 }
 function draftPayload(){
   return {brief:lastBrief,instruction:'',platforms:Object.keys(variants),variants,revision:draftRevision,thread_length:+document.getElementById('threadLength').value,
@@ -52,7 +53,7 @@ async function saveDraftNow(){
   try{await autosaveInFlight;}catch(error){setAutosaveStatus(error.status===409?'Save conflict — compare versions':'Save failed — retry');throw error;}
   finally{autosaveInFlight=null;}
   if(savedSerial!==changeSerial)return saveDraftNow();
-  loadHistory();
+
 }
 function refreshDraft(){
   const card=document.querySelector('[data-current-draft]');if(!card)return;
@@ -70,10 +71,10 @@ function updateDraftPost(platform,index,value){
   const count=document.querySelectorAll('[data-character-count]')[index];if(count)count.textContent=value.length;
   scheduleAutosave();
 }
-function promptComposer(text){studioView('chat');const input=document.getElementById('brief');input.value=text;input.focus();input.setSelectionRange(text.length,text.length);scheduleAutosave();}
+function promptComposer(text){studioView('chat');const input=document.getElementById('brief');input.value=text;input.focus();input.setSelectionRange(text.length,text.length);sizeComposer();scheduleAutosave();}
 function studioBusy(active){
   sendingMessage=active;
-  document.getElementById('generateBtn').disabled=active||!editableDraft();
+  document.getElementById('generateBtn').disabled=active||!editableDraft()||!document.getElementById('brief').value.trim();
   document.getElementById('brief').readOnly=active||!editableDraft();
   document.getElementById('newChatBtn').disabled=active;
   document.querySelectorAll('#variantEditor textarea').forEach(node=>node.readOnly=active||!editableDraft());
@@ -86,7 +87,7 @@ async function sendMessage(){
   try{
     await saveDraftNow();
     const plan=await api('/api/conversation/plan',{method:'POST',headers,body:JSON.stringify({message:text,draft_id:currentDraftId,selected_platforms:selectedPlatforms(),active_platform:currentPlatform,recent_messages:conversation.slice(-12)})});
-    addUserMessage(text);input.value='';changeSerial++;addThinking();
+    stickToLatest=true;addUserMessage(text);scrollChat(true);input.value='';sizeComposer();changeSerial++;addThinking();
     if(plan.action==='answer'){removeThinking();addAssistantMessage(plan.reply||'What would you like to create or change?');}
     else if(plan.action==='insight'){
       const result=await api('/api/insights',{method:'POST',headers,body:JSON.stringify({question:text})});removeThinking();addAssistantMessage(result.answer);
@@ -101,7 +102,7 @@ async function sendMessage(){
         const result=await api('/api/ai/rewrite',{method:'POST',headers,body:JSON.stringify({platform:p,posts:variants[p].posts,action:'',instruction:text})});
         changed[p]={posts:result.posts};
       }
-      rememberTextRevision();Object.assign(variants,changed);currentPlatform=targets[0];removeThinking();addAssistantMessage('Updated the requested versions. Review the changes in your canvas.',draftWorkspace());
+      rememberTextRevision();Object.assign(variants,changed);currentPlatform=targets[0];removeThinking();addAssistantMessage('Updated the requested versions. Here’s the updated version.',draftWorkspace());
     }else{
       const platforms=plan.platforms.length?plan.platforms:selectedPlatforms();
       if(!platforms.length)throw new Error('Choose at least one platform.');
@@ -114,11 +115,11 @@ async function sendMessage(){
       if(!targets.length)throw new Error('Those versions already exist. Tell me what to change in them.');
       const result=await api('/api/ai/generate',{method:'POST',headers,body:JSON.stringify({brief:plan.action==='add_platforms'?(lastBrief||text):text,instruction:plan.action==='add_platforms'?text:'',platforms:targets,thread_length:+document.getElementById('threadLength').value,link_url:document.getElementById('linkUrl').value,draft_id:currentDraftId})});
       variants=result.variants;currentDraftId=result.draft_id;draftRevision=result.revision;lastBrief=plan.action==='add_platforms'?lastBrief:text;currentPlatform=targets[0];currentDraftStatus='draft';
-      removeThinking();addAssistantMessage('Your versions are ready to edit. I used your description; I have not inspected the attached media or opened source links.',draftWorkspace());
+      removeThinking();addAssistantMessage('Here’s a first draft. Tell me what you’d like to change.',draftWorkspace());
     }
     changeSerial++;await saveDraftNow();
   }catch(error){removeThinking();if(!Object.keys(variants).length)renderCanvas('<p>No new versions were created. Your message is retained in the conversation composer. Retry when you are ready.</p>');input.value=text;changeSerial++;addAssistantMessage(error.message||'Something went wrong. Your message is back in the composer.');setAutosaveStatus('Unsaved changes — retry');}
-  finally{studioBusy(false);input.focus();}
+  finally{studioBusy(false);sizeComposer();if(window.matchMedia('(min-width: 761px)').matches)input.focus();}
 }
 async function loadRequestedDraft(){
   const id=new URLSearchParams(location.search).get('draft');
@@ -138,7 +139,7 @@ async function loadRequestedDraft(){
     renderAttachments();setAutosaveStatus(editableDraft()?'Saved':currentDraftStatus);
     if(currentDraftStatus!=='draft')await refreshPublicationResults();
   }catch(error){addAssistantMessage(error.message);currentDraftStatus='unavailable';document.getElementById('generateBtn').disabled=true;document.getElementById('brief').readOnly=true;return;}
-  finally{studioLoading=false;studioBusy(false);}
+  finally{studioLoading=false;studioBusy(false);sizeComposer();renderReadiness();}
 }
 async function newConversation(){
   if(sendingMessage||studioLoading)return;
@@ -148,12 +149,12 @@ async function newConversation(){
   uploadedMedia=[];uploadedMediaIds=[];uploadedMediaKind=null;uploadedVideoDuration=0;changeSerial=0;savedSerial=0;
   history.replaceState({},'','/studio');document.getElementById('chatFeed').innerHTML='';
   document.getElementById('brief').value='';document.getElementById('linkUrl').value='';document.getElementById('mediaInput').value='';document.getElementById('mediaInput').disabled=false;
-  renderCanvas('<p>Share a new idea to create your next versions.</p>');document.getElementById('reviewPanel').innerHTML='';document.getElementById('saveComparison').innerHTML='';canvasView('edit');studioView('chat');studioBusy(false);renderAttachments();addAssistantMessage('What would you like to create? Share an idea or attach your media.');setAutosaveStatus('Saved');document.getElementById('brief').focus();
+  editingDraft=false;document.getElementById('postSettings').close();studioBusy(false);renderAttachments();addAssistantMessage('What would you like to create? Share an idea or attach your media.');setAutosaveStatus('Saved');sizeComposer();document.getElementById('brief').focus();
 }
 document.getElementById('mediaInput').addEventListener('change',async()=>{await uploadMedia();scheduleAutosave();});
-document.getElementById('brief').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();sendMessage();}});
+document.getElementById('brief').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&(event.ctrlKey||event.metaKey||window.matchMedia('(min-width: 761px)').matches)){event.preventDefault();sendMessage();}});
 document.getElementById('brief').addEventListener('input',scheduleAutosave);
 document.getElementById('linkUrl').addEventListener('input',scheduleAutosave);
 document.querySelectorAll('.platform-check input,#threadLength').forEach(node=>node.addEventListener('change',scheduleAutosave));
 window.addEventListener('beforeunload',event=>{if(savedSerial!==changeSerial||mediaUploading||sendingMessage){event.preventDefault();event.returnValue='';}});
-window.addEventListener('DOMContentLoaded',()=>{renderReadiness();loadHistory();loadRequestedDraft();});
+window.addEventListener('DOMContentLoaded',()=>{renderReadiness();loadRequestedDraft();});
