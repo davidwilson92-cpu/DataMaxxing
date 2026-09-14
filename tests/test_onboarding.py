@@ -85,13 +85,13 @@ def test_studio_has_premium_application_shell():
     signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     page = client.get("/studio", cookies=signup.cookies)
     assert page.status_code == 200
-    assert 'id="canvasEditor"' in page.text and 'id="chatFeed"' in page.text
-    assert 'id="reviewPanel"' in page.text
+    assert 'id="chatFeed"' in page.text and 'role="log"' in page.text
+    assert "YOUR WORKING CANVAS" not in page.text and "draft-canvas" not in page.text
     assert 'id="studioConnections"' in page.text
     assert 'href="/account#voice"' in page.text
     assert 'href="/drafts"' in page.text and 'href="/analytics"' in page.text
     assert 'accept="image/*,video/mp4,video/quicktime,video/webm"' in page.text
-    assert 'data-studio-view="preview"' in page.text
+    assert 'id="postSettings"' in page.text and 'id="navigationDialog"' in page.text
     assert 'zova-symbol' in page.text
 
 
