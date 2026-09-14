@@ -172,7 +172,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Zova Social Publishing", version="5.1.0", lifespan=lifespan)
-from .request_security import SecurityMiddleware
+from .request_security import SecurityMiddleware, allowed_request
 from .recovery import router as recovery_router
 from .body_limit import BodyLimitMiddleware
 app.add_middleware(BodyLimitMiddleware)
@@ -324,39 +324,71 @@ def logout(request: Request):
     resp=RedirectResponse("/",303); resp.delete_cookie("nova_session",path="/"); return resp
 
 @app.get("/subscribe", response_class=HTMLResponse)
-def subscribe(request:Request):
+def subscribe(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
-    return templates.TemplateResponse(request, "subscribe.html", template_context(request,user,billing_ready=billing.configured(),subscription_required=billing.require_subscription(),price_label=os.environ.get("ZOVA_PRICE_LABEL",os.environ.get("NOVA_PRICE_LABEL","Subscription")),price_note=os.environ.get("ZOVA_PRICE_NOTE",os.environ.get("NOVA_PRICE_NOTE","Cancel from your account at any time."))))
+    info=billing.summary(db,user)
+    return templates.TemplateResponse(request,"subscribe.html",template_context(request,user,billing_info=info,subscription_required=billing.require_subscription()))
 
 @app.get("/billing/checkout")
-def billing_checkout(request:Request):
-    user=current_user(request)
-    if not billing.require_subscription(): raise HTTPException(409,"Paid checkout is disabled during testing.")
-    try:url=billing.create_checkout(user,base_url())
-    except RuntimeError as exc: raise HTTPException(503,str(exc))
+def checkout_link(request:Request):
+    current_user(request)
+    if not billing.checkout_enabled():raise HTTPException(409,"Paid checkout is disabled during testing.")
+    return RedirectResponse('/subscribe',303)
+
+@app.post("/billing/checkout")
+def billing_checkout(request:Request,plan:str=Form('monthly'),db:Session=Depends(get_db)):
+    user=db.get(User,current_user(request).id)
+    if not billing.checkout_enabled():raise HTTPException(409,"Checkout is disabled. Your current access is unchanged.")
+    try:url=billing.create_checkout(db,user,base_url(),plan)
+    except (RuntimeError,ValueError) as exc:
+        db.rollback();return RedirectResponse('/subscribe?error='+quote_plus(str(exc)),303)
     return RedirectResponse(url,303)
 
 @app.get("/billing/success")
 def billing_success(request:Request,session_id:str=Query(...),db:Session=Depends(get_db)):
     user=db.get(User,current_user(request).id)
-    try:data=billing.fetch_checkout_session(session_id)
-    except RuntimeError as exc: raise HTTPException(502,str(exc))
-    if str(data.get("client_reference_id"))!=str(user.id): raise HTTPException(403,"Checkout session does not belong to this user")
-    user.stripe_customer_id=data.get("customer") or user.stripe_customer_id; user.stripe_subscription_id=data.get("subscription") if isinstance(data.get("subscription"),str) else ((data.get("subscription") or {}).get("id")); user.subscription_status="active" if data.get("payment_status") in {"paid","no_payment_required"} else user.subscription_status; db.commit()
-    return RedirectResponse("/studio",303)
+    if not allowed_request(f"billing-return:{user.id}",20,300):raise HTTPException(429,"Please wait before refreshing billing again.")
+    try:billing.verify_return(db,user,session_id)
+    except PermissionError:raise HTTPException(403,"Checkout session does not belong to this account")
+    except ValueError:raise HTTPException(400,"Invalid checkout session")
+    except RuntimeError:
+        db.rollback();return RedirectResponse('/subscribe?pending=1',303)
+    return RedirectResponse('/subscribe?returned=1',303)
 
 @app.get("/billing/portal")
-def billing_portal(request:Request):
-    user=current_user(request)
-    try:url=billing.create_portal(user,base_url())
-    except RuntimeError as exc: raise HTTPException(503,str(exc))
+def portal_link(request:Request):
+    current_user(request)
+    return RedirectResponse('/subscribe',303)
+
+@app.post("/billing/portal")
+def billing_portal(request:Request,db:Session=Depends(get_db)):
+    user=db.get(User,current_user(request).id)
+    try:url=billing.create_portal(db,user,base_url())
+    except (RuntimeError,ValueError) as exc:
+        db.rollback();return RedirectResponse('/subscribe?error='+quote_plus(str(exc)),303)
     return RedirectResponse(url,303)
+
+@app.post("/billing/refresh")
+def billing_refresh(request:Request,db:Session=Depends(get_db)):
+    user=db.get(User,current_user(request).id)
+    try:billing.refresh(db,user)
+    except RuntimeError:
+        db.rollback();return RedirectResponse('/subscribe?pending=1',303)
+    return RedirectResponse('/subscribe',303)
 
 @app.post("/billing/webhook")
 async def billing_webhook(request:Request,db:Session=Depends(get_db)):
-    raw=await request.body(); sig=request.headers.get("stripe-signature","")
-    if not billing.verify_webhook(raw,sig): raise HTTPException(400,"Invalid Stripe signature")
-    event=json.loads(raw); billing.apply_event(db,event); return {"received":True}
+    raw=await request.body()
+    if not billing.verify_webhook(raw,request.headers.get('stripe-signature','')):raise HTTPException(400,"Invalid Stripe signature")
+    try:
+        event=json.loads(raw)
+        from starlette.concurrency import run_in_threadpool
+        await run_in_threadpool(billing.apply_event,db,event)
+    except (ValueError,TypeError):
+        db.rollback();raise HTTPException(400,"Invalid Stripe event")
+    except RuntimeError:
+        db.rollback();raise HTTPException(503,"Billing sync unavailable; retry this event")
+    return {'received':True}
 
 @app.get("/security",response_class=HTMLResponse)
 def security_page(request:Request):

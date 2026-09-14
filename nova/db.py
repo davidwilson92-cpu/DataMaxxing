@@ -279,6 +279,33 @@ class UserCreatorLink(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class BillingAccount(Base):
+    __tablename__ = 'zova_billing_accounts'
+    key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    mode: Mapped[str] = mapped_column(String(10))
+    customer_id: Mapped[str | None] = mapped_column(String(120), nullable=True, unique=True)
+    subscription_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    status: Mapped[str] = mapped_column(String(40), default='none')
+    price_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default=False)
+    period_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    checkout_key: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    checkout_started: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    checkout_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
+    checkout_session: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    revision: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class BillingEvent(Base):
+    __tablename__ = 'zova_billing_events'
+    event_id: Mapped[str] = mapped_column(String(150), primary_key=True)
+    mode: Mapped[str] = mapped_column(String(10))
+    event_type: Mapped[str] = mapped_column(String(100))
+    processed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 Base.metadata.create_all(bind=engine)
 from .migrations import run_migrations
 run_migrations(engine)

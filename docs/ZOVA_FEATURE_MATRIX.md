@@ -1,3 +1,7 @@
+## Stripe integration candidate — 14 September 2026
+
+Hosted Checkout, billing portal, verified subscription reconciliation, durable duplicate-event handling, test/live isolation and billing recovery UI are implemented on `codex/stripe-billing`. Local full suite: 88 passed. See [STRIPE_BILLING.md](STRIPE_BILLING.md) for the detailed matrix, configuration and rollback. Stripe sandbox validation, approved pricing/credentials and deployment are pending. Checkout remains off by default and subscription enforcement remains disabled.
+
 # Zova feature matrix — 14 September 2026 local candidate
 
 “Implemented” below describes this local candidate. Nothing has been deployed. Provider approval is never inferred from code or a mock.
