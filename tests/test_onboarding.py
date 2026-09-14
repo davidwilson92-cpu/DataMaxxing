@@ -93,6 +93,9 @@ def test_studio_has_premium_application_shell():
     assert 'accept="image/*,video/mp4,video/quicktime,video/webm"' in page.text
     assert 'id="postSettings"' in page.text and 'id="navigationDialog"' in page.text
     assert 'zova-symbol' in page.text
+    assert 'composer-platforms' in page.text and 'id="xFormat"' in page.text
+    assert 'studio-watermark-gradient' in page.text and 'recent-posts' in page.text
+    assert 'id="connectionPrompt"' in page.text
 
 
 

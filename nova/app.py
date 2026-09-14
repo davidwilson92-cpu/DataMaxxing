@@ -908,7 +908,9 @@ def api_drafts(request:Request,db:Session=Depends(get_db)):
     output=[]
     for r in rows:
         acts=db.scalars(select(Activity).where(Activity.user_id==user.id,Activity.draft_id==r.id,Activity.url.is_not(None)).order_by(Activity.id.desc())).all()
-        output.append({"id":r.id,"brief":r.brief,"platforms":json.loads(r.platforms_json or "[]"),"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
+        workspace=json.loads(r.workspace_json or "{}")
+        title=r.brief or next((m.get("content", "") for m in workspace.get("conversation", []) if m.get("role")=="user"), "") or workspace.get("composer", "") or "Untitled conversation"
+        output.append({"id":r.id,"title":title[:100],"brief":r.brief,"platforms":json.loads(r.platforms_json or "[]"),"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
     return output
 
 @app.get("/api/drafts/{draft_id}")
