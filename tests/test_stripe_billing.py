@@ -24,7 +24,7 @@ def stripe(monkeypatch):
         if state['fail']:raise RuntimeError('Synthetic outage')
         if path=='/customers':return {'id':'cus_'+key.replace(':','_').replace('-','_')}
         if path=='/subscriptions':return {'data':state['subscriptions']}
-        if path.startswith('/prices/'):return {'active':True,'type':'recurring','livemode':False}
+        if path.startswith('/prices/'):return {'active':True,'type':'recurring','livemode':False,'recurring':{'interval':'month','interval_count':1}}
         if path=='/checkout/sessions':
             session=state['sessions'].setdefault(key,{'id':'cs_'+key.replace('-','_'),'status':'open','url':'https://checkout.stripe.com/c/pay/test','customer':data['customer'],'client_reference_id':data['client_reference_id'],'mode':'subscription','livemode':False})
             return session
@@ -216,3 +216,14 @@ def test_expired_checkout_and_cancelled_subscription_allow_new_attempt(stripe):
     stripe['subscriptions']=[subscription(second['customer'],'canceled')]
     assert checkout(client).headers['location'].startswith('https://checkout.stripe.com')
     assert len(stripe['sessions'])==3
+
+
+def test_wrong_billing_interval_is_rejected_before_checkout(stripe,monkeypatch):
+    client,*_=account();original=billing._request
+    def wrong_interval(method,path,data=None,key=None):
+        result=original(method,path,data,key)
+        if path.startswith('/prices/'):result['recurring']['interval']='year'
+        return result
+    monkeypatch.setattr(billing,'_request',wrong_interval)
+    assert checkout(client).headers['location'].startswith('/subscribe?error=')
+    assert not stripe['sessions']
