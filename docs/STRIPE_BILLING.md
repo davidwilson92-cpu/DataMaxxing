@@ -15,7 +15,7 @@
 | Access during testing | REQUIRE_SUBSCRIPTION remains false; checkout has independent mode/live switch | Default-off tests |
 | Billing UI | Account link, test badge, cancellation/pending/error states, refresh and portal controls | Synthetic desktop/mobile inspection |
 
-No production Stripe configuration or real charges were performed. Full local suite: 88 passed; final billing-specific suite: 12 passed, including expired checkout and resubscription after cancellation. GitHub CI must also pass PostgreSQL, restore and Docker checks. Provider sandbox and deployment validation remain separate gates.
+No production Stripe configuration or real charges were performed. Full local suite: 88 passed; final billing-specific suite: 13 passed, including expired checkout, resubscription after cancellation and mismatched price intervals. GitHub CI must also pass PostgreSQL, restore and Docker checks. Provider sandbox and deployment validation remain separate gates.
 
 ## Configure a Stripe sandbox first
 

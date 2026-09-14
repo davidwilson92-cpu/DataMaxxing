@@ -3,7 +3,7 @@
 {% block body %}<main class="auth-wrap"><section class="auth-card wide"><div class="eyebrow">ZOVA MEMBERSHIP</div><h1>Your plan & billing</h1>
 {% if billing_info.mode == 'test' %}<div class="alert">Stripe test mode. No real payments. Test subscriptions do not change your live account.</div>{% endif %}
 {% if not subscription_required %}<p class="support-note">Testing access is open. Subscription enforcement remains disabled.</p>{% endif %}
-{% if request.query_params.get('error') %}<div class="alert error" role="alert">{{ request.query_params.get('error')[:200] }}</div>{% endif %}
+{% if request.query_params.get('error') %}<div class="alert error" role="alert">Billing could not complete that request. Retry shortly, or manage your existing subscription below. Your current access is unchanged.</div>{% endif %}
 {% if request.query_params.get('cancelled') %}<div class="alert">Checkout was closed. Your saved work is unchanged. You can resume checkout below.</div>{% endif %}
 {% if request.query_params.get('pending') %}<div class="alert" role="status">We could not confirm the latest billing status yet. Refresh below in a moment; do not start another payment.</div>{% endif %}
 {% if request.query_params.get('returned') %}<div class="alert" role="status">Checkout returned. Your verified subscription status is shown below.</div>{% endif %}
