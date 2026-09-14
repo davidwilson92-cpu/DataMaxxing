@@ -1,0 +1,9 @@
+.git
+.env
+.env.*
+*.db
+*.sqlite*
+uploads/
+__pycache__/
+.pytest_cache/
+docs/validation/

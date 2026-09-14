@@ -4,10 +4,10 @@ import hashlib
 import hmac
 import os
 import secrets
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from cryptography.fernet import Fernet, InvalidToken
 from fastapi import HTTPException, Request
-from .db import SessionLocal, User, utcnow
+from .db import SessionLocal, User, RevokedSession, utcnow
 
 
 def hash_api_key(raw: str) -> str:
@@ -58,7 +58,11 @@ def session_secret() -> str:
 
 def make_user_session(user_id: int) -> str:
     expires = int((utcnow() + timedelta(days=30)).timestamp())
-    payload = f'{user_id}.{expires}'
+    with SessionLocal() as db:
+        user = db.get(User, user_id)
+        if not user or not user.active:
+            raise ValueError('Active user required')
+        payload = f'v2.{user_id}.{user.auth_version}.{expires}.{secrets.token_hex(16)}'
     signature = hmac.new(session_secret().encode(), payload.encode(), hashlib.sha256).hexdigest()
     return f'{payload}.{signature}'
 
@@ -67,14 +71,24 @@ def user_from_session(token: str | None) -> User | None:
     if not token:
         return None
     try:
-        user_id, expires, signature = token.split('.', 2)
-        payload = f'{user_id}.{expires}'
+        parts = token.split('.')
+        if len(parts) == 3:
+            user_id, expires, signature = parts
+            version = 0  # Existing reviewer/customer sessions remain valid until revoked or expired.
+        elif len(parts) == 6 and parts[0] == 'v2':
+            _, user_id, version, expires, nonce, signature = parts
+            version = int(version)
+        else:
+            return None
+        payload = '.'.join(parts[:-1])
         expected = hmac.new(session_secret().encode(), payload.encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(signature, expected) or int(expires) < int(utcnow().timestamp()):
             return None
         with SessionLocal() as db:
+            if db.get(RevokedSession, hash_api_key(token)):
+                return None
             user = db.get(User, int(user_id))
-            if not user or not user.active:
+            if not user or not user.active or user.auth_version != version:
                 return None
             db.expunge(user)
             return user
@@ -87,6 +101,20 @@ def current_user(request: Request) -> User:
     if not user:
         raise HTTPException(status_code=401, detail='Sign in required')
     return user
+
+
+def revoke_session(token: str | None) -> None:
+    if not token or not user_from_session(token):
+        return
+    parts = token.split('.')
+    expires = int(parts[1] if len(parts) == 3 else parts[3])
+    from sqlalchemy.exc import IntegrityError
+    with SessionLocal() as db:
+        db.add(RevokedSession(token_hash=hash_api_key(token), expires_at=datetime.fromtimestamp(expires, timezone.utc)))
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()  # Two logout requests for the same session are both successful.
 
 
 def make_state() -> str:

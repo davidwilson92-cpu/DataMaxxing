@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, create_engine, select
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///./nova.db')
@@ -69,6 +69,7 @@ class User(Base):
     display_name: Mapped[str] = mapped_column(String(160), default='')
     country_code: Mapped[str] = mapped_column(String(2), default='')
     password_hash: Mapped[str] = mapped_column(Text)
+    auth_version: Mapped[int] = mapped_column(Integer, default=0)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -83,6 +84,37 @@ class User(Base):
 
     preferences: Mapped['CreatorPreferences | None'] = relationship(back_populates='user', uselist=False, cascade='all,delete-orphan')
     social_connections: Mapped[list['SocialConnection']] = relationship(back_populates='user', cascade='all,delete-orphan')
+
+
+class RevokedSession(Base):
+    __tablename__ = 'zova_revoked_sessions'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class RecoveryToken(Base):
+    __tablename__ = 'zova_recovery_tokens'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    auth_version: Mapped[int] = mapped_column(Integer)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class RequestLimit(Base):
+    __tablename__ = 'zova_request_limits'
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    count: Mapped[int] = mapped_column(Integer, default=0)
+    reset_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class DeletionRequest(Base):
+    __tablename__ = 'zova_deletion_requests'
+    code: Mapped[str] = mapped_column(String(64), primary_key=True)
+    subject_hash: Mapped[str] = mapped_column(String(64), index=True)
+    status: Mapped[str] = mapped_column(String(30), default='received')
+    scope: Mapped[str] = mapped_column(Text, default='Platform connection credentials')
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class AuthIdentity(Base):
@@ -158,10 +190,38 @@ class Draft(Base):
     instruction: Mapped[str] = mapped_column(Text, default='')
     platforms_json: Mapped[str] = mapped_column(Text, default='[]')
     variants_json: Mapped[str] = mapped_column(Text, default='{}')
+    workspace_json: Mapped[str] = mapped_column(Text, default='{}')
+    revision: Mapped[int] = mapped_column(Integer, default=0)
     thread_length: Mapped[int] = mapped_column(Integer, default=1)
     status: Mapped[str] = mapped_column(String(30), default='draft')
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class PublishReview(Base):
+    __tablename__ = 'zova_publish_reviews'
+    code: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    draft_id: Mapped[int] = mapped_column(ForeignKey('nova_drafts.id'), index=True)
+    revision: Mapped[int] = mapped_column(Integer)
+    payload_json: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(30), default='review')
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Publication(Base):
+    __tablename__ = 'zova_publications'
+    __table_args__ = (UniqueConstraint('draft_id','platform',name='uq_publication_draft_platform'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    draft_id: Mapped[int] = mapped_column(ForeignKey('nova_drafts.id'), index=True)
+    platform: Mapped[str] = mapped_column(String(30))
+    connection_id: Mapped[int] = mapped_column(ForeignKey('nova_social_connections.id'))
+    review_code: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(30), default='queued',index=True)
+    result_json: Mapped[str] = mapped_column(Text,default='{}')
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=utcnow,onupdate=utcnow)
 
 
 class MediaAsset(Base):

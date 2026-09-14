@@ -1,0 +1,69 @@
+name: Validate application
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  synthetic-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements.txt pytest pip-audit
+      - run: python -m pip check
+      - run: python -m pytest -q --junitxml=test-results.xml
+      - run: python -m pip_audit --format json -o dependency-audit.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-evidence
+          path: |
+            test-results.xml
+            dependency-audit.json
+  postgres-release:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: zova_test_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d zova_test_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ZOVA_TEST_POSTGRES: postgresql+psycopg://postgres:synthetic-ci-only@127.0.0.1:5432/zova_test_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt pytest
+      - run: python -m pytest -q --junitxml=postgres-tests.xml
+      - name: Restore synthetic PostgreSQL backup
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker exec "$PG_CONTAINER" sh -c 'pg_dump -U postgres -Fc zova_test_ci > /tmp/synthetic.dump'
+          docker exec "$PG_CONTAINER" createdb -U postgres zova_test_restored
+          docker exec "$PG_CONTAINER" pg_restore -U postgres -d zova_test_restored /tmp/synthetic.dump
+          python scripts/check_synthetic_restore.py
+      - name: Build hosting image
+        run: docker build -t zova-release .
+      - name: Smoke-test isolated hosting image
+        run: |
+          docker run -d --name zova-smoke -p 8772:10000 -e DATABASE_URL=sqlite:////tmp/synthetic.db -e PUBLIC_BASE_URL=http://localhost:8772 -e SESSION_SECRET=synthetic-ci-only -e CREDENTIAL_ENCRYPTION_KEY=eV7ZGbkgONCU5t6fVtxgBMvCKx6-4UlAHWVHN2LoflE= -e REQUIRE_SUBSCRIPTION=false zova-release
+          for attempt in $(seq 1 30); do if curl --fail http://localhost:8772/health; then break; fi; sleep 2; done
+          curl --fail http://localhost:8772/health
+          curl --fail http://localhost:8772/ | grep 'One idea.'
+          for file in studio studio-state studio-publish studio-experience; do node --check "nova/static/$file.js"; done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgres-release-evidence
+          path: postgres-tests.xml

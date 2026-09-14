@@ -57,7 +57,7 @@ def test_signup_routes_through_onboarding():
     assert response.headers["location"] == "/onboarding/socials"
     assert response.cookies.get("nova_session")
     socials = client.get("/onboarding/socials", cookies=response.cookies)
-    assert socials.status_code == 200 and "Skip for now" in socials.text
+    assert socials.status_code == 200 and 'href="/onboarding/complete">Create my first draft' in socials.text
     writing = client.get("/onboarding/writing-style", cookies=response.cookies)
     assert writing.status_code == 200 and "YOUR ZOVA VOICE" in writing.text
     assert "Paste 3" not in writing.text
@@ -85,37 +85,15 @@ def test_studio_has_premium_application_shell():
     signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     page = client.get("/studio", cookies=signup.cookies)
     assert page.status_code == 200
-    assert "Your social manager" in page.text
-    assert "Ask about your socials or describe what you want to post" in page.text
-    assert "LIVE CONTEXT" in page.text
-    assert "What are we working on?" in page.text
-    assert 'src="/static/studio.js?v=6.2"' in page.text
-    assert "Review and publish" not in page.text
-    assert "Include Instagram" in page.text
-    assert 'href="/static/nova.css?v=6.3"' in page.text
-    assert 'class="studio-ambient-orbit"' in page.text
-    assert 'accept="image/*,video/mp4,video/quicktime,video/webm"' in page.text
-    assert "Zova uses connected-account data to answer performance questions" in page.text
-    assert 'id="chatFeed"' in page.text
-    assert 'class="starter-prompts"' in page.text
-    assert 'id="publishReview"' not in page.text
-    assert "Confirm and publish" not in page.text
-    assert "Distinct by design" not in page.text
-    assert "NATIVE DRAFTS" not in page.text
-    assert "Recent chats" in page.text
-    assert "Across your socials" in page.text
-    assert "What Zova has done" not in page.text
-    assert "Ã" not in page.text and "â" not in page.text
-    assert "site-header" not in page.text
-    assert "Give Zova the thought behind the post" not in page.text
+    assert 'id="canvasEditor"' in page.text and 'id="chatFeed"' in page.text
+    assert 'id="reviewPanel"' in page.text
+    assert 'id="studioConnections"' in page.text
     assert 'href="/account#voice"' in page.text
-    assert "Calendar" not in page.text
-    assert "zova-symbol" in page.text
-    assert "Your social pulse" in page.text
-    assert "ZOVA INTELLIGENCE" not in page.text
-    assert 'href="/drafts"' in page.text
-    assert 'href="/analytics"' in page.text
-    assert 'href="/refund-policy"' in page.text
+    assert 'href="/drafts"' in page.text and 'href="/analytics"' in page.text
+    assert 'accept="image/*,video/mp4,video/quicktime,video/webm"' in page.text
+    assert 'data-studio-view="preview"' in page.text
+    assert 'zova-symbol' in page.text
+
 
 
 def test_studio_answers_account_questions_without_external_ai():
@@ -154,9 +132,9 @@ def test_separate_analytics_workspace_and_dashboard():
     assert "Analyse my accounts" in page.text
     dashboard = client.get("/api/analytics/dashboard", cookies=signup.cookies)
     assert dashboard.status_code == 200
-    assert dashboard.json()["period"] == "Last 7 days"
+    assert dashboard.json()["period"] == "Posts published in the last 7 days"
     assert "engagement_rate" in dashboard.json()["summary"]
-    assert dashboard.json()["recommendations"][0]["title"] == "Connect your first account"
+    assert dashboard.json()["recommendations"][0]["title"] == "Build a measurable baseline"
 
 
 def test_account_management_and_social_voice_waiting_state():

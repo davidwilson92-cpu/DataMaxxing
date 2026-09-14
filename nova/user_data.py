@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import pycountry
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 COUNTRY_RE = re.compile(r"^[A-Z]{2}$")
@@ -22,6 +23,6 @@ def normalize_name(value: str) -> str:
 
 def normalize_country(value: str) -> str:
     country = value.strip().upper()
-    if not COUNTRY_RE.fullmatch(country):
+    if not COUNTRY_RE.fullmatch(country) or pycountry.countries.get(alpha_2=country) is None:
         raise ValueError("Select a valid country")
     return country

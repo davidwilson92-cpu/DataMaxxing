@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Help | Zova{% endblock %}
+{% block body_class %}app-body{% endblock %}
+{% block site_header %}{% endblock %}{% block site_footer %}{% endblock %}
+{% block body %}<div class="app-shell">{% include "app_nav.html" %}<main class="app-workspace" style="padding:32px;max-width:900px"><h1>Your first post with Zova</h1>
+<ol><li>Connect your destination in <a href="/account#socials">Socials</a>. Instagram offers direct Instagram login and Facebook login for a linked professional account.</li><li>In <a href="/studio">Studio</a>, select platforms and describe your idea, audience and desired outcome. You can attach your own images or video.</li><li>Check each version. Zova drafts text; it does not inspect attached media or fetch source links. Describe their contents so it can work from accurate information.</li><li>Wait for “Saved” or select Save now. Open the draft later from <a href="/drafts">Drafts</a>.</li><li>Select Publish or Schedule. Review the exact destination, text, media and platform settings before confirming. A pending result is not a published post.</li></ol>
+<h2>Editing and recovery</h2><p>Change your <a href="/account#voice">voice preferences</a> whenever they are inaccurate. If a save fails, keep the tab open: your input stays visible. “Open saved version” reloads the server copy and discards unsaved local changes only after the browser warning. Keep a copy before replacing them.</p>
+<h2>Scheduled posts and uncertain results</h2><p>Manage future jobs in Drafts. Cancellation and rescheduling stop once a job starts. Times are shown in your browser’s timezone. If a provider response is uncertain, check the destination before taking further action; Zova will not automatically resend it. Only definitely failed platforms can be retried.</p>
+<h2>Current testing offer</h2><p>Subscription enforcement is disabled for testing. This workspace does not require a paid plan. Platform permissions and approvals still determine which connections can publish. Connecting an account does not guarantee every feature is approved.</p>
+<h2>Account access</h2><p>Change your password in Account. Other sessions are revoked when a password changes. Password recovery is available from the login page when secure email delivery is configured.</p>
+</main></div>{% endblock %}

@@ -1,65 +1,104 @@
 {% extends "base.html" %}
+
 {% block title %}Zova Studio | Your AI social manager{% endblock %}
+
+{% block head %}<link rel="stylesheet" href="/static/studio-attachments.css?v=20260914-release1"><link rel="stylesheet" href="/static/studio-experience.css?v=20260914-release1">{% endblock %}
+
 {% block body_class %}app-body conversation-body{% endblock %}
+
 {% block site_header %}{% endblock %}{% block site_footer %}{% endblock %}
+
 {% block body %}
+
 <div class="app-shell conversation-app">
+
   {% set active_page = 'studio' %}{% include "app_nav.html" %}
+
   <div class="app-workspace conversation-workspace">
-    <div class="studio-ambient-orbit" aria-hidden="true">
-      <div class="ambient-glow ambient-glow-one"></div>
-      <div class="ambient-glow ambient-glow-two"></div>
-      <div class="ambient-orbit ambient-orbit-outer">
-        <span class="ambient-node node-one"></span>
-        <span class="ambient-node node-two"></span>
-      </div>
-      <div class="ambient-orbit ambient-orbit-middle">
-        <span class="ambient-node node-three"></span>
-        <span class="ambient-node node-four"></span>
-      </div>
-      <div class="ambient-orbit ambient-orbit-inner">
-        <span class="ambient-node node-five"></span>
-      </div>
-    </div>
+
     <header class="conversation-topbar">
-      <div><div class="eyebrow">ZOVA STUDIO</div><h1>Your social manager</h1></div>
-      <div class="topbar-actions"><span id="connectionPulse" class="connection-pulse"><i></i>Reading your socials</span><a class="icon-button account-button" href="/account">Account</a><button class="button primary" type="button" onclick="newConversation()">New chat</button></div>
+
+      <div><div class="eyebrow">ZOVA STUDIO</div><h1>One idea. Your voice.</h1></div>
+
+      <div class="topbar-actions"><span id="connectionPulse" class="connection-pulse"><i></i>Your workspace</span><a class="icon-button account-button" href="/account">Account</a><button class="button primary" type="button" id="newChatBtn" onclick="newConversation()">New idea</button></div>
+
     </header>
+
     {% if subscription_blocked %}<div class="alert error conversation-alert">Your subscription is not active. <a href="/subscribe">Subscribe to continue.</a></div>{% endif %}
-    <main class="conversation-layout">
+
+    <nav class="mobile-studio-modes" aria-label="Studio views"><button data-studio-view="chat" aria-pressed="true" onclick="studioView('chat')">Conversation</button><button data-studio-view="draft" aria-pressed="false" onclick="canvasView('edit')">Draft</button><button data-studio-view="preview" aria-pressed="false" onclick="canvasView('preview')">Preview</button></nav><main class="conversation-layout" data-view="chat">
+
       <section class="conversation-stage">
+
         <div id="chatFeed" class="chat-feed" aria-live="polite">
+
           <article class="chat-message assistant-message welcome-message">
+
             <div class="assistant-avatar">{% include "logo_mark.html" %}</div>
-            <div class="message-content"><div class="message-name">Zova</div><h2>What are we working on?</h2><p>Ask about your account performance, turn an idea into native posts, or refine something we already made.</p><div class="starter-prompts"><button onclick="useStarter(this)">What is working across my accounts?</button><button onclick="useStarter(this)">Create posts from an idea</button><button onclick="useStarter(this)">Show me my recent performance</button></div></div>
+
+            <div class="message-content"><div class="message-name">Zova</div><h2>What do you want to say?</h2><p>Bring a rough thought, announcement or story. Create a first draft, then shape each version. Connect accounts when you are ready to publish.</p><div class="starter-prompts"><button onclick="useStarter(this)">Help me plan my first post</button><button onclick="useStarter(this)">Create posts from an idea</button><button onclick="useStarter(this)">How does Zova work?</button></div></div>
+
           </article>
+
         </div>
+
         <section class="chat-composer" aria-label="Message Zova">
+
           <div id="attachmentTray" class="attachment-tray hidden"></div>
-          <textarea id="brief" rows="2" placeholder="Ask about your socials or describe what you want to post..."></textarea>
+
+          <label class="visually-hidden" for="brief">Message Zova</label><textarea id="brief" rows="2" placeholder="Describe your idea, audience and the details that matter…"></textarea>
+
           <div class="composer-lower">
-            <div class="composer-tools">
-              <label class="round-tool" title="Add images or video">+<input id="mediaInput" type="file" accept="image/*,video/mp4,video/quicktime,video/webm" multiple hidden></label>
-              <input id="linkUrl" class="source-input" type="url" placeholder="Add source link">
+
+            <details class="composer-extras"><summary>Media, source and format</summary><div class="composer-tools">
+
+              <button type="button" class="round-tool" aria-label="Add images or video" onclick="document.getElementById('mediaInput').click()">+</button><input id="mediaInput" type="file" accept="image/*,video/mp4,video/quicktime,video/webm" multiple hidden>
+
+              <input id="linkUrl" aria-label="Source link" class="source-input" type="url" placeholder="Add source link">
+
               <select id="threadLength" class="compact-select" aria-label="X format"><option value="1">Single X post</option><option value="3">3-post X thread</option><option value="5">5-post X thread</option></select>
+
             </div>
-            <div class="send-group"><div class="platform-picker compact-platforms" aria-label="Post platforms">
+
+            </details><div class="send-group"><div class="platform-picker compact-platforms" aria-label="Post platforms">
+
               <div class="platform-check"><input id="px" type="checkbox" value="x" checked><label for="px" title="Include X"><svg class="social-badge x-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.67l7.74-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z"/></svg><span>X</span></label></div>
-              <div class="platform-check"><input id="pig" type="checkbox" value="instagram" checked><label for="pig" title="Include Instagram"><b class="social-badge instagram">IG</b><span>Instagram</span></label></div>
-              <div class="platform-check"><input id="pfb" type="checkbox" value="facebook" checked><label for="pfb" title="Include Facebook"><b class="social-badge facebook">f</b><span>Facebook</span></label></div>
-              <div class="platform-check"><input id="ptt" type="checkbox" value="tiktok" checked><label for="ptt" title="Include TikTok"><b class="social-badge tiktok">T</b><span>TikTok</span></label></div>
+
+              <div class="platform-check"><input aria-label="Include Instagram" id="pig" type="checkbox" value="instagram" checked><label for="pig" title="Include Instagram"><b class="social-badge instagram">IG</b><span>Instagram</span></label></div>
+
+              <div class="platform-check"><input aria-label="Include Facebook" id="pfb" type="checkbox" value="facebook" checked><label for="pfb" title="Include Facebook"><b class="social-badge facebook">f</b><span>Facebook</span></label></div>
+
+              <div class="platform-check"><input aria-label="Include TikTok" id="ptt" type="checkbox" value="tiktok" checked><label for="ptt" title="Include TikTok"><b class="social-badge tiktok">T</b><span>TikTok</span></label></div>
+
             </div><button id="generateBtn" class="send-button" type="button" onclick="sendMessage()" aria-label="Send message">↑</button></div>
+
           </div>
-          <div class="composer-note"><span id="mediaStatus">Zova uses connected-account data to answer performance questions.</span><span>Enter to send · Shift+Enter for a new line</span></div>
+
+          <div class="save-controls"><span data-save-status role="status">Saved</span><div id="saveRecovery" class="save-recovery" hidden><p>Your changes remain in this tab.</p><button type="button" onclick="saveDraftNow().catch(()=>{})">Retry save</button><button type="button" onclick="downloadWorkspace()">Download your work</button><button type="button" onclick="compareSaved()">Compare saved version</button></div></div><div class="composer-note"><span id="mediaStatus" role="status">Describe what matters in your media or source. Zova has not inspected them.</span><span>Enter to send · Shift+Enter for a new line</span></div>
+
         </section>
+
       </section>
-      <aside class="conversation-context">
-        <section class="context-orbit"><div class="orbit-mini" aria-hidden="true"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><span class="orbit-dot d1"></span><span class="orbit-dot d2"></span><span class="orbit-dot d3"></span><span class="orbit-core">{% include "logo_mark.html" %}</span></div><div class="eyebrow">LIVE CONTEXT</div><h2>Your social pulse</h2><div id="analytics"><div class="skeleton-lines"><i></i><i></i><i></i></div></div></section>
-        <details class="context-drawer" open><summary>Recent posts <span>Across your socials</span></summary><div id="recentActivity"><div class="muted">Loading...</div></div></details>
-        <details class="context-drawer"><summary>Recent chats <span>Your drafts</span></summary><div id="draftHistory" class="compact-history"><div class="muted">Loading...</div></div></details>
-      </aside>
+
+      <section class="draft-canvas" aria-label="Current idea">
+        <header class="canvas-heading"><div class="eyebrow">YOUR WORKING CANVAS</div><h2 id="ideaTitle">Your next idea</h2></header>
+        <nav class="canvas-modes" aria-label="Canvas view"><button data-canvas-mode="edit" aria-pressed="true" onclick="canvasView('edit')">Edit</button><button data-canvas-mode="preview" aria-pressed="false" onclick="canvasView('preview')">Preview</button><button data-canvas-mode="compare" aria-pressed="false" onclick="canvasView('compare')">Compare versions</button><button onclick="undoTextEdit()">Undo text edit</button></nav><p id="undoStatus" class="format-note" role="status"></p>
+        <div id="canvasEditor"><h3>Start with what matters to you.</h3><p>Share your idea in the conversation. Your versions will stay here while you refine them with Zova.</p><p>You can save and edit before connecting a social account. Nothing is published without your final confirmation.</p></div><div id="canvasPreview" hidden></div>
+        <div id="reviewPanel" aria-live="polite"></div><div id="saveComparison"></div>
+        <section class="canvas-context" aria-label="Destination readiness"><h3>Draft destinations</h3><ul id="destinationReadiness"></ul><p>Connected accounts still need final permission and content checks. <a href="/account#socials">Manage connections</a></p></section>
+        <details class="canvas-context"><summary>Your voice · review saved guidance</summary><p>These are your saved account preferences. Instructions in this conversation apply to this draft; edit Account to change lasting guidance.</p><p>{{ studio_prefs.writing_tone or 'No saved voice description yet. Add guidance or scan your connected posts from Account.' }}</p>{% if studio_prefs.things_to_avoid %}<p>Avoid: {{ studio_prefs.things_to_avoid }}</p>{% endif %}{% if studio_prefs.example_posts %}<details><summary>Saved writing examples</summary><p style="white-space:pre-wrap">{{ studio_prefs.example_posts }}</p></details>{% endif %}<a href="/account#voice">Correct your voice profile</a></details>
+        <details class="canvas-context"><summary>Continue a saved idea</summary><div id="draftHistory" class="compact-history"></div><a href="/drafts">Search drafts and schedules</a></details>
+        <p class="format-note">Looking for results? <a href="/analytics">Open analytics</a> or ask Zova about performance in the conversation.</p>
+      </section>
+
     </main>
+
   </div>
+
 </div>
-<script src="/static/studio.js?v=6.2"></script>
+
+<script id="studioConnections" type="application/json">{{ studio_connections | tojson }}</script><script src="/static/studio.js?v=20260914-release1"></script><script src="/static/studio-experience.js?v=20260914-release1"></script>
+<script src="/static/studio-state.js?v=20260914-release1"></script>
+<script src="/static/studio-publish.js?v=20260914-release1"></script>
+
 {% endblock %}
