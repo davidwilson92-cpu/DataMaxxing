@@ -11,6 +11,8 @@ from nova.db import BillingAccount, BillingEvent, SessionLocal, User
 
 @pytest.fixture
 def stripe(monkeypatch):
+    for tier in ('BASIC','PREMIUM'):
+        for interval in ('MONTHLY','ANNUAL'):monkeypatch.delenv(f'STRIPE_{tier}_{interval}_PRICE_ID',raising=False)
     monkeypatch.setenv('STRIPE_MODE','test')
     monkeypatch.setenv('STRIPE_SECRET_KEY','sk_test_synthetic')
     monkeypatch.setenv('STRIPE_PRICE_ID','price_monthly')
@@ -227,3 +229,35 @@ def test_wrong_billing_interval_is_rejected_before_checkout(stripe,monkeypatch):
     monkeypatch.setattr(billing,'_request',wrong_interval)
     assert checkout(client).headers['location'].startswith('/subscribe?error=')
     assert not stripe['sessions']
+
+
+@pytest.mark.parametrize('plan',['basic_monthly','basic_annual','premium_monthly','premium_annual'])
+def test_tier_prices_and_seven_day_trial(stripe,monkeypatch,plan):
+    for key in ('basic_monthly','basic_annual','premium_monthly','premium_annual'):
+        monkeypatch.setenv('STRIPE_'+key.upper()+'_PRICE_ID','price_'+key)
+    original=billing._request
+    def request(method,path,data=None,key=None):
+        result=original(method,path,data,key)
+        if path.startswith('/prices/'):
+            result['recurring']['interval']='year' if path.endswith('annual') else 'month'
+        return result
+    monkeypatch.setattr(billing,'_request',request)
+    client,*_=account()
+    page=client.get('/subscribe').text
+    assert 'Basic · Monthly' in page and 'Premium · Annual' in page and '7-day free trial' in page
+    result=client.post('/billing/checkout',data={'plan':plan},follow_redirects=False)
+    assert result.headers['location'].startswith('https://checkout.stripe.com')
+    payload=[r[2] for r in stripe['requests'] if r[1]=='/checkout/sessions' and r[0]=='POST'][-1]
+    assert payload['line_items[0][price]']=='price_'+plan
+    assert payload['subscription_data[trial_period_days]']=='7'
+    assert payload['payment_method_collection']=='always'
+    assert payload['subscription_data[trial_settings][end_behavior][missing_payment_method]']=='cancel'
+
+
+def test_returning_subscriber_does_not_receive_repeat_trial(stripe):
+    client,*_=account();checkout(client)
+    session=next(iter(stripe['sessions'].values()));session['status']='complete'
+    stripe['subscriptions']=[subscription(session['customer'],'canceled')]
+    checkout(client)
+    payload=[r[2] for r in stripe['requests'] if r[1]=='/checkout/sessions' and r[0]=='POST'][-1]
+    assert 'subscription_data[trial_period_days]' not in payload

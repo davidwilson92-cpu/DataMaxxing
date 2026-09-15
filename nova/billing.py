@@ -24,9 +24,17 @@ def mode():
 
 
 def plans():
+    tiers={name:os.environ.get('STRIPE_'+name.upper()+'_PRICE_ID') for name in
+           ('basic_monthly','basic_annual','premium_monthly','premium_annual')}
+    if any(tiers.values()):return {name:price for name,price in tiers.items() if price}
+    # Retain compatibility with already-configured Creator checkout attempts.
     return {name:price for name,price in {
         'monthly':os.environ.get('STRIPE_MONTHLY_PRICE_ID') or os.environ.get('STRIPE_PRICE_ID'),
         'annual':os.environ.get('STRIPE_ANNUAL_PRICE_ID')}.items() if price}
+
+
+def plan_label(plan):
+    return plan.replace('_',' · ').title() if '_' in plan else 'Creator · '+plan.title()
 
 
 def configured():
@@ -139,11 +147,15 @@ def create_checkout(db,user,base_url,plan='monthly'):
     if not row.checkout_key:
         price=_request('GET','/prices/'+_id(plans()[plan],'price_'))
         recurring=price.get('recurring') or {}
-        if not price.get('active') or price.get('type')!='recurring' or price.get('livemode') is not (mode()=='live') or recurring.get('interval')!=('year' if plan=='annual' else 'month') or recurring.get('interval_count')!=1:
+        if not price.get('active') or price.get('type')!='recurring' or price.get('livemode') is not (mode()=='live') or recurring.get('interval')!=('year' if plan.endswith('annual') else 'month') or recurring.get('interval_count')!=1:
             raise RuntimeError('This subscription plan is unavailable.')
         payload={'mode':'subscription','customer':row.customer_id,'line_items[0][price]':plans()[plan],'line_items[0][quantity]':'1',
             'success_url':base_url+'/billing/success?session_id={CHECKOUT_SESSION_ID}','cancel_url':base_url+'/subscribe?cancelled=1',
             'client_reference_id':str(user.id),'metadata[user_id]':str(user.id),'subscription_data[metadata][user_id]':str(user.id)}
+        if not row.subscription_id:
+            payload['subscription_data[trial_period_days]']='7'
+            payload['payment_method_collection']='always'
+            payload['subscription_data[trial_settings][end_behavior][missing_payment_method]']='cancel'
         row.checkout_key='zova-checkout-'+uuid.uuid4().hex;row.checkout_started=int(time.time());row.checkout_payload=json.dumps(payload)
     elif json.loads(row.checkout_payload)['line_items[0][price]']!=plans()[plan]:
         raise ValueError('Retry the original plan while its checkout is being confirmed.')
@@ -185,7 +197,9 @@ def refresh(db,user):
 
 def summary(db,user):
     row=db.get(BillingAccount,f'{user.id}:{mode()}')
-    return {'mode':mode(),'ready':configured(),'checkout_enabled':checkout_enabled(),'plans':list(plans()),
+    return {'mode':mode(),'ready':configured(),'checkout_enabled':checkout_enabled(),'plans':{key:plan_label(key) for key in plans()},
+        'trial_eligible':not bool(row and row.subscription_id),
+        'plan_label':next((plan_label(key) for key,value in plans().items() if row and value==row.price_id),'Zova membership'),
         'status':row.status if row else (user.subscription_status if mode()!='test' else 'none'),
         'customer':bool(row.customer_id if row else user.stripe_customer_id if mode()=='live' else None),
         'cancelling':bool(row and row.cancel_at_period_end),'period_end':row.period_end if row else None,
