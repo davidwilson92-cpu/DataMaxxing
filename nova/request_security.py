@@ -53,6 +53,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             user = await run_in_threadpool(user_from_session, request.cookies.get('nova_session'))
             identity = f'user:{user.id}' if user else f'ip:{request.client.host if request.client else "unknown"}'
             maximum, seconds = (30,300) if path in {'/login','/signup','/forgot-password','/reset-password'} else (120,60)
+            if path.startswith('/billing/'):maximum,seconds=10,60
             maximum *= max(1,int(os.environ.get('RATE_LIMIT_SCALE','1')))
             if not await run_in_threadpool(allowed_request, f'{identity}:{"auth" if path in {"/login","/signup","/forgot-password","/reset-password"} else "mutations"}', maximum, seconds):
                 response = JSONResponse({'detail':'Too many requests. Please wait before trying again.'},429,headers={'Retry-After':str(seconds)})
@@ -62,7 +63,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         response.headers.setdefault('X-Frame-Options','DENY')
         response.headers.setdefault('Referrer-Policy','same-origin')
         response.headers.setdefault('Permissions-Policy','camera=(), microphone=(), geolocation=()')
-        response.headers.setdefault('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; media-src 'self' https: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
+        form_destinations="'self' https://checkout.stripe.com https://billing.stripe.com" if path in {'/subscribe','/billing/checkout','/billing/portal'} else "'self'"
+        response.headers.setdefault('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; media-src 'self' https: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action "+form_destinations)
         if os.environ.get('PUBLIC_BASE_URL','').startswith('https://'):
             response.headers.setdefault('Strict-Transport-Security','max-age=31536000')
         if not path.startswith('/static/'):
