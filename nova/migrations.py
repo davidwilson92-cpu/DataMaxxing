@@ -6,6 +6,7 @@ from sqlalchemy import Engine, inspect, text
 
 
 MIGRATIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("20260918_default_brand_name", ("default_brand_name VARCHAR(100) NOT NULL DEFAULT 'My brand'",)),
     ("20260914_auth_version", ("auth_version INTEGER NOT NULL DEFAULT 0",)),
     (
         "20260811_user_signup_profile",
@@ -56,6 +57,9 @@ def run_migrations(engine: Engine, migrations: Iterable[tuple[str, tuple[str, ..
             )
 
     additions = {'nova_drafts': ("workspace_json TEXT NOT NULL DEFAULT '{}'", "revision INTEGER NOT NULL DEFAULT 0")}
+    for table in ('nova_drafts', 'nova_social_connections', 'nova_oauth_states', 'zova_publish_reviews',
+                  'zova_publications', 'nova_media_assets', 'nova_scheduled_posts', 'nova_activity'):
+        additions[table] = additions.get(table, ()) + ("brand_id INTEGER NOT NULL DEFAULT 0",)
     for table, definitions in additions.items():
         columns = {c['name'] for c in inspect(engine).get_columns(table)}
         with engine.begin() as connection:

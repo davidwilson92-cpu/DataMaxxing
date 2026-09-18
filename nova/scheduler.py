@@ -34,7 +34,10 @@ def process_due(limit: int = 25) -> dict[str, int]:
                 if remote=='PUBLISH_COMPLETE':
                     item.status='published';stored['pending']=False
                     if state.get('public_ids'):stored['url']='https://www.tiktok.com/@'+conn.username+'/video/'+str(state['public_ids'][0])
-                elif remote=='FAILED':item.status='failed';stored['error']='TikTok reported this publication failed. Review before retrying.'
+                elif remote=='FAILED':
+                    from .allowances import finish
+                    item.status='failed';stored['error']='TikTok reported this publication failed. Review before retrying.'
+                    finish(db,f'publication:{item.id}',False)
                 item.result_json=json.dumps(stored);db.commit()
                 db.execute(update(Activity).where(Activity.draft_id==item.draft_id,Activity.platform==item.platform,Activity.platform_post_id==stored.get('post_id'),Activity.status=='pending').values(status=item.status));db.commit()
                 db.execute(update(ScheduledPost).where(ScheduledPost.draft_id==item.draft_id,ScheduledPost.platform==item.platform,ScheduledPost.status=='pending').values(status=item.status));db.commit()
@@ -72,12 +75,12 @@ def process_due(limit: int = 25) -> dict[str, int]:
                 row.status = "pending" if result.get("pending") else "published"
                 row.platform_post_id = result.get("post_id")
                 row.post_url = result.get("url")
-                db.add(Activity(user_id=row.user_id, draft_id=row.draft_id, platform=row.platform, action="scheduled_publish", status=row.status, text="\n\n".join(posts), platform_post_id=row.platform_post_id, url=row.post_url))
+                db.add(Activity(user_id=row.user_id, brand_id=row.brand_id, draft_id=row.draft_id, platform=row.platform, action="scheduled_publish", status=row.status, text="\n\n".join(posts), platform_post_id=row.platform_post_id, url=row.post_url))
                 published += 1
             except Exception as exc:
                 log.exception("Scheduled %s post %s failed", row.platform, row.id)
                 row.status = "unknown"; row.error = "Publication outcome is unconfirmed. Check the destination before retrying."
-                db.add(Activity(user_id=row.user_id, draft_id=row.draft_id, platform=row.platform, action="scheduled_publish", status="unknown", text=row.content_json[:2000], error="Publication could not be confirmed"))
+                db.add(Activity(user_id=row.user_id, brand_id=row.brand_id, draft_id=row.draft_id, platform=row.platform, action="scheduled_publish", status="unknown", text=row.content_json[:2000], error="Publication could not be confirmed"))
                 failed += 1
             db.commit()
     return {"published": published, "failed": failed}

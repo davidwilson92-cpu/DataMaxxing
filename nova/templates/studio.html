@@ -8,6 +8,7 @@
 <div class="conversation-workspace">
 <header class="conversation-topbar"><div class="chat-brand"><button class="quiet-button" aria-label="Open navigation" onclick="document.getElementById('navigationDialog').showModal()">☰</button><a href="/studio" aria-label="Zova Studio">{% with logo_id='studio-brand-gradient' %}{% include 'logo_mark.html' %}{% endwith %}<span>Zova</span></a></div><button id="newChatBtn" class="quiet-button" onclick="newConversation()">New chat</button></header>
 {% if subscription_blocked %}<div class="alert error">Your subscription is not active. <a href="/subscribe">View your plan</a></div>{% endif %}
+<div class="studio-brand-context"><a href="/brands" aria-label="Switch brand workspace">{{ brand.name }} <span aria-hidden="true">⌄</span></a></div>
 <main class="conversation-layout"><div class="studio-watermark" aria-hidden="true">{% with logo_id="studio-watermark-gradient" %}{% include "logo_mark.html" %}{% endwith %}</div><section class="conversation-stage" aria-label="Chat with Zova">
 <div id="chatFeed" class="chat-feed" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions text">
 <article class="welcome-message"><h1>What would you like to create?</h1><p>Bring an idea. We’ll find the words together.</p><div class="starter-prompts"><button onclick="promptComposer('Help me turn this idea into a post: ')">Start with an idea</button><button onclick="promptComposer('Help me improve this caption: ')">Improve a caption</button></div></article>

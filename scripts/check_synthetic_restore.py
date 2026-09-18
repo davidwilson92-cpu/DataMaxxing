@@ -11,6 +11,7 @@ with source.connect() as a, restored.connect() as b:
     for table in inspect(source).get_table_names():
         assert table.replace('_','').isalnum()
         assert a.execute(text(f'SELECT COUNT(*) FROM "{table}"')).scalar()==b.execute(text(f'SELECT COUNT(*) FROM "{table}"')).scalar(),table
-    for table,columns in [('nova_users','id,email,password_hash,auth_version'),('nova_social_connections','id,user_id,encrypted_access_token'),('nova_drafts','id,user_id,workspace_json,revision')]:
+    for table,columns in [('nova_users','id,email,password_hash,auth_version,default_brand_name'),('nova_social_connections','id,user_id,brand_id,encrypted_access_token'),('nova_drafts','id,user_id,brand_id,workspace_json,revision'),('zova_brands','id,user_id,name'),('zova_brand_voices','id,user_id,brand_id,writing_tone')]:
         assert a.execute(text(f'SELECT {columns} FROM {table} ORDER BY id')).all()==b.execute(text(f'SELECT {columns} FROM {table} ORDER BY id')).all(),table
+    assert a.execute(text('SELECT key,user_id,kind,period,amount,state FROM zova_usage_entries ORDER BY key')).all()==b.execute(text('SELECT key,user_id,kind,period,amount,state FROM zova_usage_entries ORDER BY key')).all()
 print('Synthetic PostgreSQL restore: all table counts and identity/credential/workspace records match.')
