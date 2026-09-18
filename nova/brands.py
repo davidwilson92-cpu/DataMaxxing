@@ -1,6 +1,7 @@
 """Brand boundaries for web sessions; legacy data belongs to workspace zero."""
 from fastapi import HTTPException
 from sqlalchemy import event, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, with_loader_criteria
 from .db import (Brand, BrandVoice, BrandScoped, SessionLocal, CreatorPreferences)
 
@@ -64,5 +65,10 @@ def voice(db, user_id):
     row = db.scalar(select(BrandVoice).where(BrandVoice.user_id == user_id, BrandVoice.brand_id == brand_id))
     if not row:
         row = BrandVoice(user_id=user_id, brand_id=brand_id)
-        db.add(row); db.commit(); db.refresh(row)
+        db.add(row)
+        try:db.commit(); db.refresh(row)
+        except IntegrityError:
+            db.rollback()
+            row=db.scalar(select(BrandVoice).where(BrandVoice.user_id==user_id,BrandVoice.brand_id==brand_id))
+            if row is None:raise
     return row

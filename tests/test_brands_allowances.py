@@ -180,3 +180,13 @@ def test_retired_price_keeps_existing_tier(monkeypatch):
     monkeypatch.setenv('STRIPE_BASIC_MONTHLY_LEGACY_PRICE_IDS','price_basic')
     with SessionLocal() as db:assert allowances.tier(db,uid)=='basic'
     assert billing.plan_for_price('price_basic')=='basic_monthly'
+
+
+def test_simultaneous_reconnect_uses_one_slot():
+    from nova.social import upsert_connection
+    _,uid,*_=account()
+    def connect(_):
+        with SessionLocal() as db:
+            return upsert_connection(db,user_id=uid,platform='x',account_id='same-account',username='demo',display_name='Demo',access='synthetic').id
+    with ThreadPoolExecutor(max_workers=2) as pool:ids=list(pool.map(connect,range(2)))
+    assert ids[0]==ids[1]
