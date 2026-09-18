@@ -250,6 +250,8 @@ def test_tier_prices_and_seven_day_trial(stripe,monkeypatch,plan):
     payload=[r[2] for r in stripe['requests'] if r[1]=='/checkout/sessions' and r[0]=='POST'][-1]
     assert payload['line_items[0][price]']=='price_'+plan
     assert payload['subscription_data[trial_period_days]']=='7'
+    assert payload['managed_payments[enabled]']=='false'
+    assert payload['adaptive_pricing[enabled]']=='false'
     assert payload['payment_method_collection']=='always'
     assert payload['subscription_data[trial_settings][end_behavior][missing_payment_method]']=='cancel'
 

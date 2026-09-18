@@ -149,7 +149,7 @@ def create_checkout(db,user,base_url,plan='monthly'):
         recurring=price.get('recurring') or {}
         if not price.get('active') or price.get('type')!='recurring' or price.get('livemode') is not (mode()=='live') or recurring.get('interval')!=('year' if plan.endswith('annual') else 'month') or recurring.get('interval_count')!=1:
             raise RuntimeError('This subscription plan is unavailable.')
-        payload={'mode':'subscription','customer':row.customer_id,'line_items[0][price]':plans()[plan],'line_items[0][quantity]':'1',
+        payload={'mode':'subscription','managed_payments[enabled]':'false','adaptive_pricing[enabled]':'false','customer':row.customer_id,'line_items[0][price]':plans()[plan],'line_items[0][quantity]':'1',
             'success_url':base_url+'/billing/success?session_id={CHECKOUT_SESSION_ID}','cancel_url':base_url+'/subscribe?cancelled=1',
             'client_reference_id':str(user.id),'metadata[user_id]':str(user.id),'subscription_data[metadata][user_id]':str(user.id)}
         if not row.subscription_id:

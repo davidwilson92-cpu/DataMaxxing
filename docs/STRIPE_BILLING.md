@@ -37,7 +37,9 @@ The user has approved a 7-day trial. GBP pricing is now recovered from the user-
 
 Register POST `/billing/webhook` for: checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted, customer.subscription.paused, customer.subscription.resumed, invoice.paid and invoice.payment_failed. Use the endpoint-specific signing secret. The handler also handles other customer.subscription.* notifications by reconciling current state.
 
-## Provider acceptance checks (not yet performed)
+## Provider acceptance checks
+
+Actual local Stripe test acceptance was performed on 17–18 September 2026. See [the evidence matrix](STRIPE_PROVIDER_VALIDATION_20260918.md) for completed checks, observed account-default fixes and remaining release gates. All four hosted card checkouts, seven-day trial length, portal cancellation, clock-driven conversion/cancellation, failed renewal/recovery, repeat-trial exclusion and duplicate/invalid webhooks were verified. This supersedes the earlier mocked-only status; public staging and production remain unvalidated.
 
 Use only Stripe sandbox payment methods documented by Stripe. Complete each Basic/Premium monthly/annual checkout; verify the exact amount, currency, seven-day trial end and subsequent renewal; use Stripe test clocks to validate trial conversion and cancellation before the trial ends; verify a returning subscriber receives no repeat trial; repeat the request; close/resume checkout; test a declined/authentication-required payment; deliver duplicate and delayed events; renew a test subscription; fail an invoice; recover payment through the portal; cancel now and at period end; reopen the portal; test annual pricing if enabled. Verify Zova's last-verified status and exact Stripe customer/subscription match. Confirm existing Studio, users, uploads, reviewer login and both Instagram connection routes remain unaffected. Do not claim these provider checks from mocks.
 
