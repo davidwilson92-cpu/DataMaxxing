@@ -7,6 +7,9 @@ from .db import (Brand, BrandVoice, BrandScoped, SessionLocal, CreatorPreference
 
 
 def bind_request(db, request):
+    # These endpoints establish their own signed provider authority, not browser workspace authority.
+    if request.url.path in {'/data-deletion/callback', '/billing/webhook'}:
+        return
     from .security import user_from_session
     user = user_from_session(request.cookies.get('nova_session'))
     if not user:

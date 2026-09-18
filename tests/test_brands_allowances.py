@@ -190,3 +190,22 @@ def test_simultaneous_reconnect_uses_one_slot():
             return upsert_connection(db,user_id=uid,platform='x',account_id='same-account',username='demo',display_name='Demo',access='synthetic').id
     with ThreadPoolExecutor(max_workers=2) as pool:ids=list(pool.map(connect,range(2)))
     assert ids[0]==ids[1]
+
+
+def test_signed_deletion_covers_all_brands_despite_browser_cookie(monkeypatch):
+    import base64,hashlib,hmac,json
+    client,uid,*_=account()
+    client.post('/brands',data={'name':'Second'})
+    bid=int(client.cookies.get('zova_brand'))
+    with SessionLocal() as db:
+        for brand in (0,bid):db.add(SocialConnection(user_id=uid,brand_id=brand,platform='instagram',account_id='deletion-test',encrypted_access_token='synthetic'))
+        db.commit()
+    monkeypatch.setenv('META_APP_SECRET','synthetic-secret')
+    encode=lambda b:base64.urlsafe_b64encode(b).decode().rstrip('=')
+    payload=encode(json.dumps({'user_id':'deletion-test'}).encode())
+    signed=encode(hmac.new(b'synthetic-secret',payload.encode(),hashlib.sha256).digest())+'.'+payload
+    assert client.post('/data-deletion/callback',data={'signed_request':'invalid'}).status_code==400
+    assert client.post('/data-deletion/callback',data={'signed_request':signed}).status_code==200
+    with SessionLocal() as db:
+        rows=db.scalars(select(SocialConnection).where(SocialConnection.user_id==uid)).all()
+        assert len(rows)==2 and all(not r.active and not r.encrypted_access_token for r in rows)
