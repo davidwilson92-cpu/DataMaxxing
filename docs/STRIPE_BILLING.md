@@ -1,5 +1,7 @@
 # Stripe billing integration
 
+Latest candidate update: [brand workspaces, plan allowances and extended payment validation](BRANDS_AND_BILLING_20260918.md). This supersedes earlier provider-test gaps for 3DS, annual clock renewals, portal card replacement and manual recovery after missed webhook delivery. Public staging and live activation remain separate gates.
+
 ## Implementation and feature matrix
 
 | Capability | Implementation | Validation |

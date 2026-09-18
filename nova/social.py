@@ -301,6 +301,9 @@ def upsert_connection(
     metadata: dict[str, Any] | None = None,
 ) -> SocialConnection:
     conn = db.scalar(select(SocialConnection).where(SocialConnection.user_id == user_id, SocialConnection.platform == platform, SocialConnection.account_id == account_id))
+    if conn is None or not conn.active:
+        from .allowances import connection_slot
+        connection_slot(db,user_id)
     if conn is None:
         conn = SocialConnection(user_id=user_id, platform=platform, account_id=account_id, username=username or "", display_name=display_name or "", encrypted_access_token=encrypt(access))
         db.add(conn)

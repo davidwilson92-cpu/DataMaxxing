@@ -7,6 +7,7 @@ import os
 import re
 import time
 import uuid
+from datetime import datetime, timezone
 from urllib.parse import urlencode, urlsplit
 import httpx
 from sqlalchemy import select, update
@@ -35,6 +36,16 @@ def plans():
 
 def plan_label(plan):
     return plan.replace('_',' · ').title() if '_' in plan else 'Creator · '+plan.title()
+
+
+def plan_for_price(price_id):
+    if not price_id:return None
+    for key,value in plans().items():
+        if value==price_id:return key
+    for key in ('basic_monthly','basic_annual','premium_monthly','premium_annual'):
+        previous={p.strip() for p in os.environ.get('STRIPE_'+key.upper()+'_LEGACY_PRICE_IDS','').split(',') if p.strip()}
+        if price_id in previous:return key
+    return None
 
 
 def configured():
@@ -106,7 +117,7 @@ def _sync(db,row):
     if data.get('has_more'):raise RuntimeError('Billing needs a support review before continuing.')
     allowed=set(plans().values())
     subscriptions=[s for s in data.get('data',[]) if s.get('customer')==row.customer_id and
-        (s.get('id')==row.subscription_id or any(i.get('price',{}).get('id') in allowed for i in s.get('items',{}).get('data',[])))]
+        (s.get('id')==row.subscription_id or any(i.get('price',{}).get('id') in allowed or plan_for_price(i.get('price',{}).get('id')) for i in s.get('items',{}).get('data',[])))]
     if any(bool(s.get('livemode'))!=(row.mode=='live') for s in subscriptions):raise RuntimeError('Stripe mode does not match this account.')
     subscriptions.sort(key=lambda s:(s.get('status') in BLOCKING,s.get('created',0)),reverse=True)
     if subscriptions:
@@ -146,6 +157,11 @@ def create_checkout(db,user,base_url,plan='monthly'):
         raise RuntimeError('This checkout needs reconciliation. Contact support before trying again.')
     if not row.checkout_key:
         price=_request('GET','/prices/'+_id(plans()[plan],'price_'))
+        from .allowances import PLANS
+        parts=plan.split('_')
+        if len(parts)==2 and parts[0] in PLANS:
+            if price.get('currency')!='gbp' or price.get('unit_amount')!=PLANS[parts[0]][parts[1]]:
+                raise RuntimeError('This price does not match the published plan. Checkout is paused for review.')
         recurring=price.get('recurring') or {}
         if not price.get('active') or price.get('type')!='recurring' or price.get('livemode') is not (mode()=='live') or recurring.get('interval')!=('year' if plan.endswith('annual') else 'month') or recurring.get('interval_count')!=1:
             raise RuntimeError('This subscription plan is unavailable.')
@@ -197,9 +213,11 @@ def refresh(db,user):
 
 def summary(db,user):
     row=db.get(BillingAccount,f'{user.id}:{mode()}')
+    end=datetime.fromtimestamp(row.period_end,timezone.utc).strftime('%d %b %Y, %H:%M UTC') if row and row.period_end else None
     return {'mode':mode(),'ready':configured(),'checkout_enabled':checkout_enabled(),'plans':{key:plan_label(key) for key in plans()},
+        'period_end_label':end,
         'trial_eligible':not bool(row and row.subscription_id),
-        'plan_label':next((plan_label(key) for key,value in plans().items() if row and value==row.price_id),'Zova membership'),
+        'plan_label':plan_label(plan_for_price(row.price_id)) if row and plan_for_price(row.price_id) else 'Zova membership',
         'status':row.status if row else (user.subscription_status if mode()!='test' else 'none'),
         'customer':bool(row.customer_id if row else user.stripe_customer_id if mode()=='live' else None),
         'cancelling':bool(row and row.cancel_at_period_end),'period_end':row.period_end if row else None,

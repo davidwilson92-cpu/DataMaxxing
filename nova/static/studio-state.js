@@ -43,7 +43,7 @@ async function saveDraftNow(){
     if(!currentDraftId){
       const row=await api('/api/drafts',{method:'POST',headers,body:'{}'});
       currentDraftId=row.id;draftRevision=row.revision;
-      history.replaceState({},'',`/studio?draft=${row.id}`);
+      history.replaceState({},'',window.zovaWorkspaceUrl(`/studio?draft=${row.id}`));
     }
     const serial=changeSerial,id=currentDraftId,payload=JSON.stringify(draftPayload());
     const result=await api(`/api/drafts/${id}`,{method:'PATCH',headers,body:payload});
@@ -109,7 +109,7 @@ async function sendMessage(){
       if(!validateVideoPlatforms(platforms))throw new Error('Videos can only be used with Instagram and TikTok.');
       if(plan.action==='create' && Object.keys(variants).length){
         await saveDraftNow();const row=await api('/api/drafts',{method:'POST',headers,body:'{}'});
-        currentDraftId=row.id;draftRevision=row.revision;variants={};textHistory=[];publicationStates={};lastBrief=text;renderCanvas('<p>Creating your new versions…</p>');history.replaceState({},'',`/studio?draft=${row.id}`);
+        currentDraftId=row.id;draftRevision=row.revision;variants={};textHistory=[];publicationStates={};lastBrief=text;renderCanvas('<p>Creating your new versions…</p>');history.replaceState({},'',window.zovaWorkspaceUrl(`/studio?draft=${row.id}`));
       }
       const targets=plan.action==='add_platforms'?platforms.filter(p=>!variants[p]):platforms;
       if(!targets.length)throw new Error('Those versions already exist. Tell me what to change in them.');
@@ -147,7 +147,7 @@ async function newConversation(){
   clearTimeout(autosaveTimer);invalidateReview();mediaUploadVersion++;mediaUploading=false;
   variants={};textHistory=[];publicationStates={};document.getElementById('undoStatus').textContent='';currentDraftId=null;draftRevision=0;currentDraftStatus='draft';conversation=[];lastBrief='';pendingSchedule=null;
   uploadedMedia=[];uploadedMediaIds=[];uploadedMediaKind=null;uploadedVideoDuration=0;changeSerial=0;savedSerial=0;
-  history.replaceState({},'','/studio');document.getElementById('chatFeed').innerHTML='';
+  history.replaceState({},'',window.zovaWorkspaceUrl('/studio'));document.getElementById('chatFeed').innerHTML='';
   document.getElementById('brief').value='';document.getElementById('linkUrl').value='';document.getElementById('mediaInput').value='';document.getElementById('mediaInput').disabled=false;
   editingDraft=false;renderRecentPosts();document.getElementById('postSettings').close();studioBusy(false);renderAttachments();addAssistantMessage('What would you like to create? Share an idea or attach your media.');setAutosaveStatus('Saved');sizeComposer();document.getElementById('brief').focus();
 }

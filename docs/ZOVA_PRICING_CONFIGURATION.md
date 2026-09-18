@@ -11,6 +11,8 @@ The strategy also proposes Business at GBP 49.99/month or GBP 499/year, 5 brands
 
 ## Strategy versus implementation
 
+Update 18 September: the candidate now implements the numeric brand/account/publication/AI allowances above with opt-in enforcement, separate brand workspaces and a visible pricing/usage journey. Read BRANDS_AND_BILLING_20260918.md for counting rules, tests, provider evidence and exclusions. The earlier target-only paragraph below is retained as strategy history; it no longer describes the numeric allowance implementation. Nothing is deployed or enforced in production.
+
 These are target allowances, not verified implemented entitlements. Keep subscription enforcement disabled for reviewer testing. Scheduling, images, links and core analytics belong in Basic. Premium targets deeper analytics, reusable variations/templates and priority email support. Do not market unfinished features as delivered. The discussion's weighted token/model allowances were recommendations: Basic 1 million weighted tokens and Premium 3 million, with advanced/reasoning model credit multipliers; these require a defined accounting implementation before enforcement. No named-model promises or silent overage charges.
 
 Internal guardrails: entry-tier X limits proposed at 30 publications/month including no more than 10 external-URL posts, cached analytics and cost alerts near GBP 3/month Basic and GBP 6/month Premium. Historical provider cost estimates from the conversation were not revalidated and must not be treated as current rates.

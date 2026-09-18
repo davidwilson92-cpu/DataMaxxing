@@ -59,6 +59,12 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 response = JSONResponse({'detail':'Too many requests. Please wait before trying again.'},429,headers={'Retry-After':str(seconds)})
         if response is None:
             response = await call_next(request)
+        if response.status_code==303 and hasattr(request.state,'brand_id') and path not in {'/brands','/brands/switch','/logout','/login','/signup'} and not path.startswith('/billing/'):
+            from urllib.parse import urlunsplit, parse_qsl, urlencode
+            location=response.headers.get('location','')
+            if request.state.brand_id and location.startswith('/') and not location.startswith('//'):
+                parts=urlsplit(location);query=dict(parse_qsl(parts.query));query['workspace']=str(request.state.brand_id)
+                response.headers['location']=urlunsplit(('', '', parts.path, urlencode(query), parts.fragment))
         response.headers.setdefault('X-Content-Type-Options','nosniff')
         response.headers.setdefault('X-Frame-Options','DENY')
         response.headers.setdefault('Referrer-Policy','same-origin')

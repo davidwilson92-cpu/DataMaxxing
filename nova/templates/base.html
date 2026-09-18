@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+{% if brand %}<meta name="zova-workspace" content="{{ brand.id }}"><script src="/static/brand-context.js?v=1"></script>{% endif %}
+<link rel="stylesheet" href="/static/brand-context.css?v=1">
 <meta name="facebook-domain-verification" content="gc093o7nv5q19ykf4y2sxm82ujegg9">
 <title>{% block title %}Zova{% endblock %}</title>
 <link rel="icon" href="/static/zova-mark.svg" type="image/svg+xml">
@@ -19,7 +21,7 @@
 <a class="brand" href="/">{% include "logo_mark.html" %}<span>zova</span></a>
 <nav>
 {% if user %}
-<a href="/studio">Studio</a><a href="/account">Account</a><a href="/security">Security</a>
+<a href="/studio">Studio</a><a href="/brands">Brands</a><a href="/account">Account</a><a href="/security">Security</a>
 <form method="post" action="/logout" class="inline"><button class="nav-button">Sign out</button></form>
 {% else %}
 <a href="/security">Security</a><a href="/login">Log in</a><a class="pill" href="/signup">Start creating</a>

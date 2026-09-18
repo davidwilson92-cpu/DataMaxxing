@@ -240,6 +240,9 @@ def test_tier_prices_and_seven_day_trial(stripe,monkeypatch,plan):
         result=original(method,path,data,key)
         if path.startswith('/prices/'):
             result['recurring']['interval']='year' if path.endswith('annual') else 'month'
+            from nova.allowances import PLANS
+            tier,interval=path.rsplit('/',1)[1].removeprefix('price_').split('_')
+            result.update(currency='gbp',unit_amount=PLANS[tier][interval])
         return result
     monkeypatch.setattr(billing,'_request',request)
     client,*_=account()
@@ -263,3 +266,17 @@ def test_returning_subscriber_does_not_receive_repeat_trial(stripe):
     checkout(client)
     payload=[r[2] for r in stripe['requests'] if r[1]=='/checkout/sessions' and r[0]=='POST'][-1]
     assert 'subscription_data[trial_period_days]' not in payload
+
+
+def test_checkout_refuses_price_that_disagrees_with_display(stripe,monkeypatch):
+    monkeypatch.setenv('STRIPE_BASIC_MONTHLY_PRICE_ID','price_basic_monthly')
+    original=billing._request
+    def request(method,path,data=None,key=None):
+        result=original(method,path,data,key)
+        if path.startswith('/prices/'):result.update(currency='eur',unit_amount=1500)
+        return result
+    monkeypatch.setattr(billing,'_request',request)
+    client,*_=account()
+    response=client.post('/billing/checkout',data={'plan':'basic_monthly'},follow_redirects=False)
+    assert response.headers['location'].startswith('/subscribe?error=')
+    assert not stripe['sessions']
