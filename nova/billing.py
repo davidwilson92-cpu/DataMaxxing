@@ -137,6 +137,8 @@ def _sync(db,row):
 def create_checkout(db,user,base_url,plan='monthly'):
     if not checkout_enabled():raise RuntimeError('Checkout is disabled. Your current access is unchanged.')
     if plan not in plans():raise ValueError('Choose an available plan.')
+    if os.environ.get('EMAIL_VERIFICATION_REQUIRED_FOR_CHECKOUT','false').lower()=='true' and not user.email_verified_at:
+        raise ValueError('Verify your email in Account before starting checkout. Your saved work and current access are unchanged.')
     row=_locked(db,user.id)
     if not row.customer_id:
         customer=_request('POST','/customers',{'metadata[user_id]':str(user.id)},f'zova-customer-{row.key}')

@@ -320,6 +320,8 @@ def upsert_connection(
     if metadata is not None:
         save_meta(conn, metadata)
     db.commit(); db.refresh(conn)
+    from .readiness import event
+    event(user_id,'connected',conn.id)
     return conn
 
 

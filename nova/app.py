@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
-from . import ai, billing, brands, allowances
+from . import ai, billing, brands, allowances, customer_service, readiness
 from .connections import connection_options, safe_login_next
 from .db import (
     Activity, AuthIdentity, AuthState, Creator, CreatorPreferences, Draft, MediaAsset, OAuth2Connection, OAuthState,
@@ -67,7 +67,7 @@ def template_context(request: Request, user: User | None = None, **kwargs: Any) 
     if user and not hasattr(request.state,'brand_id'):
         with SessionLocal() as context_db:brands.bind_request(context_db,request)
     brand = brands.context(user, getattr(request.state, 'brand_id', 0)) if user else None
-    return {"request": request, "user": user, "brand": brand, "connections": connection_options(), "operator_name": os.environ.get("LEGAL_ENTITY_NAME", "Zova Social Limited"), **kwargs}
+    return {"request": request, "user": user, "brand": brand, "connections": connection_options(), **customer_service.context(), **kwargs}
 
 
 def set_user_cookie(response: RedirectResponse | JSONResponse, user: User) -> None:
@@ -254,6 +254,7 @@ def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str,
     now = utcnow()
     consent = marketing_consent == "yes"
     user=User(email=email,display_name=name,country_code=country,password_hash=hash_password(password),terms_accepted_at=now,marketing_consent=consent,marketing_consent_at=now if consent else None); db.add(user); db.commit(); db.refresh(user); get_preferences(db,user.id)
+    readiness.event(user.id,'signup',user.id)
     resp=RedirectResponse("/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
 
 @app.get("/login", response_class=HTMLResponse)
@@ -312,6 +313,7 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
         user.last_login_at = utcnow()
         db.commit()
     if not identity: db.add(AuthIdentity(user_id=user.id, provider="apple", subject=subject)); db.commit()
+    if created:readiness.event(user.id,'signup',user.id)
     resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303); set_user_cookie(resp, user); return resp
 
 @app.post("/login")
@@ -496,6 +498,7 @@ def data_deletion_status(request:Request,confirmation_code:str,db:Session=Depend
 @app.get("/studio",response_class=HTMLResponse)
 def studio(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
+    readiness.event(user.id,'visit',utcnow().strftime('%Y-%m-%d'))
     connections={}
     for row in db.scalars(select(SocialConnection).where(SocialConnection.user_id==user.id,SocialConnection.active.is_(True))).all():
         connections.setdefault(row.platform,[]).append(row.username or row.account_id or "Connected account")
@@ -918,6 +921,7 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
         else:
             row=Draft(user_id=user.id,brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(platforms),variants_json=json.dumps(variants,ensure_ascii=False),thread_length=body.thread_length)
             db.add(row);db.commit();db.refresh(row)
+        readiness.event(user.id,'generated',row.id)
         return {'draft_id':row.id,'variants':variants,'saved':True,'revision':row.revision}
 
 
@@ -1009,7 +1013,9 @@ def api_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
 def api_save_draft(draft_id:int,body:DraftSaveRequest,request:Request,db:Session=Depends(get_db)):
     from .workspace import save_workspace
     user=current_user(request)
-    return save_workspace(db,db.get(Draft,draft_id),body,user.id)
+    result=save_workspace(db,db.get(Draft,draft_id),body,user.id)
+    readiness.event(user.id,'revised',f"{draft_id}:{result.get('revision',0)}")
+    return result
 
 @app.delete("/api/drafts/{draft_id}",status_code=204)
 def api_delete_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
@@ -1122,6 +1128,9 @@ def help_page(request:Request):
 
 from .operations import router as operations_router
 app.include_router(operations_router)
+app.include_router(readiness.router)
+from .verification import router as verification_router
+app.include_router(verification_router)
 
 @app.get('/media/preview/{asset_id}')
 def media_preview(asset_id:int,request:Request,db:Session=Depends(get_db)):

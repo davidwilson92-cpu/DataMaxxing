@@ -63,6 +63,22 @@ def _parse_json(text: str) -> Any:
 
 
 def _responses(prompt: str, *, max_output_tokens: int = 2500) -> str:
+    from .readiness import record_ai
+    model = _model()
+    payload = None
+    outcome = 'unconfirmed'
+    try:
+        text, payload = _request_response(prompt, max_output_tokens=max_output_tokens)
+        if not text:
+            outcome = 'empty_output'
+            raise RuntimeError('OpenAI returned an empty response')
+        outcome = 'returned'
+        return text
+    finally:
+        record_ai(model, outcome, payload)
+
+
+def _request_response(prompt: str, *, max_output_tokens: int):
     response = httpx.post(
         "https://api.openai.com/v1/responses",
         headers={"Authorization": f"Bearer {_api_key()}", "Content-Type": "application/json"},
@@ -70,12 +86,11 @@ def _responses(prompt: str, *, max_output_tokens: int = 2500) -> str:
         timeout=75.0,
     )
     if response.status_code >= 400:
-        log.error("OpenAI request failed: %s", response.text)
+        log.error("OpenAI request failed with status %s", response.status_code)
         raise RuntimeError(f"OpenAI returned {response.status_code}")
-    text = _extract_text(response.json())
-    if not text:
-        raise RuntimeError("OpenAI returned an empty response")
-    return text
+    payload = response.json()
+    text = _extract_text(payload)
+    return text, payload
 
 
 def infer_voice_profile(content_sample: str) -> dict[str, Any]:

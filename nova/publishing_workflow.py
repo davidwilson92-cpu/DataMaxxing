@@ -110,6 +110,8 @@ def prepare_review(db,uid,body):
              'link_url':body.link_url,'publish_options':options,'targets':targets,'scheduled_utc':scheduled,'timezone':tz}
     row=PublishReview(code=secrets.token_urlsafe(24),user_id=uid,draft_id=draft.id,revision=draft.revision,payload_json=json.dumps(payload,ensure_ascii=False),expires_at=utcnow()+timedelta(minutes=15))
     db.add(row);db.commit()
+    from .readiness import event
+    event(uid,'reviewed',f'{draft.id}:{draft.revision}')
     return {'review_token':row.code,'snapshot':payload,'expires_in':900}
 
 
@@ -125,6 +127,9 @@ def update_draft_status(db,draft_id):
     statuses={r.status for r in rows}
     status='needs_review' if statuses.intersection({'unknown','publishing','queued'}) else 'scheduled' if 'scheduled' in statuses else 'pending' if 'pending' in statuses else 'partial' if 'failed' in statuses and 'published' in statuses else 'failed' if 'failed' in statuses else 'published' if 'published' in statuses else 'cancelled'
     db.execute(update(Draft).where(Draft.id==draft_id).values(status=status));db.commit()
+    from .readiness import event
+    for row in rows:
+        if row.status=='published':event(row.user_id,'published',row.id)
 
 
 def dispatch(db,publication,payload,publisher=publish_platform):

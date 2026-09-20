@@ -61,7 +61,7 @@ jobs:
           for attempt in $(seq 1 30); do if curl --fail http://localhost:8772/health; then break; fi; sleep 2; done
           curl --fail http://localhost:8772/health
           curl --fail http://localhost:8772/ | grep 'One idea.'
-          for file in studio studio-state studio-publish studio-experience; do node --check "nova/static/$file.js"; done
+          for file in studio studio-state studio-publish studio-experience brand-context readiness; do node --check "nova/static/$file.js"; done
       - uses: actions/upload-artifact@v4
         if: always()
         with:

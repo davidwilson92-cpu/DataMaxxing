@@ -73,6 +73,8 @@ def finish(db, key, success=True):
 def ai_action(db, uid):
     key=f'ai:{uid}:{uuid.uuid4().hex}'
     reserve(db, uid, 'ai', key); db.commit()
+    from .readiness import ai_user
+    context_token=ai_user.set(uid)
     try:
         yield
     except Exception:
@@ -80,6 +82,8 @@ def ai_action(db, uid):
         raise
     else:
         finish(db,key); db.commit()
+    finally:
+        ai_user.reset(context_token)
 
 
 def connection_slot(db, uid):

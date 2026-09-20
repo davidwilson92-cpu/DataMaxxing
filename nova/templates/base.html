@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+{% if metrics_enabled %}<meta name="zova-product-metrics" content="enabled">{% endif %}
 {% if brand %}<meta name="zova-workspace" content="{{ brand.id }}"><script src="/static/brand-context.js?v=1"></script>{% endif %}
 <link rel="stylesheet" href="/static/brand-context.css?v=1">
 <meta name="facebook-domain-verification" content="gc093o7nv5q19ykf4y2sxm82ujegg9">
