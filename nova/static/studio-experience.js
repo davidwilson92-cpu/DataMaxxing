@@ -1,4 +1,8 @@
 /* Chat presentation; persistence and immutable approval remain separate. */
+const instagramFormat=()=>document.getElementById('instagramFormat').value;
+const instagramLabel=()=>instagramFormat()==='story'?'Story':uploadedMediaKind==='video'?'Reel · shared to feed':'Post · feed';
+const instagramNote=()=>instagramFormat()==='story'?'One image or video, visible for 24 hours. Only the visual publishes: draft text is planning notes, not an overlay or caption. Add any text to your file first. Business account required.':'An image publishes to your feed. A video publishes as a Reel shared to your feed.';
+function instagramInstruction(platform,instruction){return platform==='instagram'&&instagramFormat()==='story'?instruction+'\nFor Instagram only: write concise Story planning copy for one visual, not a feed caption or hashtags. Text is a separate planning note; do not claim it is added to the uploaded visual.':instruction;}
 let canvasMode='edit';
 let editingDraft=false;
 let publicationStates={};
@@ -31,7 +35,7 @@ const formatNotes={x:'A single post or ordered thread. Each post must fit the pl
 function renderCanvasPreview(){
   if(!document.getElementById('canvasPreview'))return;
   const platforms=canvasMode==='compare'?Object.keys(variants):[currentPlatform].filter(p=>variants[p]);
-  document.getElementById('canvasPreview').innerHTML=platforms.length?`<button class="quiet-button" onclick="canvasView('edit');finishEditing()">← Back to draft</button><p class="preview-disclaimer">Preview · final review confirms the exact account, content and settings.</p><div class="version-previews">${platforms.map(p=>`<article class="version-preview"><h3>${platformName(p)}</h3><p class="format-note">${formatNotes[p]}</p>${variants[p].posts.map((text,i)=>`<div class="preview-post"><small>${variants[p].posts.length>1?'Post '+(i+1):'Post text'}</small><p>${esc(text)}</p></div>`).join('')}<div class="review-media">${uploadedMedia.map(mediaPreview).join('')}</div>${document.getElementById('linkUrl').value?`<p class="preview-link">Source: ${esc(document.getElementById('linkUrl').value)}</p>`:''}</article>`).join('')}</div>`:'<p>Your platform previews will appear here after you create a draft.</p>';
+  document.getElementById('canvasPreview').innerHTML=platforms.length?`<button class="quiet-button" onclick="canvasView('edit');finishEditing()">← Back to draft</button><p class="preview-disclaimer">Preview · final review confirms the exact account, content and settings.</p><div class="version-previews">${platforms.map(p=>`<article class="version-preview"><h3>${platformName(p)}${p==='instagram'?' · '+instagramLabel():''}</h3><p class="format-note">${p==='instagram'?instagramNote():formatNotes[p]}</p>${variants[p].posts.map((text,i)=>`<div class="preview-post"><small>${variants[p].posts.length>1?'Post '+(i+1):p==='instagram'&&instagramFormat()==='story'?'Planning notes · not published':'Post text'}</small><p>${esc(text)}</p></div>`).join('')}<div class="review-media">${uploadedMedia.map(mediaPreview).join('')}</div>${document.getElementById('linkUrl').value?`<p class="preview-link">Source: ${esc(document.getElementById('linkUrl').value)}</p>`:''}</article>`).join('')}</div>`:'<p>Your platform previews will appear here after you create a draft.</p>';
 }
 function renderReadiness(){
   const platforms=selectedPlatforms();
@@ -41,6 +45,9 @@ function renderReadiness(){
     return `<li><b>${platformName(p)}</b><span>${accounts.length?accounts.map(a=>esc(a)).join(', '):'Draft only · connect before publishing'}${missing?' · '+(p==='tiktok'?'Video':'Media')+' required':''}</span></li>`;
   }).join('')||'<li>Choose platforms for your versions.</li>';
   document.getElementById('xFormat').hidden=!platforms.includes('x');
+  document.getElementById('instagramFormatControl').hidden=!platforms.includes('instagram');
+  document.getElementById('instagramFormat').disabled=!platforms.includes('instagram')||sendingMessage||!editableDraft();
+  const hint=document.getElementById('instagramFormatHint');hint.hidden=!platforms.includes('instagram');hint.textContent=instagramFormat()==='story'?'24-hour Story · only your visual publishes. Add any text to your file first.':instagramNote();
   document.querySelectorAll('.composer-platforms input').forEach(input=>{input.closest('.platform-check').classList.toggle('is-selected',input.checked);input.closest('.platform-check').classList.toggle('is-connected',Boolean(connectionData[input.value]?.length));input.title=connectionData[input.value]?.length?'Connected':'Connect to publish; drafting is available';});
   document.getElementById('threadLength').disabled=!platforms.includes('x')||sendingMessage||!editableDraft();
 }
@@ -60,6 +67,7 @@ async function compareSaved(){
 }
 document.querySelectorAll('.platform-check input').forEach(node=>node.addEventListener('change',()=>{renderReadiness();if(node.checked&&!connectionData[node.value]?.length){connectionPlatform=node.value;document.getElementById('connectionTitle').textContent='Connect '+platformName(node.value);document.getElementById('connectionDescription').textContent='Select your '+platformName(node.value)+' account to publish there. You can also keep writing a draft without connecting yet.';document.getElementById('connectionPrompt').showModal();}}));
 
+document.getElementById('instagramFormat').addEventListener('change',()=>{renderReadiness();refreshDraft();});
 let textHistory=[];
 function rememberTextRevision(){
   if(!editableDraft()||!Object.keys(variants).length)return;

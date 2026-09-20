@@ -389,18 +389,32 @@ def publish_facebook(db: Session, conn: SocialConnection, posts: list[str], asse
     return {"post_id": post_id, "post_ids": [post_id], "url": f"https://www.facebook.com/{post_id.replace('_', '/posts/')}"}
 
 
-def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], assets: list[MediaAsset], link_url: str = "") -> dict[str, Any]:
+def instagram_story_eligibility(db, conn):
+    """Check current account type without changing scopes or cached connections."""
+    response=httpx.get(f"{instagram_graph_base(conn)}/{conn.account_id}", params={'fields':'account_type','access_token':access_token(conn,db)},timeout=20.0)
+    if response.status_code>=400: raise RuntimeError('Instagram account eligibility could not be verified. Try again before publishing a Story.')
+    if response.json().get('account_type') not in {'BUSINESS','INSTAGRAM_BUSINESS'}:
+        raise RuntimeError('Automatic Story publishing requires an Instagram Business account. Choose Post or publish the Story in Instagram.')
+
+
+def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], assets: list[MediaAsset], link_url: str = "", options: dict[str, Any] | None = None) -> dict[str, Any]:
+    placement=(options or {}).get('format','post')
+    if placement not in {'post','story'}: raise RuntimeError('Unsupported Instagram format')
     if not assets:
         raise RuntimeError("Instagram publishing requires an image or video")
+    if len(assets)!=1: raise RuntimeError('Choose one Instagram image or video.')
+    if placement=='story': instagram_story_eligibility(db,conn)
     token = access_token(conn, db)
     graph = instagram_graph_base(conn)
-    caption = posts[0]
+    caption = posts[0] if posts else ''
     if link_url and link_url not in caption:
         caption = (caption + "\n\n" + link_url).strip()
     media_url = get_public_url(assets[0].storage_key, assets[0].public_url)
     is_video = assets[0].mime_type.startswith("video/")
     create_data = {"caption": caption, "access_token": token}
-    if is_video:
+    if placement=='story':
+        create_data={'access_token':token,'media_type':'STORIES','video_url' if is_video else 'image_url':media_url}
+    elif is_video:
         create_data.update({"media_type": "REELS", "video_url": media_url, "share_to_feed": "true"})
     else:
         create_data["image_url"] = media_url
@@ -431,7 +445,7 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
     # Resolve permalink when available.
     detail = httpx.get(f"{graph}/{post_id}", params={"fields": "permalink", "access_token": token}, timeout=20.0)
     url = detail.json().get("permalink") if detail.status_code < 400 else None
-    return {"post_id": post_id, "post_ids": [post_id], "url": url or "https://www.instagram.com/"}
+    return {"post_id": post_id, "post_ids": [post_id], "url": url, "format": placement}
 
 
 def _tiktok_creator_info(token: str) -> dict[str, Any]:
@@ -559,7 +573,7 @@ def publish_platform(db: Session, *, user_id: int, platform: str, posts: list[st
     if platform == "facebook":
         return publish_facebook(db, conn, posts, assets, link_url)
     if platform == "instagram":
-        return publish_instagram(db, conn, posts, assets, link_url)
+        return publish_instagram(db, conn, posts, assets, link_url, options)
     if platform == "tiktok":
         return publish_tiktok(db, conn, posts, assets, link_url, options)
     raise RuntimeError("Unsupported social platform")

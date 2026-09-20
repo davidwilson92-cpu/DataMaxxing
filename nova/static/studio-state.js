@@ -23,7 +23,7 @@ function addAssistantMessage(text,extra=''){
 }
 function draftPayload(){
   return {brief:lastBrief,instruction:'',platforms:Object.keys(variants),variants,revision:draftRevision,thread_length:+document.getElementById('threadLength').value,
-    workspace:{media_asset_ids:uploadedMediaIds,video_duration:uploadedVideoDuration,link_url:document.getElementById('linkUrl').value,
+    workspace:{instagram_format:instagramFormat(),media_asset_ids:uploadedMediaIds,video_duration:uploadedVideoDuration,link_url:document.getElementById('linkUrl').value,
       conversation,text_history:textHistory,composer:document.getElementById('brief').value,selected_platforms:selectedPlatforms(),active_platform:currentPlatform}};
 }
 function scheduleAutosave(){
@@ -78,7 +78,7 @@ function studioBusy(active){
   document.getElementById('brief').readOnly=active||!editableDraft();
   document.getElementById('newChatBtn').disabled=active;
   document.querySelectorAll('#variantEditor textarea').forEach(node=>node.readOnly=active||!editableDraft());
-  document.querySelectorAll('.platform-check input,#threadLength,#linkUrl,#mediaInput').forEach(node=>node.disabled=active||!editableDraft());
+  document.querySelectorAll('.platform-check input,#threadLength,#instagramFormat,#linkUrl,#mediaInput').forEach(node=>node.disabled=active||!editableDraft());
 }
 async function sendMessage(){
   const input=document.getElementById('brief'),text=input.value.trim();
@@ -99,7 +99,7 @@ async function sendMessage(){
       const targets=plan.platforms.length?plan.platforms:[currentPlatform],changed={};
       for(const p of targets){
         if(!variants[p])throw new Error(`Add a ${platformName(p)} version first.`);
-        const result=await api('/api/ai/rewrite',{method:'POST',headers,body:JSON.stringify({platform:p,posts:variants[p].posts,action:'',instruction:plan.brief||text})});
+        const result=await api('/api/ai/rewrite',{method:'POST',headers,body:JSON.stringify({platform:p,posts:variants[p].posts,action:'',instruction:instagramInstruction(p,plan.brief||text)})});
         changed[p]={posts:result.posts};
       }
       rememberTextRevision();Object.assign(variants,changed);currentPlatform=targets[0];removeThinking();addAssistantMessage('Updated the requested versions. Here’s the updated version.',draftWorkspace());
@@ -112,11 +112,11 @@ async function sendMessage(){
       if(newDraft)await saveDraftNow();
       const targets=plan.action==='add_platforms'?platforms.filter(p=>!variants[p]):platforms;
       if(!targets.length)throw new Error('Those versions already exist. Tell me what to change in them.');
-      const result=await api('/api/ai/generate',{method:'POST',headers,body:JSON.stringify({brief:plan.action==='add_platforms'?(lastBrief||text):creationBrief,instruction:plan.action==='add_platforms'?text:'',platforms:targets,thread_length:+document.getElementById('threadLength').value,link_url:document.getElementById('linkUrl').value,draft_id:newDraft?null:currentDraftId})});
+      const result=await api('/api/ai/generate',{method:'POST',headers,body:JSON.stringify({brief:plan.action==='add_platforms'?(lastBrief||text):creationBrief,instruction:instagramInstruction(targets.includes('instagram')?'instagram':'',plan.action==='add_platforms'?text:''),platforms:targets,thread_length:+document.getElementById('threadLength').value,link_url:document.getElementById('linkUrl').value,draft_id:newDraft?null:currentDraftId})});
       if(newDraft){textHistory=[];publicationStates={};}
       history.replaceState({},'',window.zovaWorkspaceUrl(`/studio?draft=${result.draft_id}`));
       variants=result.variants;currentDraftId=result.draft_id;draftRevision=result.revision;lastBrief=plan.action==='add_platforms'?lastBrief:creationBrief;currentPlatform=targets[0];currentDraftStatus='draft';
-      removeThinking();addAssistantMessage(plan.reply||'Here’s a first draft. Tell me what you’d like to change.',draftWorkspace());
+      removeThinking();addAssistantMessage('Here’s a first draft. Tell me what you’d like to change.',draftWorkspace());
     }
     changeSerial++;await saveDraftNow();
   }catch(error){removeThinking();input.value=text;changeSerial++;addAssistantMessage(error.message||'Something went wrong. Your message is back in the composer.');try{await saveDraftNow();}catch{setAutosaveStatus('Unsaved changes - retry');}}
@@ -132,6 +132,7 @@ async function loadRequestedDraft(){
     uploadedMedia=ws.media||[];uploadedMediaIds=ws.media_asset_ids||[];uploadedMediaKind=ws.media_kind||null;uploadedVideoDuration=ws.video_duration||0;
     document.getElementById('brief').value=ws.composer||'';document.getElementById('linkUrl').value=ws.link_url||'';
     document.getElementById('threadLength').value=String(row.thread_length||1);
+    document.getElementById('instagramFormat').value=ws.instagram_format||'post';
     const selected=ws.selected_platforms||row.platforms||[];document.querySelectorAll('.platform-check input').forEach(node=>node.checked=selected.includes(node.value));
     conversation=[];document.getElementById('chatFeed').innerHTML='';
     for(const message of ws.conversation||[]){if(message.role==='user')addUserMessage(message.content);else addAssistantMessage(message.content);}
@@ -146,6 +147,7 @@ async function newConversation(){
   if(sendingMessage||studioLoading)return;
   try{await saveDraftNow();}catch(error){addAssistantMessage('Your changes could not be saved. Retry saving before starting a new chat.');return;}
   clearTimeout(autosaveTimer);invalidateReview();mediaUploadVersion++;mediaUploading=false;
+  document.getElementById('instagramFormat').value='post';
   variants={};textHistory=[];publicationStates={};document.getElementById('undoStatus').textContent='';currentDraftId=null;draftRevision=0;currentDraftStatus='draft';conversation=[];lastBrief='';pendingSchedule=null;
   uploadedMedia=[];uploadedMediaIds=[];uploadedMediaKind=null;uploadedVideoDuration=0;changeSerial=0;savedSerial=0;
   history.replaceState({},'',window.zovaWorkspaceUrl('/studio'));document.getElementById('chatFeed').innerHTML='';
@@ -156,6 +158,6 @@ document.getElementById('mediaInput').addEventListener('change',async()=>{await 
 document.getElementById('brief').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&(event.ctrlKey||event.metaKey||window.matchMedia('(min-width: 761px)').matches)){event.preventDefault();sendMessage();}});
 document.getElementById('brief').addEventListener('input',scheduleAutosave);
 document.getElementById('linkUrl').addEventListener('input',scheduleAutosave);
-document.querySelectorAll('.platform-check input,#threadLength').forEach(node=>node.addEventListener('change',scheduleAutosave));
+document.querySelectorAll('.platform-check input,#threadLength,#instagramFormat').forEach(node=>node.addEventListener('change',scheduleAutosave));
 window.addEventListener('beforeunload',event=>{if(savedSerial!==changeSerial||mediaUploading||sendingMessage){event.preventDefault();event.returnValue='';}});
 window.addEventListener('DOMContentLoaded',()=>{renderReadiness();loadRequestedDraft();});
