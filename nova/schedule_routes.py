@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from sqlalchemy import select,update
 from .db import ScheduledPost,SessionLocal,Publication,Draft,get_preferences,utcnow
 from .security import current_user
+from .brands import bind_request
+from . import allowances
 from .publishing_workflow import schedule_time,update_draft_status,results_for
 
 router=APIRouter()
@@ -16,6 +18,7 @@ class Reschedule(BaseModel):
 def schedules(request:Request):
     uid=current_user(request).id
     with SessionLocal() as db:
+        bind_request(db,request)
         return [{'id':r.id,'draft_id':r.draft_id,'platform':r.platform,'scheduled_at':r.scheduled_at.isoformat()+('Z' if r.scheduled_at.tzinfo is None else ''),'status':r.status,'error':r.error} for r in db.scalars(select(ScheduledPost).where(ScheduledPost.user_id==uid).order_by(ScheduledPost.scheduled_at.desc()).limit(100))]
 
 
@@ -23,11 +26,14 @@ def schedules(request:Request):
 def cancel(schedule_id:int,request:Request):
     uid=current_user(request).id
     with SessionLocal() as db:
+        bind_request(db,request)
         row=db.get(ScheduledPost,schedule_id)
         if not row or row.user_id!=uid:raise HTTPException(404,'Schedule not found')
         claimed=db.execute(update(ScheduledPost).where(ScheduledPost.id==row.id,ScheduledPost.status=='scheduled').values(status='cancelled',updated_at=utcnow()).execution_options(synchronize_session=False))
         if claimed.rowcount!=1:db.rollback();raise HTTPException(409,'This job has started or finished. It cannot be cancelled.')
         db.execute(update(Publication).where(Publication.draft_id==row.draft_id,Publication.platform==row.platform,Publication.status=='scheduled').values(status='cancelled'))
+        publication=db.scalar(select(Publication).where(Publication.draft_id==row.draft_id,Publication.platform==row.platform))
+        if publication:allowances.finish(db,f'publication:{publication.id}',False)
         db.commit()
         if db.scalar(select(Publication.id).where(Publication.draft_id==row.draft_id)):update_draft_status(db,row.draft_id)
         elif not db.scalar(select(ScheduledPost.id).where(ScheduledPost.draft_id==row.draft_id,ScheduledPost.status!='cancelled')):
@@ -40,6 +46,7 @@ def cancel(schedule_id:int,request:Request):
 def reschedule(schedule_id:int,body:Reschedule,request:Request):
     uid=current_user(request).id
     with SessionLocal() as db:
+        bind_request(db,request)
         row=db.get(ScheduledPost,schedule_id)
         if not row or row.user_id!=uid:raise HTTPException(404,'Schedule not found')
         value=schedule_time(body.scheduled_local,get_preferences(db,uid).timezone)
@@ -51,4 +58,6 @@ def reschedule(schedule_id:int,body:Reschedule,request:Request):
 @router.get('/api/publications/{draft_id}')
 def publication_results(draft_id:int,request:Request):
     uid=current_user(request).id
-    with SessionLocal() as db:return results_for(db,uid,draft_id)
+    with SessionLocal() as db:
+        bind_request(db,request)
+        return results_for(db,uid,draft_id)

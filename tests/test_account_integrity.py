@@ -55,12 +55,12 @@ def test_profile_persists_and_guidance_can_be_cleared():
         assert user.preferences.things_to_avoid == ''
 
 
-def test_billing_success_persists_owned_references(monkeypatch):
+def test_billing_return_cannot_grant_access_from_payment_status(monkeypatch):
     import nova.app as module
     client, uid, _, _ = account()
-    monkeypatch.setattr(module.billing,'fetch_checkout_session',lambda _: {'client_reference_id':str(uid),'customer':'synthetic-customer','subscription':'synthetic-subscription','payment_status':'paid'})
-    assert client.get('/billing/success?session_id=synthetic',follow_redirects=False).status_code == 303
+    monkeypatch.setattr(module.billing,'fetch_checkout_session',lambda _: {'client_reference_id':str(uid),'customer':'cus_unlinked','subscription':'sub_unlinked','payment_status':'paid','livemode':False})
+    assert client.get('/billing/success?session_id=cs_synthetic',follow_redirects=False).status_code == 403
     with SessionLocal() as db:
         user=db.get(User,uid)
-        assert user.stripe_customer_id == 'synthetic-customer'
-        assert user.subscription_status == 'active'
+        assert user.stripe_customer_id is None
+        assert user.subscription_status == 'none'

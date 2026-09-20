@@ -1,0 +1,12 @@
+{
+  "as_of": "2026-09-20",
+  "ai_per_action": null,
+  "social_per_publication": null,
+  "storage_per_user": null,
+  "hosting_per_user": null,
+  "support_per_user": null,
+  "payment_percent": null,
+  "payment_fixed": null,
+  "tax_fraction": null,
+  "sources": {"status": "Populate from dated invoices, current provider tariffs and measured usage. Missing is not zero."}
+}

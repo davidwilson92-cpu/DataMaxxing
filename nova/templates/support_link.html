@@ -1,0 +1,2 @@
+<p class="support-note">Need help? <a href="mailto:{{ support_email }}">Contact Zova support</a>. Include what you were trying to do and when. Never send passwords, access tokens or full card details.</p>
+{% if request.url.path in ['/account','/subscribe','/help'] %}<p class="support-note"><a href="/verify-email">Verify your account email</a>. Current access is unchanged. Plan changes are assisted: contact support before changing tier. Saved work is retained.</p>{% endif %}

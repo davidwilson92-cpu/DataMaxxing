@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from .db import Draft,MediaAsset,SocialConnection,PublishReview,Publication,ScheduledPost,Activity,get_preferences,utcnow
 from .workspace import EDITABLE,PLATFORMS
 from .social import selected_connection,publishing_context,publish_platform
+from . import allowances
 
 TERMINAL={'published','pending','publishing','unknown','scheduled','queued'}
 
@@ -109,6 +110,8 @@ def prepare_review(db,uid,body):
              'link_url':body.link_url,'publish_options':options,'targets':targets,'scheduled_utc':scheduled,'timezone':tz}
     row=PublishReview(code=secrets.token_urlsafe(24),user_id=uid,draft_id=draft.id,revision=draft.revision,payload_json=json.dumps(payload,ensure_ascii=False),expires_at=utcnow()+timedelta(minutes=15))
     db.add(row);db.commit()
+    from .readiness import event
+    event(uid,'reviewed',f'{draft.id}:{draft.revision}')
     return {'review_token':row.code,'snapshot':payload,'expires_in':900}
 
 
@@ -124,6 +127,9 @@ def update_draft_status(db,draft_id):
     statuses={r.status for r in rows}
     status='needs_review' if statuses.intersection({'unknown','publishing','queued'}) else 'scheduled' if 'scheduled' in statuses else 'pending' if 'pending' in statuses else 'partial' if 'failed' in statuses and 'published' in statuses else 'failed' if 'failed' in statuses else 'published' if 'published' in statuses else 'cancelled'
     db.execute(update(Draft).where(Draft.id==draft_id).values(status=status));db.commit()
+    from .readiness import event
+    for row in rows:
+        if row.status=='published':event(row.user_id,'published',row.id)
 
 
 def dispatch(db,publication,payload,publisher=publish_platform):
@@ -139,7 +145,7 @@ def dispatch(db,publication,payload,publisher=publish_platform):
         if any(not a or a.user_id!=publication.user_id for a in media):raise RuntimeError('Media unavailable')
         if capability_error(conn,media):raise RuntimeError('Permission changed')
     except RuntimeError:
-        publication.status='failed';publication.result_json=json.dumps({'error':'The reviewed account, media or permissions are unavailable. Reconnect/review before retrying.'});db.commit();return
+        publication.status='failed';publication.result_json=json.dumps({'error':'The reviewed account, media or permissions are unavailable. Reconnect/review before retrying.'});allowances.finish(db,f'publication:{publication.id}',False);db.commit();return
     try:
         result=publisher(db,user_id=publication.user_id,platform=publication.platform,posts=target['posts'],assets=media,link_url=target.get('link',''),options=payload['publish_options'].get(publication.platform,{}),connection_id=target['connection_id'])
         publication.status='pending' if result.get('pending') else 'published';publication.result_json=json.dumps(result)
@@ -147,7 +153,8 @@ def dispatch(db,publication,payload,publisher=publish_platform):
         db.rollback();db.refresh(publication)
         publication.status='unknown';publication.result_json=json.dumps({'error':'The provider outcome is unconfirmed. Check your social account before retrying; Zova will not resend automatically.'})
     result=json.loads(publication.result_json)
-    db.add(Activity(user_id=publication.user_id,draft_id=publication.draft_id,platform=publication.platform,action='publish',status=publication.status,text='\n\n'.join(target['posts']),platform_post_id=result.get('post_id'),url=result.get('url'),error=result.get('error')))
+    allowances.finish(db,f'publication:{publication.id}')
+    db.add(Activity(user_id=publication.user_id,brand_id=publication.brand_id,draft_id=publication.draft_id,platform=publication.platform,action='publish',status=publication.status,text='\n\n'.join(target['posts']),platform_post_id=result.get('post_id'),url=result.get('url'),error=result.get('error')))
     db.commit()
 
 
@@ -174,9 +181,12 @@ def confirm_review(db,uid,body,mode,publisher=publish_platform):
             if row and row.status not in {'failed','cancelled'}:raise HTTPException(409,'A destination is already submitted.')
             if not row:row=Publication(user_id=uid,draft_id=draft.id,platform=platform,connection_id=target['connection_id'],review_code=review.code);db.add(row)
             row.status='scheduled' if mode=='schedule' else 'queued';row.connection_id=target['connection_id'];row.review_code=review.code;row.result_json='{}';db.flush();jobs.append(row)
+            allowances.reserve(db,uid,'publications',f'publication:{row.id}',len(target['posts']))
             if mode=='schedule':db.add(ScheduledPost(user_id=uid,draft_id=draft.id,platform=platform,connection_id=target['connection_id'],content_json=json.dumps({'review_code':review.code,'publication_id':row.id,'posts':target['posts']}),media_asset_ids_json=json.dumps(payload['media_asset_ids']),scheduled_at=datetime.fromisoformat(payload['scheduled_utc']),status='scheduled'))
         db.commit()
-    except (IntegrityError,HTTPException):db.rollback();raise HTTPException(409,'This destination already has a submission. Check its results.')
+    except HTTPException:
+        db.rollback();raise
+    except IntegrityError:db.rollback();raise HTTPException(409,'This destination already has a submission. Check its results.')
     if mode=='publish':
         for job in jobs:dispatch(db,job,payload,publisher)
         update_draft_status(db,draft.id)

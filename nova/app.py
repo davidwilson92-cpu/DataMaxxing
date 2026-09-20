@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
-from . import ai, billing
+from . import ai, billing, brands, allowances, customer_service, readiness
 from .connections import connection_options, safe_login_next
 from .db import (
     Activity, AuthIdentity, AuthState, Creator, CreatorPreferences, Draft, MediaAsset, OAuth2Connection, OAuthState,
@@ -64,7 +64,10 @@ def subscription_guard(user: User) -> None:
 
 
 def template_context(request: Request, user: User | None = None, **kwargs: Any) -> dict[str, Any]:
-    return {"request": request, "user": user, "connections": connection_options(), "operator_name": os.environ.get("LEGAL_ENTITY_NAME", "Zova Social Limited"), **kwargs}
+    if user and not hasattr(request.state,'brand_id'):
+        with SessionLocal() as context_db:brands.bind_request(context_db,request)
+    brand = brands.context(user, getattr(request.state, 'brand_id', 0)) if user else None
+    return {"request": request, "user": user, "brand": brand, "connections": connection_options(), **customer_service.context(), **kwargs}
 
 
 def set_user_cookie(response: RedirectResponse | JSONResponse, user: User) -> None:
@@ -78,16 +81,17 @@ def learn_voice_from_socials(db: Session, user_id: int) -> dict[str, Any] | None
     posts = recent_content_for_user(db, user_id)
     if not posts:
         return None
-    profile = ai.infer_voice_profile("\n\n--- POST ---\n\n".join(posts))
-    prefs = get_preferences(db, user_id)
-    prefs.writing_tone = profile["writing_tone"][:5000]
-    prefs.audience = profile["audience"][:5000]
-    prefs.topics = profile["topics"][:5000]
-    prefs.things_to_avoid = profile["things_to_avoid"][:5000]
-    prefs.example_posts = "\n\n".join(posts)[:12000]
-    prefs.preferred_post_length = profile["preferred_post_length"]
-    db.commit()
-    return {**profile, "posts_scanned": len(posts)}
+    with allowances.ai_action(db, user_id):
+        profile = ai.infer_voice_profile("\n\n--- POST ---\n\n".join(posts))
+        prefs = get_preferences(db, user_id)
+        prefs.writing_tone = profile["writing_tone"][:5000]
+        prefs.audience = profile["audience"][:5000]
+        prefs.topics = profile["topics"][:5000]
+        prefs.things_to_avoid = profile["things_to_avoid"][:5000]
+        prefs.example_posts = "\n\n".join(posts)[:12000]
+        prefs.preferred_post_length = profile["preferred_post_length"]
+        db.commit()
+        return {**profile, "posts_scanned": len(posts)}
 
 
 def _state_row(db: Session, raw_state: str, platform: str) -> OAuthState:
@@ -103,7 +107,7 @@ def _state_row(db: Session, raw_state: str, platform: str) -> OAuthState:
 
 def _new_state(db: Session, user_id: int, platform: str, verifier: str | None = None) -> str:
     state = make_state()
-    db.add(OAuthState(user_id=user_id, platform=platform, state_hash=hash_api_key(state), encrypted_code_verifier=encrypt(verifier) if verifier else None))
+    db.add(OAuthState(user_id=user_id, brand_id=db.info.get('brand_id',0), platform=platform, state_hash=hash_api_key(state), encrypted_code_verifier=encrypt(verifier) if verifier else None))
     db.commit()
     return state
 
@@ -172,7 +176,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Zova Social Publishing", version="5.1.0", lifespan=lifespan)
-from .request_security import SecurityMiddleware
+from .request_security import SecurityMiddleware, allowed_request
 from .recovery import router as recovery_router
 from .body_limit import BodyLimitMiddleware
 app.add_middleware(BodyLimitMiddleware)
@@ -250,6 +254,7 @@ def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str,
     now = utcnow()
     consent = marketing_consent == "yes"
     user=User(email=email,display_name=name,country_code=country,password_hash=hash_password(password),terms_accepted_at=now,marketing_consent=consent,marketing_consent_at=now if consent else None); db.add(user); db.commit(); db.refresh(user); get_preferences(db,user.id)
+    readiness.event(user.id,'signup',user.id)
     resp=RedirectResponse("/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
 
 @app.get("/login", response_class=HTMLResponse)
@@ -308,6 +313,7 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
         user.last_login_at = utcnow()
         db.commit()
     if not identity: db.add(AuthIdentity(user_id=user.id, provider="apple", subject=subject)); db.commit()
+    if created:readiness.event(user.id,'signup',user.id)
     resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303); set_user_cookie(resp, user); return resp
 
 @app.post("/login")
@@ -321,42 +327,113 @@ def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Fo
 @app.post("/logout")
 def logout(request: Request):
     revoke_session(request.cookies.get("nova_session"))
-    resp=RedirectResponse("/",303); resp.delete_cookie("nova_session",path="/"); return resp
+    resp=RedirectResponse("/",303); resp.delete_cookie("nova_session",path="/"); resp.delete_cookie("zova_brand",path="/"); return resp
 
 @app.get("/subscribe", response_class=HTMLResponse)
-def subscribe(request:Request):
+def subscribe(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
-    return templates.TemplateResponse(request, "subscribe.html", template_context(request,user,billing_ready=billing.configured(),subscription_required=billing.require_subscription(),price_label=os.environ.get("ZOVA_PRICE_LABEL",os.environ.get("NOVA_PRICE_LABEL","Subscription")),price_note=os.environ.get("ZOVA_PRICE_NOTE",os.environ.get("NOVA_PRICE_NOTE","Cancel from your account at any time."))))
+    info=billing.summary(db,user)
+    return templates.TemplateResponse(request,"membership.html",template_context(request,user,billing_info=info,usage=allowances.summary(db,user.id),catalog=allowances.PLANS,subscription_required=billing.require_subscription()))
+
+@app.get('/brands', response_class=HTMLResponse)
+def brand_settings(request:Request,db:Session=Depends(get_db)):
+    user=current_user(request)
+    return templates.TemplateResponse(request,'brands.html',template_context(request,user))
+
+@app.post('/brands')
+def create_brand(request:Request,name:Annotated[str,Form()],db:Session=Depends(get_db)):
+    from .db import Brand
+    user=current_user(request)
+    name=name.strip()
+    if not name or len(name)>100:raise HTTPException(400,'Use a brand name between 1 and 100 characters.')
+    allowances.brand_slot(db,user.id)
+    row=Brand(user_id=user.id,name=name);db.add(row);db.commit();db.refresh(row)
+    response=RedirectResponse('/studio',303)
+    response.set_cookie('zova_brand',str(row.id),httponly=True,secure=base_url().startswith('https://'),samesite='lax',max_age=30*86400)
+    return response
+
+@app.post('/brands/switch')
+def switch_brand(request:Request,brand_id:Annotated[int,Form()],db:Session=Depends(get_db)):
+    from .db import Brand
+    user=current_user(request)
+    row=db.get(Brand,brand_id) if brand_id else None
+    if brand_id and (not row or row.user_id!=user.id):raise HTTPException(404,'Brand workspace not found')
+    response=RedirectResponse('/studio',303)
+    response.set_cookie('zova_brand',str(brand_id),httponly=True,secure=base_url().startswith('https://'),samesite='lax',max_age=30*86400)
+    return response
+
+@app.post('/brands/{brand_id}/name')
+def rename_brand(brand_id:int,request:Request,name:Annotated[str,Form()],db:Session=Depends(get_db)):
+    from .db import Brand
+    user=current_user(request);name=name.strip()
+    if not name or len(name)>100:raise HTTPException(400,'Use a brand name between 1 and 100 characters.')
+    if brand_id:
+        row=db.get(Brand,brand_id)
+        if not row or row.user_id!=user.id:raise HTTPException(404,'Brand workspace not found')
+        row.name=name
+    else:db.get(User,user.id).default_brand_name=name
+    db.commit();return RedirectResponse('/brands',303)
 
 @app.get("/billing/checkout")
-def billing_checkout(request:Request):
-    user=current_user(request)
-    if not billing.require_subscription(): raise HTTPException(409,"Paid checkout is disabled during testing.")
-    try:url=billing.create_checkout(user,base_url())
-    except RuntimeError as exc: raise HTTPException(503,str(exc))
+def checkout_link(request:Request):
+    current_user(request)
+    if not billing.checkout_enabled():raise HTTPException(409,"Paid checkout is disabled during testing.")
+    return RedirectResponse('/subscribe',303)
+
+@app.post("/billing/checkout")
+def billing_checkout(request:Request,plan:str=Form('monthly'),db:Session=Depends(get_db)):
+    user=db.get(User,current_user(request).id)
+    if not billing.checkout_enabled():raise HTTPException(409,"Checkout is disabled. Your current access is unchanged.")
+    try:url=billing.create_checkout(db,user,base_url(),plan)
+    except (RuntimeError,ValueError) as exc:
+        db.rollback();return RedirectResponse('/subscribe?error='+quote_plus(str(exc)),303)
     return RedirectResponse(url,303)
 
 @app.get("/billing/success")
 def billing_success(request:Request,session_id:str=Query(...),db:Session=Depends(get_db)):
     user=db.get(User,current_user(request).id)
-    try:data=billing.fetch_checkout_session(session_id)
-    except RuntimeError as exc: raise HTTPException(502,str(exc))
-    if str(data.get("client_reference_id"))!=str(user.id): raise HTTPException(403,"Checkout session does not belong to this user")
-    user.stripe_customer_id=data.get("customer") or user.stripe_customer_id; user.stripe_subscription_id=data.get("subscription") if isinstance(data.get("subscription"),str) else ((data.get("subscription") or {}).get("id")); user.subscription_status="active" if data.get("payment_status") in {"paid","no_payment_required"} else user.subscription_status; db.commit()
-    return RedirectResponse("/studio",303)
+    if not allowed_request(f"billing-return:{user.id}",20,300):raise HTTPException(429,"Please wait before refreshing billing again.")
+    try:billing.verify_return(db,user,session_id)
+    except PermissionError:raise HTTPException(403,"Checkout session does not belong to this account")
+    except ValueError:raise HTTPException(400,"Invalid checkout session")
+    except RuntimeError:
+        db.rollback();return RedirectResponse('/subscribe?pending=1',303)
+    return RedirectResponse('/subscribe?returned=1',303)
 
 @app.get("/billing/portal")
-def billing_portal(request:Request):
-    user=current_user(request)
-    try:url=billing.create_portal(user,base_url())
-    except RuntimeError as exc: raise HTTPException(503,str(exc))
+def portal_link(request:Request):
+    current_user(request)
+    return RedirectResponse('/subscribe',303)
+
+@app.post("/billing/portal")
+def billing_portal(request:Request,db:Session=Depends(get_db)):
+    user=db.get(User,current_user(request).id)
+    try:url=billing.create_portal(db,user,base_url())
+    except (RuntimeError,ValueError) as exc:
+        db.rollback();return RedirectResponse('/subscribe?error='+quote_plus(str(exc)),303)
     return RedirectResponse(url,303)
+
+@app.post("/billing/refresh")
+def billing_refresh(request:Request,db:Session=Depends(get_db)):
+    user=db.get(User,current_user(request).id)
+    try:billing.refresh(db,user)
+    except RuntimeError:
+        db.rollback();return RedirectResponse('/subscribe?pending=1',303)
+    return RedirectResponse('/subscribe',303)
 
 @app.post("/billing/webhook")
 async def billing_webhook(request:Request,db:Session=Depends(get_db)):
-    raw=await request.body(); sig=request.headers.get("stripe-signature","")
-    if not billing.verify_webhook(raw,sig): raise HTTPException(400,"Invalid Stripe signature")
-    event=json.loads(raw); billing.apply_event(db,event); return {"received":True}
+    raw=await request.body()
+    if not billing.verify_webhook(raw,request.headers.get('stripe-signature','')):raise HTTPException(400,"Invalid Stripe signature")
+    try:
+        event=json.loads(raw)
+        from starlette.concurrency import run_in_threadpool
+        await run_in_threadpool(billing.apply_event,db,event)
+    except (ValueError,TypeError):
+        db.rollback();raise HTTPException(400,"Invalid Stripe event")
+    except RuntimeError:
+        db.rollback();raise HTTPException(503,"Billing sync unavailable; retry this event")
+    return {'received':True}
 
 @app.get("/security",response_class=HTMLResponse)
 def security_page(request:Request):
@@ -421,6 +498,7 @@ def data_deletion_status(request:Request,confirmation_code:str,db:Session=Depend
 @app.get("/studio",response_class=HTMLResponse)
 def studio(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
+    readiness.event(user.id,'visit',utcnow().strftime('%Y-%m-%d'))
     connections={}
     for row in db.scalars(select(SocialConnection).where(SocialConnection.user_id==user.id,SocialConnection.active.is_(True))).all():
         connections.setdefault(row.platform,[]).append(row.username or row.account_id or "Connected account")
@@ -578,7 +656,10 @@ def connection_state(db: Session, request: Request, state: str, platform: str):
     owner = db.scalar(select(OAuthState.user_id).where(OAuthState.state_hash == hash_api_key(state), OAuthState.platform == platform))
     if owner != user.id:
         raise HTTPException(400, "Return to the Zova workspace where you started connecting and try again.")
-    return _state_row(db, state, platform)
+    row=_state_row(db,state,platform)
+    db.info.update(brand_id=row.brand_id,brand_user_id=user.id)
+    request.state.brand_id=row.brand_id
+    return row
 
 
 def ensure_connection_ready(request: Request, platform: str):
@@ -752,21 +833,22 @@ class LegacyPostRequest(BaseModel):
 
 @app.post("/api/voice/learn")
 def learn_voice(payload: VoiceLearnRequest, request: Request, db: Session = Depends(get_db)):
-    user = current_user(request)
-    try:
-        profile = ai.infer_voice_profile(payload.content)
-    except Exception as exc:
-        log.exception("Voice learning failed")
-        raise HTTPException(502, f"Zova could not analyse that sample: {exc}") from exc
-    prefs = get_preferences(db, user.id)
-    prefs.writing_tone = profile["writing_tone"][:5000]
-    prefs.audience = profile["audience"][:5000]
-    prefs.topics = profile["topics"][:5000]
-    prefs.things_to_avoid = profile["things_to_avoid"][:5000]
-    prefs.example_posts = payload.content[:12000]
-    prefs.preferred_post_length = profile["preferred_post_length"]
-    db.commit()
-    return profile
+    with allowances.ai_action(db,current_user(request).id):
+        user = current_user(request)
+        try:
+            profile = ai.infer_voice_profile(payload.content)
+        except Exception as exc:
+            log.exception("Voice learning failed")
+            raise HTTPException(502, f"Zova could not analyse that sample: {exc}") from exc
+        prefs = get_preferences(db, user.id)
+        prefs.writing_tone = profile["writing_tone"][:5000]
+        prefs.audience = profile["audience"][:5000]
+        prefs.topics = profile["topics"][:5000]
+        prefs.things_to_avoid = profile["things_to_avoid"][:5000]
+        prefs.example_posts = payload.content[:12000]
+        prefs.preferred_post_length = profile["preferred_post_length"]
+        db.commit()
+        return profile
 
 
 def _validate_platforms(values:list[str])->list[str]:
@@ -790,6 +872,7 @@ def _validate_media_targets(platforms:list[str],assets:list[MediaAsset])->None:
     if unsupported:
         names=["X" if p=="x" else p.title() for p in unsupported]
         raise HTTPException(400,f"Videos can only be published to Instagram and TikTok. Remove {', '.join(names)}.")
+
 
 @app.post("/api/media")
 async def upload_media(request:Request,files:list[UploadFile]=File(...),db:Session=Depends(get_db)):
@@ -820,38 +903,45 @@ def local_media(filename:str):
 
 @app.post("/api/ai/generate")
 def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)):
-    from .workspace import EDITABLE
-    user=current_user(request); subscription_guard(user); platforms=_validate_platforms(body.platforms); prefs=get_preferences(db,user.id)
-    row=db.get(Draft,body.draft_id) if body.draft_id else None
-    if body.draft_id and (not row or row.user_id!=user.id):raise HTTPException(404,'Draft not found')
-    if row and row.status not in EDITABLE:raise HTTPException(409,'This draft is already submitted.')
-    revision=row.revision if row else 0
-    try:variants=ai.generate_variants(brief=body.brief,instruction=body.instruction,platforms=platforms,thread_length=body.thread_length,preferences=prefs,link_url=body.link_url)
-    except Exception:raise HTTPException(502,'Content generation failed. Your previous draft is unchanged; try again.')
-    if row:
-        existing=json.loads(row.variants_json or '{}');existing.update(variants);variants=existing
-        all_platforms=list(dict.fromkeys(json.loads(row.platforms_json or '[]')+platforms))
-        claimed=db.execute(update(Draft).where(Draft.id==row.id,Draft.revision==revision,Draft.status.in_(EDITABLE)).values(brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(all_platforms),variants_json=json.dumps(variants,ensure_ascii=False),thread_length=body.thread_length,revision=Draft.revision+1,updated_at=utcnow()).execution_options(synchronize_session=False))
-        if claimed.rowcount!=1:db.rollback();raise HTTPException(409,'This draft changed while generating. Open the latest saved version.')
-        db.commit();db.refresh(row)
-    else:
-        row=Draft(user_id=user.id,brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(platforms),variants_json=json.dumps(variants,ensure_ascii=False),thread_length=body.thread_length)
-        db.add(row);db.commit();db.refresh(row)
-    return {'draft_id':row.id,'variants':variants,'saved':True,'revision':row.revision}
+    with allowances.ai_action(db,current_user(request).id):
+        from .workspace import EDITABLE
+        user=current_user(request); subscription_guard(user); platforms=_validate_platforms(body.platforms); prefs=get_preferences(db,user.id)
+        row=db.get(Draft,body.draft_id) if body.draft_id else None
+        if body.draft_id and (not row or row.user_id!=user.id):raise HTTPException(404,'Draft not found')
+        if row and row.status not in EDITABLE:raise HTTPException(409,'This draft is already submitted.')
+        revision=row.revision if row else 0
+        try:variants=ai.generate_variants(brief=body.brief,instruction=body.instruction,platforms=platforms,thread_length=body.thread_length,preferences=prefs,link_url=body.link_url)
+        except Exception:raise HTTPException(502,'Content generation failed. Your previous draft is unchanged; try again.')
+        if row:
+            existing=json.loads(row.variants_json or '{}');existing.update(variants);variants=existing
+            all_platforms=list(dict.fromkeys(json.loads(row.platforms_json or '[]')+platforms))
+            claimed=db.execute(update(Draft).where(Draft.id==row.id,Draft.revision==revision,Draft.status.in_(EDITABLE)).values(brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(all_platforms),variants_json=json.dumps(variants,ensure_ascii=False),thread_length=body.thread_length,revision=Draft.revision+1,updated_at=utcnow()).execution_options(synchronize_session=False))
+            if claimed.rowcount!=1:db.rollback();raise HTTPException(409,'This draft changed while generating. Open the latest saved version.')
+            db.commit();db.refresh(row)
+        else:
+            row=Draft(user_id=user.id,brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(platforms),variants_json=json.dumps(variants,ensure_ascii=False),thread_length=body.thread_length)
+            db.add(row);db.commit();db.refresh(row)
+        readiness.event(user.id,'generated',row.id)
+        return {'draft_id':row.id,'variants':variants,'saved':True,'revision':row.revision}
+
 
 @app.post("/api/ai/rewrite")
 def api_rewrite(body:RewriteRequest,request:Request,db:Session=Depends(get_db)):
-    user=current_user(request);subscription_guard(user);prefs=get_preferences(db,user.id)
-    try:posts=ai.rewrite_variant(platform=body.platform,posts=body.posts,action=body.action,instruction=body.instruction,preferences=prefs)
-    except RuntimeError as exc:raise HTTPException(502,str(exc))
-    return {"posts":posts}
+    with allowances.ai_action(db,current_user(request).id):
+        user=current_user(request);subscription_guard(user);prefs=get_preferences(db,user.id)
+        try:posts=ai.rewrite_variant(platform=body.platform,posts=body.posts,action=body.action,instruction=body.instruction,preferences=prefs)
+        except RuntimeError as exc:raise HTTPException(502,str(exc))
+        return {"posts":posts}
+
 
 @app.post("/api/ai/schedule")
 def api_schedule_suggest(body:ScheduleSuggestRequest,request:Request,db:Session=Depends(get_db)):
-    user=current_user(request);subscription_guard(user);prefs=get_preferences(db,user.id);platforms=_validate_platforms(body.platforms)
-    try:s=ai.propose_schedule(platforms=platforms,timezone_name=prefs.timezone,context=body.context)
-    except RuntimeError as exc:raise HTTPException(502,str(exc))
-    return {"timezone":prefs.timezone,"suggestions":s,"note":"Suggested starting points, not recommendations based on your account performance."}
+    with allowances.ai_action(db,current_user(request).id):
+        user=current_user(request);subscription_guard(user);prefs=get_preferences(db,user.id);platforms=_validate_platforms(body.platforms)
+        try:s=ai.propose_schedule(platforms=platforms,timezone_name=prefs.timezone,context=body.context)
+        except RuntimeError as exc:raise HTTPException(502,str(exc))
+        return {"timezone":prefs.timezone,"suggestions":s,"note":"Suggested starting points, not recommendations based on your account performance."}
+
 
 @app.post("/api/preview")
 def api_preview(body:PreviewRequest,request:Request):
@@ -923,7 +1013,9 @@ def api_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
 def api_save_draft(draft_id:int,body:DraftSaveRequest,request:Request,db:Session=Depends(get_db)):
     from .workspace import save_workspace
     user=current_user(request)
-    return save_workspace(db,db.get(Draft,draft_id),body,user.id)
+    result=save_workspace(db,db.get(Draft,draft_id),body,user.id)
+    readiness.event(user.id,'revised',f"{draft_id}:{result.get('revision',0)}")
+    return result
 
 @app.delete("/api/drafts/{draft_id}",status_code=204)
 def api_delete_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
@@ -1001,7 +1093,10 @@ def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db))
         answer=f"In the available sample of posts published in the last seven days: {number('impressions')} impressions, {number('likes')} likes, {number('comments')} comments and {number('shares')} shares or reposts.{lead}"
     answer += " " + dashboard["note"]
     if connected and os.environ.get("OPENAI_API_KEY"):
-        try:answer=ai.analyse_performance(question=body.question,dashboard=dashboard,preferences=get_preferences(db,user.id))
+        try:
+            with allowances.ai_action(db,user.id):
+                answer=ai.analyse_performance(question=body.question,dashboard=dashboard,preferences=get_preferences(db,user.id))
+        except HTTPException:raise
         except Exception as exc:log.warning("AI performance analysis failed; using account-data fallback: %s",exc)
     return {"answer":answer,"summary":summary,"has_signal":bool(connected),"recommendations":dashboard.get("recommendations") or []}
 
@@ -1033,6 +1128,9 @@ def help_page(request:Request):
 
 from .operations import router as operations_router
 app.include_router(operations_router)
+app.include_router(readiness.router)
+from .verification import router as verification_router
+app.include_router(verification_router)
 
 @app.get('/media/preview/{asset_id}')
 def media_preview(asset_id:int,request:Request,db:Session=Depends(get_db)):

@@ -13,6 +13,7 @@ function renderCanvas(markup){
   turn.innerHTML='<div id="canvasEditor"></div><div id="canvasPreview" hidden></div>';
   document.getElementById('canvasEditor').innerHTML=markup;
   renderReadiness();
+  if (typeof contextualRefinements === 'function') contextualRefinements();
 }
 function canvasView(mode){
   canvasMode=mode;

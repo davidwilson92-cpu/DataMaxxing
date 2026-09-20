@@ -300,7 +300,11 @@ def upsert_connection(
     scope: str = "",
     metadata: dict[str, Any] | None = None,
 ) -> SocialConnection:
+    from .allowances import lock, connection_slot
+    lock(db,user_id)
     conn = db.scalar(select(SocialConnection).where(SocialConnection.user_id == user_id, SocialConnection.platform == platform, SocialConnection.account_id == account_id))
+    if conn is None or not conn.active:
+        connection_slot(db,user_id)
     if conn is None:
         conn = SocialConnection(user_id=user_id, platform=platform, account_id=account_id, username=username or "", display_name=display_name or "", encrypted_access_token=encrypt(access))
         db.add(conn)
@@ -316,6 +320,8 @@ def upsert_connection(
     if metadata is not None:
         save_meta(conn, metadata)
     db.commit(); db.refresh(conn)
+    from .readiness import event
+    event(user_id,'connected',conn.id)
     return conn
 
 

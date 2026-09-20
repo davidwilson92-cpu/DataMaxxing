@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
+from fastapi import Request
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 
@@ -21,6 +22,43 @@ def utcnow() -> datetime:
 
 class Base(DeclarativeBase):
     pass
+
+
+class BrandScoped:
+    brand_id: Mapped[int] = mapped_column(Integer, default=0, server_default='0', index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+
+
+class Brand(Base):
+    __tablename__ = 'zova_brands'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+
+
+class BrandVoice(BrandScoped, Base):
+    __tablename__ = 'zova_brand_voices'
+    __table_args__ = (UniqueConstraint('user_id', 'brand_id'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    writing_tone: Mapped[str] = mapped_column(Text, default='')
+    audience: Mapped[str] = mapped_column(Text, default='')
+    topics: Mapped[str] = mapped_column(Text, default='')
+    things_to_avoid: Mapped[str] = mapped_column(Text, default='')
+    example_posts: Mapped[str] = mapped_column(Text, default='')
+    preferred_post_length: Mapped[int] = mapped_column(Integer, default=220)
+    timezone: Mapped[str] = mapped_column(String(80), default='Europe/London')
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class UsageEntry(Base):
+    __tablename__ = 'zova_usage_entries'
+    key: Mapped[str] = mapped_column(String(180), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    kind: Mapped[str] = mapped_column(String(30))
+    period: Mapped[str] = mapped_column(String(7), index=True)
+    amount: Mapped[int] = mapped_column(Integer, default=1)
+    state: Mapped[str] = mapped_column(String(20), default='reserved')
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 # Legacy X tables are intentionally retained so existing Custom GPTs keep working.
@@ -67,6 +105,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
     display_name: Mapped[str] = mapped_column(String(160), default='')
+    default_brand_name: Mapped[str] = mapped_column(String(100), default='My brand', server_default='My brand')
     country_code: Mapped[str] = mapped_column(String(2), default='')
     password_hash: Mapped[str] = mapped_column(Text)
     auth_version: Mapped[int] = mapped_column(Integer, default=0)
@@ -152,7 +191,7 @@ class CreatorPreferences(Base):
     user: Mapped[User] = relationship(back_populates='preferences')
 
 
-class SocialConnection(Base):
+class SocialConnection(BrandScoped, Base):
     __tablename__ = 'nova_social_connections'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
@@ -173,6 +212,7 @@ class SocialConnection(Base):
 
 class OAuthState(Base):
     __tablename__ = 'nova_oauth_states'
+    brand_id: Mapped[int] = mapped_column(Integer, default=0, server_default='0')
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
     platform: Mapped[str] = mapped_column(String(30), index=True)
@@ -182,7 +222,7 @@ class OAuthState(Base):
     used: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class Draft(Base):
+class Draft(BrandScoped, Base):
     __tablename__ = 'nova_drafts'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
@@ -198,7 +238,7 @@ class Draft(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
 
-class PublishReview(Base):
+class PublishReview(BrandScoped, Base):
     __tablename__ = 'zova_publish_reviews'
     code: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
@@ -210,7 +250,7 @@ class PublishReview(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
-class Publication(Base):
+class Publication(BrandScoped, Base):
     __tablename__ = 'zova_publications'
     __table_args__ = (UniqueConstraint('draft_id','platform',name='uq_publication_draft_platform'),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -224,7 +264,7 @@ class Publication(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=utcnow,onupdate=utcnow)
 
 
-class MediaAsset(Base):
+class MediaAsset(BrandScoped, Base):
     __tablename__ = 'nova_media_assets'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
@@ -236,7 +276,7 @@ class MediaAsset(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
-class ScheduledPost(Base):
+class ScheduledPost(BrandScoped, Base):
     __tablename__ = 'nova_scheduled_posts'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
@@ -254,7 +294,7 @@ class ScheduledPost(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
 
-class Activity(Base):
+class Activity(BrandScoped, Base):
     __tablename__ = 'nova_activity'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
@@ -279,20 +319,92 @@ class UserCreatorLink(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class BillingAccount(Base):
+    __tablename__ = 'zova_billing_accounts'
+    key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    mode: Mapped[str] = mapped_column(String(10))
+    customer_id: Mapped[str | None] = mapped_column(String(120), nullable=True, unique=True)
+    subscription_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    status: Mapped[str] = mapped_column(String(40), default='none')
+    price_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default=False)
+    period_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    checkout_key: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    checkout_started: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    checkout_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
+    checkout_session: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    revision: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class BillingEvent(Base):
+    __tablename__ = 'zova_billing_events'
+    event_id: Mapped[str] = mapped_column(String(150), primary_key=True)
+    mode: Mapped[str] = mapped_column(String(10))
+    event_type: Mapped[str] = mapped_column(String(100))
+    processed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AICall(Base):
+    __tablename__ = 'zova_ai_calls'
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey('nova_users.id'), nullable=True, index=True)
+    model: Mapped[str] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(30))
+    input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    cached_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    estimated_gbp: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    rate_date: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    rate_snapshot: Mapped[str] = mapped_column(Text, default='{}')
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class ProductEvent(Base):
+    __tablename__ = 'zova_product_events'
+    key: Mapped[str] = mapped_column(String(200), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    kind: Mapped[str] = mapped_column(String(40), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class MailDelivery(Base):
+    __tablename__ = 'zova_mail_deliveries'
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    status: Mapped[str] = mapped_column(String(20))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class EmailVerification(Base):
+    __tablename__ = 'zova_email_verifications'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    email: Mapped[str] = mapped_column(String(320))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 Base.metadata.create_all(bind=engine)
 from .migrations import run_migrations
 run_migrations(engine)
 
 
-def get_db():
+def get_db(request: Request):
     db = SessionLocal()
     try:
+        from .brands import bind_request
+        bind_request(db, request)
         yield db
     finally:
         db.close()
 
 
 def get_preferences(db: Session, user_id: int) -> CreatorPreferences:
+    from .brands import voice
+    branded = voice(db, user_id)
+    if branded is not None:
+        return branded
     pref = db.scalar(select(CreatorPreferences).where(CreatorPreferences.user_id == user_id))
     if pref is None:
         pref = CreatorPreferences(user_id=user_id)

@@ -1,49 +1,34 @@
-# Zova feature matrix — 14 September 2026 local candidate
+# Current feature matrix — 20 September 2026
 
-“Implemented” below describes this local candidate. Nothing has been deployed. Provider approval is never inferred from code or a mock.
+This replaces obsolete canvas and early billing entries. Historical reports remain dated evidence, not current specifications. Candidate: `codex/stripe-billing`; current release evidence in the root handoff. The 20 September increment is **not deployed**. Last observed live commercial journey still offered free testing and unavailable email recovery.
 
-| Capability | Implementation / compatible change | Evidence and remaining gate |
+| Capability | Candidate implementation | Validation / remaining gate |
 |---|---|---|
-| Signup and login | Existing email/password flow; named country selector; non-secret signup fields survive errors in a short-lived encrypted cookie | Existing onboarding/login tests plus signup error test; production reviewer credentials untouched |
-| Both Instagram routes | Direct Instagram and Facebook-linked Instagram routes retained | Existing route/state tests; direct review last recorded in progress; no new OAuth grant or live post |
-| Password and sessions | Attached ORM writes, password version increment, individual logout revocation; eligible legacy sessions continue | Old password fails, new password works, logout replay fails, unaffected sessions continue |
-| Recovery | Hashed single-use 15-minute links, authenticated TLS email, version-bound reset | Mock delivery/replay/expiry tests; SMTP/DNS/real inbox and timing assessment pending |
-| Profile, preferences and billing persistence | Attached user changes and clearing guidance persist; learned voice text editable | Independent-session persistence tests; current subscription testing access retained |
-| Voice learning | Existing social scan retained; profile/date visible and fields correctable | Template/account tests; real model quality and simultaneous scan/manual-edit conflicts need further evaluation |
-| Generation and rewriting | Existing AI adapters retained; contextual planner with deterministic negation/creation safeguards | Intent tests and synthetic browser generation/failure; no claim of universal intent accuracy |
-| Media/source grounding | Explicitly says media was not inspected and links not fetched for generation | Prompt and UI reviewed; actual vision/source fetching remains absent by design in this increment |
-| Attachments | Decode/allowlist/size checks, safe suffixes, quotas, previews/removal, persisted owner references | Image/video/security tests; mobile upload/reload/removal and rejected-upload check; lifecycle/decoder isolation risks in operations document |
-| Full Studio state | Conversation, variants, composer, selected platforms, media and source saved with revision checks | Reload and ownership tests; two-tab browser conflict retains local input; only one active draft editor |
-| Draft library | Existing filters/open/delete plus text search and schedule management | Browser/page checks; delivery history is retained; deletion of unsubmitted reviews is tested |
-| Review and confirmation | Server-owned expiring snapshot: exact account, final text/link, media and settings | Tamper, concurrent confirmation, exact-account and finalised-link tests; reviewer’s simple confirm path retained |
-| X | Text, threads and up to four images retained; scope gate; videos remain unsupported | Mocked adapter/legacy compatibility tests; live X validation pending |
-| Instagram | Single image or video; direct and Facebook-linked login preserved | Multi-image selection fails clearly instead of silently dropping files; live permissions/container behaviour pending |
-| Facebook Pages | Text/link or one image; pinned Page and explicit publishing-scope requirement | Mocked partial/retry tests; `pages_manage_posts` approval/grant remains an external gate |
-| TikTok | Existing photo/video adapters, reviewed privacy/interactions/disclosures, configured inbox/direct mode, pending-state polling | Mode/scope checks and server workflow; provider settings/live pending lifecycle need external validation |
-| Publication results | Per-platform states/links; successful platforms cannot be retried; failed-only review/retry; unknown held for reconciliation | Partial results, definitive failure retry, duplicate-click and concurrency tests; no real posts |
-| Scheduling | Exact reviewed account/content, timezone/DST validation, cancel/reschedule, atomic worker claim and interruption recovery | Concurrent-worker, cancelled-job, reschedule and DST tests; PostgreSQL contention and host worker monitoring pending |
-| Time suggestions | Existing AI suggestions retained as optional starting points, clearly not performance-derived | API retained and UI connected; real-model usefulness not re-evaluated |
-| Analytics and questions | Dated seven-day post cohort, explicit sample/lifetime definition, refreshed timestamp, null/partial metrics, honest sidebar | Window/missing-data tests and UI check; pagination/history and comparable per-platform metric definitions remain limited |
-| Billing and offer | Existing integration retained; persistence fixed; checkout blocked while subscription enforcement is off | Mocked persistence and testing-checkout tests; no charge, live checkout or webhook certification |
-| Privacy/deletion | Unlink clears credentials; signed callback records scope/status; unknown status code returns 404 | Record/expiry/security tests; account deletion remains assisted, not a demonstrated full erasure workflow |
-| Mobile/navigation | Menu restores workspace links, sign-out/legal links; source/X format and Account remain reachable | 320/390/768/1280 responsive checks; physical keyboard/zoom/landscape/screen-reader testing pending |
-| Accessibility | Associated labels, visible focus, real upload button, keyboard platform tabs, larger controls and reduced-motion support | Browser focus check and semantic inspection; not a WCAG conformance claim |
-| Administration | Existing admin user listing and authorisation retained | Existing suite; no production admin data mutation or new operational audit trail |
-| Operations | Authenticated operational counts, CI/dependency checks, additive migration and synthetic restore tests | Local evidence only; monitoring destinations and managed PostgreSQL/upload restore drill pending |
+| Chat Studio | Simple chat, composer platforms, conditional X format, translucent Z, account draft history; no working canvas | Desktop and measured 390px local preview; reload, options and keyboard focus checked |
+| Draft persistence | Full workspace, revisions, retained errors, conflict recovery, private owner media | Existing regression suite retained |
+| Grounding and voice | Attachment notice, source limitation, editable voice shown in Post options; contextual weekday-led revision prompt where grounded in current text | Local preview; real-model usefulness/voice fidelity study pending |
+| Account integrity | Password persistence, session revocation and legacy continuity | Existing tests retained |
+| Recovery | Single-use hashed links; background delivery with failed/stuck attempt signals; operator branding/support fixed | Replay/ownership/failure tests; live SMTP/DNS/inbox/bounces still external |
+| Email verification | User-initiated account-bound expiring links, explicit POST; optional new-checkout gate off | Synthetic wrong-user/replay/expiry/access tests; real delivery pending |
+| Brands | Separate voice/drafts/media/connections per brand; tabs and OAuth retain initiating brand | Existing cross-brand/concurrency tests; additional workspaces still not live from this candidate |
+| Pricing | Basic £9.99/£99, Premium £19.99/£199, seven-day trial; central offer reused across entry/help/account | Template tests and browser billing; live checkout remains disabled |
+| Stripe | Checkout/portal, account-bound reconciliation, deduplication, test/live isolation | Prior actual TEST trials, renewal, 3DS, card change and manual reconciliation; durable public webhook monitoring/retries pending |
+| Plan changes | Assisted support guidance; data retained | No self-service upgrade/downgrade or grace-period promise; policy/implementation gate |
+| Allowances | Atomic account-wide AI/publication/account/brand caps; failure refunds and known-outcome retries | Tests retained; enforcement disabled; legacy Custom GPT excluded |
+| X | Text, threads, up to four images | Mocked adapter/review tests; current production access unverified; no video claim |
+| Instagram | Single image/video; direct and Facebook-linked login preserved | Route/mock tests; current approval/container lifecycle unverified; no carousel claim |
+| Facebook Pages | Text/link or single image, exact Page | Mocked tests; current `pages_manage_posts` grant/approval unverified |
+| TikTok | Existing photo/video inbox/direct-mode paths and reviewed controls | Mocked pending handling; operating mode/approval/provider completion require verification |
+| Review/publishing | Immutable exact destinations/content/settings; partial states and failed-only retries | Existing tamper/duplicate/concurrent/ownership tests; no real posts in this task |
+| Scheduling | Cancel/reschedule, timezone/DST checks, worker claim/recovery | Synthetic tests; named worker monitoring/production acceptance pending |
+| Analytics | Explicit seven-day post cohort/lifetime counters, missing data/freshness; readable question label | Tests and prior live sample; not historical time-series analytics |
+| Cost measurement | Token counts, configured GBP estimate/rate snapshot, unknown cost coverage, monthly threshold | Synthetic success/timeout/alert tests; real tariffs/invoices and observed costs not populated |
+| Cost scenarios | 12 monthly/annual normal/allowance/retry scenarios incl. support/tax/fees | Arithmetic tested; missing inputs yield null margin, not profit claims |
+| Customer measurement | Optional first-party server milestones; explicit useful-draft feedback; mature D7 cohort reporting | Off by default, synthetic/UI tests; no real participants or retention evidence |
+| Support/help | Direct links, drafting-first guidance, recovery and subscription escalation | UI/tests; named responder and coverage unconfirmed |
+| Operations | Authenticated worker/billing/mail/cost signals plus read-only monitoring probe | Synthetic checks; external monitor/alert destination not installed |
+| Export/erasure | Operator-only cross-brand export, dry run, blocked unresolved billing/publishing, local active-store erasure | Disposable data/files tested; remote objects, backups, third-party posts and final retention decisions external |
+| Backup/rollback | Existing synthetic PostgreSQL restore and image checks; additive tables retained | Fresh CI recorded in handoff; managed production database/upload/key restore remains required |
+| Privacy | Measurement disclosure and assisted workflow documented | Legal bases, exact retention/transfer/provider facts and operator approval remain external; no compliance certification |
 
-Team approvals, media editing, email marketing, native mobile apps and enterprise SSO are not newly assumed launch requirements, consistent with the original audit.
-
-
-## Experience increment — 14 September 2026
-
-| Capability | Local implementation | Evidence / limit |
-|---|---|---|
-| Persistent canvas | Edit, Preview, Compare separate from chat | Desktop/mobile browser inspection; approximate previews |
-| Text undo | Three sanitised snapshots stored in owned workspace | Round-trip/bounds tests and browser undo; no media rollback |
-| Voice visibility | Saved guidance and examples in Studio, correction link | Truthful-state regression test; provenance not inferred |
-| Destination continuation | Explicit ready-target review, individual status, copy unsubmitted versions | Mocked X publication and editable Instagram continuation |
-| Save conflict recovery | Retained input, download, saved/current comparison | Two-tab browser conflict; no automatic merge |
-| First-draft journey | Honest signup CTA, editorial example, optional setup shortcut | Template/route checks; pre-signup idea capture absent |
-| Focused mobile work | Conversation / Draft / Preview modes | 390px no overflow, composer hidden in editor, keyboard focus check |
-
-Detailed implementation, limitations, provisional experience scores and rollback: `ZOVA_EXPERIENCE_IMPLEMENTATION.md`. Latest automated suite: 76 passed; no production deployment.
+See `COMMERCIAL_OPERATIONS_20260920.md`, `CUSTOMER_VALIDATION_20260920.md` and `COMMERCIAL_READINESS_EVIDENCE_20260920.md`. Provider approval is never inferred from code, old credentials, a connected status or a mock.
