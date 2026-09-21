@@ -765,7 +765,7 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
     try:token,info=tiktok_exchange(code)
     except (RuntimeError, httpx.HTTPError):return connection_return(request,"tiktok","connection_failed")
     from .connection_review import stage
-    return stage(db,request,row,'tiktok',[dict(platform="tiktok",account_id=str(info.get("open_id")),username=info.get("display_name","") or "",display_name=info.get("display_name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",TIKTOK_SCOPES),metadata={"avatar_url":info.get("avatar_url")})])
+    return stage(db,request,row,'tiktok',[dict(platform="tiktok",account_id=str(info.get("open_id")),username="",display_name=info.get("display_name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",TIKTOK_SCOPES),metadata={"avatar_url":info.get("avatar_url")})])
 
 
 # ---------- API models ----------
