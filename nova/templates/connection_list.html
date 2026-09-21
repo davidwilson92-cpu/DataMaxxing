@@ -4,5 +4,5 @@
 <small>{{ option.detail }}</small>
 {% for row in rows %}<small><strong>{{ row.username or row.display_name or 'Connected account' }}</strong> · Connected{% if p == 'instagram' and 'instagram_business_basic' not in (row.scope or '') %} via Facebook{% endif %}</small>{% if manage_connections %}<form method="post" action="/account/connections/{{ row.id }}/unlink"><button class="link-danger" type="submit" aria-label="Unlink {{ option.name }} {{ row.username or row.display_name }}">Unlink</button></form>{% endif %}{% endfor %}
 {% if not rows %}<small>{% if option.ready %}Not connected{% else %}Connection setup in progress. You can use Studio meanwhile.{% endif %}</small>{% endif %}</div>
-{% if rows %}{% if p == 'instagram' %}<a class="mini-button" href="/connect/instagram">Connection options</a>{% else %}<span class="connected-label">Connected</span>{% endif %}{% else %}<a class="mini-button" href="/connect/{{ p }}">{% if option.ready %}Connect {{ option.name }}{% else %}View setup status{% endif %}</a>{% endif %}</div>
+{% if rows %}<a class="mini-button" href="/connect/{{ p }}">Connection options</a>{% else %}<a class="mini-button" href="/connect/{{ p }}">{% if option.ready %}Connect {{ option.name }}{% else %}View setup status{% endif %}</a>{% endif %}</div>
 {% endfor %}</div>

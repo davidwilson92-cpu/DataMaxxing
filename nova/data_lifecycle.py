@@ -99,7 +99,7 @@ def erase_local_account(db, uid, verified_case, *, writes_paused=False):
             for name in names:setattr(row,name,'{}' if name.endswith('_json') else '')
             if cls is models.SocialConnection:row.active=False
             if cls is models.PublishReview:row.status='erased'
-    for cls in [models.AuthIdentity,models.RecoveryToken,models.EmailVerification,models.OAuthState,models.ProductEvent]:
+    for cls in [models.AuthIdentity,models.RecoveryToken,models.EmailVerification,models.OAuthState,models.PendingConnection,models.ProductEvent]:
         db.execute(delete(cls).where(cls.user_id==uid))
     user.email=f'erased-{uid}@deleted.invalid';user.display_name='Deleted account';user.default_brand_name='Deleted brand';user.country_code='';user.email_verified_at=None;user.marketing_consent=False
     request.status='active_store_erased';db.commit()

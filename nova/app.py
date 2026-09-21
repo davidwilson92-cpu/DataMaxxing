@@ -253,9 +253,11 @@ def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str,
     if db.scalar(select(User).where(User.email==email)): return retry("/signup?error=An+account+with+that+email+already+exists",303)
     now = utcnow()
     consent = marketing_consent == "yes"
-    user=User(email=email,display_name=name,country_code=country,password_hash=hash_password(password),terms_accepted_at=now,marketing_consent=consent,marketing_consent_at=now if consent else None); db.add(user); db.commit(); db.refresh(user); get_preferences(db,user.id)
+    user=User(email=email,display_name=name,country_code=country,password_hash=hash_password(password),terms_accepted_at=now,marketing_consent=consent,marketing_consent_at=now if consent else None); db.add(user); db.commit(); db.refresh(user)
+    db.info.update(brand_id=0,brand_user_id=user.id);request.state.brand_id=0
+    get_preferences(db,user.id)
     readiness.event(user.id,'signup',user.id)
-    resp=RedirectResponse("/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
+    resp=RedirectResponse("/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, error: str | None = None):
@@ -306,7 +308,9 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
     created = user is None
     if created:
         now = utcnow()
-        user = User(email=email or f"apple-{hash_api_key(subject)[:20]}@private.zova.invalid", display_name=display_name, password_hash=hash_password(secrets.token_urlsafe(48)), email_verified_at=now if claims.get("email_verified") in {True, "true"} else None, last_login_at=now, terms_accepted_at=now); db.add(user); db.commit(); db.refresh(user); get_preferences(db, user.id)
+        user = User(email=email or f"apple-{hash_api_key(subject)[:20]}@private.zova.invalid", display_name=display_name, password_hash=hash_password(secrets.token_urlsafe(48)), email_verified_at=now if claims.get("email_verified") in {True, "true"} else None, last_login_at=now, terms_accepted_at=now); db.add(user); db.commit(); db.refresh(user)
+        db.info.update(brand_id=0,brand_user_id=user.id);request.state.brand_id=0
+        get_preferences(db,user.id)
     else:
         if display_name and not user.display_name:
             user.display_name = display_name
@@ -314,7 +318,7 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
         db.commit()
     if not identity: db.add(AuthIdentity(user_id=user.id, provider="apple", subject=subject)); db.commit()
     if created:readiness.event(user.id,'signup',user.id)
-    resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303); set_user_cookie(resp, user); return resp
+    resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303); set_user_cookie(resp, user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 
 @app.post("/login")
 def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Form()],next:Annotated[str,Form()]="/studio",db:Session=Depends(get_db)):
@@ -322,7 +326,7 @@ def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Fo
     destination=safe_login_next(next)
     if not user or not user.active or not verify_password(password,user.password_hash): return RedirectResponse("/login?error=Incorrect+email+or+password&next="+quote_plus(destination),303)
     user.last_login_at=utcnow(); db.commit()
-    resp=RedirectResponse(destination,303); set_user_cookie(resp,user); return resp
+    resp=RedirectResponse(destination,303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 
 @app.post("/logout")
 def logout(request: Request):
@@ -530,7 +534,7 @@ def onboarding_socials(request: Request, db: Session = Depends(get_db)):
     by = {}
     for row in rows: by.setdefault(row.platform, []).append(row)
     response = templates.TemplateResponse(request, "onboarding_socials.html", template_context(request, user, by_platform=by))
-    response.set_cookie("zova_onboarding", "1", max_age=1800, httponly=True, secure=base_url().startswith("https://"), samesite="lax", path="/")
+    response.set_cookie("zova_onboarding", str(user.id), max_age=1800, httponly=True, secure=base_url().startswith("https://"), samesite="lax", path="/")
     return response
 
 @app.get("/onboarding/writing-style", response_class=HTMLResponse)
@@ -646,7 +650,7 @@ def connect_platform(platform: str, request: Request):
 
 
 def connection_return(request: Request, platform: str, outcome: str = "connected"):
-    destination = "/onboarding/socials" if request.cookies.get("zova_onboarding") else "/account"
+    destination = "/onboarding/socials" if request.cookies.get("zova_onboarding")==str(current_user(request).id) else "/account"
     return RedirectResponse(f"{destination}?{outcome}={platform}", 303)
 
 
@@ -682,10 +686,8 @@ def oauth_x_callback(request:Request,code:str|None=None,state:str|None=None,erro
     row=connection_state(db,request,state,"x"); verifier=decrypt(row.encrypted_code_verifier) if row.encrypted_code_verifier else ""
     try:token,user_info=x_exchange(code,verifier)
     except (RuntimeError, httpx.HTTPError):return connection_return(request,"x","connection_failed")
-    upsert_connection(db,user_id=row.user_id,platform="x",account_id=str(user_info["id"]),username=user_info.get("username","") or "",display_name=user_info.get("name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",X_SCOPES),metadata={"profile_image_url":user_info.get("profile_image_url")})
-    try: learn_voice_from_socials(db, row.user_id)
-    except Exception as exc: log.warning("Automatic X voice learning failed: %s", exc)
-    return RedirectResponse("/onboarding/socials?connected=x" if request.cookies.get("zova_onboarding") else "/account?connected=x",303)
+    from .connection_review import stage
+    return stage(db,request,row,'x',[dict(platform="x",account_id=str(user_info["id"]),username=user_info.get("username","") or "",display_name=user_info.get("name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",X_SCOPES),metadata={"profile_image_url":user_info.get("profile_image_url")})])
 
 @app.get("/oauth/meta/start")
 def oauth_meta_start(request:Request,db:Session=Depends(get_db)):
@@ -716,21 +718,17 @@ def oauth_meta_callback(request:Request,code:str|None=None,state:str|None=None,e
     if instagram_intent:
         pages=[page for page in pages if (page.get("instagram_business_account") or {}).get("id")]
     if not pages:return connection_return(request,target,"no_pages")
+    candidates=[]
     for page in pages:
-        page_token=page.get("access_token"); page_id=str(page.get("id")); name=page.get("name","")
-        if not page_token or not page_id:continue
+        if not page.get('access_token') or not page.get('id'):continue
         if instagram_intent:
-            ig=page["instagram_business_account"]
-            existing=db.scalar(select(SocialConnection).where(SocialConnection.user_id==row.user_id,SocialConnection.platform=="instagram",SocialConnection.account_id==str(ig["id"]),SocialConnection.active.is_(True)))
-            # A Page login must not downgrade a working direct Instagram grant.
-            if existing and "instagram_business_basic" in (existing.scope or ""):
-                continue
-            upsert_connection(db,user_id=row.user_id,platform="instagram",account_id=str(ig["id"]),username=ig.get("username","") or "",display_name=ig.get("name","") or ig.get("username","") or "",access=page_token,scope=INSTAGRAM_FACEBOOK_SCOPES,metadata={"auth_provider":"facebook_login","facebook_page_id":page_id,"profile_picture_url":ig.get("profile_picture_url")})
+            ig=page['instagram_business_account']
+            candidates.append(dict(platform='instagram',account_id=str(ig['id']),username=ig.get('username','') or '',display_name=ig.get('name','') or ig.get('username','') or '',access=page['access_token'],scope=INSTAGRAM_FACEBOOK_SCOPES,metadata={'auth_provider':'facebook_login','facebook_page_id':str(page['id']),'profile_picture_url':ig.get('profile_picture_url')}))
         else:
-            upsert_connection(db,user_id=row.user_id,platform="facebook",account_id=page_id,username=name,display_name=name,access=page_token,scope=META_SCOPES,metadata={"tasks":page.get("tasks",[])})
-    try: learn_voice_from_socials(db, row.user_id)
-    except Exception as exc: log.warning("Automatic Meta voice learning failed: %s", exc)
-    return connection_return(request,target)
+            candidates.append(dict(platform='facebook',account_id=str(page['id']),username='',display_name=page.get('name',''),access=page['access_token'],scope=META_SCOPES,metadata={'tasks':page.get('tasks',[])}))
+    from .connection_review import stage
+    if not candidates:return connection_return(request,target,'no_pages')
+    return stage(db,request,row,target,candidates)
 
 @app.get("/oauth/instagram/start")
 def oauth_instagram_start(request:Request,db:Session=Depends(get_db)):
@@ -751,11 +749,8 @@ def oauth_instagram_callback(request:Request,code:str|None=None,state:str|None=N
         log.warning("Direct Instagram connection failed")
         return connection_return(request,"instagram","connection_failed")
     profile=result["profile"]
-    upsert_connection(db,user_id=row.user_id,platform="instagram",account_id=str(profile["id"]),username=profile.get("username","") or "",display_name=profile.get("name","") or profile.get("username","") or "",access=result["access_token"],expires_in=result.get("expires_in"),scope=os.environ.get("INSTAGRAM_SCOPES",INSTAGRAM_SCOPES),metadata={"auth_provider":"instagram_login","profile_picture_url":profile.get("profile_picture_url")})
-    try:learn_voice_from_socials(db,row.user_id)
-    except Exception as exc:log.warning("Automatic Instagram voice learning failed: %s",exc)
-    return RedirectResponse("/onboarding/socials?connected=instagram" if request.cookies.get("zova_onboarding") else "/account?connected=instagram",303)
-
+    from .connection_review import stage
+    return stage(db,request,row,'instagram',[dict(platform="instagram",account_id=str(profile["id"]),username=profile.get("username","") or "",display_name=profile.get("name","") or profile.get("username","") or "",access=result["access_token"],expires_in=result.get("expires_in"),scope=os.environ.get("INSTAGRAM_SCOPES",INSTAGRAM_SCOPES),metadata={"auth_provider":"instagram_login","profile_picture_url":profile.get("profile_picture_url")})])
 @app.get("/oauth/tiktok/start")
 def oauth_tiktok_start(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
@@ -769,10 +764,8 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
     row=connection_state(db,request,state,"tiktok")
     try:token,info=tiktok_exchange(code)
     except (RuntimeError, httpx.HTTPError):return connection_return(request,"tiktok","connection_failed")
-    upsert_connection(db,user_id=row.user_id,platform="tiktok",account_id=str(info.get("open_id")),username=info.get("display_name","") or "",display_name=info.get("display_name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",TIKTOK_SCOPES),metadata={"avatar_url":info.get("avatar_url")})
-    try: learn_voice_from_socials(db, row.user_id)
-    except Exception as exc: log.warning("Automatic TikTok voice learning failed: %s", exc)
-    return RedirectResponse("/onboarding/socials?connected=tiktok" if request.cookies.get("zova_onboarding") else "/account?connected=tiktok",303)
+    from .connection_review import stage
+    return stage(db,request,row,'tiktok',[dict(platform="tiktok",account_id=str(info.get("open_id")),username=info.get("display_name","") or "",display_name=info.get("display_name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",TIKTOK_SCOPES),metadata={"avatar_url":info.get("avatar_url")})])
 
 
 # ---------- API models ----------
@@ -1139,3 +1132,6 @@ def media_preview(asset_id:int,request:Request,db:Session=Depends(get_db)):
     if not row or row.user_id!=current_user(request).id:raise HTTPException(404,'Media not found')
     try:return RedirectResponse(get_public_url(row.storage_key,row.public_url,expires=300),307)
     except RuntimeError:raise HTTPException(404,'Media preview unavailable')
+
+from .connection_review import router as connection_review_router
+app.include_router(connection_review_router)

@@ -24,9 +24,9 @@
       }
     });
     document.querySelectorAll('form').forEach(form => {
-      const url = new URL(form.action, location.href);
+      const url = new URL(form.getAttribute('action') || location.href, location.href);
       if (url.origin === location.origin) {
-        url.searchParams.set('workspace', workspace); form.action = url.href;
+        url.searchParams.set('workspace', workspace); form.setAttribute('action', url.href);
       }
     });
   });

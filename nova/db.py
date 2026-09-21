@@ -385,6 +385,18 @@ class EmailVerification(Base):
     used: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class PendingConnection(Base):
+    __tablename__ = 'zova_pending_connections'
+    code_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    brand_id: Mapped[int] = mapped_column(Integer, default=0)
+    auth_version: Mapped[int] = mapped_column(Integer)
+    platform: Mapped[str] = mapped_column(String(30))
+    encrypted_payload: Mapped[str] = mapped_column(Text)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 Base.metadata.create_all(bind=engine)
 from .migrations import run_migrations
 run_migrations(engine)

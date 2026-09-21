@@ -147,6 +147,7 @@ def test_second_brand_oauth_state_survives_workspace_switch(monkeypatch):
     result=client.get('/oauth/instagram/callback?code=synthetic&state=brand-state',follow_redirects=False)
     assert result.status_code==303,result.text
     assert f'workspace={bid}' in result.headers['location']
+    assert client.post(result.headers['location'],data={'choice':0,'action':'connect'}).status_code==200
     with SessionLocal() as db:
         row=db.scalar(select(SocialConnection).where(SocialConnection.user_id==uid));assert row.brand_id==bid
 

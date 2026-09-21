@@ -69,7 +69,9 @@ def test_facebook_does_not_import_or_overwrite_instagram(signed_in, monkeypatch)
     response = client.get("/oauth/meta/start", follow_redirects=False)
     assert "instagram" not in parse_qs(urlsplit(response.headers["location"]).query)["scope"][0]
     result = client.get("/oauth/meta/callback", params={"code":"synthetic", "state":state_from(response)}, follow_redirects=False)
-    assert result.headers["location"] == "/account?connected=facebook"
+    assert result.headers["location"].startswith("/connections/review/")
+    result=client.post(result.headers["location"],data={"choice":0,"action":"connect"},follow_redirects=False)
+    assert result.headers["location"] == "/account?connected=facebook&workspace=0"
     with SessionLocal() as db:
         rows=db.scalars(select(SocialConnection).where(SocialConnection.user_id == user_id)).all()
         assert {row.platform for row in rows} == {"instagram", "facebook"}
@@ -90,7 +92,9 @@ def test_instagram_success_replay_and_owner_binding(signed_in, monkeypatch):
     other.cookies.set("nova_session",make_user_session(other_id))
     assert other.get("/oauth/instagram/callback",params={"code":"synthetic","state":raw}).status_code == 400
     result=client.get("/oauth/instagram/callback",params={"code":"synthetic","state":raw},follow_redirects=False)
-    assert result.headers["location"] == "/account?connected=instagram"
+    assert result.headers["location"].startswith("/connections/review/")
+    result=client.post(result.headers["location"],data={"choice":0,"action":"connect"},follow_redirects=False)
+    assert result.headers["location"] == "/account?connected=instagram&workspace=0"
     assert client.get("/oauth/instagram/callback",params={"code":"synthetic","state":raw}).status_code == 400
 
 
@@ -184,7 +188,9 @@ def test_instagram_facebook_is_explicit_and_connects_only_instagram(signed_in, m
         return [{"id":"page-route", "access_token":"synthetic-page-token", "name":"Page", "instagram_business_account":{"id":"ig-route", "username":"correct_instagram"}}]
     monkeypatch.setattr(module,"meta_exchange",exchange)
     result=client.get("/oauth/meta/callback",params={"code":"synthetic","state":state_from(start)},follow_redirects=False)
-    assert result.headers["location"] == "/account?connected=instagram"
+    assert result.headers["location"].startswith("/connections/review/")
+    result=client.post(result.headers["location"],data={"choice":0,"action":"connect"},follow_redirects=False)
+    assert result.headers["location"] == "/account?connected=instagram&workspace=0"
     with SessionLocal() as db:
         rows=db.scalars(select(SocialConnection).where(SocialConnection.user_id==user_id)).all()
         assert len(rows)==1 and rows[0].platform=="instagram"
@@ -202,7 +208,8 @@ def test_instagram_facebook_requires_linked_account_and_preserves_direct(signed_
         module.upsert_connection(db,user_id=user_id,platform="instagram",account_id="ig-direct",username="kept",display_name="Kept",access="synthetic-direct-token",scope="instagram_business_basic",metadata={"auth_provider":"instagram_login"})
     monkeypatch.setattr(module,"meta_exchange",lambda code, **kwargs: [{"id":"page","access_token":"synthetic-facebook-token","instagram_business_account":{"id":"ig-direct","username":"other"}}])
     raw=state_from(client.get("/oauth/instagram/facebook/start",follow_redirects=False))
-    client.get("/oauth/meta/callback",params={"code":"synthetic","state":raw})
+    pending=client.get("/oauth/meta/callback",params={"code":"synthetic","state":raw},follow_redirects=False)
+    assert client.post(pending.headers["location"],data={"choice":0,"action":"connect"}).status_code==200
     with SessionLocal() as db:
         row=db.scalar(select(SocialConnection).where(SocialConnection.user_id==user_id))
         assert row.username=="kept" and decrypt(row.encrypted_access_token)=="synthetic-direct-token"
