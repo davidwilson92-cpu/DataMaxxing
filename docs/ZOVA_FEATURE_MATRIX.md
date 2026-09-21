@@ -1,12 +1,12 @@
 # Current feature matrix — 21 September 2026
 
-Current production baseline: main `504b617` (20 September commercial release). Candidate: `codex/personal-onboarding`, not deployed. Instagram Post/Story remains a separate PR #7 candidate. Billing and subscription enforcement remain off. Historical reports are dated evidence, not current specifications.
+Current production baseline: main `78d9924` (21 September Instagram reauthentication correction). Candidate: `codex/studio-proposal-layout`, not deployed. Instagram Post/Story remains separate PR #7. Billing and subscription enforcement remain off.
 
 | Capability | Candidate implementation | Validation / remaining gate |
 |---|---|---|
-| Chat Studio | Simple chat, composer platforms, conditional X format, translucent Z, account draft history; no working canvas | Desktop and measured 390px local preview; reload, options and keyboard focus checked |
+| Chat Studio | Compact attachment row, header brand switch, bounded composer and contextual first proposals; simple chat, composer platforms, conditional X format, translucent Z, account draft history; no working canvas | Desktop and measured 390px local preview; reload, options and keyboard focus checked |
 | Draft persistence | Full workspace, revisions, retained errors, conflict recovery, private owner media | Existing regression suite retained |
-| Grounding and voice | Attachment notice, source limitation, editable voice shown in Post options; contextual weekday-led revision prompt where grounded in current text | Local preview; real-model usefulness/voice fidelity study pending |
+| Grounding and voice | Selected-platform editorial feedback, bounded AI recovery, concise proposals; attachment notice, source limitation, editable voice shown in Post options; contextual weekday-led revision prompt where grounded in current text | Local preview; real-model usefulness/voice fidelity study pending |
 | Personal onboarding | Named welcome, fresh account workspace/voice, explicit exact-account confirmation after all social callbacks; switch/cancel and one-Page selection | 10 new synthetic tests, desktop/mobile/keyboard browser checks; real provider acceptance pending |
 | Account integrity | Password persistence, session revocation and legacy continuity | Existing tests retained |
 | Recovery | Single-use hashed links; background delivery with failed/stuck attempt signals; operator branding/support fixed | Replay/ownership/failure tests; live SMTP/DNS/inbox/bounces still external |

@@ -42,3 +42,29 @@
 @media(min-width:1060px){.simple-chat .conversation-workspace{width:calc(100% - 236px);margin-left:236px}.chat-navigation .saved-history{display:none}}
 @media(max-width:1059px){.studio-history-rail{display:none}}
 @media(max-width:760px){.simple-chat .composer-platforms .platform-check label{min-height:44px;padding:7px 9px}.simple-chat .composer-format select{min-height:44px}.simple-chat .composer-destinations{gap:6px}.studio-watermark .zova-symbol{width:80vw}}
+
+/* Keep the conversation visible, including on short laptop viewports. */
+.simple-chat .studio-brand-context{margin:0;padding:0;min-width:0;max-width:40%;font-size:13px}
+.simple-chat .studio-brand-context a{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.simple-chat .conversation-topbar{gap:12px}
+.simple-chat .chat-feed{padding-top:16px;padding-bottom:16px}
+.simple-chat .chat-composer{padding:8px 12px 6px;border-radius:20px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 8px}
+.simple-chat .chat-composer>label,.simple-chat .chat-composer>textarea,.simple-chat #groundingNotice,.simple-chat .attachment-tray{grid-column:1/-1}
+.simple-chat #groundingNotice{font-size:12px;line-height:1.4;margin:0 0 6px}
+.simple-chat .attachment-tray{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;max-height:68px;padding:0 0 4px}
+.simple-chat .attachment-card{display:flex;align-items:center;width:220px;height:56px;border-radius:10px}
+.simple-chat .attachment-card img,.simple-chat .attachment-card video{width:52px;height:52px;flex-shrink:0;object-fit:contain}
+.simple-chat .attachment-details{flex:1;min-width:0;padding:3px;gap:2px}
+.simple-chat .attachment-details span{font-size:12px}
+.simple-chat .attachment-details button{font-size:12px;min-width:44px;min-height:44px;padding:4px}
+.simple-chat #brief{min-height:38px;max-height:112px;padding:6px 3px;font-size:16px}
+.simple-chat .composer-destinations{margin:2px 0;gap:4px}
+.simple-chat .composer-toolbar{gap:4px;align-self:end;margin:0}
+.simple-chat .composer-toolbar>div{display:flex}
+.simple-chat .composer-toolbar .quiet-button{padding:6px}
+.simple-chat .composer-platforms .platform-check label{min-height:44px;padding:6px 9px}
+.simple-chat .composer-footnote{padding-top:4px}
+@media(max-width:760px){.simple-chat .chat-composer{display:block}.simple-chat .composer-toolbar{display:flex}.simple-chat .composer-wrap{padding-top:4px}.simple-chat .composer-destinations{margin:0}.simple-chat .chat-brand{gap:2px}.simple-chat .studio-brand-context{max-width:30%}.simple-chat .studio-brand-context a{font-size:12px}.simple-chat .conversation-topbar{gap:4px}.simple-chat .chat-brand a{font-size:17px}.simple-chat .chat-brand .zova-symbol{width:24px;height:24px}}
+@media(max-height:560px){.simple-chat .conversation-topbar{height:48px}.simple-chat .composer-wrap{padding-bottom:4px}.simple-chat .attachment-card{height:44px}.simple-chat .attachment-card img,.simple-chat .attachment-card video{height:40px;width:40px}.simple-chat #groundingNotice{margin-bottom:2px}.simple-chat .composer-footnote{padding-top:2px}}
+
+@media(max-height:560px){.simple-chat .composer-wrap{max-height:55dvh;overflow-y:auto;overscroll-behavior:contain}.simple-chat .latest-message{position:sticky;top:0;bottom:auto;z-index:2}}

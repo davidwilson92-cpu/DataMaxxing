@@ -65,24 +65,35 @@ def _parse_json(text: str) -> Any:
 def _responses(prompt: str, *, max_output_tokens: int = 2500) -> str:
     from .readiness import record_ai
     model = _model()
-    payload = None
-    outcome = 'unconfirmed'
-    try:
-        text, payload = _request_response(prompt, max_output_tokens=max_output_tokens)
-        if not text:
-            outcome = 'empty_output'
-            raise RuntimeError('OpenAI returned an empty response')
-        outcome = 'returned'
-        return text
-    finally:
-        record_ai(model, outcome, payload)
+    # Retry only an explicit output-budget exhaustion, never a provider error.
+    for attempt in range(2):
+        payload = None
+        outcome = 'unconfirmed'
+        try:
+            text, payload = _request_response(prompt, max_output_tokens=max_output_tokens)
+            if payload.get('status') == 'incomplete':
+                outcome = 'incomplete_output'
+                if (payload.get('incomplete_details') or {}).get('reason') == 'max_output_tokens' and attempt == 0:
+                    max_output_tokens = min(max_output_tokens * 2, 8000)
+                    continue
+                raise RuntimeError('OpenAI returned an incomplete response')
+            if not text:
+                outcome = 'empty_output'
+                raise RuntimeError('OpenAI returned an empty response')
+            outcome = 'returned'
+            return text
+        finally:
+            record_ai(model, outcome, payload)
 
 
 def _request_response(prompt: str, *, max_output_tokens: int):
+    body = {"model": _model(), "input": prompt, "max_output_tokens": max_output_tokens}
+    if _model() == "gpt-5-mini" or _model().startswith("gpt-5-mini-20"):
+        body["reasoning"] = {"effort": "low"}
     response = httpx.post(
         "https://api.openai.com/v1/responses",
         headers={"Authorization": f"Bearer {_api_key()}", "Content-Type": "application/json"},
-        json={"model": _model(), "input": prompt, "max_output_tokens": max_output_tokens},
+        json=body,
         timeout=75.0,
     )
     if response.status_code >= 400:
@@ -142,7 +153,7 @@ Schema:
   "tiktok": {{"posts": ["..."]}}
 }}
 Include only requested platforms. Every value in posts must be a finished publish-ready string.
-You have NOT seen attached images/videos or fetched source links. Do not describe unseen visuals, claim to have read a URL, or invent source facts. Ask the user for details if needed. Never include scene directions such as Photo: or Video: inside the caption.
+You have NOT seen attached images/videos or fetched source links. Do not describe unseen visuals, claim to have read a URL, or invent source facts. Create a useful first proposal using the supplied topic and description. Do not put clarification questions or requests for a brief into the caption. Avoid unsupported visual details; optional tone or audience information is not required. Never include scene directions such as Photo: or Video: inside the caption.
 
 Platform rules:
 {guidance}
