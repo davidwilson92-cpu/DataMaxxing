@@ -44,7 +44,9 @@ def test_instagram_uses_only_instagram(signed_in):
     assert parsed.hostname == "www.instagram.com"
     query = parse_qs(parsed.query)
     assert query["scope"] == ["instagram_business_basic,instagram_business_content_publish"]
-    assert query["enable_fb_login"] == ["0"]
+    assert query["enable_fb_login"] == ["false"]
+    assert query["force_reauth"] == ["true"]
+    assert "force_authentication" not in query
     assert query["redirect_uri"] == ["http://testserver/oauth/instagram/callback"]
 
 
