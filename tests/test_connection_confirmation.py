@@ -140,3 +140,51 @@ def test_worker_scrubs_expired_pending_grants(signed_in,monkeypatch):
         row=db.scalar(select(PendingConnection).where(PendingConnection.user_id==uid));row.expires_at=utcnow()-timedelta(minutes=1);db.commit()
     process_due()
     with SessionLocal() as db:assert db.scalar(select(PendingConnection).where(PendingConnection.user_id==uid)) is None
+
+@pytest.mark.parametrize('platform',['instagram','tiktok','x'])
+def test_same_browser_new_signup_never_inherits_connection(signed_in,monkeypatch,platform):
+    import secrets
+    from urllib.parse import parse_qs
+    client,old_uid=signed_in
+    with SessionLocal() as db:
+        module.upsert_connection(db,user_id=old_uid,platform=platform,account_id='prior-account',username='prior_private_identity',display_name='Prior account',access='prior-private-token')
+    old_start=client.get(f'/oauth/{platform}/start',follow_redirects=False)
+    email=f'new-owner-{secrets.token_hex(6)}@example.test'
+    page=client.post('/signup',data={'name':'New owner','email':email,'country':'GB','password':'new-owner-password-123','password_confirmation':'new-owner-password-123','accept_terms':'yes'})
+    assert page.status_code==200
+    for path in ['/onboarding/socials','/account','/studio']:
+        assert 'prior_private_identity' not in client.get(path).text
+    with SessionLocal() as db:
+        new_uid=db.scalar(select(User.id).where(User.email==email))
+        assert new_uid!=old_uid
+        assert db.scalar(select(SocialConnection).where(SocialConnection.user_id==new_uid)) is None
+    # Returning from an older user's open provider tab cannot attach it to this signup.
+    assert client.get(f'/oauth/{platform}/callback',params={'code':'mock','state':state_from(old_start)}).status_code==400
+    start=client.get(f'/oauth/{platform}/start',follow_redirects=False)
+    assert state_from(start)!=state_from(old_start)
+    if platform=='instagram':
+        query=parse_qs(urlsplit(start.headers['location']).query)
+        assert query['force_reauth']==['true'] and 'force_authentication' not in query
+    # Simulate a provider returning the remembered identity anyway: cancel must save nothing.
+    monkeypatch.setattr(module,'instagram_exchange',lambda *a:{'profile':{'id':'prior-account','username':'prior_private_identity'},'access_token':'returned-token'})
+    monkeypatch.setattr(module,'tiktok_exchange',lambda *a:({'access_token':'returned-token'},{'open_id':'prior-account','display_name':'Prior account'}))
+    monkeypatch.setattr(module,'x_exchange',lambda *a:({'access_token':'returned-token'},{'id':'prior-account','username':'prior_private_identity'}))
+    pending=client.get(f'/oauth/{platform}/callback',params={'code':'mock','state':state_from(start)},follow_redirects=False)
+    assert pending.headers['location'].startswith('/connections/review/')
+    assert client.post(pending.headers['location'],data={'choice':0,'action':'cancel'}).status_code==200
+    with SessionLocal() as db:
+        assert db.scalar(select(SocialConnection).where(SocialConnection.user_id==new_uid)) is None
+        old=db.scalar(select(SocialConnection).where(SocialConnection.user_id==old_uid))
+        assert decrypt(old.encrypted_access_token)=='prior-private-token'
+
+
+def test_switch_account_restarts_with_reauthentication(signed_in,monkeypatch):
+    from urllib.parse import parse_qs
+    client,uid=signed_in
+    url=staged(client,monkeypatch)
+    switched=client.post(url,data={'choice':0,'action':'switch'},follow_redirects=False)
+    page=client.get(switched.headers['location'])
+    assert 'Use the account you intended' in page.text
+    start=client.get('/oauth/instagram/start',follow_redirects=False)
+    assert parse_qs(urlsplit(start.headers['location']).query)['force_reauth']==['true']
+    assert client.post(url,data={'choice':0}).status_code==410

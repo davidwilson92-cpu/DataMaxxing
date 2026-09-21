@@ -164,8 +164,10 @@ def instagram_authorize_url(state: str) -> str:
         "response_type": "code",
         "scope": scopes,
         "state": state,
-        "enable_fb_login": "0",
-        "force_authentication": "1",
+        "enable_fb_login": "false",
+        # Meta's current Business Login parameter; force_authentication is ignored here.
+        # Reauthenticate even when this browser already has an Instagram session.
+        "force_reauth": "true",
     }
     return "https://www.instagram.com/oauth/authorize?" + urlencode(params)
 
