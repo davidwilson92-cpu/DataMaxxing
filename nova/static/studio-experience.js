@@ -26,7 +26,7 @@ function canvasView(mode){
 }
 function finishEditing(){editingDraft=false;refreshDraft();document.querySelector('#canvasEditor .response-actions button')?.focus();saveDraftNow().catch(()=>{});}
 async function copyDraft(button){try{await navigator.clipboard.writeText((variants[currentPlatform]?.posts||[]).join('\n\n'));button.textContent='Copied';}catch{document.getElementById('undoStatus').textContent='Select the draft text to copy it.';}}
-function sizeComposer(){const input=document.getElementById('brief');input.style.height='auto';input.style.height=Math.min(input.scrollHeight,180)+'px';if(!sendingMessage)document.getElementById('generateBtn').disabled=!input.value.trim()||!editableDraft();}
+function sizeComposer(){const input=document.getElementById('brief');input.style.height='auto';input.style.height=Math.min(input.scrollHeight,Math.min(112,window.innerHeight*0.18))+'px';if(!sendingMessage)document.getElementById('generateBtn').disabled=!input.value.trim()||!editableDraft();}
 const formatNotes={x:'A single post or ordered thread. Each post must fit the platform limit.',instagram:'A caption for your image or video. Zova has not created the visual.',facebook:'Post text with your selected link or media.',tiktok:'A caption for your uploaded video. This is not a generated video.'};
 function renderCanvasPreview(){
   if(!document.getElementById('canvasPreview'))return;

@@ -99,26 +99,27 @@ async function sendMessage(){
       const targets=plan.platforms.length?plan.platforms:[currentPlatform],changed={};
       for(const p of targets){
         if(!variants[p])throw new Error(`Add a ${platformName(p)} version first.`);
-        const result=await api('/api/ai/rewrite',{method:'POST',headers,body:JSON.stringify({platform:p,posts:variants[p].posts,action:'',instruction:text})});
+        const result=await api('/api/ai/rewrite',{method:'POST',headers,body:JSON.stringify({platform:p,posts:variants[p].posts,action:'',instruction:plan.brief||text})});
         changed[p]={posts:result.posts};
       }
       rememberTextRevision();Object.assign(variants,changed);currentPlatform=targets[0];removeThinking();addAssistantMessage('Updated the requested versions. Here’s the updated version.',draftWorkspace());
     }else{
       const platforms=plan.platforms.length?plan.platforms:selectedPlatforms();
+      const creationBrief=plan.brief||[lastBrief,...conversation.filter(m=>m.role==='user').slice(-4).map(m=>m.content)].filter(Boolean).join('\n').slice(-12000);
       if(!platforms.length)throw new Error('Choose at least one platform.');
       if(!validateVideoPlatforms(platforms))throw new Error('Videos can only be used with Instagram and TikTok.');
-      if(plan.action==='create' && Object.keys(variants).length){
-        await saveDraftNow();const row=await api('/api/drafts',{method:'POST',headers,body:'{}'});
-        currentDraftId=row.id;draftRevision=row.revision;variants={};textHistory=[];publicationStates={};lastBrief=text;renderCanvas('<p>Creating your new versions…</p>');history.replaceState({},'',window.zovaWorkspaceUrl(`/studio?draft=${row.id}`));
-      }
+      const newDraft=plan.action==='create' && Object.keys(variants).length>0;
+      if(newDraft)await saveDraftNow();
       const targets=plan.action==='add_platforms'?platforms.filter(p=>!variants[p]):platforms;
       if(!targets.length)throw new Error('Those versions already exist. Tell me what to change in them.');
-      const result=await api('/api/ai/generate',{method:'POST',headers,body:JSON.stringify({brief:plan.action==='add_platforms'?(lastBrief||text):text,instruction:plan.action==='add_platforms'?text:'',platforms:targets,thread_length:+document.getElementById('threadLength').value,link_url:document.getElementById('linkUrl').value,draft_id:currentDraftId})});
-      variants=result.variants;currentDraftId=result.draft_id;draftRevision=result.revision;lastBrief=plan.action==='add_platforms'?lastBrief:text;currentPlatform=targets[0];currentDraftStatus='draft';
-      removeThinking();addAssistantMessage('Here’s a first draft. Tell me what you’d like to change.',draftWorkspace());
+      const result=await api('/api/ai/generate',{method:'POST',headers,body:JSON.stringify({brief:plan.action==='add_platforms'?(lastBrief||text):creationBrief,instruction:plan.action==='add_platforms'?text:'',platforms:targets,thread_length:+document.getElementById('threadLength').value,link_url:document.getElementById('linkUrl').value,draft_id:newDraft?null:currentDraftId})});
+      if(newDraft){textHistory=[];publicationStates={};}
+      history.replaceState({},'',window.zovaWorkspaceUrl(`/studio?draft=${result.draft_id}`));
+      variants=result.variants;currentDraftId=result.draft_id;draftRevision=result.revision;lastBrief=plan.action==='add_platforms'?lastBrief:creationBrief;currentPlatform=targets[0];currentDraftStatus='draft';
+      removeThinking();addAssistantMessage(plan.reply||'Here’s a first draft. Tell me what you’d like to change.',draftWorkspace());
     }
     changeSerial++;await saveDraftNow();
-  }catch(error){removeThinking();if(!Object.keys(variants).length)renderCanvas('<p>No new versions were created. Your message is retained in the conversation composer. Retry when you are ready.</p>');input.value=text;changeSerial++;addAssistantMessage(error.message||'Something went wrong. Your message is back in the composer.');setAutosaveStatus('Unsaved changes — retry');}
+  }catch(error){removeThinking();input.value=text;changeSerial++;addAssistantMessage(error.message||'Something went wrong. Your message is back in the composer.');try{await saveDraftNow();}catch{setAutosaveStatus('Unsaved changes - retry');}}
   finally{studioBusy(false);sizeComposer();if(window.matchMedia('(min-width: 761px)').matches)input.focus();}
 }
 async function loadRequestedDraft(){
