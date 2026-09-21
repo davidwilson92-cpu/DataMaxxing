@@ -18,6 +18,9 @@ log = logging.getLogger("nova.scheduler")
 def process_due(limit: int = 25) -> dict[str, int]:
     published = failed = 0
     with SessionLocal() as db:
+        from .db import PendingConnection
+        from sqlalchemy import delete
+        db.execute(delete(PendingConnection).where(PendingConnection.expires_at<utcnow()))
         # Never automatically resend an uncertain request after a crash.
         stale=utcnow()-timedelta(minutes=15)
         stuck=db.scalars(select(Publication).where(Publication.status.in_(['publishing','queued']),Publication.updated_at<stale)).all()

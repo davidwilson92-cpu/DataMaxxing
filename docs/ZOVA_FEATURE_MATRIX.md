@@ -1,16 +1,17 @@
-# Current feature matrix — 20 September 2026
+# Current feature matrix — 21 September 2026
 
-This replaces obsolete canvas and early billing entries. Historical reports remain dated evidence, not current specifications. Candidate: `codex/stripe-billing`; current release evidence in the root handoff. The 20 September increment is **not deployed**. Last observed live commercial journey still offered free testing and unavailable email recovery.
+Current production baseline: main `504b617` (20 September commercial release). Candidate: `codex/personal-onboarding`, not deployed. Instagram Post/Story remains a separate PR #7 candidate. Billing and subscription enforcement remain off. Historical reports are dated evidence, not current specifications.
 
 | Capability | Candidate implementation | Validation / remaining gate |
 |---|---|---|
 | Chat Studio | Simple chat, composer platforms, conditional X format, translucent Z, account draft history; no working canvas | Desktop and measured 390px local preview; reload, options and keyboard focus checked |
 | Draft persistence | Full workspace, revisions, retained errors, conflict recovery, private owner media | Existing regression suite retained |
 | Grounding and voice | Attachment notice, source limitation, editable voice shown in Post options; contextual weekday-led revision prompt where grounded in current text | Local preview; real-model usefulness/voice fidelity study pending |
+| Personal onboarding | Named welcome, fresh account workspace/voice, explicit exact-account confirmation after all social callbacks; switch/cancel and one-Page selection | 10 new synthetic tests, desktop/mobile/keyboard browser checks; real provider acceptance pending |
 | Account integrity | Password persistence, session revocation and legacy continuity | Existing tests retained |
 | Recovery | Single-use hashed links; background delivery with failed/stuck attempt signals; operator branding/support fixed | Replay/ownership/failure tests; live SMTP/DNS/inbox/bounces still external |
 | Email verification | User-initiated account-bound expiring links, explicit POST; optional new-checkout gate off | Synthetic wrong-user/replay/expiry/access tests; real delivery pending |
-| Brands | Separate voice/drafts/media/connections per brand; tabs and OAuth retain initiating brand | Existing cross-brand/concurrency tests; additional workspaces still not live from this candidate |
+| Brands | Separate voice/drafts/media/connections per brand; tabs and OAuth retain initiating brand | Existing cross-brand/concurrency tests; live baseline includes separate workspaces; provider flows newly require account confirmation |
 | Pricing | Basic £9.99/£99, Premium £19.99/£199, seven-day trial; central offer reused across entry/help/account | Template tests and browser billing; live checkout remains disabled |
 | Stripe | Checkout/portal, account-bound reconciliation, deduplication, test/live isolation | Prior actual TEST trials, renewal, 3DS, card change and manual reconciliation; durable public webhook monitoring/retries pending |
 | Plan changes | Assisted support guidance; data retained | No self-service upgrade/downgrade or grace-period promise; policy/implementation gate |

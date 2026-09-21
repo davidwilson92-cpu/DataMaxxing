@@ -1,0 +1,13 @@
+.connection-review-page .connection-explainer{max-width:680px;padding:clamp(22px,4vw,40px);margin:auto}
+.connection-review-page h1{font-size:clamp(28px,4vw,38px);line-height:1.18;letter-spacing:-.025em}
+.connection-review-page p{overflow-wrap:anywhere}
+.connection-review-page fieldset{border:0;padding:0;margin:24px 0}
+.connection-review-page legend{font-size:16px;font-weight:600;margin-bottom:10px}
+.connection-review-page .connection-choice{display:flex;align-items:center;gap:14px;min-height:64px;padding:16px;border:1px solid #d9d2e6;border-radius:14px;margin:8px 0;font-size:16px;font-weight:400;line-height:1.5;color:#252031;letter-spacing:normal;text-transform:none;cursor:pointer}
+.connection-review-page .connection-choice:has(input:checked){border-color:#8050cc;background:#f6f1fd}
+.connection-review-page .connection-choice input{width:20px;height:20px;flex:0 0 20px;margin:0;accent-color:#8050cc}
+.connection-review-page .connection-choice span{min-width:0;overflow-wrap:anywhere}
+.connection-review-page .connection-choice small{display:block;font-size:13px;font-weight:400;color:#655b70}
+.connection-review-page button{min-height:44px;white-space:normal;overflow-wrap:anywhere;max-width:100%}
+.connection-review-page .review-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.connection-review-page :focus-visible{outline:3px solid #8044d4;outline-offset:4px}
