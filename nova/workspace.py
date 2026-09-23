@@ -33,6 +33,8 @@ def clean_text_history(value):
 
 def clean_workspace(value, db, user_id):
     if not isinstance(value,dict): raise HTTPException(400,'Invalid workspace')
+    instagram_format=value.get('instagram_format','post')
+    if instagram_format not in ('post','story'): raise HTTPException(400,'Choose Instagram Post or Story.')
     ids=value.get('media_asset_ids',[])
     if not isinstance(ids,list) or len(ids)>10 or any(type(i)!=int for i in ids):
         raise HTTPException(400,'Invalid attachment selection')
@@ -52,7 +54,7 @@ def clean_workspace(value, db, user_id):
     except (TypeError,ValueError): raise HTTPException(400,'Invalid video duration')
     if not math.isfinite(duration): raise HTTPException(400,'Invalid video duration')
     return {'media_asset_ids':[a['id'] for a in assets],'media':assets,'media_kind':('video' if any(a['kind']=='video' for a in assets) else 'image') if assets else None,
-            'video_duration':max(0,min(duration,36000)), 'link_url':link,'conversation':messages,
+            'instagram_format':instagram_format, 'video_duration':max(0,min(duration,36000)), 'link_url':link,'conversation':messages,
             'text_history':clean_text_history(value.get('text_history',[])), 'composer':str(value.get('composer',''))[:12000], 'selected_platforms':[p for p in selected if p in PLATFORMS][:4],
             'active_platform':value.get('active_platform') if value.get('active_platform') in PLATFORMS else 'x'}
 

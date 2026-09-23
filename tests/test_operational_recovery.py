@@ -71,10 +71,12 @@ def test_additive_migration_preserves_existing_records(tmp_path):
         db.add(user);db.flush();db.add(Draft(user_id=user.id,brief='Existing draft'))
         db.commit()
     with db_engine.begin() as connection:
+        connection.execute(text('ALTER TABLE nova_media_assets DROP COLUMN analysis_json'))
         connection.execute(text('ALTER TABLE nova_users DROP COLUMN auth_version'))
         connection.execute(text('ALTER TABLE nova_drafts DROP COLUMN workspace_json'))
         connection.execute(text('ALTER TABLE nova_drafts DROP COLUMN revision'))
     run_migrations(db_engine);run_migrations(db_engine)
+    assert 'analysis_json' in {c['name'] for c in inspect(db_engine).get_columns('nova_media_assets')}
     with db_engine.connect() as connection:
         assert connection.execute(text('SELECT password_hash,auth_version FROM nova_users')).first()==('preserved-hash',0)
         assert connection.execute(text('SELECT brief,workspace_json,revision FROM nova_drafts')).first()==('Existing draft','{}',0)

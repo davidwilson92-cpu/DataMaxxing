@@ -268,6 +268,7 @@ class MediaAsset(BrandScoped, Base):
     __tablename__ = 'nova_media_assets'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    analysis_json: Mapped[str] = mapped_column(Text, default='{}')
     filename: Mapped[str] = mapped_column(String(260))
     mime_type: Mapped[str] = mapped_column(String(120))
     storage_key: Mapped[str] = mapped_column(Text)

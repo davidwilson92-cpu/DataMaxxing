@@ -72,6 +72,12 @@ def prepare_review(db,uid,body):
     if workspace and (workspace.get('media_asset_ids',[])!=body.media_asset_ids or workspace.get('link_url','')!=body.link_url):
         raise HTTPException(409,'Save your current media and source link before reviewing.')
     targets={};options=body.publish_options or {}
+    instagram_options=options.get('instagram',{})
+    if not isinstance(instagram_options,dict):raise HTTPException(400,'Invalid Instagram settings.')
+    instagram_format=instagram_options.get('format','post')
+    if instagram_format not in ('post','story'):raise HTTPException(400,'Choose Instagram Post or Story.')
+    if 'instagram' in platforms and instagram_format!=workspace.get('instagram_format','post'):
+        raise HTTPException(409,'Save your Instagram format before reviewing.')
     for p in platforms:
         previous=db.scalar(select(Publication).where(Publication.draft_id==draft.id,Publication.platform==p))
         history=db.scalar(select(Activity).where(Activity.draft_id==draft.id,Activity.user_id==uid,Activity.platform==p,Activity.status.in_(TERMINAL)))
@@ -82,9 +88,10 @@ def prepare_review(db,uid,body):
         if p=='x' and len(media)>4:raise HTTPException(400,'X supports at most four images per post.')
         posts=[text.strip() for text in posts]
         # Finalise link insertion before review, then prevent adapter mutations.
-        if body.link_url and p in {'x','instagram','tiktok'} and body.link_url not in posts[0]:
+        story=p=='instagram' and instagram_format=='story'
+        if body.link_url and p in {'x','instagram','tiktok'} and not story and body.link_url not in posts[0]:
             posts[0]+= ('\n\n' if p=='instagram' else ' ') + body.link_url
-        if p in {'instagram','tiktok'} and len(posts[0])>2200:raise HTTPException(400,f'{p}: shorten the caption and source link to 2,200 characters.')
+        if p in {'instagram','tiktok'} and not story and len(posts[0])>2200:raise HTTPException(400,f'{p}: shorten the caption and source link to 2,200 characters.')
         if p=='x' and (len(posts)>5 or any(len(t)>280 for t in posts)):raise HTTPException(400,'An X post exceeds its limit.')
         if p!='x' and len(posts)!=1:raise HTTPException(400,'Use one caption per platform.')
         if p in {'instagram','tiktok'} and not media:raise HTTPException(400,f'{p}: attach an image or video first.')
@@ -94,6 +101,14 @@ def prepare_review(db,uid,body):
             if problem:raise HTTPException(400,problem)
             context=publishing_context(db,uid,p,conn.id)
         except RuntimeError:raise HTTPException(400,f'Connect or reconnect {p} before publishing.')
+        if story:
+            from .social import instagram_story_eligibility
+            try:instagram_story_eligibility(db,conn)
+            except RuntimeError as exc:raise HTTPException(400,str(exc))
+            except Exception:raise HTTPException(502,'Instagram Story eligibility is unavailable. Try again.')
+            if media[0].mime_type not in {'image/jpeg','video/mp4','video/quicktime'}:
+                raise HTTPException(400,'For an Instagram Story, attach a JPEG image or MP4/MOV video.')
+            posts=[]  # Notes are not a supported Story caption or overlay.
         if p=='tiktok':
             settings=options.get(p,{})
             if settings.get('privacy_level') not in context.get('privacy_options',[]):raise HTTPException(400,'Choose an available TikTok privacy setting.')
@@ -103,6 +118,7 @@ def prepare_review(db,uid,body):
                 duration=float(settings.get('video_duration_sec') or 0)
                 if duration<=0 or (context.get('max_video_duration_sec') and duration>context['max_video_duration_sec']):raise HTTPException(400,'Check the video duration for this TikTok account.')
         targets[p]={'connection_id':conn.id,'account_id':conn.account_id,'username':context.get('username'),'display_name':context.get('display_name'),'posts':posts,'link':body.link_url if p=='facebook' and not media else ''}
+        if p=='instagram':targets[p]['format']=instagram_format;targets[p]['format_label']='Story' if story else ('Reel · shared to feed' if videos else 'Post · feed')
     tz=get_preferences(db,uid).timezone
     scheduled=getattr(body,'scheduled_local',None)
     if scheduled:scheduled=schedule_time(scheduled,tz).isoformat()
@@ -116,10 +132,37 @@ def prepare_review(db,uid,body):
 
 
 def results_for(db,uid,draft_id):
+    draft=owned_draft(db,uid,draft_id)
     rows=db.scalars(select(Publication).where(Publication.user_id==uid,Publication.draft_id==draft_id)).all()
+    for row in rows:
+        reconcile_instagram(db,row)
+    db.refresh(draft)
     results={r.platform:{**json.loads(r.result_json or '{}'),'status':r.status} for r in rows}
     draft=owned_draft(db,uid,draft_id)
     return {'draft_status':draft.status,'results':results,'summary':' '.join(f"{'X' if p=='x' else p.title()}: {r['status'].replace('_',' ')}." for p,r in results.items())}
+
+
+def reconcile_instagram(db, publication):
+    """Only authoritative PUBLISHED resolves an uncertain send; never resend here."""
+    if publication.platform!='instagram' or publication.status!='unknown':return
+    result=json.loads(publication.result_json or '{}')
+    if not result.get('container_id'):return
+    from .request_security import allowed_request
+    if not allowed_request('publication-check:'+str(publication.id),1,30):return
+    try:
+        from .social import instagram_graph_base, access_token
+        import httpx
+        conn=selected_connection(db,publication.user_id,'instagram',publication.connection_id)
+        response=httpx.get(f"{instagram_graph_base(conn)}/{result['container_id']}",params={'fields':'status_code','access_token':access_token(conn,db)},timeout=15)
+        if response.status_code>=400 or response.json().get('status_code')!='PUBLISHED':return
+    except Exception:return
+    result.pop('error',None)
+    result.update(phase='published',confirmed_by='Instagram container status')
+    publication.result_json=json.dumps(result);publication.status='published'
+    for activity in db.scalars(select(Activity).where(Activity.user_id==publication.user_id,Activity.draft_id==publication.draft_id,Activity.platform=='instagram',Activity.status=='unknown')).all():
+        activity.status='published';activity.error=None
+    db.commit()
+    update_draft_status(db,publication.draft_id)
 
 
 def update_draft_status(db,draft_id):
@@ -146,12 +189,32 @@ def dispatch(db,publication,payload,publisher=publish_platform):
         if capability_error(conn,media):raise RuntimeError('Permission changed')
     except RuntimeError:
         publication.status='failed';publication.result_json=json.dumps({'error':'The reviewed account, media or permissions are unavailable. Reconnect/review before retrying.'});allowances.finish(db,f'publication:{publication.id}',False);db.commit();return
+    from .publication_evidence import recorder
+    def record(evidence):
+        previous=json.loads(publication.result_json or '{}')
+        previous.update(evidence)
+        publication.result_json=json.dumps(previous)
+        publication.updated_at=utcnow()
+        db.commit()
+    evidence_token=recorder.set(record)
     try:
         result=publisher(db,user_id=publication.user_id,platform=publication.platform,posts=target['posts'],assets=media,link_url=target.get('link',''),options=payload['publish_options'].get(publication.platform,{}),connection_id=target['connection_id'])
-        publication.status='pending' if result.get('pending') else 'published';publication.result_json=json.dumps(result)
+        publication.status='pending' if result.get('pending') else 'published';publication.result_json=json.dumps({**json.loads(publication.result_json or '{}'),**result})
     except Exception:
         db.rollback();db.refresh(publication)
-        publication.status='unknown';publication.result_json=json.dumps({'error':'The provider outcome is unconfirmed. Check your social account before retrying; Zova will not resend automatically.'})
+        evidence=json.loads(publication.result_json or '{}')
+        if evidence.get('phase')=='published' and evidence.get('post_id'):
+            publication.status='published'
+        elif evidence.get('phase') in {'validating','container_created'}:
+            publication.status='failed'
+            evidence['error']='Instagram did not reach the publishing step. Check the media and connection, then review again.'
+        else:
+            publication.status='unknown'
+            evidence['error']='The provider outcome is unconfirmed. Check your social account before retrying; Zova will not resend automatically.'
+        evidence['support_reference']='publication-'+str(publication.id)
+        publication.result_json=json.dumps(evidence)
+    finally:
+        recorder.reset(evidence_token)
     result=json.loads(publication.result_json)
     allowances.finish(db,f'publication:{publication.id}')
     db.add(Activity(user_id=publication.user_id,brand_id=publication.brand_id,draft_id=publication.draft_id,platform=publication.platform,action='publish',status=publication.status,text='\n\n'.join(target['posts']),platform_post_id=result.get('post_id'),url=result.get('url'),error=result.get('error')))
@@ -168,6 +231,8 @@ def confirm_review(db,uid,body,mode,publisher=publish_platform):
         raise HTTPException(409,'The submission differs from the reviewed content. Review again.')
     draft=owned_draft(db,uid,review.draft_id)
     current=json.loads(draft.variants_json or '{}');ws=json.loads(draft.workspace_json or '{}')
+    if 'instagram' in payload['platforms'] and ws.get('instagram_format','post')!=payload['publish_options'].get('instagram',{}).get('format','post'):
+        raise HTTPException(409,'Instagram format changed after review. Review again.')
     if any(current.get(p)!=payload['variants'][p] for p in payload['platforms']) or (ws and (ws.get('media_asset_ids',[])!=payload['media_asset_ids'] or ws.get('link_url','')!=payload['link_url'])):
         raise HTTPException(409,'The draft changed after review. Review the latest version.')
     claimed=db.execute(update(PublishReview).where(PublishReview.code==review.code,PublishReview.status=='review',PublishReview.expires_at>utcnow()).values(status='submitted').execution_options(synchronize_session=False))
@@ -181,7 +246,7 @@ def confirm_review(db,uid,body,mode,publisher=publish_platform):
             if row and row.status not in {'failed','cancelled'}:raise HTTPException(409,'A destination is already submitted.')
             if not row:row=Publication(user_id=uid,draft_id=draft.id,platform=platform,connection_id=target['connection_id'],review_code=review.code);db.add(row)
             row.status='scheduled' if mode=='schedule' else 'queued';row.connection_id=target['connection_id'];row.review_code=review.code;row.result_json='{}';db.flush();jobs.append(row)
-            allowances.reserve(db,uid,'publications',f'publication:{row.id}',len(target['posts']))
+            allowances.reserve(db,uid,'publications',f'publication:{row.id}',max(1,len(target['posts'])))
             if mode=='schedule':db.add(ScheduledPost(user_id=uid,draft_id=draft.id,platform=platform,connection_id=target['connection_id'],content_json=json.dumps({'review_code':review.code,'publication_id':row.id,'posts':target['posts']}),media_asset_ids_json=json.dumps(payload['media_asset_ids']),scheduled_at=datetime.fromisoformat(payload['scheduled_utc']),status='scheduled'))
         db.commit()
     except HTTPException:

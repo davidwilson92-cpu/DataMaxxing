@@ -68,3 +68,22 @@
 @media(max-height:560px){.simple-chat .conversation-topbar{height:48px}.simple-chat .composer-wrap{padding-bottom:4px}.simple-chat .attachment-card{height:44px}.simple-chat .attachment-card img,.simple-chat .attachment-card video{height:40px;width:40px}.simple-chat #groundingNotice{margin-bottom:2px}.simple-chat .composer-footnote{padding-top:2px}}
 
 @media(max-height:560px){.simple-chat .composer-wrap{max-height:55dvh;overflow-y:auto;overscroll-behavior:contain}.simple-chat .latest-message{position:sticky;top:0;bottom:auto;z-index:2}}
+
+/* The drawer is already navigation; never nest a second collapsed mobile menu. */
+.simple-chat .chat-navigation .app-nav{position:static!important;display:flex!important;flex-direction:column!important;height:auto!important;min-height:0!important;width:100%;padding:60px 16px 0;box-sizing:border-box}
+.simple-chat .chat-navigation .app-menu{display:flex!important;position:static!important;flex-direction:column;max-height:none!important;overflow:visible;padding:0;width:100%}
+.simple-chat .chat-navigation .mobile-menu-toggle{display:none!important}
+.simple-chat .chat-navigation .app-menu a{min-height:44px;display:flex;align-items:center;font-size:15px}
+.simple-chat .chat-navigation .dialog-close{z-index:2;top:8px;right:8px}
+.simple-chat #instagramFormatHint{grid-column:1/-1;font-size:12px;line-height:1.4;margin:4px 0;max-width:70ch}
+.simple-chat .chat-composer .composer-destinations{min-width:0}
+
+.simple-chat .chat-navigation .app-nav{overflow:visible!important;flex-shrink:0!important}
+.simple-chat .chat-navigation .app-menu{height:auto!important;flex-shrink:0!important;gap:4px}
+.simple-chat .chat-navigation .app-menu>a{flex-shrink:0;box-sizing:border-box}
+.simple-chat .chat-navigation .mobile-menu-extra{display:block!important}
+.simple-chat .chat-navigation .mobile-menu-extra form{display:block!important}
+
+.simple-chat .studio-brand-context button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.simple-chat #brandDialog{border:1px solid #ded4e8;border-radius:16px;padding:24px;width:min(360px,85vw)}
+.simple-chat #brandDialog form .button{width:100%;margin:6px 0}

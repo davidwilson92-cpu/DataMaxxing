@@ -1,8 +1,10 @@
+let mediaInspectionKey="";
+let inspectedSelection="";
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('mediaInput');
   const tray = document.getElementById('attachmentTray');
   const notice = document.getElementById('groundingNotice');
-  const update = () => { if (notice) notice.hidden = !(tray && tray.children.length); };
+  const update = () => { if (notice) {notice.hidden = !(tray && tray.children.length);const selection=uploadedMediaIds.join(',');if(selection!==inspectedSelection){inspectedSelection=selection;mediaInspectionKey='';notice.textContent='AI inspects images and video frames when you send. No audio.';}} };
   if (input) input.addEventListener('change', () => { if (notice && input.files.length) notice.hidden = false; });
   if (tray) new MutationObserver(update).observe(tray, {childList:true});
   update();
@@ -44,4 +46,15 @@ function contextualRefinements() {
   button.textContent = 'Lead with ' + day;
   button.addEventListener('click', () => promptComposer('Revise only the ' + platformName(currentPlatform) + ' version: lead with the existing reference to ' + day + '. Keep the facts and call to action; do not add new claims.'));
   host.append(button);
+}
+
+function showMediaInspection(results) {
+  const notice=document.getElementById('groundingNotice');
+  if(!notice)return;
+  notice.textContent=results.map(r=>r.coverage).join(' ');
+  notice.hidden=false;
+  const details=results.filter(r=>r.status==='inspected').map(r=>r.observations).join('\n\n');
+  const key=JSON.stringify(results);
+  if(details&&key!==mediaInspectionKey)addAssistantMessage('What I can see: '+details+'\n\nCorrect any detail I have misunderstood.');
+  mediaInspectionKey=key;
 }

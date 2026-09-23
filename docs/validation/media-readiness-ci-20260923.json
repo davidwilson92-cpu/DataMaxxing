@@ -1,0 +1,154 @@
+{
+  "code_commit": "e5babb8137b077e254c762992e288390994129fa",
+  "run": 35835048025,
+  "jobs": [
+    {
+      "name": "synthetic-tests",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m pip install --upgrade pip",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m pip install -r requirements.txt pytest pip-audit",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m pip check",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m pytest -q --junitxml=test-results.xml",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m pip_audit --format json -o dependency-audit.json",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "postgres-release",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m pip install -r requirements.txt pytest",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m pytest -q --junitxml=postgres-tests.xml",
+          "conclusion": "success"
+        },
+        {
+          "name": "Restore synthetic PostgreSQL backup",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build hosting image",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke-test isolated hosting image",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "test_suites": [
+    {
+      "artifact": "postgres-tests.xml",
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "1",
+          "tests": "182",
+          "time": "18.658",
+          "timestamp": "2026-09-23T08:04:43.969742+00:00",
+          "hostname": "runnervmlun5p"
+        }
+      ]
+    },
+    {
+      "artifact": "test-results.xml",
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "182",
+          "time": "15.792",
+          "timestamp": "2026-09-23T08:04:31.327269+00:00",
+          "hostname": "runnervmlun5p"
+        }
+      ]
+    }
+  ]
+}

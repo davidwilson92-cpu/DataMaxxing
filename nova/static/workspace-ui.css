@@ -45,3 +45,15 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .mobile-menu-extra{display:none}@media(max-width:760px){.mobile-menu-extra{display:block}.app-nav .mobile-menu-extra form{display:block!important}.mobile-menu-extra button{min-height:44px;background:transparent;color:white;border:1px solid #887599;border-radius:8px;width:100%}.platform-check label{font-size:13px}.schedule-row{padding:12px 0;border-bottom:1px solid #ddd}.schedule-row button{min-height:44px;margin:6px}.schedule-row input{max-width:100%}}
 
 @media(max-width:360px){.conversation-topbar h1{font-size:15px}.conversation-topbar .button{font-size:12px;white-space:nowrap;padding:10px}.conversation-topbar{gap:6px}.attachment-details button{min-height:40px}}
+
+.account-flow-body .account-flow{padding-top:24px;padding-bottom:48px}
+.account-flow-body .account-section{padding:28px 0;gap:24px;grid-template-columns:32px minmax(150px,1fr) minmax(220px,1.5fr)}
+.account-flow-body .section-copy h2{font-size:25px}
+.account-flow-body .section-copy p{font-size:15px}
+.account-flow-body .voice-edit{margin-bottom:24px}
+.analytics-dashboard [hidden]{display:none!important}
+@media(max-width:760px){.account-flow-body .account-section{grid-template-columns:1fr;gap:12px}.account-flow-body .section-number{display:none}.account-flow-body .account-section>*{grid-column:1}.account-flow-body .app-topbar{padding:20px}.account-flow-body .app-topbar h1{font-size:30px}}
+
+.draft-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))!important;gap:16px!important}
+.draft-card-main{min-height:0!important;padding:20px!important}
+.draft-card h2{font-size:20px!important;line-height:1.4!important;margin:14px 0!important}

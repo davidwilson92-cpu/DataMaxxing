@@ -1,3 +1,7 @@
+# Current release boundary — 23 September 2026
+
+Media/Stories/readiness candidate is not deployed. Current rollback instructions and evidence are in [MEDIA_STORIES_READINESS_20260923.md](MEDIA_STORIES_READINESS_20260923.md). In particular, stop/hold Story jobs before rolling back to a worker that only understands feed posts. Preserve additive columns and all records. The historical instructions below describe earlier releases and are not fresh validation.
+
 # Operations and rollback — local candidate, 14 September 2026
 
 Nothing in this document authorises a production deployment, post, grant change, review submission or charge.

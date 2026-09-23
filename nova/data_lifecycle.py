@@ -18,7 +18,7 @@ EXPORT = {
     models.CreatorPreferences: ['writing_tone','audience','topics','things_to_avoid','example_posts','timezone'],
     models.BrandVoice: ['brand_id','writing_tone','audience','topics','things_to_avoid','example_posts','timezone'],
     models.Draft: ['id','brand_id','brief','instruction','variants_json','workspace_json','status'],
-    models.MediaAsset: ['id','brand_id','filename','mime_type'],
+    models.MediaAsset: ['id','brand_id','filename','mime_type','analysis_json'],
     models.SocialConnection: ['brand_id','platform','account_id','username','active'],
     models.Publication: ['id','brand_id','draft_id','platform','status','result_json'],
     models.ScheduledPost: ['id','brand_id','draft_id','platform','status','scheduled_at'],

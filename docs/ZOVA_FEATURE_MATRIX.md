@@ -1,3 +1,18 @@
+# Current candidate update — 23 September 2026
+
+`codex/media-stories-readiness` is not deployed. See [evidence, scores and rollback](MEDIA_STORIES_READINESS_20260923.md). This section supersedes older candidate/media-status statements below; historical validation is not proof for this candidate.
+
+| Capability | Implementation | Validation | Deployment |
+|---|---|---|---|
+| Image understanding | Actual resized visual input; owned, cached, correctable observations | Decode/ownership/cache/failure mocks; real recognition pending | Candidate only |
+| Video understanding | Up to 8 timestamped frames, <=10-minute clips; no audio analysis | Real synthetic video decoder + mock model | Candidate only |
+| Instagram Post/Story | Explicit placement; Business eligibility; image/video; immutable review/scheduling | Both OAuth adapters mocked; no real Story acceptance | Candidate only |
+| Delivery recovery | Durable phase/container/post IDs; confirmed delivery survives link failure; read-only reconciliation | Synthetic timeout/phase/reconciliation tests | Candidate only |
+| Studio/account/mobile | Canonical variant card, compact composer, accessible drawer, saved brand switch, clarified settings | Local browser and synthetic regression | Candidate only |
+| Draft library | All-record search and 30-item page navigation | Synthetic 32-record test | Candidate only |
+| Billing/analytics | Testing state and empty/freshness clarity | Browser/route/client checks; charges remain disabled | Candidate only |
+| Operations/privacy | Media export/erasure field, AI failure probe, rate bucket, explicit disclosures | Synthetic migration/restore and dependency audit | External monitoring/legal/managed restore gates remain |
+
 # Current feature matrix — 21 September 2026
 
 Current production baseline: main `78d9924` (21 September Instagram reauthentication correction). Candidate: `codex/studio-proposal-layout`, not deployed. Instagram Post/Story remains separate PR #7. Billing and subscription enforcement remain off.
@@ -17,7 +32,7 @@ Current production baseline: main `78d9924` (21 September Instagram reauthentica
 | Plan changes | Assisted support guidance; data retained | No self-service upgrade/downgrade or grace-period promise; policy/implementation gate |
 | Allowances | Atomic account-wide AI/publication/account/brand caps; failure refunds and known-outcome retries | Tests retained; enforcement disabled; legacy Custom GPT excluded |
 | X | Text, threads, up to four images | Mocked adapter/review tests; current production access unverified; no video claim |
-| Instagram | Single image/video; direct and Facebook-linked login preserved | Route/mock tests; current approval/container lifecycle unverified; no carousel claim |
+| Instagram | Post/Story choice saved per draft; Post images go to feed, videos become Reels shared to feed; Story publishes one visual with explicit no-caption guidance; both login routes preserved | 13 focused format/eligibility/approval/schedule tests plus synthetic mobile/keyboard/reload checks; real Story acceptance and provider media restrictions remain unverified; no carousel/overlay editor claim |
 | Facebook Pages | Text/link or single image, exact Page | Mocked tests; current `pages_manage_posts` grant/approval unverified |
 | TikTok | Existing photo/video inbox/direct-mode paths and reviewed controls | Mocked pending handling; operating mode/approval/provider completion require verification |
 | Review/publishing | Immutable exact destinations/content/settings; partial states and failed-only retries | Existing tamper/duplicate/concurrent/ownership tests; no real posts in this task |
