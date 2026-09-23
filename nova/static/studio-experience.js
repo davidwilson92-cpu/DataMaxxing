@@ -47,7 +47,7 @@ function renderReadiness(){
   document.getElementById('xFormat').hidden=!platforms.includes('x');
   document.getElementById('instagramFormatControl').hidden=!platforms.includes('instagram');
   document.getElementById('instagramFormat').disabled=!platforms.includes('instagram')||sendingMessage||!editableDraft();
-  const hint=document.getElementById('instagramFormatHint');hint.hidden=!platforms.includes('instagram');hint.textContent=instagramFormat()==='story'?'Story · visual only. Add text to your file first.':'Feed post · videos publish as Reels';
+  document.querySelectorAll('[name=instagramFormatChoice]').forEach(input=>{input.checked=input.value===instagramFormat();input.disabled=document.getElementById('instagramFormat').disabled;});
   document.querySelectorAll('.composer-platforms input').forEach(input=>{input.closest('.platform-check').classList.toggle('is-selected',input.checked);input.closest('.platform-check').classList.toggle('is-connected',Boolean(connectionData[input.value]?.length));input.title=connectionData[input.value]?.length?'Connected':'Connect to publish; drafting is available';});
   document.getElementById('threadLength').disabled=!platforms.includes('x')||sendingMessage||!editableDraft();
 }
@@ -123,3 +123,10 @@ async function openSavedPost(event,id){
   catch{document.getElementById('navigationDialog').close();document.getElementById('undoStatus').textContent='Save this conversation before opening another. Retry save or download your work.';}
 }
 window.addEventListener('DOMContentLoaded',loadRecentPosts);
+
+// Keep the existing persisted format and approval binding as the single source of truth.
+document.querySelectorAll('[name=instagramFormatChoice]').forEach(input=>input.addEventListener('change',()=>{
+  if(!input.checked||sendingMessage||!editableDraft())return;
+  const format=document.getElementById('instagramFormat');format.value=input.value;
+  format.dispatchEvent(new Event('change',{bubbles:true}));
+}));
