@@ -87,3 +87,35 @@
 .simple-chat .studio-brand-context button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .simple-chat #brandDialog{border:1px solid #ded4e8;border-radius:16px;padding:24px;width:min(360px,85vw)}
 .simple-chat #brandDialog form .button{width:100%;margin:6px 0}
+
+/* Persistent desktop rail: expansion participates in layout rather than covering work. */
+.studio-nav-rail{display:none}
+.simple-chat .instagram-format-choices{grid-column:1/-1;grid-row:3;display:flex;gap:8px;border:0;padding:0;margin:6px 0 2px;min-width:0}
+.simple-chat .instagram-format-choices label{display:flex;align-items:center;gap:8px;min-height:44px;padding:6px 14px;border:1px solid #e2dde8;border-radius:10px;background:#fff;color:#716978;font-size:13px;cursor:pointer;box-sizing:border-box}
+.simple-chat .instagram-format-choices label:has(input:checked){border-color:#ac87d7;background:#f1eafa;color:#602b9e}
+.simple-chat .instagram-format-choices input{position:static;opacity:1;appearance:auto;accent-color:#783bc0;width:16px;height:16px;margin:0}
+.simple-chat .instagram-format-choices label:has(input:disabled){opacity:.55;cursor:default}
+@media(min-width:761px){
+ .simple-chat{--studio-rail-width:64px;--studio-history-width:0px}
+ .simple-chat:has(.studio-nav-rail:hover),.simple-chat:has(.studio-nav-rail:focus-within){--studio-rail-width:196px}
+ .studio-nav-rail{display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;width:var(--studio-rail-width);height:100dvh;box-sizing:border-box;padding:12px 8px;background:#100c17;color:#eee5f8;overflow-x:hidden;overflow-y:auto;z-index:5;transition:width .18s ease}
+ .studio-nav-rail nav{display:flex;flex-direction:column;gap:4px}
+ .studio-nav-rail a,.studio-nav-rail button{display:flex;align-items:center;gap:12px;min-height:44px;width:100%;box-sizing:border-box;padding:0 4px;border:0;border-radius:10px;background:transparent;color:#d3c6df;text-decoration:none;font:500 14px/1.3 Inter,system-ui,sans-serif;white-space:nowrap;cursor:pointer}
+ .studio-nav-rail a:hover,.studio-nav-rail button:hover,.studio-nav-rail a[aria-current]{background:#30203f;color:#fff}
+ .studio-nav-rail .rail-icon{display:flex;align-items:center;justify-content:center;width:40px;flex:0 0 40px;font-size:22px}
+ .studio-nav-rail .rail-brand{margin-bottom:18px;font-size:20px;color:#fff}
+ .studio-nav-rail .rail-brand .zova-symbol{width:30px;height:30px;margin:5px;flex:0 0 30px}
+ .studio-nav-rail .rail-label{opacity:0;transition:opacity .12s ease}
+ .studio-nav-rail:hover .rail-label,.studio-nav-rail:focus-within .rail-label{opacity:1}
+ .studio-nav-rail .rail-bottom{margin-top:auto;padding-top:16px}
+ .studio-nav-rail form{margin:0}
+ .simple-chat .studio-mobile-navigation{display:none}
+ .simple-chat .studio-history-rail{left:var(--studio-rail-width);transition:left .18s ease}
+ .simple-chat .conversation-workspace{margin-left:calc(var(--studio-rail-width) + var(--studio-history-width));width:calc(100% - var(--studio-rail-width) - var(--studio-history-width));transition:margin-left .18s ease,width .18s ease}
+}
+@media(min-width:1060px){.simple-chat{--studio-history-width:236px}}
+@media(prefers-reduced-motion:reduce){.studio-nav-rail,.studio-nav-rail .rail-label,.simple-chat .studio-history-rail,.simple-chat .conversation-workspace{transition:none!important}}
+.simple-chat .instagram-format-choices input{appearance:none;border:1px solid #b4a5c2;border-radius:4px;display:grid;place-content:center;background:white}
+.simple-chat .instagram-format-choices input:checked{background:#783bc0;border-color:#783bc0}
+.simple-chat .instagram-format-choices input:checked::after{content:'✓';color:white;font-size:12px;line-height:1}
+@media(min-width:761px){.simple-chat .composer-toolbar{grid-row:2;grid-column:2}}
