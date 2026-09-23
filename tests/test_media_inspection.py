@@ -18,6 +18,14 @@ def uploaded(client):
     return response.json()['assets'][0]['id']
 
 
+def test_transparent_images_keep_visible_contrast():
+    import base64
+    image = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
+    encoded = visual.image_input(image)['image_url'].split(',', 1)[1]
+    with Image.open(io.BytesIO(base64.b64decode(encoded))) as decoded:
+        assert decoded.getpixel((32, 32)) == (255, 255, 255)
+
+
 def test_owned_image_payload_cached_and_passed_to_generation(monkeypatch):
     client, uid, _, _ = account()
     asset_id = uploaded(client)

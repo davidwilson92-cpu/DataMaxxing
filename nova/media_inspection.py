@@ -15,10 +15,12 @@ MAX_BYTES = 100 * 1024 * 1024
 
 
 def image_input(image):
-    image = ImageOps.exif_transpose(image).convert('RGB')
+    image = ImageOps.exif_transpose(image).convert('RGBA')
     image.thumbnail((1280, 1280))
+    background = Image.new('RGB', image.size, 'white')
+    background.paste(image, mask=image.getchannel('A'))
     output = io.BytesIO()
-    image.save(output, format='JPEG', quality=85)
+    background.save(output, format='JPEG', quality=85)
     return {'type': 'input_image', 'image_url': 'data:image/jpeg;base64,' + base64.b64encode(output.getvalue()).decode(), 'detail': 'auto'}
 
 
