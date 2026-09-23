@@ -93,13 +93,13 @@ function renderAttachments(){
 
   tray.innerHTML=uploadedMedia.map((asset,index)=>`<div class="attachment-card">${!asset.url?'<div class="attachment-placeholder">Preview unavailable</div>':asset.kind==="video"?`<video src="${esc(asset.url)}" controls preload="metadata" aria-label="Preview of ${esc(asset.filename)}"></video>`:`<img src="${esc(asset.url)}" alt="Preview of ${esc(asset.filename)}">`}<div class="attachment-details"><span title="${esc(asset.filename)}">${esc(asset.filename)}</span><button type="button" onclick="removeAttachment(${index})" ${mediaUploading?"disabled":""} aria-label="Remove ${esc(asset.filename)}">Remove</button></div></div>`).join("");
 
-  document.getElementById("mediaStatus").textContent=uploadedMedia.length?(uploadedMediaKind==="video"?"Video attached · Instagram and TikTok only":`${uploadedMedia.length} image${uploadedMedia.length===1?"":"s"} attached`):"";
+  document.getElementById("mediaStatus").textContent="";
 
 }
 
 function removeAttachment(index){
 
-  if(mediaUploading||!editableDraft())return;
+  if(mediaUploading||sendingMessage||!editableDraft())return;
 
   uploadedMedia.splice(index,1);
 

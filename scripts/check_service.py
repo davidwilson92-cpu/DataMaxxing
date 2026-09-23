@@ -8,7 +8,7 @@ import httpx
 
 def check(payload):
     reasons=[]
-    for key in ['overdue_jobs','uncertain_publications','stuck_publications','stale_billing_accounts','mail_failures_24h','stuck_mail']:
+    for key in ['overdue_jobs','uncertain_publications','stuck_publications','stale_billing_accounts','mail_failures_24h','stuck_mail','ai_failures_24h']:
         if payload.get(key):reasons.append(key)
     if payload.get('ai_spend',{}).get('threshold_exceeded'):reasons.append('ai_spend_threshold')
     if payload.get('ai_spend',{}).get('unpriced_calls'):reasons.append('ai_cost_coverage')

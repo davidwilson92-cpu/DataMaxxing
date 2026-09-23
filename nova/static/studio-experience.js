@@ -47,7 +47,7 @@ function renderReadiness(){
   document.getElementById('xFormat').hidden=!platforms.includes('x');
   document.getElementById('instagramFormatControl').hidden=!platforms.includes('instagram');
   document.getElementById('instagramFormat').disabled=!platforms.includes('instagram')||sendingMessage||!editableDraft();
-  const hint=document.getElementById('instagramFormatHint');hint.hidden=!platforms.includes('instagram');hint.textContent=instagramFormat()==='story'?'24-hour Story · only your visual publishes. Add any text to your file first.':instagramNote();
+  const hint=document.getElementById('instagramFormatHint');hint.hidden=!platforms.includes('instagram');hint.textContent=instagramFormat()==='story'?'Story · visual only. Add text to your file first.':'Feed post · videos publish as Reels';
   document.querySelectorAll('.composer-platforms input').forEach(input=>{input.closest('.platform-check').classList.toggle('is-selected',input.checked);input.closest('.platform-check').classList.toggle('is-connected',Boolean(connectionData[input.value]?.length));input.title=connectionData[input.value]?.length?'Connected':'Connect to publish; drafting is available';});
   document.getElementById('threadLength').disabled=!platforms.includes('x')||sendingMessage||!editableDraft();
 }

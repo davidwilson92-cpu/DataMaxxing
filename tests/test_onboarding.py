@@ -24,7 +24,7 @@ def test_health_and_branding():
     response = client.get("/health")
     assert response.json() == {"status": "ok", "version": "5.1.0", "brand": "Zova"}
     landing = client.get("/").text
-    assert "One idea." in landing and "Every social." in landing
+    assert "One idea." in landing and "Your socials." in landing
     assert "YOUR AI SOCIAL MANAGER" in landing
     assert "Nova" not in landing
 

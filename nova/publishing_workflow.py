@@ -132,10 +132,37 @@ def prepare_review(db,uid,body):
 
 
 def results_for(db,uid,draft_id):
+    draft=owned_draft(db,uid,draft_id)
     rows=db.scalars(select(Publication).where(Publication.user_id==uid,Publication.draft_id==draft_id)).all()
+    for row in rows:
+        reconcile_instagram(db,row)
+    db.refresh(draft)
     results={r.platform:{**json.loads(r.result_json or '{}'),'status':r.status} for r in rows}
     draft=owned_draft(db,uid,draft_id)
     return {'draft_status':draft.status,'results':results,'summary':' '.join(f"{'X' if p=='x' else p.title()}: {r['status'].replace('_',' ')}." for p,r in results.items())}
+
+
+def reconcile_instagram(db, publication):
+    """Only authoritative PUBLISHED resolves an uncertain send; never resend here."""
+    if publication.platform!='instagram' or publication.status!='unknown':return
+    result=json.loads(publication.result_json or '{}')
+    if not result.get('container_id'):return
+    from .request_security import allowed_request
+    if not allowed_request('publication-check:'+str(publication.id),1,30):return
+    try:
+        from .social import instagram_graph_base, access_token
+        import httpx
+        conn=selected_connection(db,publication.user_id,'instagram',publication.connection_id)
+        response=httpx.get(f"{instagram_graph_base(conn)}/{result['container_id']}",params={'fields':'status_code','access_token':access_token(conn,db)},timeout=15)
+        if response.status_code>=400 or response.json().get('status_code')!='PUBLISHED':return
+    except Exception:return
+    result.pop('error',None)
+    result.update(phase='published',confirmed_by='Instagram container status')
+    publication.result_json=json.dumps(result);publication.status='published'
+    for activity in db.scalars(select(Activity).where(Activity.user_id==publication.user_id,Activity.draft_id==publication.draft_id,Activity.platform=='instagram',Activity.status=='unknown')).all():
+        activity.status='published';activity.error=None
+    db.commit()
+    update_draft_status(db,publication.draft_id)
 
 
 def update_draft_status(db,draft_id):
@@ -162,12 +189,32 @@ def dispatch(db,publication,payload,publisher=publish_platform):
         if capability_error(conn,media):raise RuntimeError('Permission changed')
     except RuntimeError:
         publication.status='failed';publication.result_json=json.dumps({'error':'The reviewed account, media or permissions are unavailable. Reconnect/review before retrying.'});allowances.finish(db,f'publication:{publication.id}',False);db.commit();return
+    from .publication_evidence import recorder
+    def record(evidence):
+        previous=json.loads(publication.result_json or '{}')
+        previous.update(evidence)
+        publication.result_json=json.dumps(previous)
+        publication.updated_at=utcnow()
+        db.commit()
+    evidence_token=recorder.set(record)
     try:
         result=publisher(db,user_id=publication.user_id,platform=publication.platform,posts=target['posts'],assets=media,link_url=target.get('link',''),options=payload['publish_options'].get(publication.platform,{}),connection_id=target['connection_id'])
-        publication.status='pending' if result.get('pending') else 'published';publication.result_json=json.dumps(result)
+        publication.status='pending' if result.get('pending') else 'published';publication.result_json=json.dumps({**json.loads(publication.result_json or '{}'),**result})
     except Exception:
         db.rollback();db.refresh(publication)
-        publication.status='unknown';publication.result_json=json.dumps({'error':'The provider outcome is unconfirmed. Check your social account before retrying; Zova will not resend automatically.'})
+        evidence=json.loads(publication.result_json or '{}')
+        if evidence.get('phase')=='published' and evidence.get('post_id'):
+            publication.status='published'
+        elif evidence.get('phase') in {'validating','container_created'}:
+            publication.status='failed'
+            evidence['error']='Instagram did not reach the publishing step. Check the media and connection, then review again.'
+        else:
+            publication.status='unknown'
+            evidence['error']='The provider outcome is unconfirmed. Check your social account before retrying; Zova will not resend automatically.'
+        evidence['support_reference']='publication-'+str(publication.id)
+        publication.result_json=json.dumps(evidence)
+    finally:
+        recorder.reset(evidence_token)
     result=json.loads(publication.result_json)
     allowances.finish(db,f'publication:{publication.id}')
     db.add(Activity(user_id=publication.user_id,brand_id=publication.brand_id,draft_id=publication.draft_id,platform=publication.platform,action='publish',status=publication.status,text='\n\n'.join(target['posts']),platform_post_id=result.get('post_id'),url=result.get('url'),error=result.get('error')))

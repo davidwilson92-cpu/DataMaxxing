@@ -514,13 +514,17 @@ def drafts_page(request:Request,db:Session=Depends(get_db)):
     query=request.query_params.get("q","").strip()[:200]
     statement=select(Draft).where(Draft.user_id==user.id)
     if query:statement=statement.where(or_(Draft.brief.icontains(query,autoescape=True),Draft.variants_json.icontains(query,autoescape=True),Draft.workspace_json.icontains(query,autoescape=True)))
-    rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).limit(100)).all()
+    try:page=max(1,min(10000,int(request.query_params.get('page','1'))))
+    except ValueError:page=1
+    rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).offset((page-1)*30).limit(31)).all()
+    has_more=len(rows)>30
+    rows=rows[:30]
     drafts=[]
     for row in rows:
         try:platforms=json.loads(row.platforms_json or "[]")
         except (TypeError,json.JSONDecodeError):platforms=[]
         drafts.append({"id":row.id,"brief":row.brief,"platforms":platforms,"status":row.status,"created_at":row.created_at,"updated_at":row.updated_at})
-    return templates.TemplateResponse(request, "drafts.html",template_context(request,user,drafts=drafts))
+    return templates.TemplateResponse(request, "drafts.html",template_context(request,user,drafts=drafts,page=page,has_more=has_more))
 
 @app.get("/analytics",response_class=HTMLResponse)
 def analytics_page(request:Request):
@@ -604,11 +608,12 @@ def save_preferences(request:Request,writing_tone:Annotated[str,Form()]="",audie
     prefs.writing_tone=writing_tone[:5000]; prefs.audience=audience[:5000]; prefs.topics=topics[:5000]; prefs.things_to_avoid=things_to_avoid[:5000]; prefs.example_posts=example_posts[:12000]; prefs.preferred_post_length=max(30,min(preferred_post_length,4000)); prefs.timezone=timezone_name; db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account",303)
 
 @app.post("/account/profile")
-def update_profile(request: Request, display_name: Annotated[str, Form()] = "", guidance: Annotated[str, Form()] = "", next_url: Annotated[str, Form(alias="next")] = "", db: Session = Depends(get_db)):
+async def update_profile(request: Request, display_name: Annotated[str, Form()] = "", guidance: Annotated[str | None, Form()] = None, next_url: Annotated[str, Form(alias="next")] = "", db: Session = Depends(get_db)):
     user = db.get(User, current_user(request).id); prefs = get_preferences(db, user.id)
     try: user.display_name = normalize_name(display_name)
     except ValueError: return RedirectResponse("/account?error=profile", 303)
-    prefs.things_to_avoid = guidance.strip()[:5000]
+    profile_form=await request.form()
+    if 'guidance' in profile_form: prefs.things_to_avoid = str(profile_form['guidance']).strip()[:5000]
     db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=profile", 303)
 
 @app.post("/account/password")
@@ -770,14 +775,18 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
 
 # ---------- API models ----------
 class GenerateRequest(BaseModel):
+    media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     brief:str=Field(min_length=1,max_length=12000); instruction:str=Field(default="",max_length=5000); platforms:list[str]; thread_length:int=1; link_url:str=""; draft_id:int|None=None
     @field_validator("thread_length")
     @classmethod
     def valid_thread(cls,v:int): return v if v in {1,3,5} else 1
-class RewriteRequest(BaseModel): platform:str; posts:list[str]; action:str=""; instruction:str=Field(default="",max_length=1000)
+class RewriteRequest(BaseModel):
+    media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
+    platform:str; posts:list[str]; action:str=""; instruction:str=Field(default="",max_length=1000)
 class ScheduleSuggestRequest(BaseModel): platforms:list[str]; context:str=""
 class InsightRequest(BaseModel): question:str=Field(min_length=1,max_length=2000)
 class ConversationRequest(BaseModel):
+    media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     message:str=Field(min_length=1,max_length=12000)
     draft_id:int|None=None
     selected_platforms:list[str]=Field(default_factory=list,max_length=4)
@@ -796,8 +805,20 @@ def conversation_plan(body:ConversationRequest,request:Request,db:Session=Depend
         context.update(brief=row.brief,variants=json.loads(row.variants_json),status=row.status)
         if row.status not in EDITABLE:
             return {'action':'answer','platforms':[],'reply':'This item is already submitted. Start a new chat for another post.'}
-    try:return plan_message(body.message,context).model_dump()
-    except Exception:raise HTTPException(502,'I could not interpret that request. Your draft is unchanged; please try again.')
+    from .media_inspection import inspect_assets
+    from .readiness import ai_user
+    ai_context=ai_user.set(user.id)
+    try:
+        inspected=inspect_assets(db,user.id,body.media_asset_ids)
+        db.commit()
+        context['attachment_observations']=inspected
+        try:
+            result=plan_message(body.message,context).model_dump()
+            result['media_inspection']=inspected
+            return result
+        except Exception:raise HTTPException(502,'I could not interpret that request. Your draft is unchanged; please try again.')
+    finally:
+        ai_user.reset(ai_context)
 
 class VoiceLearnRequest(BaseModel): content:str=Field(min_length=80,max_length=30000)
 class PreviewRequest(BaseModel): platforms:list[str]; variants:dict[str,Any]
@@ -903,7 +924,9 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
         if body.draft_id and (not row or row.user_id!=user.id):raise HTTPException(404,'Draft not found')
         if row and row.status not in EDITABLE:raise HTTPException(409,'This draft is already submitted.')
         revision=row.revision if row else 0
-        try:variants=ai.generate_variants(brief=body.brief,instruction=body.instruction,platforms=platforms,thread_length=body.thread_length,preferences=prefs,link_url=body.link_url)
+        from .media_inspection import inspect_assets, context as media_context
+        inspected=inspect_assets(db,user.id,body.media_asset_ids)
+        try:variants=ai.generate_variants(brief=body.brief,instruction=body.instruction+media_context(inspected),platforms=platforms,thread_length=body.thread_length,preferences=prefs,link_url=body.link_url)
         except Exception:raise HTTPException(502,'Content generation failed. Your previous draft is unchanged; try again.')
         if row:
             existing=json.loads(row.variants_json or '{}');existing.update(variants);variants=existing
@@ -922,8 +945,11 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
 def api_rewrite(body:RewriteRequest,request:Request,db:Session=Depends(get_db)):
     with allowances.ai_action(db,current_user(request).id):
         user=current_user(request);subscription_guard(user);prefs=get_preferences(db,user.id)
-        try:posts=ai.rewrite_variant(platform=body.platform,posts=body.posts,action=body.action,instruction=body.instruction,preferences=prefs)
+        from .media_inspection import inspect_assets, context as media_context
+        inspected=inspect_assets(db,user.id,body.media_asset_ids)
+        try:posts=ai.rewrite_variant(platform=body.platform,posts=body.posts,action=body.action,instruction=body.instruction+media_context(inspected),preferences=prefs)
         except RuntimeError as exc:raise HTTPException(502,str(exc))
+        db.commit()
         return {"posts":posts}
 
 

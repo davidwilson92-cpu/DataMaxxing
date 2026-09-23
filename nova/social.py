@@ -398,6 +398,8 @@ def instagram_story_eligibility(db, conn):
 
 
 def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], assets: list[MediaAsset], link_url: str = "", options: dict[str, Any] | None = None) -> dict[str, Any]:
+    from .publication_evidence import checkpoint
+    checkpoint('validating')
     placement=(options or {}).get('format','post')
     if placement not in {'post','story'}: raise RuntimeError('Unsupported Instagram format')
     if not assets:
@@ -422,6 +424,7 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
     if create.status_code >= 400:
         raise RuntimeError(f"Instagram media container failed: {create.text}")
     creation_id = str(create.json()["id"])
+    checkpoint('container_created', container_id=creation_id)
     # Instagram creates an asynchronous media container for both images and
     # videos. Publishing before that container is FINISHED intermittently
     # fails, especially just after Meta has fetched a newly uploaded image.
@@ -438,13 +441,19 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
         time.sleep(2)
     else:
         raise RuntimeError("Instagram is still processing the media. Try publishing again shortly.")
+    checkpoint('publish_requested', container_id=creation_id)
     publish = httpx.post(f"{graph}/{conn.account_id}/media_publish", data={"creation_id": creation_id, "access_token": token}, timeout=45.0)
     if publish.status_code >= 400:
         raise RuntimeError(f"Instagram publish failed: {publish.text}")
     post_id = str(publish.json()["id"])
-    # Resolve permalink when available.
-    detail = httpx.get(f"{graph}/{post_id}", params={"fields": "permalink", "access_token": token}, timeout=20.0)
-    url = detail.json().get("permalink") if detail.status_code < 400 else None
+    checkpoint('published', container_id=creation_id, post_id=post_id)
+    # Publishing is confirmed by the media ID; a missing link cannot undo it.
+    url = None
+    try:
+        detail = httpx.get(f"{graph}/{post_id}", params={"fields": "permalink", "access_token": token}, timeout=20.0)
+        url = detail.json().get("permalink") if detail.status_code < 400 else None
+    except (httpx.HTTPError, ValueError, TypeError):
+        pass
     return {"post_id": post_id, "post_ids": [post_id], "url": url, "format": placement}
 
 

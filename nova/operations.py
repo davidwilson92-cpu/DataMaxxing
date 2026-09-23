@@ -4,7 +4,7 @@ import os
 from datetime import timedelta
 from fastapi import APIRouter, Header, HTTPException
 from sqlalchemy import func, select, text
-from .db import SessionLocal, ScheduledPost, Publication, BillingEvent, BillingAccount, UsageEntry, MailDelivery, utcnow
+from .db import SessionLocal, ScheduledPost, Publication, BillingEvent, BillingAccount, UsageEntry, MailDelivery, AICall, utcnow
 from .readiness import spend_summary, cohort_report
 
 router=APIRouter()
@@ -26,10 +26,11 @@ def status(authorization: str | None = Header(default=None)):
         latest=db.scalar(select(func.max(BillingEvent.processed_at)))
         mail_failures=db.scalar(select(func.count()).select_from(MailDelivery).where(MailDelivery.status=='failed',MailDelivery.created_at>utcnow()-timedelta(days=1)))
         mail_stuck=db.scalar(select(func.count()).select_from(MailDelivery).where(MailDelivery.status=='sending',MailDelivery.created_at<utcnow()-timedelta(minutes=5)))
-        attention=bool(overdue or uncertain or stuck or spend['threshold_exceeded'] or spend['unpriced_calls'] or stale_billing or mail_failures or mail_stuck)
+        ai_failures=db.scalar(select(func.count()).select_from(AICall).where(AICall.status!='returned',AICall.created_at>utcnow()-timedelta(days=1)))
+        attention=bool(ai_failures or overdue or uncertain or stuck or spend['threshold_exceeded'] or spend['unpriced_calls'] or stale_billing or mail_failures or mail_stuck)
         return {'status':'attention' if attention else 'ok','database':'reachable','overdue_jobs':overdue,'uncertain_publications':uncertain,'stuck_publications':stuck,
                 'stale_billing_accounts':stale_billing,'last_billing_event':latest.isoformat() if latest else None,
-                'old_usage_reservations':reservations,'mail_failures_24h':mail_failures,'stuck_mail':mail_stuck,'ai_spend':spend,'checked_at':utcnow().isoformat()}
+                'ai_failures_24h':ai_failures,'old_usage_reservations':reservations,'mail_failures_24h':mail_failures,'stuck_mail':mail_stuck,'ai_spend':spend,'checked_at':utcnow().isoformat()}
 
 
 @router.get('/internal/cohorts')
