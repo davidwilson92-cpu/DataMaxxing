@@ -137,6 +137,19 @@ def test_failed_inspection_is_truthful_and_retryable(monkeypatch):
     assert client.post('/api/conversation/plan', json=body).json()['media_inspection'][0]['status'] == 'inspected'
 
 
+def test_multiple_images_do_not_block_usage_telemetry(monkeypatch):
+    from sqlalchemy import select
+    from nova.db import AICall
+    client, uid, _, _ = account()
+    ids = [uploaded(client), uploaded(client)]
+    monkeypatch.setattr(ai, '_request_response', lambda *a, **kw: ('{"observations":"A purple rectangle"}', {'status':'completed'}))
+    response = client.post('/api/conversation/plan', json={'message':'Create a post', 'selected_platforms':['instagram'], 'media_asset_ids':ids})
+    assert response.status_code == 200
+    assert len(response.json()['media_inspection']) == 2
+    with SessionLocal() as db:
+        assert len(db.scalars(select(AICall).where(AICall.user_id == uid)).all()) == 2
+
+
 def test_real_video_decoder_samples_frames_without_claiming_audio():
     import av
     output = io.BytesIO()

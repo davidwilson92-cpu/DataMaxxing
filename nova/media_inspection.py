@@ -97,7 +97,8 @@ def inspect_assets(db, user_id, ids):
                 raise ValueError('Invalid inspection response')
             result = {'asset_id': asset.id, 'status': 'inspected', 'observations': observations, 'coverage': coverage, 'timestamps': timestamps}
             asset.analysis_json = json.dumps({'fingerprint': fingerprint, 'result': result}, ensure_ascii=False)
-            db.flush()
+            # Keep cache changes pending until the caller commits. A write lock
+            # here would obstruct separate usage telemetry during later images.
             results.append(result)
         except HTTPException:
             raise
