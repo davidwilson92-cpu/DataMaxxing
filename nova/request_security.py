@@ -21,7 +21,10 @@ def allowed_request(key, maximum, seconds):
         if claimed.rowcount:
             db.commit(); return True
         if db.get(RequestLimit, digest):
-            db.rollback(); return False
+            # A concurrent request may have inserted this bucket after our first UPDATE.
+            db.rollback()
+            claimed = db.execute(update(RequestLimit).where(RequestLimit.key == digest, RequestLimit.count < maximum).values(count=RequestLimit.count + 1))
+            db.commit(); return bool(claimed.rowcount)
         db.add(RequestLimit(key=digest, count=1, reset_at=now + timedelta(seconds=seconds)))
         try:
             db.commit(); return True
