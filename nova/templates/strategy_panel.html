@@ -1,5 +1,5 @@
 <dialog id="strategyPanel" aria-labelledby="strategyPanelTitle" class="strategy-panel">
- <header><h2 id="strategyPanelTitle">Next move</h2><button class="quiet-button" onclick="this.closest('dialog').close()" aria-label="Close next move">×</button></header>
+ <header><h2 id="strategyPanelTitle">{% include "next_move_icon.html" %}<span>Next move</span></h2><button class="quiet-button" onclick="this.closest('dialog').close()" aria-label="Close next move">×</button></header>
  <p id="strategyStatus" role="status"></p>
  <div id="strategyActions"></div>
  <button class="quiet-button" id="recommendButton" onclick="refreshStrategyActions(this)">Suggest next moves</button>
