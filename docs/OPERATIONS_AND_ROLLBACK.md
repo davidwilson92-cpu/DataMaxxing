@@ -52,3 +52,7 @@ Use an isolated Python 3.12 environment. Install `requirements.txt`, `pytest` an
 
 
 The 14 September experience-only rollback boundaries and browser evidence are in `ZOVA_EXPERIENCE_IMPLEMENTATION.md`. Do not revert the previous security candidate to undo the canvas changes. No production actions occurred.
+
+
+## 27 September strategy candidate
+See STRATEGY_NEXT_MOVE_20260927.md for additive schema and rollback. Cancel pending series jobs before code rollback; retain new tables and all completed history. Resume does not re-approve cancelled deliveries. Verify staging PostgreSQL locks and worker recovery before release.

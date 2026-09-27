@@ -6,6 +6,7 @@ async function requestPublishConfirmation(mode,scheduledLocal=null,targets=null)
   if(mediaUploading||!editableDraft())return addAssistantMessage('Finish the upload or check this draft’s current results first.');
   reviewPlatforms=targets||selectedPlatforms().filter(p=>variants[p]);
   if(!reviewPlatforms.length)return addAssistantMessage('Select at least one platform with a draft.');
+  scheduledLocal=scheduledLocal||(mode==='schedule'?plannedOccurrence?.local_time:null);
   invalidateReview();reviewMode=mode;pendingSchedule=scheduledLocal;
   const epoch=reviewEpoch;
   try{
@@ -23,7 +24,7 @@ async function requestPublishConfirmation(mode,scheduledLocal=null,targets=null)
       const c=reviewContexts.tiktok;
       controls+=`<label>TikTok privacy<select id="reviewPrivacy" required><option value="">Choose privacy</option>${(c.privacy_options||[]).map(v=>`<option>${esc(v)}</option>`).join('')}</select></label>${[['allow_comment','Allow comments','comment_disabled'],['allow_duet','Allow Duet','duet_disabled'],['allow_stitch','Allow Stitch','stitch_disabled'],['your_brand','Promotes my own brand',''],['brand_content','Paid brand partnership','']].map(([key,label,disabled])=>`<label><input id="review_${key}" type="checkbox" ${c[disabled]?'disabled':''}> ${label}</label>`).join('')}`;
     }
-    if(mode==='schedule')controls+=`<label>Posting time (your Zova account timezone)<input id="reviewTime" type="datetime-local" value="${esc(scheduledLocal||'')}" required></label><p>The final review will show the timezone and exact time.</p><button type="button" onclick="loadTimeSuggestions(this)">Suggest starting times</button><div id="timeSuggestions"></div>`;
+    if(mode==='schedule')controls+=`<label>Posting time (${esc(plannedOccurrence?.timezone||'your Zova account timezone')})<input id="reviewTime" type="datetime-local" value="${esc(scheduledLocal||'')}" required></label><p>The final review will show the timezone and exact time.</p><button type="button" onclick="loadTimeSuggestions(this)">Suggest starting times</button><div id="timeSuggestions"></div>`;
     reviewHost().insertAdjacentHTML('beforeend',`<section class="chat-confirmation"><h3>Review destinations and settings</h3>${controls}<button class="button primary" onclick="buildPublicationReview()">Review final post</button></section>`);openReview();
   }catch(error){addAssistantMessage(error.message);}
 }

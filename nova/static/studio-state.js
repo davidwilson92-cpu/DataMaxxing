@@ -1,5 +1,6 @@
 /* Persistence and conversation lifecycle. The editor/sidebar remain in studio.js. */
 let draftRevision = 0;
+let plannedOccurrence = null;
 let changeSerial = 0;
 let savedSerial = 0;
 let sendingMessage = false;
@@ -128,6 +129,7 @@ async function loadRequestedDraft(){
   try{
     if(!id)return;
     const row=await api(`/api/drafts/${encodeURIComponent(id)}`),ws=row.workspace||{};
+    plannedOccurrence=row.planned||null;
     textHistory=ws.text_history||[];variants=row.variants||{};currentDraftId=row.id;draftRevision=row.revision||0;currentDraftStatus=row.status||'draft';lastBrief=row.brief||'';
     currentPlatform=ws.active_platform||row.platforms?.[0]||'x';if(Object.keys(variants).length&&!variants[currentPlatform])currentPlatform=Object.keys(variants)[0];
     uploadedMedia=ws.media||[];uploadedMediaIds=ws.media_asset_ids||[];uploadedMediaKind=ws.media_kind||null;uploadedVideoDuration=ws.video_duration||0;
@@ -149,7 +151,7 @@ async function newConversation(){
   try{await saveDraftNow();}catch(error){addAssistantMessage('Your changes could not be saved. Retry saving before starting a new chat.');return;}
   clearTimeout(autosaveTimer);invalidateReview();mediaUploadVersion++;mediaUploading=false;
   document.getElementById('instagramFormat').value='post';
-  variants={};textHistory=[];publicationStates={};document.getElementById('undoStatus').textContent='';currentDraftId=null;draftRevision=0;currentDraftStatus='draft';conversation=[];lastBrief='';pendingSchedule=null;
+  plannedOccurrence=null;variants={};textHistory=[];publicationStates={};document.getElementById('undoStatus').textContent='';currentDraftId=null;draftRevision=0;currentDraftStatus='draft';conversation=[];lastBrief='';pendingSchedule=null;
   uploadedMedia=[];uploadedMediaIds=[];uploadedMediaKind=null;uploadedVideoDuration=0;changeSerial=0;savedSerial=0;
   history.replaceState({},'',window.zovaWorkspaceUrl('/studio'));document.getElementById('chatFeed').innerHTML='';
   document.getElementById('brief').value='';document.getElementById('linkUrl').value='';document.getElementById('mediaInput').value='';document.getElementById('mediaInput').disabled=false;

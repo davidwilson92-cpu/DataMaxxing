@@ -398,6 +398,60 @@ class PendingConnection(Base):
     used: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class Strategy(BrandScoped, Base):
+    __tablename__ = 'zova_strategies'
+    __table_args__ = (UniqueConstraint('user_id', 'brand_id'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    confirmed_json: Mapped[str] = mapped_column(Text, default='{}')
+    proposal_json: Mapped[str] = mapped_column(Text, default='{}')
+    revision: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class StrategyAction(BrandScoped, Base):
+    __tablename__ = 'zova_strategy_actions'
+    __table_args__ = (UniqueConstraint('user_id', 'brand_id', 'action_key'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    action_key: Mapped[str] = mapped_column(String(80))
+    strategy_revision: Mapped[int] = mapped_column(Integer)
+    payload_json: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default='open')
+    snoozed_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    feedback: Mapped[str] = mapped_column(String(80), default='')
+    draft_id: Mapped[int | None] = mapped_column(ForeignKey('nova_drafts.id'), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class ContentSeries(BrandScoped, Base):
+    __tablename__ = 'zova_content_series'
+    __table_args__ = (UniqueConstraint('user_id', 'brand_id', 'request_key'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    request_key: Mapped[str] = mapped_column(String(80))
+    spec_json: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default='active')
+    revision: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class SeriesOccurrence(BrandScoped, Base):
+    __tablename__ = 'zova_series_occurrences'
+    __table_args__ = (UniqueConstraint('series_id', 'position'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    series_id: Mapped[int] = mapped_column(ForeignKey('zova_content_series.id'), index=True)
+    position: Mapped[int] = mapped_column(Integer)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    draft_id: Mapped[int | None] = mapped_column(ForeignKey('nova_drafts.id'), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default='planned')
+
+
+class SeriesApproval(BrandScoped, Base):
+    __tablename__ = 'zova_series_approvals'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    series_id: Mapped[int] = mapped_column(ForeignKey('zova_content_series.id'))
+    revision: Mapped[int] = mapped_column(Integer)
+    token: Mapped[str] = mapped_column(String(80), unique=True)
+    payload_json: Mapped[str] = mapped_column(Text)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 Base.metadata.create_all(bind=engine)
 from .migrations import run_migrations
 run_migrations(engine)

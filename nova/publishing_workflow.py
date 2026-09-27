@@ -55,6 +55,8 @@ def schedule_time(value,tz):
 
 def prepare_review(db,uid,body):
     draft=owned_draft(db,uid,body.draft_id)
+    from .series import approval_guard
+    approval_guard(db,draft.id)
     if draft.status not in EDITABLE:raise HTTPException(409,'This draft is already submitted. Check its results.')
     variants=json.loads(draft.variants_json or '{}');workspace=json.loads(draft.workspace_json or '{}')
     platforms=list(dict.fromkeys(body.platforms))
@@ -119,7 +121,9 @@ def prepare_review(db,uid,body):
                 if duration<=0 or (context.get('max_video_duration_sec') and duration>context['max_video_duration_sec']):raise HTTPException(400,'Check the video duration for this TikTok account.')
         targets[p]={'connection_id':conn.id,'account_id':conn.account_id,'username':context.get('username'),'display_name':context.get('display_name'),'posts':posts,'link':body.link_url if p=='facebook' and not media else ''}
         if p=='instagram':targets[p]['format']=instagram_format;targets[p]['format_label']='Story' if story else ('Reel · shared to feed' if videos else 'Post · feed')
-    tz=get_preferences(db,uid).timezone
+    from .series import planned_context
+    planned=planned_context(db,draft.id)
+    tz=planned["timezone"] if planned else get_preferences(db,uid).timezone
     scheduled=getattr(body,'scheduled_local',None)
     if scheduled:scheduled=schedule_time(scheduled,tz).isoformat()
     payload={'draft_id':draft.id,'platforms':platforms,'variants':{p:variants[p] for p in platforms},'media_asset_ids':body.media_asset_ids,'media':[{'filename':a.filename,'kind':'video' if a.mime_type.startswith('video/') else 'image','url':a.public_url or f'/media/preview/{a.id}'} for a in media],
@@ -230,6 +234,8 @@ def confirm_review(db,uid,body,mode,publisher=publish_platform):
     if body.platforms!=payload['platforms'] or body.variants!=payload['variants'] or body.media_asset_ids!=payload['media_asset_ids'] or body.link_url!=payload['link_url'] or body.publish_options!=payload['publish_options']:
         raise HTTPException(409,'The submission differs from the reviewed content. Review again.')
     draft=owned_draft(db,uid,review.draft_id)
+    from .series import approval_guard
+    approval_guard(db,draft.id)
     current=json.loads(draft.variants_json or '{}');ws=json.loads(draft.workspace_json or '{}')
     if 'instagram' in payload['platforms'] and ws.get('instagram_format','post')!=payload['publish_options'].get('instagram',{}).get('format','post'):
         raise HTTPException(409,'Instagram format changed after review. Review again.')
