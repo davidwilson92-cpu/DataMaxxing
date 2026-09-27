@@ -1,3 +1,16 @@
+# Current local increment — 27 September 2026
+
+The previous strategy release is live at 021aad7. The top-right Next move/source-discovery increment is NOT deployed. See [current evidence and release gates](NEXT_MOVE_SOURCES_20260927.md).
+
+| Capability | Implementation | Validation / remaining gate |
+|---|---|---|
+| Next move placement | Top-right purple sparkle pill; composer simplified; compact source details | Desktop + 390/320px mobile and keyboard checked locally |
+| Current topics | Forced web and public-social search; cited links, reported dates, 14-day window, 24-hour check expiry | Mocked provider contract/outage/provenance tests; actual provider search not validated |
+| Strategy fit | Confirmed goal/audience/resources/exclusions + recent drafts/feedback rank evidence; explicit evergreen fallback | Context/source/draft tests; real-model relevance evaluation pending |
+| Safety and continuity | Existing brand ownership, review approval, draft idempotency; source metadata in existing JSON | 224 full tests + final 43 focused; no migration or production changes |
+
+The sections below describe historical candidates and do not establish the release status of this increment.
+
 # Local candidate — 27 September 2026
 
 Strategy candidate is based on deployed `b746bad`; it is not deployed. Historical sections below retain their original dates/status. See [iteration evidence and scores](STRATEGY_NEXT_MOVE_20260927.md).

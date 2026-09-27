@@ -2,8 +2,9 @@
  <header><h2 id="strategyPanelTitle">{% include "next_move_icon.html" %}<span>Next move</span></h2><button class="quiet-button" onclick="this.closest('dialog').close()" aria-label="Close next move">×</button></header>
  <p id="strategyStatus" role="status"></p>
  <div id="strategyActions"></div>
- <button class="quiet-button" id="recommendButton" onclick="refreshStrategyActions(this)">Suggest next moves</button>
- <p class="support-note">Evergreen ideas from your strategy. Live trend discovery is not connected.</p>
+ <button class="quiet-button" id="recommendButton" onclick="refreshStrategyActions(this)">Refresh next moves</button>
+ <details class="recommendation-help"><summary>How recommendations work</summary><p class="support-note">Refreshing searches the web and public social posts using your content themes. Keep confidential details out of those themes. Suggestions stay drafts until you approve them. Publicly indexed posts are not a measure of platform-wide popularity.</p></details>
+ <p id="strategySourceNote" class="support-note">Refresh next moves to check current topics against your confirmed strategy.</p>
  <details id="strategyDetails"><summary>Your strategy</summary>
   <p id="strategyConfirmedState" class="support-note"></p>
   <label for="strategyBrief">What do you want to achieve?</label>
@@ -14,7 +15,7 @@
   <div id="strategyAssumptions"></div>
   <button class="quiet-button" type="button" onclick="document.getElementById('strategyForm').hidden=false">Edit strategy details yourself</button>
   <form hidden id="strategyForm" onsubmit="confirmStrategy(event)">
-   {% for key,label in [('goal','Goal'),('audience','Audience'),('offer','Your offer'),('voice','Voice'),('themes','Content themes'),('rhythm','Posting rhythm'),('resources','Time and resources'),('avoid','Topics to avoid')] %}
+   {% for key,label in [('goal','Goal'),('audience','Audience'),('offer','Your offer'),('voice','Voice'),('themes','Public content themes (used for search)'),('rhythm','Posting rhythm'),('resources','Time and resources'),('avoid','Topics to avoid')] %}
    <label for="strategy_{{ key }}">{{ label }}</label><textarea id="strategy_{{ key }}" name="{{ key }}" rows="2" maxlength="1000"></textarea>
    {% endfor %}
    <fieldset><legend>Platforms</legend>{% for p,label in [('x','X'),('instagram','Instagram'),('facebook','Facebook'),('tiktok','TikTok')] %}<label class="inline-choice"><input type="checkbox" name="strategy_platform" value="{{ p }}">{{ label }}</label>{% endfor %}</fieldset>
