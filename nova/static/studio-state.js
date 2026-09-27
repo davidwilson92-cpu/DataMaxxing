@@ -78,7 +78,7 @@ function studioBusy(active){
   document.getElementById('brief').readOnly=active||!editableDraft();
   document.getElementById('newChatBtn').disabled=active;
   document.querySelectorAll('#variantEditor textarea').forEach(node=>node.readOnly=active||!editableDraft());
-  document.querySelectorAll('.platform-check input,#threadLength,#instagramFormat,#linkUrl,#mediaInput,.attachment-details button').forEach(node=>node.disabled=active||!editableDraft());
+  document.querySelectorAll('.platform-check input,[name=instagramFormatChoice],#threadLength,#instagramFormat,#linkUrl,#mediaInput,.attachment-details button').forEach(node=>node.disabled=active||!editableDraft());
 }
 async function sendMessage(){
   const input=document.getElementById('brief'),text=input.value.trim();

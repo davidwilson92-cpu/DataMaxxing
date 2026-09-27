@@ -1,0 +1,9 @@
+<aside class="studio-nav-rail" aria-label="Workspace navigation">
+  <a class="rail-brand" href="/studio" aria-label="Zova Studio">{% with logo_id='rail-brand-gradient' %}{% include 'logo_mark.html' %}{% endwith %}<span class="rail-label">Zova</span></a>
+  <nav aria-label="Workspace">
+  {% for href,icon,label in [('/studio','+','Studio'),('/drafts','▤','Drafts'),('/analytics','↗','Analytics'),('/account#voice','◌','Voice'),('/account#socials','◎','Socials'),('/account','○','Account'),('/help','?','Help'),('/security','◇','Security')] %}
+    <a href="{{ href }}" aria-label="{{ label }}" title="{{ label }}" {% if href == '/studio' %}aria-current="page"{% endif %}><span class="rail-icon" aria-hidden="true">{{ icon }}</span><span class="rail-label" aria-hidden="true">{{ label }}</span></a>
+  {% endfor %}
+  </nav>
+  <div class="rail-bottom"><a href="/terms-of-service" aria-label="Terms" title="Terms"><span class="rail-icon" aria-hidden="true">§</span><span class="rail-label" aria-hidden="true">Terms</span></a><a href="/refund-policy" aria-label="Refunds" title="Refunds"><span class="rail-icon" aria-hidden="true">↶</span><span class="rail-label" aria-hidden="true">Refunds</span></a><a href="/privacy-policy" aria-label="Privacy" title="Privacy"><span class="rail-icon" aria-hidden="true">◈</span><span class="rail-label" aria-hidden="true">Privacy</span></a><form method="post" action="/logout"><button type="submit" aria-label="Sign out" title="Sign out"><span class="rail-icon" aria-hidden="true">↪</span><span class="rail-label" aria-hidden="true">Sign out</span></button></form></div>
+</aside>
