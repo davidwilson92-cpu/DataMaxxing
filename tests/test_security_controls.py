@@ -88,3 +88,14 @@ def test_chunked_body_limit_before_handler():
     async def forbidden(*args):raise AssertionError('Oversized request reached handler')
     asyncio.run(BodyLimitMiddleware(forbidden)({'type':'http','method':'POST','path':'/api/drafts'},receive,send))
     assert sent[0]['status']==413
+
+
+def test_concurrent_first_requests_share_capacity():
+    import uuid
+    from concurrent.futures import ThreadPoolExecutor
+    for _ in range(10):
+        key='concurrent-limit-'+uuid.uuid4().hex
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            outcomes=list(pool.map(lambda _:allowed_request(key,2,60),range(4)))
+        assert outcomes.count(True)==2
+        assert not allowed_request(key,2,60)

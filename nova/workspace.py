@@ -14,6 +14,9 @@ def delete_unsubmitted_draft(db,row):
     if row.status not in EDITABLE or any(db.scalar(select(model.id).where(model.draft_id==row.id).limit(1)) for model in (Publication,ScheduledPost,Activity)):
         raise HTTPException(409,'This draft has delivery records and is retained in your history.')
     db.execute(delete(PublishReview).where(PublishReview.draft_id==row.id))
+    from .db import StrategyAction, SeriesOccurrence
+    db.execute(update(StrategyAction).where(StrategyAction.draft_id==row.id).values(draft_id=None,status="dismissed"))
+    db.execute(update(SeriesOccurrence).where(SeriesOccurrence.draft_id==row.id).values(draft_id=None,status="cancelled"))
     db.delete(row);db.commit()
 
 

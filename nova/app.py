@@ -184,6 +184,10 @@ app.add_middleware(SecurityMiddleware)
 app.include_router(recovery_router)
 from .schedule_routes import router as schedule_router
 app.include_router(schedule_router)
+from .strategy import router as strategy_router, strategy_context
+from .series import router as series_router
+app.include_router(strategy_router)
+app.include_router(series_router)
 app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
 
 
@@ -798,7 +802,7 @@ def conversation_plan(body:ConversationRequest,request:Request,db:Session=Depend
     from .conversation import plan_message
     from .workspace import EDITABLE
     user=current_user(request);subscription_guard(user)
-    context={'selected_platforms':body.selected_platforms,'active_platform':body.active_platform,'conversation':body.recent_messages}
+    context={'brand_strategy':strategy_context(db,user.id),'selected_platforms':body.selected_platforms,'active_platform':body.active_platform,'conversation':body.recent_messages}
     if body.draft_id:
         row=db.get(Draft,body.draft_id)
         if not row or row.user_id!=user.id:raise HTTPException(404,'Draft not found')
@@ -926,7 +930,7 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
         revision=row.revision if row else 0
         from .media_inspection import inspect_assets, context as media_context
         inspected=inspect_assets(db,user.id,body.media_asset_ids)
-        try:variants=ai.generate_variants(brief=body.brief,instruction=body.instruction+media_context(inspected),platforms=platforms,thread_length=body.thread_length,preferences=prefs,link_url=body.link_url)
+        try:variants=ai.generate_variants(brief=body.brief,instruction=body.instruction+strategy_context(db,user.id)+media_context(inspected),platforms=platforms,thread_length=body.thread_length,preferences=prefs,link_url=body.link_url)
         except Exception:raise HTTPException(502,'Content generation failed. Your previous draft is unchanged; try again.')
         if row:
             existing=json.loads(row.variants_json or '{}');existing.update(variants);variants=existing
@@ -947,7 +951,7 @@ def api_rewrite(body:RewriteRequest,request:Request,db:Session=Depends(get_db)):
         user=current_user(request);subscription_guard(user);prefs=get_preferences(db,user.id)
         from .media_inspection import inspect_assets, context as media_context
         inspected=inspect_assets(db,user.id,body.media_asset_ids)
-        try:posts=ai.rewrite_variant(platform=body.platform,posts=body.posts,action=body.action,instruction=body.instruction+media_context(inspected),preferences=prefs)
+        try:posts=ai.rewrite_variant(platform=body.platform,posts=body.posts,action=body.action,instruction=body.instruction+strategy_context(db,user.id)+media_context(inspected),preferences=prefs)
         except RuntimeError as exc:raise HTTPException(502,str(exc))
         db.commit()
         return {"posts":posts}
@@ -1026,7 +1030,8 @@ def api_drafts(request:Request,db:Session=Depends(get_db)):
 def api_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
     user=current_user(request); row=db.get(Draft,draft_id)
     if not row or row.user_id!=user.id:raise HTTPException(404,"Draft not found")
-    return {"id":row.id,"brief":row.brief,"instruction":row.instruction,"revision":row.revision,"workspace":json.loads(row.workspace_json or "{}"),"platforms":json.loads(row.platforms_json or "[]"),"variants":json.loads(row.variants_json or "{}"),"thread_length":row.thread_length,"status":row.status,"created_at":row.created_at.isoformat(),"updated_at":row.updated_at.isoformat()}
+    from .series import planned_context
+    return {"planned":planned_context(db,row.id),"id":row.id,"brief":row.brief,"instruction":row.instruction,"revision":row.revision,"workspace":json.loads(row.workspace_json or "{}"),"platforms":json.loads(row.platforms_json or "[]"),"variants":json.loads(row.variants_json or "{}"),"thread_length":row.thread_length,"status":row.status,"created_at":row.created_at.isoformat(),"updated_at":row.updated_at.isoformat()}
 
 @app.patch("/api/drafts/{draft_id}")
 def api_save_draft(draft_id:int,body:DraftSaveRequest,request:Request,db:Session=Depends(get_db)):

@@ -21,7 +21,10 @@ def allowed_request(key, maximum, seconds):
         if claimed.rowcount:
             db.commit(); return True
         if db.get(RequestLimit, digest):
-            db.rollback(); return False
+            # A concurrent request may have inserted this bucket after our first UPDATE.
+            db.rollback()
+            claimed = db.execute(update(RequestLimit).where(RequestLimit.key == digest, RequestLimit.count < maximum).values(count=RequestLimit.count + 1))
+            db.commit(); return bool(claimed.rowcount)
         db.add(RequestLimit(key=digest, count=1, reset_at=now + timedelta(seconds=seconds)))
         try:
             db.commit(); return True
@@ -54,7 +57,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             identity = f'user:{user.id}' if user else f'ip:{request.client.host if request.client else "unknown"}'
             maximum, seconds = (30,300) if path in {'/login','/signup','/forgot-password','/reset-password'} else (120,60)
             if path.startswith('/billing/'):maximum,seconds=10,60
-            ai_request=path.startswith('/api/ai/') or path.startswith('/api/voice/') or path=='/api/conversation/plan'
+            ai_request=path.startswith('/api/ai/') or path.startswith('/api/voice/') or path=='/api/conversation/plan' or path.startswith('/api/strategy/') or (path.startswith('/api/series/occurrences/') and path.endswith('/draft'))
             if ai_request:maximum,seconds=20,60
             maximum *= max(1,int(os.environ.get('RATE_LIMIT_SCALE','1')))
             if not await run_in_threadpool(allowed_request, f'{identity}:{"auth" if path in {"/login","/signup","/forgot-password","/reset-password"} else "ai" if ai_request else "mutations"}', maximum, seconds):

@@ -13,6 +13,11 @@ from .storage import UPLOAD_DIR
 import secrets
 
 EXPORT = {
+    models.SeriesApproval: ['brand_id','series_id','revision','payload_json','expires_at'],
+    models.Strategy: ['brand_id','confirmed_json','proposal_json','revision'],
+    models.StrategyAction: ['brand_id','payload_json','status','feedback','draft_id'],
+    models.ContentSeries: ['id','brand_id','spec_json','status'],
+    models.SeriesOccurrence: ['series_id','brand_id','draft_id','due_at','status'],
     models.User: ['id','email','display_name','country_code','created_at'],
     models.Brand: ['id','name'],
     models.CreatorPreferences: ['writing_tone','audience','topics','things_to_avoid','example_posts','timezone'],
@@ -99,7 +104,7 @@ def erase_local_account(db, uid, verified_case, *, writes_paused=False):
             for name in names:setattr(row,name,'{}' if name.endswith('_json') else '')
             if cls is models.SocialConnection:row.active=False
             if cls is models.PublishReview:row.status='erased'
-    for cls in [models.AuthIdentity,models.RecoveryToken,models.EmailVerification,models.OAuthState,models.PendingConnection,models.ProductEvent]:
+    for cls in [models.SeriesApproval,models.SeriesOccurrence,models.ContentSeries,models.StrategyAction,models.Strategy,models.AuthIdentity,models.RecoveryToken,models.EmailVerification,models.OAuthState,models.PendingConnection,models.ProductEvent]:
         db.execute(delete(cls).where(cls.user_id==uid))
     user.email=f'erased-{uid}@deleted.invalid';user.display_name='Deleted account';user.default_brand_name='Deleted brand';user.country_code='';user.email_verified_at=None;user.marketing_consent=False
     request.status='active_store_erased';db.commit()

@@ -1,0 +1,38 @@
+<dialog id="strategyPanel" aria-labelledby="strategyPanelTitle" class="strategy-panel">
+ <header><h2 id="strategyPanelTitle">{% include "next_move_icon.html" %}<span>Next move</span></h2><button class="quiet-button" onclick="this.closest('dialog').close()" aria-label="Close next move">×</button></header>
+ <p id="strategyStatus" role="status"></p>
+ <div id="strategyActions"></div>
+ <button class="quiet-button" id="recommendButton" onclick="refreshStrategyActions(this)">Suggest next moves</button>
+ <p class="support-note">Evergreen ideas from your strategy. Live trend discovery is not connected.</p>
+ <details id="strategyDetails"><summary>Your strategy</summary>
+  <p id="strategyConfirmedState" class="support-note"></p>
+  <label for="strategyBrief">What do you want to achieve?</label>
+  <textarea id="strategyBrief" rows="3" maxlength="20000" placeholder="Tell Zova your goal, or paste your existing strategy."></textarea>
+  <label for="strategyImport">Import text or Markdown (UTF-8, up to 20 KB)</label><input id="strategyImport" type="file" accept=".txt,.md,text/plain,text/markdown">
+  <button class="quiet-button" onclick="proposeStrategy(this)">Propose a strategy</button>
+  <p class="support-note">Imported text and your brief are sent to AI when you request a proposal. You can also edit the fields directly.</p>
+  <div id="strategyAssumptions"></div>
+  <button class="quiet-button" type="button" onclick="document.getElementById('strategyForm').hidden=false">Edit strategy details yourself</button>
+  <form hidden id="strategyForm" onsubmit="confirmStrategy(event)">
+   {% for key,label in [('goal','Goal'),('audience','Audience'),('offer','Your offer'),('voice','Voice'),('themes','Content themes'),('rhythm','Posting rhythm'),('resources','Time and resources'),('avoid','Topics to avoid')] %}
+   <label for="strategy_{{ key }}">{{ label }}</label><textarea id="strategy_{{ key }}" name="{{ key }}" rows="2" maxlength="1000"></textarea>
+   {% endfor %}
+   <fieldset><legend>Platforms</legend>{% for p,label in [('x','X'),('instagram','Instagram'),('facebook','Facebook'),('tiktok','TikTok')] %}<label class="inline-choice"><input type="checkbox" name="strategy_platform" value="{{ p }}">{{ label }}</label>{% endfor %}</fieldset>
+   <button class="button primary" type="submit">Confirm this strategy</button>
+  </form>
+ </details>
+ <details id="seriesDetails"><summary>Recurring drafts</summary>
+  <p>Plan fresh drafts or repeat a draft. Fresh drafts need individual review. Repeats can be approved together after reviewing their exact content, accounts and dates.</p>
+  <button class="quiet-button" onclick="openSeriesBuilder()">Plan a series from this draft</button>
+  <div id="seriesBuilder" hidden>
+   <label for="seriesMode">Content</label><select id="seriesMode"><option value="fresh">Fresh draft from this brief</option><option value="repeat">Repeat this draft</option></select>
+   <label for="seriesStart">First date and time</label><input type="datetime-local" id="seriesStart">
+   <label for="seriesTimezone">Timezone</label><input id="seriesTimezone" value="Europe/London" placeholder="Europe/London">
+   <label for="seriesFrequency">Frequency</label><select id="seriesFrequency"><option value="weekly">Weekly</option><option value="daily">Daily</option></select>
+   <fieldset><legend>Weekdays (weekly; leave blank to use the first date)</legend>{% for day,label in [(0,'Mon'),(1,'Tue'),(2,'Wed'),(3,'Thu'),(4,'Fri'),(5,'Sat'),(6,'Sun')] %}<label class="inline-choice"><input type="checkbox" name="series_day" value="{{ day }}">{{ label }}</label>{% endfor %}</fieldset>
+   <label for="seriesCount">Occurrences (1–26)</label><input id="seriesCount" type="number" min="1" max="26" value="4">
+   <button class="quiet-button" onclick="previewSeries(this)">Preview dates</button><div id="seriesPreview"></div>
+  </div>
+  <div id="seriesList"></div>
+ </details>
+</dialog>

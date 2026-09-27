@@ -1,3 +1,17 @@
+# Local candidate — 27 September 2026
+
+Strategy candidate is based on deployed `b746bad`; it is not deployed. Historical sections below retain their original dates/status. See [iteration evidence and scores](STRATEGY_NEXT_MOVE_20260927.md).
+
+| Capability | Implementation | Validation / release gate |
+|---|---|---|
+| Brand strategy | Editable confirmed strategy, separate AI assumptions, TXT/Markdown import | Ownership/revision tests and local browser; real AI quality pending |
+| Next move | Up to 3 actions; generated linked draft; done/snooze/dismiss feedback | Concurrent idempotency/failure tests, browser journey |
+| Topics | Evergreen strategy-based ideas, explicit unavailable live trends | No current-topic source configured |
+| Recurring drafts | Finite daily/weekly dates, fresh or frozen repeats, timezone preview | DST/cancellation/revision tests; staging PostgreSQL pending |
+| Recurring approvals | Exact-content batch repeats; fresh drafts individually approved | Duplicate/tamper/partial results tests; provider acceptance pending |
+| Privacy / usage | New data export/erasure and existing allowance controls | Synthetic tests; enforcement remains disabled |
+| Studio | Compact Next move, existing chat/format flow preserved | Desktop/mobile local review; no deployment |
+
 # Current candidate update — 23 September 2026
 
 `codex/media-stories-readiness` is not deployed. See [evidence, scores and rollback](MEDIA_STORIES_READINESS_20260923.md). This section supersedes older candidate/media-status statements below; historical validation is not proof for this candidate.
