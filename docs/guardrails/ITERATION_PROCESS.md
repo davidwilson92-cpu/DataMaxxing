@@ -37,6 +37,11 @@ second sign-in step or change existing account MFA settings. Continue the other
 increments. Keep authentication/admin/safe-default requirements open wherever
 MFA evidence is required; do not mark this deferral as an exemption.
 
+The owner also paused paid staging until the app is approved. Preserve the
+follow-up in `STAGING_PLAN.md`; do not create resources or incur charges.
+Continue locally testable work. Once the owner confirms app approval, revisit
+the staging plan and costs before provisioning. Neither deferral closes a gap.
+
 ## Enforce the gate outside this branch
 
 - The workflow adds the **Production guardrails** check, dependent on successful application and PostgreSQL jobs. It is intentionally red while the register has open items.
@@ -63,6 +68,11 @@ MFA evidence is required; do not mark this deferral as an exemption.
    become failed without a provider call; ambiguous sends stay unknown and are
    never automatically retried. This does not resolve the separate synchronous
    `/x/post` route or establish database RLS.
+7. Pinned all validation actions to commits verified in their official GitHub
+   repositories, disabled persisted checkout credentials, bounded job runtimes
+   and evidence retention, and added reviewed dependency-update configuration.
+   Application/dependency locks, image digests, independent review and cloud
+   access assurance remain open. See `CI_SECURITY.md` for update procedures.
 
 The Render inventory review found `zova-cs-staging` runs a different repository
 and `zova-tiktok-sandbox` shares the production database. Neither is approved for

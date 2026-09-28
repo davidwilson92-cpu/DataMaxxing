@@ -62,7 +62,7 @@
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
-          "sha256": "3bc4c7b209641d7c087faa0d7c24011a52c2434eff0ee9b5f013a40b188e940b"
+          "sha256": "80867080842ebe431039d70a1b4989124e2eadbf764b1fb93dfcfda264dde01b"
         }
       ],
       "reviewed_by": null,
@@ -215,7 +215,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "8ddc75e8c765f55d758d79c4cd5ffc59c6bbaee0b061cb22b29a3e3ffa2d2296"
+          "sha256": "c344f27ff8a79a3b2998d20d04c396f2980f8437356a9e6b8754348cc0bdfb92"
         }
       ],
       "reviewed_by": null,
@@ -933,7 +933,7 @@
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
-          "sha256": "3bc4c7b209641d7c087faa0d7c24011a52c2434eff0ee9b5f013a40b188e940b"
+          "sha256": "80867080842ebe431039d70a1b4989124e2eadbf764b1fb93dfcfda264dde01b"
         }
       ],
       "reviewed_by": null,
@@ -946,7 +946,7 @@
       "severity": "P1",
       "owner": "Operations and security",
       "finding": "Render inspection found the TikTok sandbox uses the production database; the existing CS staging service runs a different repository. Tests remain isolated, but an independent deployed Social staging environment is missing.",
-      "next_action": "Provision the separate staging service/database in STAGING_PLAN.md after cost approval; verify distinct data, secrets, storage and credentials before migrations. Do not repurpose the shared-database sandbox.",
+      "next_action": "Owner paused staging until app approval on 28 September 2026. After the owner confirms approval, revisit STAGING_PLAN.md and obtain cost approval before provisioning; verify distinct data, secrets, storage and credentials before migrations. Continue local work; do not repurpose the shared-database sandbox.",
       "evidence": [
         {
           "path": "tests/conftest.py",
@@ -954,7 +954,7 @@
         },
         {
           "path": "docs/guardrails/STAGING_PLAN.md",
-          "sha256": "bba4f453c0f529d526dd343be31893e4fd91a578395df3635d48710fe63e7285"
+          "sha256": "b2f3ebbd1c2139206071801baa7aae6cd9927f9e9c5306ca1dc718e0dfc8a45a"
         }
       ],
       "reviewed_by": null,
@@ -966,12 +966,20 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "CI tests SQLite/PostgreSQL, dependency audit, restore and image build. Lint/type/static security coverage and enforced deployment policy are incomplete.",
+      "finding": "CI tests SQLite/PostgreSQL, dependency audit, restore and image build. Lint/type/static security coverage and enforced deployment policy are incomplete. Validation actions are now pinned to verified upstream commits, checkout credentials are not persisted, and jobs/evidence retention are bounded.",
       "next_action": "Require Production guardrails plus validation checks in branch protection and hosting; add incremental lint/type/security checks.",
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "8ddc75e8c765f55d758d79c4cd5ffc59c6bbaee0b061cb22b29a3e3ffa2d2296"
+          "sha256": "c344f27ff8a79a3b2998d20d04c396f2980f8437356a9e6b8754348cc0bdfb92"
+        },
+        {
+          "path": "docs/guardrails/CI_SECURITY.md",
+          "sha256": "cf010c0314aa4c246cb92751cde4950a68abbd037631fbb306ce5b70124bdb3d"
+        },
+        {
+          "path": ".github/dependabot.yml",
+          "sha256": "5160cdf21e5d08e9e3f4d9cd7231c6aa97484a57e9e1788e9a254482ff9123c1"
         }
       ],
       "reviewed_by": null,
@@ -983,12 +991,24 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Several dependencies are exact pinned; others are ranges and transitive dependencies are not locked. pip-audit exists in CI.",
+      "finding": "Several dependencies are exact pinned; others are ranges and transitive dependencies are not locked. pip-audit exists in CI. Weekly Dependabot proposals for Python and Actions are configured in the candidate; activation on the default branch remains unverified and no auto-merge is enabled.",
       "next_action": "Produce a reproducible complete dependency lock and validate current vulnerability scans with an update/remediation process.",
       "evidence": [
         {
           "path": "requirements.txt",
           "sha256": "cf1442c3839d1da646c55d1d1129df4f4cfb056c83b494956567a2db3ce87cbc"
+        },
+        {
+          "path": "docs/guardrails/CI_SECURITY.md",
+          "sha256": "cf010c0314aa4c246cb92751cde4950a68abbd037631fbb306ce5b70124bdb3d"
+        },
+        {
+          "path": ".github/workflows/validate.yml",
+          "sha256": "c344f27ff8a79a3b2998d20d04c396f2980f8437356a9e6b8754348cc0bdfb92"
+        },
+        {
+          "path": ".github/dependabot.yml",
+          "sha256": "5160cdf21e5d08e9e3f4d9cd7231c6aa97484a57e9e1788e9a254482ff9123c1"
         }
       ],
       "reviewed_by": null,
@@ -1000,16 +1020,24 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Operations and security",
-      "finding": "GitHub ruleset 24140009 is verified Active on main: three GitHub Actions checks required, no bypass actors, up-to-date branches and resolved conversations required, force pushes/deletions blocked. PR approval count is zero; trusted action pinning and remaining cloud/registry controls still need assurance.",
-      "next_action": "Keep the active required checks; establish independent review, pin CI dependencies and verify least-privilege cloud/registry access. App MFA is deferred; do not change existing account MFA settings.",
+      "finding": "GitHub ruleset 24140009 is verified Active on main: three GitHub Actions checks required, no bypass actors, up-to-date branches and resolved conversations required, force pushes/deletions blocked. PR approval count is zero; all validation actions are pinned to official upstream commits and checkout credential persistence is disabled. Full dependency/image locks and remaining cloud/registry controls still need assurance.",
+      "next_action": "Keep the active required checks; establish independent review, finish dependency/image pinning and verify least-privilege cloud/registry access. App MFA remains deferred; do not change existing account MFA settings.",
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "8ddc75e8c765f55d758d79c4cd5ffc59c6bbaee0b061cb22b29a3e3ffa2d2296"
+          "sha256": "c344f27ff8a79a3b2998d20d04c396f2980f8437356a9e6b8754348cc0bdfb92"
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
-          "sha256": "3bc4c7b209641d7c087faa0d7c24011a52c2434eff0ee9b5f013a40b188e940b"
+          "sha256": "80867080842ebe431039d70a1b4989124e2eadbf764b1fb93dfcfda264dde01b"
+        },
+        {
+          "path": "docs/guardrails/CI_SECURITY.md",
+          "sha256": "cf010c0314aa4c246cb92751cde4950a68abbd037631fbb306ce5b70124bdb3d"
+        },
+        {
+          "path": ".github/dependabot.yml",
+          "sha256": "5160cdf21e5d08e9e3f4d9cd7231c6aa97484a57e9e1788e9a254482ff9123c1"
         }
       ],
       "reviewed_by": null,
@@ -1110,7 +1138,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "8ddc75e8c765f55d758d79c4cd5ffc59c6bbaee0b061cb22b29a3e3ffa2d2296"
+          "sha256": "c344f27ff8a79a3b2998d20d04c396f2980f8437356a9e6b8754348cc0bdfb92"
         }
       ],
       "reviewed_by": null,
@@ -1284,7 +1312,7 @@
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
-          "sha256": "3bc4c7b209641d7c087faa0d7c24011a52c2434eff0ee9b5f013a40b188e940b"
+          "sha256": "80867080842ebe431039d70a1b4989124e2eadbf764b1fb93dfcfda264dde01b"
         }
       ],
       "reviewed_by": null,
@@ -1339,7 +1367,7 @@
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
-          "sha256": "3bc4c7b209641d7c087faa0d7c24011a52c2434eff0ee9b5f013a40b188e940b"
+          "sha256": "80867080842ebe431039d70a1b4989124e2eadbf764b1fb93dfcfda264dde01b"
         }
       ],
       "reviewed_by": null,

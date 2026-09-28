@@ -1,6 +1,16 @@
 # Isolated Zova Social staging proposal
 
-Status: prepared for cost approval; no resources created or existing services changed.
+Status: deferred by the owner on 28 September 2026 until the app is approved.
+No resources created or existing services changed; spending is not authorized.
+
+## Saved follow-up
+
+After app approval, revisit this plan with the owner, recheck current pricing and
+obtain explicit cost approval before creating the separate staging app/database.
+The meaning and evidence of app approval must come from the owner; do not infer
+it from passing tests, a merged PR or platform status. Continue guardrail fixes
+that can be tested locally in the meantime. Environment separation, migration,
+load and recovery evidence remain open. This deferral is not a release waiver.
 
 ## Initial scope
 

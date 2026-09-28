@@ -8,6 +8,12 @@ Owner direction (28 September 2026): defer MFA implementation and sign-in
 challenges. Continue other guardrail work. MFA-related requirements remain open;
 this deferral is not evidence of compliance or a release waiver.
 
+Owner direction (28 September 2026): pause the paid Render staging app/database
+until the app is approved. Keep this follow-up in docs/guardrails/STAGING_PLAN.md;
+do not provision or incur new charges. Approval of the app is not evidence that
+the release guardrails pass. After app approval, revisit the plan and obtain
+explicit cost approval before provisioning. Continue locally testable guardrails.
+
 For each change, reproduce the relevant gap, implement a bounded fix, validate
 with isolated tests, and update the affected assessment findings and evidence
 hashes. Preserve customer data, identity links, credentials and publication
