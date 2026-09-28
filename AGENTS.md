@@ -4,6 +4,10 @@ Read `docs/PRODUCTION_GUARDRAILS.md`, `docs/guardrails/assessment.json` and
 `docs/guardrails/ITERATION_PROCESS.md` before changing this application.
 The 79-section production baseline is required, not optional guidance.
 
+Owner direction (28 September 2026): defer MFA implementation and sign-in
+challenges. Continue other guardrail work. MFA-related requirements remain open;
+this deferral is not evidence of compliance or a release waiver.
+
 For each change, reproduce the relevant gap, implement a bounded fix, validate
 with isolated tests, and update the affected assessment findings and evidence
 hashes. Preserve customer data, identity links, credentials and publication

@@ -28,12 +28,20 @@
       "status": "gap",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "User plus brand scoping is application-side. No workspace membership model or PostgreSQL RLS exists; legacy creator tables use separate ownership. ORM ownership mutation and worker destination checks are tightened in this iteration.",
+      "finding": "User plus brand scoping is application-side. No workspace membership model or PostgreSQL RLS exists; legacy creator tables use separate ownership. ORM ownership mutation and worker destination checks are tightened in this iteration. Pre-ledger scheduled jobs now also reject mismatched owner/brand/account/media/draft and missing publishing permissions before provider dispatch.",
       "next_action": "Design an additive tenant migration with a verified owner mapping, restrictive application/worker roles, RLS and adversarial tests on every sensitive table.",
       "evidence": [
         {
           "path": "nova/brands.py",
           "sha256": "b4f4c4d4665f347ab911ad72160d2b5664b7ca2dcf2f62ed3fce0032e48ae908"
+        },
+        {
+          "path": "nova/scheduler.py",
+          "sha256": "b03d33d33999df0020e73c084f002a97ece1947b7ec96b4c7ac6487b5882917a"
+        },
+        {
+          "path": "tests/test_worker_boundaries.py",
+          "sha256": "ab559fa3c6a2ce52fe5a803dda484ef52c2d5ddb68b2468b96769749d90669da"
         }
       ],
       "reviewed_by": null,
@@ -45,12 +53,16 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Custom scrypt/session authentication exists. New-password minimum is now 15 with a small common-password denylist; MFA and a maintained compromised-password corpus are absent.",
-      "next_action": "Select identity/MFA integration, preserve account links and sessions during migration, and validate recovery and privilege-change revocation.",
+      "finding": "Custom scrypt/session authentication exists. New-password minimum is now 15 with a small common-password denylist; MFA and a maintained compromised-password corpus are absent. Owner deferred MFA implementation on 28 September 2026; the requirement remains open and sign-in is unchanged.",
+      "next_action": "Continue compromised-password and session/recovery assurance work. Resume MFA only when the owner lifts the deferral; do not waive its release requirement.",
       "evidence": [
         {
           "path": "nova/security.py",
           "sha256": "75abf664ca6ac1ef9b304bebcc2997fa1bea4578873cb6d77337283596a68c6c"
+        },
+        {
+          "path": "docs/guardrails/ITERATION_PROCESS.md",
+          "sha256": "3bc4c7b209641d7c087faa0d7c24011a52c2434eff0ee9b5f013a40b188e940b"
         }
       ],
       "reviewed_by": null,
@@ -135,7 +147,7 @@
       "evidence": [
         {
           "path": "nova/scheduler.py",
-          "sha256": "db487637ddf4f4e6346532fa6e604b48664302159a1e0df61198c0904839d90b"
+          "sha256": "b03d33d33999df0020e73c084f002a97ece1947b7ec96b4c7ac6487b5882917a"
         }
       ],
       "reviewed_by": null,
@@ -912,12 +924,16 @@
       "status": "gap",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Internal operations use bearer secrets; staff MFA, separate capabilities and audited support access are absent.",
-      "next_action": "Put internal operations behind verified staff identity/MFA and least-privilege auditable actions.",
+      "finding": "Internal operations use bearer secrets; staff MFA, separate capabilities and audited support access are absent. Owner deferred MFA implementation on 28 September 2026; the requirement remains open and sign-in is unchanged.",
+      "next_action": "Continue least-privilege capabilities and attributable support/operations audits. MFA is deferred, not satisfied.",
       "evidence": [
         {
           "path": "nova/operations.py",
           "sha256": "f180f36ea19adf75aa1d837a3d9abec44daddd748bb537040d2fecf20b52bca7"
+        },
+        {
+          "path": "docs/guardrails/ITERATION_PROCESS.md",
+          "sha256": "3bc4c7b209641d7c087faa0d7c24011a52c2434eff0ee9b5f013a40b188e940b"
         }
       ],
       "reviewed_by": null,
@@ -926,15 +942,19 @@
     {
       "id": 55,
       "title": "ENVIRONMENT SEPARATION",
-      "status": "unverified",
+      "status": "gap",
       "severity": "P1",
       "owner": "Operations and security",
-      "finding": "Tests use disposable data and blocked HTTP. Distinct deployed staging/production services, apps, storage and credentials are not evidenced.",
-      "next_action": "Establish and verify environment inventory and prevent production data/secret use in development.",
+      "finding": "Render inspection found the TikTok sandbox uses the production database; the existing CS staging service runs a different repository. Tests remain isolated, but an independent deployed Social staging environment is missing.",
+      "next_action": "Provision the separate staging service/database in STAGING_PLAN.md after cost approval; verify distinct data, secrets, storage and credentials before migrations. Do not repurpose the shared-database sandbox.",
       "evidence": [
         {
           "path": "tests/conftest.py",
           "sha256": "6ce8d6b385683aab61b9824e3283e7162070b65d6aa5e573d4cd122c94ddab5f"
+        },
+        {
+          "path": "docs/guardrails/STAGING_PLAN.md",
+          "sha256": "bba4f453c0f529d526dd343be31893e4fd91a578395df3635d48710fe63e7285"
         }
       ],
       "reviewed_by": null,
@@ -977,15 +997,19 @@
     {
       "id": 58,
       "title": "SUPPLY CHAIN SECURITY",
-      "status": "unverified",
+      "status": "partial",
       "severity": "P1",
       "owner": "Operations and security",
-      "finding": "Maintainer MFA, branch protection, trusted CI actions and registry/cloud permissions are not established by source code.",
-      "next_action": "Verify repository/host controls and require reviewed changes with pinned CI dependencies and least-privilege secrets.",
+      "finding": "GitHub ruleset 24140009 is verified Active on main: three GitHub Actions checks required, no bypass actors, up-to-date branches and resolved conversations required, force pushes/deletions blocked. PR approval count is zero; trusted action pinning and remaining cloud/registry controls still need assurance.",
+      "next_action": "Keep the active required checks; establish independent review, pin CI dependencies and verify least-privilege cloud/registry access. App MFA is deferred; do not change existing account MFA settings.",
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
           "sha256": "8ddc75e8c765f55d758d79c4cd5ffc59c6bbaee0b061cb22b29a3e3ffa2d2296"
+        },
+        {
+          "path": "docs/guardrails/ITERATION_PROCESS.md",
+          "sha256": "3bc4c7b209641d7c087faa0d7c24011a52c2434eff0ee9b5f013a40b188e940b"
         }
       ],
       "reviewed_by": null,
@@ -1014,12 +1038,20 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access.",
+      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access. An additional adversarial worker matrix covers older schedules, including same-owner cross-brand references, wrong-owner/inactive/wrong-platform accounts and malformed media IDs.",
       "next_action": "Build a complete object/operation attack matrix and run it under restricted PostgreSQL identities with RLS.",
       "evidence": [
         {
           "path": "tests/test_production_guardrails.py",
           "sha256": "98901343bebb38e073cf20f4fb1314ca07c60615bc0dac3ea23d0e35078ad428"
+        },
+        {
+          "path": "nova/scheduler.py",
+          "sha256": "b03d33d33999df0020e73c084f002a97ece1947b7ec96b4c7ac6487b5882917a"
+        },
+        {
+          "path": "tests/test_worker_boundaries.py",
+          "sha256": "ab559fa3c6a2ce52fe5a803dda484ef52c2d5ddb68b2468b96769749d90669da"
         }
       ],
       "reviewed_by": null,
@@ -1031,12 +1063,20 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Reviewed publishing covers duplicates, worker races and uncertainty; legacy routes and all required media/cancellation/provider fault scenarios are incomplete.",
+      "finding": "Reviewed publishing covers duplicates, worker races and uncertainty; legacy routes and all required media/cancellation/provider fault scenarios are incomplete. Older schedules now distinguish definite preflight rejection from uncertain sends; timeout replay tests confirm no automatic retry.",
       "next_action": "Cover every mandatory scenario against all publish entry points with deterministic persisted outcomes.",
       "evidence": [
         {
           "path": "tests/test_reviewed_publication.py",
           "sha256": "882697be84891f0f83f7e2517984e040fa2a3128a8fa8586f0df81e3e8303de0"
+        },
+        {
+          "path": "nova/scheduler.py",
+          "sha256": "b03d33d33999df0020e73c084f002a97ece1947b7ec96b4c7ac6487b5882917a"
+        },
+        {
+          "path": "tests/test_worker_boundaries.py",
+          "sha256": "ab559fa3c6a2ce52fe5a803dda484ef52c2d5ddb68b2468b96769749d90669da"
         }
       ],
       "reviewed_by": null,
@@ -1235,12 +1275,16 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Product and engineering",
-      "finding": "Marketing consent is off and publishing requires review. Public media configuration and MFA defaults do not meet the complete safe-default requirement.",
-      "next_action": "Enforce private storage, MFA prompts and explicit opt-in automation in initial/deployment configuration.",
+      "finding": "Marketing consent is off and publishing requires review. Public media configuration and MFA defaults do not meet the complete safe-default requirement. Owner deferred MFA implementation on 28 September 2026; the requirement remains open and sign-in is unchanged.",
+      "next_action": "Continue private storage and explicit opt-in automation. MFA defaults remain deferred and unresolved.",
       "evidence": [
         {
           "path": "render.yaml",
           "sha256": "acc44ffca299e77fc4a8f888f730b0efa956b26bd186c7e11b746141e842869b"
+        },
+        {
+          "path": "docs/guardrails/ITERATION_PROCESS.md",
+          "sha256": "3bc4c7b209641d7c087faa0d7c24011a52c2434eff0ee9b5f013a40b188e940b"
         }
       ],
       "reviewed_by": null,
@@ -1286,12 +1330,16 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "A fail-closed register and CI/pre-deploy command are added. Actual required-check/hosting enforcement and all domain evidence remain outstanding.",
-      "next_action": "Install repository/host enforcement and close all applicable product/security/privacy/reliability/concurrency/data/operations checks.",
+      "finding": "The fail-closed production check is running and required on main by verified GitHub ruleset 24140009. Application/PostgreSQL/restore/image checks passed for the first candidate. Hosting enforcement and all domain closure evidence remain outstanding.",
+      "next_action": "Verify the actual production hosting gate, preserve mandatory repository checks and close every applicable domain requirement. Keep remediation on the unmerged draft PR.",
       "evidence": [
         {
           "path": "scripts/release_gate.py",
           "sha256": "90807069a2efab8b6f7204270e1c03e92be90cbf2c1f67ad0005df139893494f"
+        },
+        {
+          "path": "docs/guardrails/ITERATION_PROCESS.md",
+          "sha256": "3bc4c7b209641d7c087faa0d7c24011a52c2434eff0ee9b5f013a40b188e940b"
         }
       ],
       "reviewed_by": null,

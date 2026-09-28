@@ -32,10 +32,21 @@ Do not weaken the baseline, skip a failed test, invent approval, or add a blanke
 
 These are work packages, not completed approvals. Infrastructure configuration, legal/privacy review and an independent penetration test cannot be inferred from local code.
 
+Owner direction, 28 September 2026: MFA implementation is deferred. Do not add a
+second sign-in step or change existing account MFA settings. Continue the other
+increments. Keep authentication/admin/safe-default requirements open wherever
+MFA evidence is required; do not mark this deferral as an exemption.
+
 ## Enforce the gate outside this branch
 
 - The workflow adds the **Production guardrails** check, dependent on successful application and PostgreSQL jobs. It is intentionally red while the register has open items.
 - Repository administrators must require that exact check in protected-branch/ruleset policy, prevent bypass, and review changes to the gate and baseline. This branch cannot itself enforce GitHub account settings.
+- Verified on 28 September 2026: GitHub ruleset `24140009` is Active on `main`,
+  requires `Production guardrails`, `synthetic-tests`, and `postgres-release`
+  from GitHub Actions, requires up-to-date branches and resolved conversations,
+  and blocks force pushes and deletions. Its bypass list is empty. Required PR
+  approvals are currently zero; this does not establish independent review.
+  [Ruleset](https://github.com/davidwilson92-cpu/DataMaxxing/settings/rules/24140009).
 - `render.yaml` adds `preDeployCommand: python scripts/release_gate.py`. Confirm that the actual hosting service consumes this blueprint and that no alternate deploy path bypasses the command. Editing YAML does not prove a deployed service has adopted it.
 - Do not merge/deploy this candidate as production-ready while those controls or the register remain open. A draft remediation PR can still run application tests and show its blocked production check.
 
@@ -46,6 +57,16 @@ These are work packages, not completed approvals. Infrastructure configuration, 
 3. Removed raw exception output from selected voice/AI/legacy-send paths and scheduler logs; removed an unused unrestricted URL fetcher. A full egress and telemetry audit remains open.
 4. Rejected tenant ownership reassignment through ORM flushes, verified the exact owner/brand/account/media at worker dispatch, and capped PostgreSQL pool overflow. Raw SQL/RLS defense and fleet capacity remain open.
 5. Moved immediate Studio publishing into the existing durable job table atomically with approval and publication state. Added safe recovery for crashes before the external-send claim and retained non-retry behavior after ambiguous sends. Added queued-state UX and cancellation. Legacy Custom GPT publishing remains a release blocker.
+6. Reproduced cross-brand connection/media/draft and missing-permission failures
+   in pre-ledger scheduled jobs. Added exact ownership, brand, account activity,
+   platform, media-reference and scope checks before dispatch. Rejected jobs
+   become failed without a provider call; ambiguous sends stay unknown and are
+   never automatically retried. This does not resolve the separate synchronous
+   `/x/post` route or establish database RLS.
+
+The Render inventory review found `zova-cs-staging` runs a different repository
+and `zova-tiktok-sandbox` shares the production database. Neither is approved for
+these migration tests. See `STAGING_PLAN.md`; no cloud services were changed.
 
 ## Rollback and operational limits
 

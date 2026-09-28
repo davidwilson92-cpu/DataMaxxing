@@ -10,9 +10,38 @@ from sqlalchemy import select,update
 
 from .db import Activity, MediaAsset, ScheduledPost, SessionLocal, Publication, PublishReview, Draft, utcnow
 from .social import publish_platform,resolve_tiktok_post,selected_connection
-from .publishing_workflow import dispatch,update_draft_status
+from .publishing_workflow import capability_error,dispatch,update_draft_status
 
 log = logging.getLogger("nova.scheduler")
+
+
+class SchedulePreflightError(RuntimeError):
+    """A scheduled job was rejected before any external publishing call."""
+
+
+def scheduled_assets(db, job):
+    """Legacy jobs have no review ledger; validate their exact persisted boundary."""
+    try:
+        if not job.connection_id:
+            raise RuntimeError('Missing connection')
+        conn = selected_connection(db, job.user_id, job.platform, job.connection_id)
+        if (conn.user_id, conn.brand_id) != (job.user_id, job.brand_id):
+            raise RuntimeError('Connection boundary mismatch')
+        if job.draft_id is not None:
+            draft = db.get(Draft, job.draft_id)
+            if not draft or (draft.user_id, draft.brand_id) != (job.user_id, job.brand_id):
+                raise RuntimeError('Draft boundary mismatch')
+        ids = json.loads(job.media_asset_ids_json or '[]')
+        if not isinstance(ids, list) or any(type(mid) is not int for mid in ids):
+            raise ValueError('Invalid media references')
+        assets = [db.get(MediaAsset, mid) for mid in ids]
+        if any(not asset or (asset.user_id, asset.brand_id) != (job.user_id, job.brand_id) for asset in assets):
+            raise RuntimeError('Media boundary mismatch')
+        if capability_error(conn, assets):
+            raise RuntimeError('Publishing permission unavailable')
+        return assets
+    except (RuntimeError, ValueError, TypeError):
+        raise SchedulePreflightError('The scheduled account, draft, media or permissions are unavailable. Review before retrying.') from None
 
 
 def process_due(limit: int = 25) -> dict[str, int]:
@@ -97,16 +126,20 @@ def process_due(limit: int = 25) -> dict[str, int]:
                 posts = content.get("posts") or []
                 link_url = content.get("link_url") or ""
                 publish_options = content.get("publish_options") or {}
-                media_ids = json.loads(row.media_asset_ids_json or "[]")
-                assets = [db.get(MediaAsset, int(mid)) for mid in media_ids]
-                if any(not a or a.user_id!=row.user_id for a in assets):raise RuntimeError("Scheduled media unavailable")
-                if not row.connection_id:raise RuntimeError("Scheduled account unavailable; manual review required")
+                assets = scheduled_assets(db, row)
                 result = publish_platform(db, user_id=row.user_id, platform=row.platform, posts=posts, assets=assets, link_url=link_url, options=publish_options,connection_id=row.connection_id)
                 row.status = "pending" if result.get("pending") else "published"
                 row.platform_post_id = result.get("post_id")
                 row.post_url = result.get("url")
                 db.add(Activity(user_id=row.user_id, brand_id=row.brand_id, draft_id=row.draft_id, platform=row.platform, action="scheduled_publish", status=row.status, text="\n\n".join(posts), platform_post_id=row.platform_post_id, url=row.post_url))
                 published += 1
+            except SchedulePreflightError as exc:
+                # No provider call happened. Keep this distinct from an ambiguous send.
+                row.status = 'failed'; row.error = str(exc)
+                db.add(Activity(user_id=row.user_id, brand_id=row.brand_id, draft_id=None,
+                                platform=row.platform, action='scheduled_publish',
+                                status='failed', error=row.error))
+                failed += 1
             except Exception as exc:
                 log.warning("Scheduled %s post %s failed; outcome unconfirmed", row.platform, row.id)
                 row.status = "unknown"; row.error = "Publication outcome is unconfirmed. Check the destination before retrying."

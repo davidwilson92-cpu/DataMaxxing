@@ -1,0 +1,487 @@
+{
+  "at": "2026-09-28T20:46:47.401405+00:00",
+  "source_digest": "8846174d48a38fb6400fe9b0be5fed90a066d3d01ebac2d1e8574e89e68fbc03",
+  "checks": {
+    "assessment": 0,
+    "tests": 0,
+    "production": 1
+  },
+  "local_iteration_passed": false,
+  "next_actions": [
+    {
+      "section": 2,
+      "severity": "P0",
+      "owner": "Engineering",
+      "next_action": "Design an additive tenant migration with a verified owner mapping, restrictive application/worker roles, RLS and adversarial tests on every sensitive table."
+    },
+    {
+      "section": 4,
+      "severity": "P0",
+      "owner": "Engineering",
+      "next_action": "Implement server-side capabilities and membership before enabling team access; test object and operation denial across roles."
+    },
+    {
+      "section": 6,
+      "severity": "P0",
+      "owner": "Engineering",
+      "next_action": "Move the remaining legacy publish route through the durable worker; make ambiguous outcomes non-retryable until reconciled."
+    },
+    {
+      "section": 37,
+      "severity": "P0",
+      "owner": "Engineering",
+      "next_action": "Test cross-tenant IDs/context/attachments/strategy and enforce isolation below application queries."
+    },
+    {
+      "section": 60,
+      "severity": "P0",
+      "owner": "Engineering",
+      "next_action": "Build a complete object/operation attack matrix and run it under restricted PostgreSQL identities with RLS."
+    },
+    {
+      "section": 61,
+      "severity": "P0",
+      "owner": "Engineering",
+      "next_action": "Cover every mandatory scenario against all publish entry points with deterministic persisted outcomes."
+    },
+    {
+      "section": 77,
+      "severity": "P0",
+      "owner": "Engineering",
+      "next_action": "Close underlying blockers with independently reviewable evidence; do not waive them based on a successful build."
+    },
+    {
+      "section": 1,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Define one action-risk policy and enforce its confirmation and audit rules across every mutation."
+    },
+    {
+      "section": 3,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Continue compromised-password and session/recovery assurance work. Resume MFA only when the owner lifts the deferral; do not waive its release requirement."
+    },
+    {
+      "section": 5,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Implement provider-specific revocation and transactional local cancellation; test expired state, wrong scope, disconnect races and secret masking."
+    },
+    {
+      "section": 7,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Extend versioned writes and concurrency tests to account, schedule, strategy, connection and billing boundaries."
+    },
+    {
+      "section": 8,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Introduce recoverable claim/lease, retry classification and inspect/retry/cancel tooling without replaying ambiguous external actions."
+    },
+    {
+      "section": 9,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Add endpoint/resource budgets and per-provider quota backpressure with concurrent boundary tests."
+    },
+    {
+      "section": 10,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Review canonical relational constraints and migrate ownership with reconciliation and rollback evidence."
+    },
+    {
+      "section": 11,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Supply deployment configuration evidence and separate migration/application/worker identities with least privilege."
+    },
+    {
+      "section": 12,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Run an approved isolated recovery drill and record restore time, data-loss bound, backup lifecycle and alert ownership."
+    },
+    {
+      "section": 13,
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "next_action": "Document collection purposes, recipients, access and retention for every stored field and review additions against it."
+    },
+    {
+      "section": 14,
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "next_action": "Classify each table, object bucket, telemetry field and export, then map access/encryption/retention controls."
+    },
+    {
+      "section": 15,
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "next_action": "Approve retention periods and implement bounded, observable purge jobs including backup expiry."
+    },
+    {
+      "section": 16,
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "next_action": "Build authenticated owner-confirmed deletion with durable provider, billing, storage and secondary-store reconciliation."
+    },
+    {
+      "section": 17,
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "next_action": "Add owner-authorized export jobs, tenant-bound expiring access and a media archive with deletion lifecycle."
+    },
+    {
+      "section": 18,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Verify managed encryption and TLS settings and plan application-key rotation with tested recovery."
+    },
+    {
+      "section": 19,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Inventory secret consumers and establish rotation/revocation procedures and a secret scanner."
+    },
+    {
+      "section": 20,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Implement private storage delivery, metadata handling and a documented scan/quarantine policy; verify hostile-media tests."
+    },
+    {
+      "section": 21,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Inventory routes and enforce strict schemas, response allowlists and budgets, with object-level attack tests."
+    },
+    {
+      "section": 22,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Document every callback, verify signatures/time/schema, and queue idempotent processing with duplicate-event tests."
+    },
+    {
+      "section": 23,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Inventory remaining server egress and constrain provider upload URLs, DNS resolution, redirects, response size and timeouts."
+    },
+    {
+      "section": 24,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Move executable inline code to controlled assets/nonces and test CSRF, XSS and browser policy across critical flows."
+    },
+    {
+      "section": 25,
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "next_action": "Exercise every supported format/account/timezone on staging, including unsupported-field warnings and wrong-account prevention."
+    },
+    {
+      "section": 26,
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "next_action": "Add server-enforced confirmation and consequence copy for every high-impact action, with keyboard and screen-reader verification."
+    },
+    {
+      "section": 27,
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "next_action": "Test offline save, refresh, navigation, concurrent edits and recovery for each editor; expose clear save state."
+    },
+    {
+      "section": 28,
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "next_action": "Measure desktop/mobile p95 reads/writes and LCP/INP/CLS under realistic load, then address bottlenecks."
+    },
+    {
+      "section": 30,
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "next_action": "Test all error responses for secrets, outcome clarity, retry policy and recovery action."
+    },
+    {
+      "section": 31,
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "next_action": "Add automated accessibility checks and manual keyboard/screen-reader/contrast review for critical journeys."
+    },
+    {
+      "section": 32,
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "next_action": "Verify editing, review, publishing, errors and analytics at representative mobile widths and input modes."
+    },
+    {
+      "section": 35,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Bind every AI action to authenticated workspace capabilities and explicit authority; test bypass attempts."
+    },
+    {
+      "section": 36,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Apply versioned strict schemas and reject extra or invalid action fields before any mutation."
+    },
+    {
+      "section": 38,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Test hostile source/media/tool data against deterministic authority controls and ensure secrets cannot enter model context."
+    },
+    {
+      "section": 39,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Capture synthetic outbound payloads and assert minimum approved fields and absence of tokens/billing/other tenants."
+    },
+    {
+      "section": 40,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Validate approval identity, scope, expiry and content binding for every AI-proposed external action."
+    },
+    {
+      "section": 41,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Add append-only structured audit records for all critical actions with retention, access controls and tamper detection."
+    },
+    {
+      "section": 42,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Add minimal security event telemetry and actionable alerts for failed login, denial, privilege and unusual-volume events."
+    },
+    {
+      "section": 43,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Implement safe structured telemetry, metrics, trace propagation and alert-delivery tests."
+    },
+    {
+      "section": 44,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Create and propagate server-generated request/job IDs through responses, durable jobs, audit events and telemetry."
+    },
+    {
+      "section": 45,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Define eligible outcomes and provider-outage accounting; instrument and review SLO/error-budget reporting."
+    },
+    {
+      "section": 46,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Exercise outages, latency, quota exhaustion and malformed responses per adapter with bounded recovery."
+    },
+    {
+      "section": 48,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Reconcile legacy paths into one canonical publishing contract and versioned payload model."
+    },
+    {
+      "section": 49,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Run independent durable workers and persistent private object storage; test multi-instance restarts."
+    },
+    {
+      "section": 50,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Set per-service pool budgets from the actual database capacity and validate saturation/backpressure under load."
+    },
+    {
+      "section": 51,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Inventory all caches and verify tenant prefixes, expiry, invalidation and absence of secret payloads."
+    },
+    {
+      "section": 52,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Validate test/live separation, subscription races, duplicate/out-of-order events and current payment setup."
+    },
+    {
+      "section": 53,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Define canonical entitlements independent of display plans and test concurrent limit enforcement and changes."
+    },
+    {
+      "section": 54,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Continue least-privilege capabilities and attributable support/operations audits. MFA is deferred, not satisfied."
+    },
+    {
+      "section": 55,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Provision the separate staging service/database in STAGING_PLAN.md after cost approval; verify distinct data, secrets, storage and credentials before migrations. Do not repurpose the shared-database sandbox."
+    },
+    {
+      "section": 56,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Require Production guardrails plus validation checks in branch protection and hosting; add incremental lint/type/security checks."
+    },
+    {
+      "section": 57,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Produce a reproducible complete dependency lock and validate current vulnerability scans with an update/remediation process."
+    },
+    {
+      "section": 58,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Keep the active required checks; establish independent review, pin CI dependencies and verify least-privilege cloud/registry access. App MFA is deferred; do not change existing account MFA settings."
+    },
+    {
+      "section": 59,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Map critical journeys to each test level and add missing provider/browser security regressions."
+    },
+    {
+      "section": 62,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Run isolated staged load scenarios and verify graceful overload with no duplicate sends or corruption."
+    },
+    {
+      "section": 63,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Scope and complete independent security testing after architectural remediation, recording unresolved findings as blockers."
+    },
+    {
+      "section": 64,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Run an incident tabletop covering detection through postmortem, preserving evidence and customer impact analysis."
+    },
+    {
+      "section": 65,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Implement the emergency control path and exercise provider revocation/key rotation/affected-account identification."
+    },
+    {
+      "section": 66,
+      "severity": "P1",
+      "owner": "Operations and security",
+      "next_action": "Document and rehearse database corruption/deletion, region outage, credential compromise and provider failure recovery."
+    },
+    {
+      "section": 67,
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "next_action": "Obtain accountable privacy review and operational evidence; do not infer legal compliance from code tests."
+    },
+    {
+      "section": 68,
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "next_action": "Test telemetry allowlists against synthetic credentials, draft text, emails and secret-bearing URLs."
+    },
+    {
+      "section": 69,
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "next_action": "Gate elevated content access with explicit reason, verified support role and immutable audit."
+    },
+    {
+      "section": 70,
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "next_action": "Expose accurate connection permissions/access and action provenance with clear automation status."
+    },
+    {
+      "section": 71,
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "next_action": "Define and display a versioned automation policy enforced by workers and approvals."
+    },
+    {
+      "section": 72,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Add durable owner and operations switches enforced immediately before new dispatch, with audited changes and in-flight caveats."
+    },
+    {
+      "section": 73,
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "next_action": "Continue private storage and explicit opt-in automation. MFA defaults remain deferred and unresolved."
+    },
+    {
+      "section": 74,
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "next_action": "Implement accessible authenticated self-service lifecycle/team/automation controls with recovery and audit."
+    },
+    {
+      "section": 75,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Assign accountable owners and verify release policy is required in repository and hosting controls."
+    },
+    {
+      "section": 76,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Verify the actual production hosting gate, preserve mandatory repository checks and close every applicable domain requirement. Keep remediation on the unmerged draft PR."
+    },
+    {
+      "section": 78,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Migrate incrementally to the target architecture with compatibility, recovery and failure tests at each stage."
+    },
+    {
+      "section": 79,
+      "severity": "P1",
+      "owner": "Engineering",
+      "next_action": "Require evidence-backed closure, repeat the full release gate on the exact candidate and archive approved release evidence."
+    },
+    {
+      "section": 29,
+      "severity": "P2",
+      "owner": "Product and engineering",
+      "next_action": "Inventory asynchronous actions and test busy, repeated click, timeout, success and retry states."
+    },
+    {
+      "section": 33,
+      "severity": "P2",
+      "owner": "Product and engineering",
+      "next_action": "Inventory and consolidate critical shared controls while preserving Zova branding and tested behavior."
+    },
+    {
+      "section": 34,
+      "severity": "P2",
+      "owner": "Product and engineering",
+      "next_action": "Verify every empty state explains purpose, absence and a usable next action."
+    },
+    {
+      "section": 47,
+      "severity": "P2",
+      "owner": "Engineering",
+      "next_action": "Split adapters behind a stable interface and add provider contract fixtures without changing public behavior."
+    }
+  ],
+  "limits": "This local iteration does not run PostgreSQL, hosting, live providers, load tests, or independent reviews. Required CI and operational evidence still apply."
+}
