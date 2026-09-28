@@ -67,9 +67,3 @@ def get_public_url(storage_key: str, existing_public_url: str | None = None, exp
     if client and bucket and storage_key.startswith("nova/"):
         return client.generate_presigned_url("get_object", Params={"Bucket": bucket, "Key": storage_key}, ExpiresIn=expires)
     raise RuntimeError("This media does not have a public URL. Configure S3 or another persistent public media store.")
-
-
-def fetch_remote(url: str) -> bytes:
-    r = httpx.get(url, timeout=30.0, follow_redirects=True)
-    r.raise_for_status()
-    return r.content

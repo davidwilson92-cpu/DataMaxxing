@@ -1,0 +1,1352 @@
+{
+  "schema_version": 1,
+  "assessed_at": "2026-09-28",
+  "base_commit": "38f1c265d5eeaa6f8ba6cf09445570cc7943d961",
+  "baseline_sha256": "953d7d3686edf255b6cda9f2b47b8982aeb97aa7bb9b53ca7171cfd1c77e0388",
+  "reviewed_source_digest": null,
+  "sections": [
+    {
+      "id": 1,
+      "title": "CORE ENGINEERING PRINCIPLES",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Reviewed publish snapshots exist; confirmations are inconsistent for disconnect, administration and legacy routes.",
+      "next_action": "Define one action-risk policy and enforce its confirmation and audit rules across every mutation.",
+      "evidence": [
+        {
+          "path": "nova/publishing_workflow.py",
+          "sha256": "7cedb245121dcbe1cf058a614a0edf9ce1f8688648a21475dc56040e89c7bcae"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 2,
+      "title": "MULTI-TENANCY",
+      "status": "gap",
+      "severity": "P0",
+      "owner": "Engineering",
+      "finding": "User plus brand scoping is application-side. No workspace membership model or PostgreSQL RLS exists; legacy creator tables use separate ownership. ORM ownership mutation and worker destination checks are tightened in this iteration.",
+      "next_action": "Design an additive tenant migration with a verified owner mapping, restrictive application/worker roles, RLS and adversarial tests on every sensitive table.",
+      "evidence": [
+        {
+          "path": "nova/brands.py",
+          "sha256": "b4f4c4d4665f347ab911ad72160d2b5664b7ca2dcf2f62ed3fce0032e48ae908"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 3,
+      "title": "AUTHENTICATION",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Custom scrypt/session authentication exists. New-password minimum is now 15 with a small common-password denylist; MFA and a maintained compromised-password corpus are absent.",
+      "next_action": "Select identity/MFA integration, preserve account links and sessions during migration, and validate recovery and privilege-change revocation.",
+      "evidence": [
+        {
+          "path": "nova/security.py",
+          "sha256": "75abf664ca6ac1ef9b304bebcc2997fa1bea4578873cb6d77337283596a68c6c"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 4,
+      "title": "AUTHORIZATION",
+      "status": "gap",
+      "severity": "P0",
+      "owner": "Engineering",
+      "finding": "Ownership checks exist but workspace membership and the six required roles/capabilities are absent.",
+      "next_action": "Implement server-side capabilities and membership before enabling team access; test object and operation denial across roles.",
+      "evidence": [
+        {
+          "path": "nova/brands.py",
+          "sha256": "b4f4c4d4665f347ab911ad72160d2b5664b7ca2dcf2f62ed3fce0032e48ae908"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 5,
+      "title": "SOCIAL PLATFORM CONNECTION SECURITY",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Provider OAuth state and encrypted tokens exist. Disconnect clears local tokens but lacks a complete remote-revocation, audit and scheduled-work cancellation workflow.",
+      "next_action": "Implement provider-specific revocation and transactional local cancellation; test expired state, wrong scope, disconnect races and secret masking.",
+      "evidence": [
+        {
+          "path": "nova/app.py",
+          "sha256": "cd4fafaaeebb689506865b26c0451c1c42bf83bb2199fcb281f53e9e871652f6"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 6,
+      "title": "PUBLISHING ARCHITECTURE",
+      "status": "partial",
+      "severity": "P0",
+      "owner": "Engineering",
+      "finding": "Reviewed publications have a unique draft/platform ledger and durable schedules. Immediate publishing now persists a worker job atomically with approval and ledger state, with crash/restart tests. Legacy X sends still lack an idempotency ledger.",
+      "next_action": "Move the remaining legacy publish route through the durable worker; make ambiguous outcomes non-retryable until reconciled.",
+      "evidence": [
+        {
+          "path": "nova/publishing_workflow.py",
+          "sha256": "7cedb245121dcbe1cf058a614a0edf9ce1f8688648a21475dc56040e89c7bcae"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 7,
+      "title": "CONCURRENCY",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Draft revisions, conditional job claims and selected transactions exist. Concurrency guarantees do not cover all mutable resources and disconnect races.",
+      "next_action": "Extend versioned writes and concurrency tests to account, schedule, strategy, connection and billing boundaries.",
+      "evidence": [
+        {
+          "path": "nova/workspace.py",
+          "sha256": "4caf7a4403ff8041ab3bdc5f2d97657351d41d48c69a572f882ca0f01c08c9ce"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 8,
+      "title": "QUEUES AND WORKERS",
+      "status": "gap",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Database schedules are durable, but no general worker queue, bounded jittered retry policy or dead-letter operations exists; immediate and scheduled work now share the durable database queue.",
+      "next_action": "Introduce recoverable claim/lease, retry classification and inspect/retry/cancel tooling without replaying ambiguous external actions.",
+      "evidence": [
+        {
+          "path": "nova/scheduler.py",
+          "sha256": "db487637ddf4f4e6346532fa6e604b48664302159a1e0df61198c0904839d90b"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 9,
+      "title": "RATE LIMITING",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Database mutation/auth/AI limits exist; reads and provider-specific quota controllers are incomplete.",
+      "next_action": "Add endpoint/resource budgets and per-provider quota backpressure with concurrent boundary tests.",
+      "evidence": [
+        {
+          "path": "nova/request_security.py",
+          "sha256": "98d09d053737f88121f13399e4f60822e7d8d7b50fb57a29e06a6303f235e2bb"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 10,
+      "title": "DATABASE DESIGN",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "SQLAlchemy relational entities and PostgreSQL support exist, but workspace identity and important state remain spread across legacy and JSON fields.",
+      "next_action": "Review canonical relational constraints and migrate ownership with reconciliation and rollback evidence.",
+      "evidence": [
+        {
+          "path": "nova/db.py",
+          "sha256": "90d753bdf78a4adac0ff7853a4f91f70da94abd22a11f19a01178c7e3e71062f"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 11,
+      "title": "DATABASE SECURITY",
+      "status": "unverified",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "Production private networking, TLS enforcement and restricted identities cannot be proved from this checkout; migrations run during application import.",
+      "next_action": "Supply deployment configuration evidence and separate migration/application/worker identities with least privilege.",
+      "evidence": [
+        {
+          "path": "nova/db.py",
+          "sha256": "90d753bdf78a4adac0ff7853a4f91f70da94abd22a11f19a01178c7e3e71062f"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 12,
+      "title": "DATABASE BACKUPS",
+      "status": "unverified",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "CI exercises a synthetic PostgreSQL restore. Current production RPO/RTO, encryption and a measured production-like recovery drill are not evidenced here.",
+      "next_action": "Run an approved isolated recovery drill and record restore time, data-loss bound, backup lifecycle and alert ownership.",
+      "evidence": [
+        {
+          "path": ".github/workflows/validate.yml",
+          "sha256": "8ddc75e8c765f55d758d79c4cd5ffc59c6bbaee0b061cb22b29a3e3ffa2d2296"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 13,
+      "title": "PRIVACY BY DESIGN",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "finding": "AI requests are bounded and product events are categorical; a field-by-field purpose/necessity inventory is absent.",
+      "next_action": "Document collection purposes, recipients, access and retention for every stored field and review additions against it.",
+      "evidence": [
+        {
+          "path": "nova/data_lifecycle.py",
+          "sha256": "aab266d06bbdd83c9771cc51515b94b43dc7837d9b627862fd26a4a859ee5593"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 14,
+      "title": "DATA CLASSIFICATION",
+      "status": "gap",
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "finding": "The supplied guardrail defines classes, but the app has no complete data-classification inventory mapped to enforcement.",
+      "next_action": "Classify each table, object bucket, telemetry field and export, then map access/encryption/retention controls.",
+      "evidence": [
+        {
+          "path": "nova/db.py",
+          "sha256": "90d753bdf78a4adac0ff7853a4f91f70da94abd22a11f19a01178c7e3e71062f"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 15,
+      "title": "DATA RETENTION",
+      "status": "gap",
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "finding": "Cleanup exists for temporary connections, but no comprehensive automated lifecycle for drafts, media, logs and retained ledgers is implemented.",
+      "next_action": "Approve retention periods and implement bounded, observable purge jobs including backup expiry.",
+      "evidence": [
+        {
+          "path": "nova/data_lifecycle.py",
+          "sha256": "aab266d06bbdd83c9771cc51515b94b43dc7837d9b627862fd26a4a859ee5593"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 16,
+      "title": "ACCOUNT DELETION",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "finding": "Assisted erasure requires verified operator input and blocks unresolved billing/publication/storage; no complete self-service workflow exists.",
+      "next_action": "Build authenticated owner-confirmed deletion with durable provider, billing, storage and secondary-store reconciliation.",
+      "evidence": [
+        {
+          "path": "nova/data_lifecycle.py",
+          "sha256": "aab266d06bbdd83c9771cc51515b94b43dc7837d9b627862fd26a4a859ee5593"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 17,
+      "title": "DATA EXPORT",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "finding": "An allowlisted support export function exists, with no self-service export job or expiring download delivery.",
+      "next_action": "Add owner-authorized export jobs, tenant-bound expiring access and a media archive with deletion lifecycle.",
+      "evidence": [
+        {
+          "path": "nova/data_lifecycle.py",
+          "sha256": "aab266d06bbdd83c9771cc51515b94b43dc7837d9b627862fd26a4a859ee5593"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 18,
+      "title": "ENCRYPTION",
+      "status": "unverified",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "Fernet token encryption exists; database, object and backup encryption plus actual TLS posture require environment evidence.",
+      "next_action": "Verify managed encryption and TLS settings and plan application-key rotation with tested recovery.",
+      "evidence": [
+        {
+          "path": "nova/security.py",
+          "sha256": "75abf664ca6ac1ef9b304bebcc2997fa1bea4578873cb6d77337283596a68c6c"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 19,
+      "title": "SECRET MANAGEMENT",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "Code uses environment credentials; managed secret storage, environment separation and rotation are not demonstrated.",
+      "next_action": "Inventory secret consumers and establish rotation/revocation procedures and a secret scanner.",
+      "evidence": [
+        {
+          "path": "render.yaml",
+          "sha256": "acc44ffca299e77fc4a8f888f730b0efa956b26bd186c7e11b746141e842869b"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 20,
+      "title": "MEDIA UPLOAD SECURITY",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Upload bytes are bounded and decoded; no systematic metadata stripping or malware policy exists, and public media delivery remains possible.",
+      "next_action": "Implement private storage delivery, metadata handling and a documented scan/quarantine policy; verify hostile-media tests.",
+      "evidence": [
+        {
+          "path": "nova/media_safety.py",
+          "sha256": "00729ffafef43f92592e6894803fd0e4245f6d8eaac5d77fc0f35b449488938c"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 21,
+      "title": "API SECURITY",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Authentication, request limits and selected Pydantic schemas exist; some broad dictionaries and unbounded collection patterns remain.",
+      "next_action": "Inventory routes and enforce strict schemas, response allowlists and budgets, with object-level attack tests.",
+      "evidence": [
+        {
+          "path": "nova/app.py",
+          "sha256": "cd4fafaaeebb689506865b26c0451c1c42bf83bb2199fcb281f53e9e871652f6"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 22,
+      "title": "WEBHOOK SECURITY",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Stripe signature/replay processing exists. Provider webhook support and asynchronous processing are not comprehensive.",
+      "next_action": "Document every callback, verify signatures/time/schema, and queue idempotent processing with duplicate-event tests.",
+      "evidence": [
+        {
+          "path": "nova/billing.py",
+          "sha256": "48292b7bcd7058c79f3206727f79117bbce368d809f6ef96da1878a5b1870b9c"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 23,
+      "title": "SSRF",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "The unused unrestricted fetch_remote helper was removed. Provider-returned URLs and all future ingestion still require an egress review.",
+      "next_action": "Inventory remaining server egress and constrain provider upload URLs, DNS resolution, redirects, response size and timeouts.",
+      "evidence": [
+        {
+          "path": "nova/social.py",
+          "sha256": "fe4c95c8eb30740a191ec20ca1b562cb79210a7ad5ca2bef96914f93165805b2"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 24,
+      "title": "FRONTEND SECURITY",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "CSP, HSTS, framing and origin checks exist; CSP permits inline scripts and styles.",
+      "next_action": "Move executable inline code to controlled assets/nonces and test CSRF, XSS and browser policy across critical flows.",
+      "evidence": [
+        {
+          "path": "nova/request_security.py",
+          "sha256": "98d09d053737f88121f13399e4f60822e7d8d7b50fb57a29e06a6303f235e2bb"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 25,
+      "title": "CONTENT PREVIEW",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "finding": "Review snapshots include exact destination, content, attachments and schedule; platform fidelity and accessibility are not independently verified for all formats.",
+      "next_action": "Exercise every supported format/account/timezone on staging, including unsupported-field warnings and wrong-account prevention.",
+      "evidence": [
+        {
+          "path": "nova/publishing_workflow.py",
+          "sha256": "7cedb245121dcbe1cf058a614a0edf9ce1f8688648a21475dc56040e89c7bcae"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 26,
+      "title": "HIGH-RISK ACTION UX",
+      "status": "gap",
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "finding": "Publish has explicit review, but connection unlink is a direct form submission without a consequence-specific confirmation.",
+      "next_action": "Add server-enforced confirmation and consequence copy for every high-impact action, with keyboard and screen-reader verification.",
+      "evidence": [
+        {
+          "path": "nova/templates/connection_list.html",
+          "sha256": "8e33af651f40e04d451275161e10ca88c893a473081794cfa693e7c0bb5e992d"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 27,
+      "title": "UNSAVED CHANGES",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "finding": "Studio persistence and revision tests exist; interruption and navigation coverage across all substantive editors is incomplete.",
+      "next_action": "Test offline save, refresh, navigation, concurrent edits and recovery for each editor; expose clear save state.",
+      "evidence": [
+        {
+          "path": "tests/test_workspace_persistence.py",
+          "sha256": "b642b59f28e45b96db41e542ba56671425d87d20c8efa9c3fa9925e26e6df4d1"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 28,
+      "title": "UX PERFORMANCE",
+      "status": "unverified",
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "finding": "No representative measurements establish the required API latency and Web Vitals targets.",
+      "next_action": "Measure desktop/mobile p95 reads/writes and LCP/INP/CLS under realistic load, then address bottlenecks.",
+      "evidence": [
+        {
+          "path": "docs/PRODUCTION_GUARDRAILS.md",
+          "sha256": "953d7d3686edf255b6cda9f2b47b8982aeb97aa7bb9b53ca7171cfd1c77e0388"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 29,
+      "title": "LOADING STATES",
+      "status": "partial",
+      "severity": "P2",
+      "owner": "Product and engineering",
+      "finding": "Many forms and Studio actions expose loading states; exhaustive asynchronous action coverage has not been verified.",
+      "next_action": "Inventory asynchronous actions and test busy, repeated click, timeout, success and retry states.",
+      "evidence": [
+        {
+          "path": "nova/static/studio-publish.js",
+          "sha256": "461764214d04696a9b262cd743ee797f9a137a2649db3e0c76325b348cd8a748"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 30,
+      "title": "ERROR HANDLING",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "finding": "Selected provider exception leaks are now replaced by fixed messages. Error consistency and truthful retry explanations need a full route audit.",
+      "next_action": "Test all error responses for secrets, outcome clarity, retry policy and recovery action.",
+      "evidence": [
+        {
+          "path": "nova/app.py",
+          "sha256": "cd4fafaaeebb689506865b26c0451c1c42bf83bb2199fcb281f53e9e871652f6"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 31,
+      "title": "ACCESSIBILITY",
+      "status": "unverified",
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "finding": "Some semantic and focus behavior exists, but no complete WCAG 2.2 AA audit or automated accessibility CI evidence exists.",
+      "next_action": "Add automated accessibility checks and manual keyboard/screen-reader/contrast review for critical journeys.",
+      "evidence": [
+        {
+          "path": "nova/templates/studio.html",
+          "sha256": "a79f5516da83b08ba838f1591eae7621c85f1f15e499289de63221b428f00bc5"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 32,
+      "title": "RESPONSIVE DESIGN",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "finding": "Prior release notes describe mobile checks; current end-to-end coverage for all critical mobile journeys is incomplete.",
+      "next_action": "Verify editing, review, publishing, errors and analytics at representative mobile widths and input modes.",
+      "evidence": [
+        {
+          "path": "tests/test_studio_experience.py",
+          "sha256": "f8edad3f1fb9dc43ae439a4ebf0f35fbb6c5f03ca92f17914f8f80c83a759bb4"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 33,
+      "title": "DESIGN SYSTEM",
+      "status": "partial",
+      "severity": "P2",
+      "owner": "Product and engineering",
+      "finding": "Shared templates and Studio styles exist; controls remain distributed with duplicated patterns.",
+      "next_action": "Inventory and consolidate critical shared controls while preserving Zova branding and tested behavior.",
+      "evidence": [
+        {
+          "path": "nova/templates/base.html",
+          "sha256": "a94abc82ee49e1cbd354e3db31ce9ad0a3f78aac57c11257632af3c0df38ec0c"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 34,
+      "title": "EMPTY STATES",
+      "status": "partial",
+      "severity": "P2",
+      "owner": "Product and engineering",
+      "finding": "Connection and Studio empty states exist; a complete feature-by-feature review is outstanding.",
+      "next_action": "Verify every empty state explains purpose, absence and a usable next action.",
+      "evidence": [
+        {
+          "path": "nova/templates/connection_list.html",
+          "sha256": "8e33af651f40e04d451275161e10ca88c893a473081794cfa693e7c0bb5e992d"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 35,
+      "title": "AI SYSTEM ARCHITECTURE",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "AI proposes drafts/strategy and reviewed publishing uses deterministic validation. Full capability-based policy enforcement depends on missing RBAC.",
+      "next_action": "Bind every AI action to authenticated workspace capabilities and explicit authority; test bypass attempts.",
+      "evidence": [
+        {
+          "path": "nova/conversation.py",
+          "sha256": "c778f569492e20d4e729de3a94450d7ac2a51f5eef5d5372ca092b2187322930"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 36,
+      "title": "STRUCTURED AI OUTPUT",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "AI JSON parsing and domain validation exist, but uniform strict provider and execution schemas are incomplete.",
+      "next_action": "Apply versioned strict schemas and reject extra or invalid action fields before any mutation.",
+      "evidence": [
+        {
+          "path": "nova/ai.py",
+          "sha256": "96452aeb7e404355013b674438a07a6ab81363de311546b753ed9e8eb812b9fc"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 37,
+      "title": "AI TENANT ISOLATION",
+      "status": "partial",
+      "severity": "P0",
+      "owner": "Engineering",
+      "finding": "Brand scoping filters normal AI data access; database-enforced isolation and exhaustive adversarial retrieval tests are absent.",
+      "next_action": "Test cross-tenant IDs/context/attachments/strategy and enforce isolation below application queries.",
+      "evidence": [
+        {
+          "path": "nova/strategy.py",
+          "sha256": "52f4a123b070876c46d569f58b87e3373b723a4e6266891d6c1df8aa7dc1e038"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 38,
+      "title": "PROMPT INJECTION",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Prompts identify media/source text as untrusted, and publishing requires review. Broad adversarial prompt-injection evaluations are absent.",
+      "next_action": "Test hostile source/media/tool data against deterministic authority controls and ensure secrets cannot enter model context.",
+      "evidence": [
+        {
+          "path": "nova/ai.py",
+          "sha256": "96452aeb7e404355013b674438a07a6ab81363de311546b753ed9e8eb812b9fc"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 39,
+      "title": "AI DATA MINIMISATION",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "AI context has bounds and store=false. Necessity and sensitive-field exclusion need systematic evidence for every model call.",
+      "next_action": "Capture synthetic outbound payloads and assert minimum approved fields and absence of tokens/billing/other tenants.",
+      "evidence": [
+        {
+          "path": "nova/ai.py",
+          "sha256": "96452aeb7e404355013b674438a07a6ab81363de311546b753ed9e8eb812b9fc"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 40,
+      "title": "AI ACTION APPROVAL",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Draft/repeat-series review is explicit; capability-specific authority configuration is not complete.",
+      "next_action": "Validate approval identity, scope, expiry and content binding for every AI-proposed external action.",
+      "evidence": [
+        {
+          "path": "nova/series.py",
+          "sha256": "21d8cd0b3e97ca407c7294ef64461d39cbd154b98e7c44ead6bb24a8bdcd11f9"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 41,
+      "title": "AUDIT LOGGING",
+      "status": "gap",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Activity rows are mutable, content-bearing and do not constitute a complete immutable actor/action audit trail.",
+      "next_action": "Add append-only structured audit records for all critical actions with retention, access controls and tamper detection.",
+      "evidence": [
+        {
+          "path": "nova/db.py",
+          "sha256": "90d753bdf78a4adac0ff7853a4f91f70da94abd22a11f19a01178c7e3e71062f"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 42,
+      "title": "SECURITY LOGGING",
+      "status": "gap",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Rate limits exist but there is no comprehensive takeover/anomaly security monitoring and escalation evidence.",
+      "next_action": "Add minimal security event telemetry and actionable alerts for failed login, denial, privilege and unusual-volume events.",
+      "evidence": [
+        {
+          "path": "nova/request_security.py",
+          "sha256": "98d09d053737f88121f13399e4f60822e7d8d7b50fb57a29e06a6303f235e2bb"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 43,
+      "title": "OBSERVABILITY",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "Operational status exposes overdue/unknown jobs and failures; structured logs, distributed traces and paging evidence are incomplete.",
+      "next_action": "Implement safe structured telemetry, metrics, trace propagation and alert-delivery tests.",
+      "evidence": [
+        {
+          "path": "nova/operations.py",
+          "sha256": "f180f36ea19adf75aa1d837a3d9abec44daddd748bb537040d2fecf20b52bca7"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 44,
+      "title": "CORRELATION IDs",
+      "status": "gap",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Publication support references exist, but there is no universal request-to-job correlation identifier.",
+      "next_action": "Create and propagate server-generated request/job IDs through responses, durable jobs, audit events and telemetry.",
+      "evidence": [
+        {
+          "path": "nova/publishing_workflow.py",
+          "sha256": "7cedb245121dcbe1cf058a614a0edf9ce1f8688648a21475dc56040e89c7bcae"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 45,
+      "title": "RELIABILITY TARGETS",
+      "status": "unverified",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "No measured production SLI report establishes the availability and eligible-publishing success targets.",
+      "next_action": "Define eligible outcomes and provider-outage accounting; instrument and review SLO/error-budget reporting.",
+      "evidence": [
+        {
+          "path": "nova/operations.py",
+          "sha256": "f180f36ea19adf75aa1d837a3d9abec44daddd748bb537040d2fecf20b52bca7"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 46,
+      "title": "THIRD-PARTY FAILURE",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "HTTP timeouts, ambiguous outcome handling and some fallbacks exist; circuit breakers and safe retry/backpressure are incomplete.",
+      "next_action": "Exercise outages, latency, quota exhaustion and malformed responses per adapter with bounded recovery.",
+      "evidence": [
+        {
+          "path": "nova/social.py",
+          "sha256": "fe4c95c8eb30740a191ec20ca1b562cb79210a7ad5ca2bef96914f93165805b2"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 47,
+      "title": "PROVIDER ABSTRACTION",
+      "status": "partial",
+      "severity": "P2",
+      "owner": "Engineering",
+      "finding": "Provider dispatch is centralized in social.py; adapters remain coupled in a large module.",
+      "next_action": "Split adapters behind a stable interface and add provider contract fixtures without changing public behavior.",
+      "evidence": [
+        {
+          "path": "nova/social.py",
+          "sha256": "fe4c95c8eb30740a191ec20ca1b562cb79210a7ad5ca2bef96914f93165805b2"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 48,
+      "title": "INTERNAL CANONICAL MODEL",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Draft/media/review/publication entities exist, alongside separate legacy creator/post routes.",
+      "next_action": "Reconcile legacy paths into one canonical publishing contract and versioned payload model.",
+      "evidence": [
+        {
+          "path": "nova/db.py",
+          "sha256": "90d753bdf78a4adac0ff7853a4f91f70da94abd22a11f19a01178c7e3e71062f"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 49,
+      "title": "SCALE ARCHITECTURE",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "Database state supports multiple instances, but uploads can use local disk and the scheduler shares the web process.",
+      "next_action": "Run independent durable workers and persistent private object storage; test multi-instance restarts.",
+      "evidence": [
+        {
+          "path": "nova/storage.py",
+          "sha256": "81ad9f855faf292cd1d432ea9e106385fb1379c903bb2ff922a1c5846f90ac4b"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 50,
+      "title": "CONNECTION POOLING",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "PostgreSQL pool is now explicitly capped at 5 connections by default with no overflow and a finite wait. Fleet-level sizing is not verified.",
+      "next_action": "Set per-service pool budgets from the actual database capacity and validate saturation/backpressure under load.",
+      "evidence": [
+        {
+          "path": "nova/db.py",
+          "sha256": "90d753bdf78a4adac0ff7853a4f91f70da94abd22a11f19a01178c7e3e71062f"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 51,
+      "title": "CACHE DESIGN",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Strategy/source state is owner/brand scoped; no complete cache-key and permission-invalidation inventory has been reviewed.",
+      "next_action": "Inventory all caches and verify tenant prefixes, expiry, invalidation and absence of secret payloads.",
+      "evidence": [
+        {
+          "path": "nova/strategy.py",
+          "sha256": "52f4a123b070876c46d569f58b87e3373b723a4e6266891d6c1df8aa7dc1e038"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 52,
+      "title": "BILLING SECURITY",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Hosted Stripe, verified events and idempotency tests exist; live account configuration and operational reconciliation require current evidence.",
+      "next_action": "Validate test/live separation, subscription races, duplicate/out-of-order events and current payment setup.",
+      "evidence": [
+        {
+          "path": "tests/test_stripe_billing.py",
+          "sha256": "fc8fc032ac23654404b7a8bb82ddd952ca6b4137c2eee99aecd0acec377c1984"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 53,
+      "title": "ENTITLEMENTS",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Explicit allowance functions and usage reservations exist; the complete requested entitlement set and team capability model are incomplete.",
+      "next_action": "Define canonical entitlements independent of display plans and test concurrent limit enforcement and changes.",
+      "evidence": [
+        {
+          "path": "nova/allowances.py",
+          "sha256": "a38edb8feb5de2ee5ce7ce676054bda6151e6f24ef048a7e62dcac2494c9a7de"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 54,
+      "title": "ADMINISTRATION",
+      "status": "gap",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Internal operations use bearer secrets; staff MFA, separate capabilities and audited support access are absent.",
+      "next_action": "Put internal operations behind verified staff identity/MFA and least-privilege auditable actions.",
+      "evidence": [
+        {
+          "path": "nova/operations.py",
+          "sha256": "f180f36ea19adf75aa1d837a3d9abec44daddd748bb537040d2fecf20b52bca7"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 55,
+      "title": "ENVIRONMENT SEPARATION",
+      "status": "unverified",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "Tests use disposable data and blocked HTTP. Distinct deployed staging/production services, apps, storage and credentials are not evidenced.",
+      "next_action": "Establish and verify environment inventory and prevent production data/secret use in development.",
+      "evidence": [
+        {
+          "path": "tests/conftest.py",
+          "sha256": "6ce8d6b385683aab61b9824e3283e7162070b65d6aa5e573d4cd122c94ddab5f"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 56,
+      "title": "CI/CD",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "CI tests SQLite/PostgreSQL, dependency audit, restore and image build. Lint/type/static security coverage and enforced deployment policy are incomplete.",
+      "next_action": "Require Production guardrails plus validation checks in branch protection and hosting; add incremental lint/type/security checks.",
+      "evidence": [
+        {
+          "path": ".github/workflows/validate.yml",
+          "sha256": "8ddc75e8c765f55d758d79c4cd5ffc59c6bbaee0b061cb22b29a3e3ffa2d2296"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 57,
+      "title": "DEPENDENCY SECURITY",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Several dependencies are exact pinned; others are ranges and transitive dependencies are not locked. pip-audit exists in CI.",
+      "next_action": "Produce a reproducible complete dependency lock and validate current vulnerability scans with an update/remediation process.",
+      "evidence": [
+        {
+          "path": "requirements.txt",
+          "sha256": "cf1442c3839d1da646c55d1d1129df4f4cfb056c83b494956567a2db3ce87cbc"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 58,
+      "title": "SUPPLY CHAIN SECURITY",
+      "status": "unverified",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "Maintainer MFA, branch protection, trusted CI actions and registry/cloud permissions are not established by source code.",
+      "next_action": "Verify repository/host controls and require reviewed changes with pinned CI dependencies and least-privilege secrets.",
+      "evidence": [
+        {
+          "path": ".github/workflows/validate.yml",
+          "sha256": "8ddc75e8c765f55d758d79c4cd5ffc59c6bbaee0b061cb22b29a3e3ffa2d2296"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 59,
+      "title": "TESTING PYRAMID",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Substantial synthetic unit/integration suites exist; browser, accessibility and provider contract coverage are incomplete.",
+      "next_action": "Map critical journeys to each test level and add missing provider/browser security regressions.",
+      "evidence": [
+        {
+          "path": "tests/test_reviewed_publication.py",
+          "sha256": "882697be84891f0f83f7e2517984e040fa2a3128a8fa8586f0df81e3e8303de0"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 60,
+      "title": "MANDATORY TENANT ISOLATION TESTS",
+      "status": "partial",
+      "severity": "P0",
+      "owner": "Engineering",
+      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access.",
+      "next_action": "Build a complete object/operation attack matrix and run it under restricted PostgreSQL identities with RLS.",
+      "evidence": [
+        {
+          "path": "tests/test_production_guardrails.py",
+          "sha256": "98901343bebb38e073cf20f4fb1314ca07c60615bc0dac3ea23d0e35078ad428"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 61,
+      "title": "MANDATORY PUBLISHING TESTS",
+      "status": "partial",
+      "severity": "P0",
+      "owner": "Engineering",
+      "finding": "Reviewed publishing covers duplicates, worker races and uncertainty; legacy routes and all required media/cancellation/provider fault scenarios are incomplete.",
+      "next_action": "Cover every mandatory scenario against all publish entry points with deterministic persisted outcomes.",
+      "evidence": [
+        {
+          "path": "tests/test_reviewed_publication.py",
+          "sha256": "882697be84891f0f83f7e2517984e040fa2a3128a8fa8586f0df81e3e8303de0"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 62,
+      "title": "LOAD TESTING",
+      "status": "unverified",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "No current 100/1000-user, top-of-hour, ingestion or webhook-spike load evidence is present.",
+      "next_action": "Run isolated staged load scenarios and verify graceful overload with no duplicate sends or corruption.",
+      "evidence": [
+        {
+          "path": "docs/PRODUCTION_GUARDRAILS.md",
+          "sha256": "953d7d3686edf255b6cda9f2b47b8982aeb97aa7bb9b53ca7171cfd1c77e0388"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 63,
+      "title": "SECURITY TESTING",
+      "status": "unverified",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Dependency scanning exists; no current external penetration test, full ASVS Level 2 assessment, dynamic/API fuzz or OAuth review evidence exists.",
+      "next_action": "Scope and complete independent security testing after architectural remediation, recording unresolved findings as blockers.",
+      "evidence": [
+        {
+          "path": ".github/workflows/validate.yml",
+          "sha256": "8ddc75e8c765f55d758d79c4cd5ffc59c6bbaee0b061cb22b29a3e3ffa2d2296"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 64,
+      "title": "INCIDENT RESPONSE",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "Operations/rollback notes exist; a complete incident procedure with accountable responders and notification workflow needs approval and exercise.",
+      "next_action": "Run an incident tabletop covering detection through postmortem, preserving evidence and customer impact analysis.",
+      "evidence": [
+        {
+          "path": "docs/OPERATIONS_AND_ROLLBACK.md",
+          "sha256": "08dfc870bb5f673a398505fe557f6041deb1cf39b1bc172ed86745559e921a1b"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 65,
+      "title": "OAUTH COMPROMISE RUNBOOK",
+      "status": "gap",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "No complete OAuth-store compromise runbook, global invalidation, rotation and publishing suspension control is present.",
+      "next_action": "Implement the emergency control path and exercise provider revocation/key rotation/affected-account identification.",
+      "evidence": [
+        {
+          "path": "docs/OPERATIONS_AND_ROLLBACK.md",
+          "sha256": "08dfc870bb5f673a398505fe557f6041deb1cf39b1bc172ed86745559e921a1b"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 66,
+      "title": "DISASTER RECOVERY",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Operations and security",
+      "finding": "Synthetic restore and code rollback guidance exist; all required disaster scenarios and annual exercise evidence are incomplete.",
+      "next_action": "Document and rehearse database corruption/deletion, region outage, credential compromise and provider failure recovery.",
+      "evidence": [
+        {
+          "path": "docs/OPERATIONS_AND_ROLLBACK.md",
+          "sha256": "08dfc870bb5f673a398505fe557f6041deb1cf39b1bc172ed86745559e921a1b"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 67,
+      "title": "GDPR ACCOUNTABILITY",
+      "status": "unverified",
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "finding": "Legal pages and assisted lifecycle functions exist; completeness/current approval of inventory, DPA, subprocessors and DSAR procedures is not verified.",
+      "next_action": "Obtain accountable privacy review and operational evidence; do not infer legal compliance from code tests.",
+      "evidence": [
+        {
+          "path": "USER_DATA.md",
+          "sha256": "77be076a7498089ce3dfb418d6079f578d9967f26d068259cf3637cae6c9b652"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 68,
+      "title": "ANALYTICS PRIVACY",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "finding": "Product events and AI usage records favor categorical metadata. Complete third-party analytics/log data-flow exclusion is not verified.",
+      "next_action": "Test telemetry allowlists against synthetic credentials, draft text, emails and secret-bearing URLs.",
+      "evidence": [
+        {
+          "path": "nova/readiness.py",
+          "sha256": "5801a24030d66f29d74fb1d620c7c53963f6e05f8801700d017f2d0388eec574"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 69,
+      "title": "SUPPORT DATA ACCESS",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Privacy and engineering",
+      "finding": "Internal status is metadata-only; assisted export/erasure helpers lack enforced per-case staff capability and immutable access records.",
+      "next_action": "Gate elevated content access with explicit reason, verified support role and immutable audit.",
+      "evidence": [
+        {
+          "path": "nova/data_lifecycle.py",
+          "sha256": "aab266d06bbdd83c9771cc51515b94b43dc7837d9b627862fd26a4a859ee5593"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 70,
+      "title": "PRODUCT TRUST",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "finding": "Review shows account identity and publication results; scopes, last access, actor attribution and automation visibility are incomplete.",
+      "next_action": "Expose accurate connection permissions/access and action provenance with clear automation status.",
+      "evidence": [
+        {
+          "path": "nova/templates/connection_list.html",
+          "sha256": "8e33af651f40e04d451275161e10ca88c893a473081794cfa693e7c0bb5e992d"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 71,
+      "title": "AUTOMATION GUARDRAILS",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "finding": "Finite recurring plans declare timing/mode and reviewed snapshots; uniform trigger/condition/limits/authority declarations are incomplete.",
+      "next_action": "Define and display a versioned automation policy enforced by workers and approvals.",
+      "evidence": [
+        {
+          "path": "nova/series.py",
+          "sha256": "21d8cd0b3e97ca407c7294ef64461d39cbd154b98e7c44ead6bb24a8bdcd11f9"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 72,
+      "title": "AUTOMATION KILL SWITCH",
+      "status": "gap",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "Series can pause/cancel, but workspace-wide automated publishing pause and system-wide emergency switch are absent.",
+      "next_action": "Add durable owner and operations switches enforced immediately before new dispatch, with audited changes and in-flight caveats.",
+      "evidence": [
+        {
+          "path": "nova/series.py",
+          "sha256": "21d8cd0b3e97ca407c7294ef64461d39cbd154b98e7c44ead6bb24a8bdcd11f9"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 73,
+      "title": "SAFE DEFAULTS",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "finding": "Marketing consent is off and publishing requires review. Public media configuration and MFA defaults do not meet the complete safe-default requirement.",
+      "next_action": "Enforce private storage, MFA prompts and explicit opt-in automation in initial/deployment configuration.",
+      "evidence": [
+        {
+          "path": "render.yaml",
+          "sha256": "acc44ffca299e77fc4a8f888f730b0efa956b26bd186c7e11b746141e842869b"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 74,
+      "title": "USER CONTROL",
+      "status": "gap",
+      "severity": "P1",
+      "owner": "Product and engineering",
+      "finding": "Users manage connections/profile/billing and series. Team roles, direct deletion and direct exports are missing or assisted-only.",
+      "next_action": "Implement accessible authenticated self-service lifecycle/team/automation controls with recovery and audit.",
+      "evidence": [
+        {
+          "path": "nova/templates/account.html",
+          "sha256": "f2cd5d1ff13722252b65f6b6e10513bf77e4630386c36416909357573370673c"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 75,
+      "title": "RELEASE SEVERITY MODEL",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "This assessment applies P0–P3 and blocks all unresolved applicable sections; previously deployed code has not been certified against the model.",
+      "next_action": "Assign accountable owners and verify release policy is required in repository and hosting controls.",
+      "evidence": [
+        {
+          "path": "scripts/release_gate.py",
+          "sha256": "90807069a2efab8b6f7204270e1c03e92be90cbf2c1f67ad0005df139893494f"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 76,
+      "title": "PRODUCTION RELEASE GATE",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "A fail-closed register and CI/pre-deploy command are added. Actual required-check/hosting enforcement and all domain evidence remain outstanding.",
+      "next_action": "Install repository/host enforcement and close all applicable product/security/privacy/reliability/concurrency/data/operations checks.",
+      "evidence": [
+        {
+          "path": "scripts/release_gate.py",
+          "sha256": "90807069a2efab8b6f7204270e1c03e92be90cbf2c1f67ad0005df139893494f"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 77,
+      "title": "ZOVA'S TEN NON-NEGOTIABLES",
+      "status": "gap",
+      "severity": "P0",
+      "owner": "Engineering",
+      "finding": "The ten non-negotiables cannot be certified while tenant, legacy publishing, queue, audit and recovery requirements remain unresolved.",
+      "next_action": "Close underlying blockers with independently reviewable evidence; do not waive them based on a successful build.",
+      "evidence": [
+        {
+          "path": "docs/PRODUCTION_GUARDRAILS.md",
+          "sha256": "953d7d3686edf255b6cda9f2b47b8982aeb97aa7bb9b53ca7171cfd1c77e0388"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 78,
+      "title": "TARGET PRODUCTION ARCHITECTURE",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "API, ORM and provider layers exist; restricted PostgreSQL/RLS, independent worker/queue, private object storage and central telemetry remain incomplete.",
+      "next_action": "Migrate incrementally to the target architecture with compatibility, recovery and failure tests at each stage.",
+      "evidence": [
+        {
+          "path": "nova/db.py",
+          "sha256": "90d753bdf78a4adac0ff7853a4f91f70da94abd22a11f19a01178c7e3e71062f"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": 79,
+      "title": "ENGINEERING DEFINITION OF DONE",
+      "status": "partial",
+      "severity": "P1",
+      "owner": "Engineering",
+      "finding": "The definition of done is now versioned and checked through the register; complete operational and product acceptance evidence is absent.",
+      "next_action": "Require evidence-backed closure, repeat the full release gate on the exact candidate and archive approved release evidence.",
+      "evidence": [
+        {
+          "path": "scripts/release_gate.py",
+          "sha256": "90807069a2efab8b6f7204270e1c03e92be90cbf2c1f67ad0005df139893494f"
+        }
+      ],
+      "reviewed_by": null,
+      "reviewed_at": null
+    }
+  ]
+}

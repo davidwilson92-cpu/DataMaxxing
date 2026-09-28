@@ -1,3 +1,5 @@
+> Production readiness is governed by [the 79-section guardrails](docs/PRODUCTION_GUARDRAILS.md), [current assessment](docs/guardrails/ASSESSMENT.md), and [iterative release process](docs/guardrails/ITERATION_PROCESS.md). The production gate remains blocked until all applicable requirements have reviewed evidence.
+
 # Zova Social Studio — V5.1
 
 Zova V5.1 is an AI social manager for content creators. It turns one piece of intent into genuinely different native content for **X, Instagram, Facebook and TikTok**, applies the creator's voice and brings performance back into the creative workflow.

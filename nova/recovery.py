@@ -12,6 +12,7 @@ from pathlib import Path
 from sqlalchemy import select, update
 from .db import RecoveryToken, SessionLocal, User, utcnow
 from .security import hash_api_key, hash_password
+from .password_policy import password_error
 from .request_security import allowed_request
 from .customer_service import context as service_context
 
@@ -93,8 +94,10 @@ def reset_page(request:Request,token:str=''):
 
 @router.post('/reset-password')
 def reset(token:str=Form(...),password:str=Form(...),confirmation:str=Form(...)):
-    if not 10<=len(password)<=256 or password!=confirmation:
-        raise HTTPException(400,'Use matching passwords with 10–256 characters. Return to the form to try again.')
+    if password != confirmation:
+        raise HTTPException(400, 'Passwords must match.')
+    if problem := password_error(password):
+        raise HTTPException(400, problem)
     with SessionLocal() as db:
         row=db.get(RecoveryToken,hash_api_key(token))
         if not row or row.used:

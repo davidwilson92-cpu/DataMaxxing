@@ -36,6 +36,7 @@ from .db import (
 )
 from .scheduler import loop as scheduler_loop, process_due
 from .security import revoke_session, current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password
+from .password_policy import password_error
 from .user_data import normalize_country, normalize_email, normalize_name
 from .social import (
     INSTAGRAM_SCOPES, INSTAGRAM_FACEBOOK_SCOPES, META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, instagram_authorize_url, instagram_exchange, meta_authorize_url, meta_exchange,
@@ -160,7 +161,7 @@ def publish_legacy_creator(text: str, creator: Creator, db: Session) -> dict[str
         row.status="published"; row.x_post_id=pid; db.commit()
         return {"post_id": pid, "url": f"https://x.com/{creator.x_username}/status/{pid}"}
     except Exception as exc:
-        row.status="failed"; row.error=str(exc); db.commit(); raise HTTPException(502, f"X API error: {exc}") from exc
+        row.status="unknown"; row.error="Publication outcome unconfirmed; check X before retrying."; db.commit(); raise HTTPException(502, row.error) from None
 
 
 @asynccontextmanager
@@ -253,7 +254,7 @@ def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str,
         return retry(f"/signup?error={quote_plus(str(exc))}", 303)
     if accept_terms != "yes": return retry("/signup?error=Please+accept+the+Terms+and+Privacy+Policy",303)
     if password != password_confirmation: return retry("/signup?error=Passwords+do+not+match",303)
-    if not 10 <= len(password) <= 256: return retry("/signup?error=Use+a+password+of+at+least+10+characters",303)
+    if problem := password_error(password): return retry("/signup?error="+quote_plus(problem),303)
     if db.scalar(select(User).where(User.email==email)): return retry("/signup?error=An+account+with+that+email+already+exists",303)
     now = utcnow()
     consent = marketing_consent == "yes"
@@ -624,7 +625,7 @@ async def update_profile(request: Request, display_name: Annotated[str, Form()] 
 def change_password(request: Request, current_password: Annotated[str, Form()], new_password: Annotated[str, Form()], new_password_confirmation: Annotated[str, Form()], db: Session = Depends(get_db)):
     user = db.get(User, current_user(request).id)
     if not verify_password(current_password, user.password_hash): return RedirectResponse("/account?error=current_password", 303)
-    if not 10 <= len(new_password) <= 256: return RedirectResponse("/account?error=password_length", 303)
+    if problem := password_error(new_password): return RedirectResponse("/account?error="+quote_plus(problem), 303)
     if new_password != new_password_confirmation: return RedirectResponse("/account?error=password_match", 303)
     user.password_hash = hash_password(new_password)
     user.auth_version += 1
@@ -637,7 +638,9 @@ def change_password(request: Request, current_password: Annotated[str, Form()], 
 def scan_social_voice(request: Request, db: Session = Depends(get_db)):
     user = current_user(request)
     try: profile = learn_voice_from_socials(db, user.id)
-    except Exception as exc: log.exception("Social voice scan failed"); raise HTTPException(502, f"Zova could not scan recent posts: {exc}") from exc
+    except Exception:
+        log.warning("Social voice scan failed")
+        raise HTTPException(502, "Zova could not scan recent posts. Your saved voice is unchanged. Try again later.") from None
     if not profile: return {"status": "waiting", "message": "Connect a social account so Zova can learn from recent posts."}
     return {"status": "learned", **profile}
 
@@ -856,8 +859,8 @@ def learn_voice(payload: VoiceLearnRequest, request: Request, db: Session = Depe
         try:
             profile = ai.infer_voice_profile(payload.content)
         except Exception as exc:
-            log.exception("Voice learning failed")
-            raise HTTPException(502, f"Zova could not analyse that sample: {exc}") from exc
+            log.warning("Voice learning failed")
+            raise HTTPException(502, "Zova could not analyse that sample. Your saved voice is unchanged. Try again later.") from None
         prefs = get_preferences(db, user.id)
         prefs.writing_tone = profile["writing_tone"][:5000]
         prefs.audience = profile["audience"][:5000]
@@ -952,7 +955,7 @@ def api_rewrite(body:RewriteRequest,request:Request,db:Session=Depends(get_db)):
         from .media_inspection import inspect_assets, context as media_context
         inspected=inspect_assets(db,user.id,body.media_asset_ids)
         try:posts=ai.rewrite_variant(platform=body.platform,posts=body.posts,action=body.action,instruction=body.instruction+strategy_context(db,user.id)+media_context(inspected),preferences=prefs)
-        except RuntimeError as exc:raise HTTPException(502,str(exc))
+        except Exception:raise HTTPException(502,'The AI service could not complete this request. Nothing has been published. Try again later.') from None
         db.commit()
         return {"posts":posts}
 
@@ -962,7 +965,7 @@ def api_schedule_suggest(body:ScheduleSuggestRequest,request:Request,db:Session=
     with allowances.ai_action(db,current_user(request).id):
         user=current_user(request);subscription_guard(user);prefs=get_preferences(db,user.id);platforms=_validate_platforms(body.platforms)
         try:s=ai.propose_schedule(platforms=platforms,timezone_name=prefs.timezone,context=body.context)
-        except RuntimeError as exc:raise HTTPException(502,str(exc))
+        except Exception:raise HTTPException(502,'The AI service could not complete this request. Nothing has been published. Try again later.') from None
         return {"timezone":prefs.timezone,"suggestions":s,"note":"Suggested starting points, not recommendations based on your account performance."}
 
 

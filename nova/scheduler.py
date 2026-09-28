@@ -23,10 +23,33 @@ def process_due(limit: int = 25) -> dict[str, int]:
         db.execute(delete(PendingConnection).where(PendingConnection.expires_at<utcnow()))
         # Never automatically resend an uncertain request after a crash.
         stale=utcnow()-timedelta(minutes=15)
-        stuck=db.scalars(select(Publication).where(Publication.status.in_(['publishing','queued']),Publication.updated_at<stale)).all()
+        stuck=db.scalars(select(Publication).where(Publication.status=='publishing',Publication.updated_at<stale)).all()
         for item in stuck:
-            item.status='unknown';item.result_json=json.dumps({'error':'Worker interrupted; check the destination before retrying.'})
-        db.execute(update(ScheduledPost).where(ScheduledPost.status=='publishing',ScheduledPost.updated_at<stale).values(status='unknown',error='Worker interrupted; verify destination.'))
+            evidence=json.loads(item.result_json or '{}')
+            evidence['error']='Worker interrupted; check the destination before retrying.'
+            db.execute(update(Publication).where(
+                Publication.id==item.id,Publication.status=='publishing',Publication.updated_at==item.updated_at
+            ).values(status='unknown',result_json=json.dumps(evidence)).execution_options(synchronize_session=False))
+        db.commit();db.expire_all()
+        interrupted=db.scalars(select(ScheduledPost).where(ScheduledPost.status=='publishing',ScheduledPost.updated_at<stale)).all()
+        for job in interrupted:
+            content=json.loads(job.content_json or '{}')
+            item=db.get(Publication,content.get('publication_id')) if content.get('publication_id') else None
+            linked=(item and
+                    (item.user_id,item.brand_id,item.draft_id,item.connection_id,item.platform)==
+                    (job.user_id,job.brand_id,job.draft_id,job.connection_id,job.platform))
+            values={'status':'unknown','error':'Worker interrupted; verify destination.'}
+            if linked and item.status in {'queued','scheduled'}:
+                # The external-send claim never happened: this job is safe to reclaim.
+                values={'status':'scheduled','error':None}
+            elif linked and item.status in {'published','pending','failed','cancelled'}:
+                # The ledger committed before the worker could update the job row.
+                result=json.loads(item.result_json or '{}')
+                values={'status':item.status,'error':result.get('error'),
+                        'platform_post_id':result.get('post_id'),'post_url':result.get('url')}
+            db.execute(update(ScheduledPost).where(
+                ScheduledPost.id==job.id,ScheduledPost.status=='publishing',ScheduledPost.updated_at==job.updated_at
+            ).values(**values).execution_options(synchronize_session=False))
         db.commit()
         for item in stuck:update_draft_status(db,item.draft_id)
         pending=db.scalars(select(Publication).where(Publication.platform=='tiktok',Publication.status=='pending').limit(limit)).all()
@@ -60,7 +83,11 @@ def process_due(limit: int = 25) -> dict[str, int]:
                 content = json.loads(row.content_json)
                 if content.get('publication_id'):
                     item=db.get(Publication,content['publication_id']);review=db.get(PublishReview,content['review_code'])
-                    if not item or not review:raise RuntimeError('Missing reviewed publication')
+                    if (not item or not review or
+                            (item.user_id,item.brand_id,item.draft_id,item.platform,item.connection_id,item.review_code) !=
+                            (row.user_id,row.brand_id,row.draft_id,row.platform,row.connection_id,review.code) or
+                            (review.user_id,review.brand_id,review.draft_id)!=(row.user_id,row.brand_id,row.draft_id)):
+                        raise RuntimeError('Invalid reviewed publication ownership')
                     dispatch(db,item,json.loads(review.payload_json),publish_platform)
                     db.refresh(item);row.status=item.status
                     result=json.loads(item.result_json or '{}');row.platform_post_id=result.get('post_id');row.post_url=result.get('url');row.error=result.get('error');db.commit()
@@ -81,7 +108,7 @@ def process_due(limit: int = 25) -> dict[str, int]:
                 db.add(Activity(user_id=row.user_id, brand_id=row.brand_id, draft_id=row.draft_id, platform=row.platform, action="scheduled_publish", status=row.status, text="\n\n".join(posts), platform_post_id=row.platform_post_id, url=row.post_url))
                 published += 1
             except Exception as exc:
-                log.exception("Scheduled %s post %s failed", row.platform, row.id)
+                log.warning("Scheduled %s post %s failed; outcome unconfirmed", row.platform, row.id)
                 row.status = "unknown"; row.error = "Publication outcome is unconfirmed. Check the destination before retrying."
                 db.add(Activity(user_id=row.user_id, brand_id=row.brand_id, draft_id=row.draft_id, platform=row.platform, action="scheduled_publish", status="unknown", text=row.content_json[:2000], error="Publication could not be confirmed"))
                 failed += 1
@@ -95,5 +122,5 @@ async def loop() -> None:
         try:
             await asyncio.to_thread(process_due)
         except Exception:
-            log.exception("Scheduler loop failed")
+            log.error("Scheduler loop failed; inspect operational status")
         await asyncio.sleep(interval)
