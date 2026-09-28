@@ -155,7 +155,7 @@ async function newConversation(){
   uploadedMedia=[];uploadedMediaIds=[];uploadedMediaKind=null;uploadedVideoDuration=0;changeSerial=0;savedSerial=0;
   history.replaceState({},'',window.zovaWorkspaceUrl('/studio'));document.getElementById('chatFeed').innerHTML='';
   document.getElementById('brief').value='';document.getElementById('linkUrl').value='';document.getElementById('mediaInput').value='';document.getElementById('mediaInput').disabled=false;
-  editingDraft=false;renderRecentPosts();document.getElementById('postSettings').close();studioBusy(false);renderAttachments();addAssistantMessage('What do you want to share? Bring an idea or attach your media.');setAutosaveStatus('Ready');sizeComposer();document.getElementById('brief').focus();
+  editingDraft=false;renderRecentPosts();document.getElementById('postSettings').close();studioBusy(false);renderAttachments();addAssistantMessage('How can we grow your engagement today? Share your ideas. Zova’s AI helps shape them into a plan and posts in your voice.');setAutosaveStatus('Ready');sizeComposer();document.getElementById('brief').focus();
 }
 document.getElementById('mediaInput').addEventListener('change',async()=>{await uploadMedia();scheduleAutosave();});
 document.getElementById('brief').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&(event.ctrlKey||event.metaKey||window.matchMedia('(min-width: 761px)').matches)){event.preventDefault();sendMessage();}});
