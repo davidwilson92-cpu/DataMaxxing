@@ -10,7 +10,7 @@ from sqlalchemy import select,update
 
 from .db import Activity, MediaAsset, ScheduledPost, SessionLocal, Publication, PublishReview, Draft, utcnow
 from .social import publish_platform,resolve_tiktok_post,selected_connection
-from .publishing_workflow import capability_error,dispatch,update_draft_status
+from .publishing_workflow import capability_error,dispatch,update_draft_status,publication_connection
 
 log = logging.getLogger("nova.scheduler")
 
@@ -45,7 +45,9 @@ def scheduled_assets(db, job):
 
 
 def process_due(limit: int = 25) -> dict[str, int]:
-    published = failed = 0
+    from .legacy_queue import process_legacy
+    legacy_counts = process_legacy(limit)
+    published, failed = legacy_counts['published'], legacy_counts['failed']
     with SessionLocal() as db:
         from .db import PendingConnection
         from sqlalchemy import delete
@@ -84,7 +86,7 @@ def process_due(limit: int = 25) -> dict[str, int]:
         pending=db.scalars(select(Publication).where(Publication.platform=='tiktok',Publication.status=='pending').limit(limit)).all()
         for item in pending:
             try:
-                stored=json.loads(item.result_json);conn=selected_connection(db,item.user_id,item.platform,item.connection_id)
+                stored=json.loads(item.result_json);conn=publication_connection(db,item)
                 state=resolve_tiktok_post(db,conn,stored['post_id']);remote=str(state.get('status','')).upper()
                 if remote=='PUBLISH_COMPLETE':
                     item.status='published';stored['pending']=False
@@ -94,8 +96,8 @@ def process_due(limit: int = 25) -> dict[str, int]:
                     item.status='failed';stored['error']='TikTok reported this publication failed. Review before retrying.'
                     finish(db,f'publication:{item.id}',False)
                 item.result_json=json.dumps(stored);db.commit()
-                db.execute(update(Activity).where(Activity.draft_id==item.draft_id,Activity.platform==item.platform,Activity.platform_post_id==stored.get('post_id'),Activity.status=='pending').values(status=item.status));db.commit()
-                db.execute(update(ScheduledPost).where(ScheduledPost.draft_id==item.draft_id,ScheduledPost.platform==item.platform,ScheduledPost.status=='pending').values(status=item.status));db.commit()
+                db.execute(update(Activity).where(Activity.user_id==item.user_id,Activity.brand_id==item.brand_id,Activity.draft_id==item.draft_id,Activity.platform==item.platform,Activity.platform_post_id==stored.get('post_id'),Activity.status=='pending').values(status=item.status));db.commit()
+                db.execute(update(ScheduledPost).where(ScheduledPost.user_id==item.user_id,ScheduledPost.brand_id==item.brand_id,ScheduledPost.connection_id==item.connection_id,ScheduledPost.draft_id==item.draft_id,ScheduledPost.platform==item.platform,ScheduledPost.status=='pending').values(status=item.status));db.commit()
                 update_draft_status(db,item.draft_id)
             except Exception:db.rollback();log.warning('Pending publication could not be checked; it will not be resent')
         rows = db.scalars(

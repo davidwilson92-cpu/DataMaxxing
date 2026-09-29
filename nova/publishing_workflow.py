@@ -126,7 +126,7 @@ def prepare_review(db,uid,body):
     tz=planned["timezone"] if planned else get_preferences(db,uid).timezone
     scheduled=getattr(body,'scheduled_local',None)
     if scheduled:scheduled=schedule_time(scheduled,tz).isoformat()
-    payload={'draft_id':draft.id,'platforms':platforms,'variants':{p:variants[p] for p in platforms},'media_asset_ids':body.media_asset_ids,'media':[{'filename':a.filename,'kind':'video' if a.mime_type.startswith('video/') else 'image','url':a.public_url or f'/media/preview/{a.id}'} for a in media],
+    payload={'draft_id':draft.id,'platforms':platforms,'variants':{p:variants[p] for p in platforms},'media_asset_ids':body.media_asset_ids,'media':[{'filename':a.filename,'kind':'video' if a.mime_type.startswith('video/') else 'image','url':f'/media/preview/{a.id}'} for a in media],
              'link_url':body.link_url,'publish_options':options,'targets':targets,'scheduled_utc':scheduled,'timezone':tz}
     row=PublishReview(code=secrets.token_urlsafe(24),user_id=uid,draft_id=draft.id,revision=draft.revision,payload_json=json.dumps(payload,ensure_ascii=False),expires_at=utcnow()+timedelta(minutes=15))
     db.add(row);db.commit()
@@ -146,6 +146,26 @@ def results_for(db,uid,draft_id):
     return {'draft_status':draft.status,'results':results,'summary':' '.join(f"{'X' if p=='x' else p.title()}: {r['status'].replace('_',' ')}." for p,r in results.items())}
 
 
+def publication_connection(db, publication):
+    """Reconciliation is privileged provider access too; never fall back to an account."""
+    if not publication.connection_id:
+        raise RuntimeError('Publication connection missing')
+    conn=selected_connection(db,publication.user_id,publication.platform,publication.connection_id)
+    draft=db.get(Draft,publication.draft_id)
+    boundary=(publication.user_id,publication.brand_id)
+    if ((conn.user_id,conn.brand_id)!=boundary or not draft
+            or (draft.user_id,draft.brand_id)!=boundary):
+        raise RuntimeError('Publication boundary mismatch')
+    review=db.get(PublishReview,publication.review_code)
+    if (not review or (review.user_id,review.brand_id,review.draft_id)!=
+            (publication.user_id,publication.brand_id,publication.draft_id)):
+        raise RuntimeError('Publication review mismatch')
+    target=json.loads(review.payload_json)['targets'][publication.platform]
+    if target['connection_id']!=conn.id or target['account_id']!=conn.account_id:
+        raise RuntimeError('Reviewed account changed')
+    return conn
+
+
 def reconcile_instagram(db, publication):
     """Only authoritative PUBLISHED resolves an uncertain send; never resend here."""
     if publication.platform!='instagram' or publication.status!='unknown':return
@@ -156,7 +176,7 @@ def reconcile_instagram(db, publication):
     try:
         from .social import instagram_graph_base, access_token
         import httpx
-        conn=selected_connection(db,publication.user_id,'instagram',publication.connection_id)
+        conn=publication_connection(db,publication)
         response=httpx.get(f"{instagram_graph_base(conn)}/{result['container_id']}",params={'fields':'status_code','access_token':access_token(conn,db)},timeout=15)
         if response.status_code>=400 or response.json().get('status_code')!='PUBLISHED':return
     except Exception:return

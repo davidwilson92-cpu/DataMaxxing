@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Zova X Posting API
-  version: 5.1.0
-  description: Backward-compatible X preview and publish actions for an authenticated creator account.
+  version: 5.2.0
+  description: X preview, durable publishing and status actions for an authenticated creator. Queued is not published. Reuse the same idempotency key on retries and never resubmit an unknown outcome under a new key.
 servers:
   - url: https://REPLACE-WITH-YOUR-SERVICE.onrender.com
 paths:
@@ -25,7 +25,7 @@ paths:
   /x/post:
     post:
       operationId: publishPost
-      summary: Publish an explicitly approved post to X
+      summary: Queue an explicitly approved post to X
       x-openai-isConsequential: true
       security: [{bearerAuth: []}]
       requestBody:
@@ -37,9 +37,39 @@ paths:
               properties:
                 text: {type: string, minLength: 1, maxLength: 280}
                 approved: {type: boolean, enum: [true]}
-              required: [text, approved]
+                idempotency_key: {type: string, minLength: 16, maxLength: 128, pattern: '^[A-Za-z0-9_-]+$', description: Unique key for this approval. Reuse it when retrying this exact submission.}
+              required: [text, approved, idempotency_key]
       responses:
-        "200": {description: Published successfully}
+        "202": {description: Job saved or existing job returned. Read status_url; only published confirms success.}
+        "409": {description: Idempotency key already belongs to different content.}
+  /x/jobs/{job_id}:
+    get:
+      operationId: getPublicationStatus
+      summary: Read the current state of your publishing job without sending again
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: {type: string}
+      responses:
+        "200": {description: Current job state. Unknown requires checking X; do not resend automatically.}
+        "404": {description: Job not found for this creator.}
+  /x/jobs/{job_id}/cancel:
+    post:
+      operationId: cancelQueuedPublication
+      summary: Cancel your queued post before its worker starts
+      x-openai-isConsequential: true
+      security: [{bearerAuth: []}]
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: {type: string}
+      responses:
+        "200": {description: Cancelled before dispatch.}
+        "409": {description: Already started or finished; an external request cannot be recalled.}
+        "404": {description: Job not found for this creator.}
 components:
   securitySchemes:
     bearerAuth: {type: http, scheme: bearer}

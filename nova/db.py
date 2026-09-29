@@ -95,6 +95,19 @@ class OAuth2Connection(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
 
+class LegacyPublication(Base):
+    __tablename__ = 'zova_legacy_publications'
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    creator_id: Mapped[int] = mapped_column(ForeignKey('creators.id'), index=True)
+    text: Mapped[str] = mapped_column(Text)
+    account: Mapped[str] = mapped_column(String(50))
+    authority_digest: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(30), default='queued', index=True)
+    result_json: Mapped[str] = mapped_column(Text, default='{}')
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
 class PostLog(Base):
     __tablename__ = 'post_logs'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -458,9 +471,12 @@ class SeriesApproval(BrandScoped, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine, tables=[table for table in Base.metadata.sorted_tables
+                                             if table is not LegacyPublication.__table__])
 from .migrations import run_migrations
 run_migrations(engine)
+from .migrations import run_legacy_queue_migration
+run_legacy_queue_migration(engine, LegacyPublication.__table__)
 
 
 def get_db(request: Request):

@@ -45,7 +45,7 @@ def clean_workspace(value, db, user_id):
     for aid in dict.fromkeys(ids):
         row=db.get(MediaAsset,aid)
         if not row or row.user_id!=user_id: raise HTTPException(404,'Attachment not found')
-        assets.append({'id':row.id,'filename':row.filename,'url':row.public_url or f'/media/preview/{row.id}','kind':'video' if row.mime_type.startswith('video/') else 'image'})
+        assets.append({'id':row.id,'filename':row.filename,'url':f'/media/preview/{row.id}','kind':'video' if row.mime_type.startswith('video/') else 'image'})
     messages=value.get('conversation',[])
     if not isinstance(messages,list) or len(messages)>200: raise HTTPException(400,'Conversation is too long; start a new chat.')
     messages=[{'role':m['role'],'content':str(m.get('content',''))[:12000]} for m in messages if isinstance(m,dict) and m.get('role') in {'assistant','user'}]

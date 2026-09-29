@@ -17,3 +17,6 @@ with source.connect() as a, restored.connect() as b:
     for table,columns,order in [('zova_pending_connections','code_hash,user_id,brand_id,auth_version,platform,encrypted_payload,expires_at,used','code_hash'),('zova_ai_calls','id,user_id,model,status,input_tokens,output_tokens,estimated_gbp,rate_snapshot','id'),('zova_product_events','key,user_id,kind,created_at','key'),('zova_email_verifications','token_hash,user_id,email,expires_at,used','token_hash'),('zova_mail_deliveries','id,status,created_at','id')]:
         assert a.execute(text(f'SELECT {columns} FROM {table} ORDER BY {order}')).all()==b.execute(text(f'SELECT {columns} FROM {table} ORDER BY {order}')).all(),table
 print('Synthetic PostgreSQL restore: all table counts and identity/credential/workspace records match.')
+with source.connect() as a, restored.connect() as b:
+    query = text('SELECT id,creator_id,text,account,authority_digest,status,result_json FROM zova_legacy_publications ORDER BY id')
+    assert a.execute(query).all() == b.execute(query).all(), 'legacy publication ledger'

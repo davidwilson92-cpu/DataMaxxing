@@ -73,6 +73,22 @@ the staging plan and costs before provisioning. Neither deferral closes a gap.
    and evidence retention, and added reviewed dependency-update configuration.
    Application/dependency locks, image digests, independent review and cloud
    access assurance remain open. See `CI_SECURITY.md` for update procedures.
+8. Replaced synchronous Custom GPT X sending with a creator-scoped idempotency
+   ledger and durable worker jobs, explicit queued/status responses, conditional
+   cancellation, immutable approval fields and conservative unknown outcomes.
+   Added a versioned additive migration, restore comparison, dedicated worker
+   entry point and metadata-only operational signals. The GPT action contract
+   must be updated before rollout; see `LEGACY_QUEUE_ROLLOUT.md`. The independent
+   worker is implemented but not deployed or operationally certified.
+9. Added exact owner/brand/draft/review/account checks before Instagram and TikTok
+   result reconciliation, with adversarial tests. These application checks do
+   not replace the remaining canonical workspace/membership/RLS migration.
+10. Replaced permanent local media delivery with authenticated owner previews
+    and signed downloads (five-minute previews, at most one-hour provider URLs).
+    S3 delivery now generates expiring URLs instead of trusting stored public
+    URLs. Unsigned, modified and expired local URLs are rejected. Existing bucket
+    policies, cache copies, persistent storage and provider fetch compatibility
+    still require deployed evidence; see `PRIVATE_MEDIA_ROLLOUT.md`.
 
 The Render inventory review found `zova-cs-staging` runs a different repository
 and `zova-tiktok-sandbox` shares the production database. Neither is approved for
@@ -80,7 +96,14 @@ these migration tests. See `STAGING_PLAN.md`; no cloud services were changed.
 
 ## Rollback and operational limits
 
-This increment adds no database columns or tables. Queued immediate posts use existing `ScheduledPost` and `Publication` records. Do not deploy old workers over these records without first pausing writes and reconciling/draining them with this candidate: the old recovery logic can mark a queued publication unknown after 15 minutes. Preserve all unknown/pending outcomes and never blindly resend. No rollback should restore an older customer database or rotate encryption keys merely to undo code.
+Iteration 8 adds the `zova_legacy_publications` table through migration
+`20260929_legacy_publication_queue`; historical sends are never backfilled as
+work. Follow `LEGACY_QUEUE_ROLLOUT.md` before rollout or rollback. Earlier queued
+Studio publishing uses existing `ScheduledPost` and `Publication` records. Do
+not deploy old workers over those records without first pausing writes and
+reconciling/draining them: old recovery can mark queued work unknown after
+15 minutes. Preserve all unknown/pending outcomes and never blindly resend.
+No rollback should restore an older database or rotate encryption keys to undo code.
 
 The existing scheduler wakes on its configured interval (default 60 seconds). The queued UI states that work is saved and continues after closing the page. A production deployment still requires an always-on worker, operational alerting and capacity verification. In-flight calls cannot be safely recalled by closing a browser.
 

@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy import event, select, inspect
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, with_loader_criteria
-from .db import (Brand, BrandVoice, BrandScoped, SessionLocal, CreatorPreferences)
+from .db import (Brand, BrandVoice, BrandScoped, SessionLocal, CreatorPreferences, LegacyPublication)
 
 
 def bind_request(db, request):
@@ -42,6 +42,11 @@ def scope_queries(state):
 @event.listens_for(Session, 'before_flush')
 def scope_writes(db, context, instances):
     for row in db.dirty:
+        if isinstance(row, LegacyPublication):
+            state = inspect(row)
+            if any(state.attrs[field].history.has_changes() for field in
+                   ('id', 'creator_id', 'text', 'account', 'authority_digest')):
+                raise HTTPException(409, 'Approved publication identity and content cannot be changed.')
         if isinstance(row, (BrandScoped, Brand)):
             state = inspect(row)
             fields = ('user_id', 'brand_id') if isinstance(row, BrandScoped) else ('user_id',)

@@ -32,7 +32,7 @@ def test_media_is_decoded_and_storage_extension_is_safe():
     result=client.post('/api/media',files={'files':('misleading.html',png.getvalue(),'image/png')})
     assert result.status_code==200
     url=result.json()['assets'][0]['url']
-    assert url.endswith('.png')
+    assert url.startswith('/media/preview/')
     response=client.get(url)
     assert response.headers['content-type'].startswith('image/png')
     assert 'sandbox' in response.headers['content-security-policy']

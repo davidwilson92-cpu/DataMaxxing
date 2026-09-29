@@ -49,6 +49,8 @@ log = logging.getLogger("nova")
 # OAuth exchanges put secrets and short-lived codes in query parameters. Never
 # allow the HTTP client to print those request URLs into provider logs.
 logging.getLogger("httpx").setLevel(logging.WARNING)
+from .safe_logging import install_access_filter
+install_access_filter()
 
 HERE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
@@ -167,13 +169,14 @@ def publish_legacy_creator(text: str, creator: Creator, db: Session) -> dict[str
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     bootstrap_legacy_account()
-    task = asyncio.create_task(scheduler_loop())
+    task = asyncio.create_task(scheduler_loop()) if os.environ.get('EMBEDDED_SCHEDULER', 'true').lower() in {'true','1','yes'} else None
     try:
         yield
     finally:
-        task.cancel()
-        try: await task
-        except asyncio.CancelledError: pass
+        if task:
+            task.cancel()
+            try: await task
+            except asyncio.CancelledError: pass
 
 
 app = FastAPI(title="Zova Social Publishing", version="5.1.0", lifespan=lifespan)
@@ -850,6 +853,7 @@ class DraftSaveRequest(BaseModel):
     revision:int|None=None
 class LegacyPostRequest(BaseModel):
     text:str=Field(min_length=1,max_length=280); approved:bool=False
+    idempotency_key:str|None=Field(default=None,min_length=16,max_length=128,pattern=r'^[A-Za-z0-9_-]+$')
 
 
 @app.post("/api/voice/learn")
@@ -912,14 +916,17 @@ async def upload_media(request:Request,files:list[UploadFile]=File(...),db:Sessi
         stored=save_bytes(data,file.filename or 'media',mime,base_url())
         row=MediaAsset(user_id=user.id,filename=(file.filename or 'media')[:260],mime_type=mime,storage_key=stored.storage_key,public_url=stored.public_url,size_bytes=len(data))
         db.add(row); db.flush()
-        result.append({'id':row.id,'filename':row.filename,'kind':'video' if mime in VIDEO_TYPES else 'image','mime_type':mime,'url':stored.public_url or f'/media/preview/{row.id}'})
+        result.append({'id':row.id,'filename':row.filename,'kind':'video' if mime in VIDEO_TYPES else 'image','mime_type':mime,'url':f'/media/preview/{row.id}'})
     db.commit()
     return {'assets':result}
 
 @app.get("/media/raw/{filename}")
-def local_media(filename:str):
-    safe=Path(filename).name; path=UPLOAD_DIR/safe
-    if not path.exists():raise HTTPException(404,"Media not found")
+def local_media(filename:str,expires:str='',signature:str=''):
+    from .storage import valid_media_signature
+    safe=Path(filename).name; path=(UPLOAD_DIR/safe).resolve()
+    if (safe!=filename or path.parent!=UPLOAD_DIR.resolve() or not path.is_file()
+            or not valid_media_signature(filename,expires,signature)):
+        raise HTTPException(404,"Media not found")
     return FileResponse(path, headers={"X-Content-Type-Options":"nosniff","Content-Security-Policy":"sandbox; default-src 'none'"})
 
 @app.post("/api/ai/generate")
@@ -1144,10 +1151,33 @@ def run_due(authorization:Annotated[str|None,Header()]=None):
 def legacy_preview(body:LegacyPostRequest,creator:Creator=Depends(require_legacy_creator)):
     return {"text":body.text,"character_count":len(body.text),"valid":len(body.text)<=280,"account":f"@{creator.x_username}"}
 
-@app.post("/x/post")
+@app.post("/x/post", status_code=202)
 def legacy_publish(body:LegacyPostRequest,creator:Creator=Depends(require_legacy_creator),db:Session=Depends(get_db)):
     if body.approved is not True:raise HTTPException(400,"Publication requires approved=true after explicit user confirmation")
-    result=publish_legacy_creator(body.text,creator,db);return {"success":True,"post_id":result["post_id"],"url":result["url"],"text":body.text,"account":f"@{creator.x_username}"}
+    from .legacy_queue import enqueue
+    return enqueue(db,creator,body.text,body.idempotency_key)
+
+@app.get('/x/jobs/{job_id}')
+def legacy_job(job_id:str,creator:Creator=Depends(require_legacy_creator),db:Session=Depends(get_db)):
+    from .db import LegacyPublication
+    from .legacy_queue import response
+    row=db.get(LegacyPublication,job_id)
+    if not row or row.creator_id!=creator.id:raise HTTPException(404,'Publication job not found')
+    return response(row)
+
+@app.post('/x/jobs/{job_id}/cancel')
+def cancel_legacy_job(job_id:str,creator:Creator=Depends(require_legacy_creator),db:Session=Depends(get_db)):
+    from .db import LegacyPublication
+    from .legacy_queue import response
+    from sqlalchemy import update
+    row=db.get(LegacyPublication,job_id)
+    if not row or row.creator_id!=creator.id:raise HTTPException(404,'Publication job not found')
+    claimed=db.execute(update(LegacyPublication).where(LegacyPublication.id==job_id,
+                       LegacyPublication.creator_id==creator.id,LegacyPublication.status=='queued').values(status='cancelled'))
+    db.commit();db.refresh(row)
+    if not claimed.rowcount and row.status!='cancelled':
+        raise HTTPException(409,'This job has started or finished. Check its status; cancellation cannot recall an external request.')
+    return response(row)
 
 @app.get("/help",response_class=HTMLResponse)
 def help_page(request:Request):
