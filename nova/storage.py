@@ -3,6 +3,10 @@ from __future__ import annotations
 import os
 import pathlib
 import uuid
+import hashlib
+import hmac
+import time
+from urllib.parse import quote
 from dataclasses import dataclass
 
 import httpx
@@ -42,12 +46,10 @@ def save_bytes(data: bytes, filename: str, content_type: str, base_url: str) -> 
     if client and bucket:
         extra = {"ContentType": content_type}
         client.put_object(Bucket=bucket, Key=key, Body=data, **extra)
-        public_base = os.environ.get("S3_PUBLIC_BASE_URL", "").rstrip("/")
-        public_url = f"{public_base}/{key}" if public_base else None
-        return StoredObject(key, public_url)
+        return StoredObject(key, None)
     path = UPLOAD_DIR / key.replace("/", "_")
     path.write_bytes(data)
-    return StoredObject(str(path), f"{base_url.rstrip('/')}/media/raw/{path.name}")
+    return StoredObject(str(path), None)
 
 
 def get_bytes(storage_key: str) -> bytes:
@@ -60,16 +62,30 @@ def get_bytes(storage_key: str) -> bytes:
 
 
 def get_public_url(storage_key: str, existing_public_url: str | None = None, expires: int = 3600) -> str:
-    if existing_public_url:
-        return existing_public_url
+    expires=max(1,min(int(expires),3600))
     client = _s3_client()
     bucket = os.environ.get("S3_BUCKET")
     if client and bucket and storage_key.startswith("nova/"):
         return client.generate_presigned_url("get_object", Params={"Bucket": bucket, "Key": storage_key}, ExpiresIn=expires)
-    raise RuntimeError("This media does not have a public URL. Configure S3 or another persistent public media store.")
+    path=pathlib.Path(storage_key).resolve()
+    if path.parent!=UPLOAD_DIR.resolve() or not path.is_file():
+        raise RuntimeError('Media is unavailable in the configured private storage.')
+    deadline=int(time.time())+expires
+    signature=media_signature(path.name,deadline)
+    base=os.environ.get('PUBLIC_BASE_URL','').rstrip('/')
+    return f'{base}/media/raw/{quote(path.name)}?expires={deadline}&signature={signature}'
 
 
-def fetch_remote(url: str) -> bytes:
-    r = httpx.get(url, timeout=30.0, follow_redirects=True)
-    r.raise_for_status()
-    return r.content
+def media_signature(filename, deadline):
+    from .security import session_secret
+    return hmac.new(session_secret().encode(),f'media-download:{filename}:{deadline}'.encode(),hashlib.sha256).hexdigest()
+
+
+def valid_media_signature(filename, deadline, signature):
+    try:
+        expires=int(deadline)
+        now=int(time.time())
+        return (now < expires <= now+3600 and
+                hmac.compare_digest(signature,media_signature(filename,expires)))
+    except (TypeError,ValueError):
+        return False

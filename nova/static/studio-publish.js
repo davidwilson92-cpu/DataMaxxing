@@ -59,7 +59,7 @@ async function refreshPublicationResults(){const id=currentDraftId;try{const res
 async function confirmChatPublish(button){
   if(!pendingReview||mediaUploading||sendingMessage)return;
   const review=JSON.parse(JSON.stringify(pendingReview)),s=review.snapshot;
-  studioBusy(true);busy(button,true,s.scheduled_utc?'Scheduling…':'Publishing…');
+  studioBusy(true);busy(button,true,s.scheduled_utc?'Scheduling…':'Queueing…');
   const body={review_token:review.review_token,draft_id:s.draft_id,platforms:s.platforms,variants:s.variants,media_asset_ids:s.media_asset_ids,link_url:s.link_url,publish_options:s.publish_options};
   if(s.scheduled_utc)body.scheduled_local=s.scheduled_utc;
   try{

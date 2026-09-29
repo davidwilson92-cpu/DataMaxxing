@@ -12,7 +12,13 @@ if DATABASE_URL.startswith('postgres://'):
 elif DATABASE_URL.startswith('postgresql://'):
     DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg://', 1)
 connect_args = {'check_same_thread': False} if DATABASE_URL.startswith('sqlite') else {}
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args)
+pool_options = {} if DATABASE_URL.startswith('sqlite') else {
+    'pool_size': max(1, min(20, int(os.environ.get('DB_POOL_SIZE', '5')))),
+    'max_overflow': 0,
+    'pool_timeout': 10,
+    'pool_recycle': 1800,
+}
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args, **pool_options)
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 
@@ -85,6 +91,19 @@ class OAuth2Connection(Base):
     encrypted_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     scope: Mapped[str] = mapped_column(Text, default='tweet.read tweet.write users.read offline.access')
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class LegacyPublication(Base):
+    __tablename__ = 'zova_legacy_publications'
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    creator_id: Mapped[int] = mapped_column(ForeignKey('creators.id'), index=True)
+    text: Mapped[str] = mapped_column(Text)
+    account: Mapped[str] = mapped_column(String(50))
+    authority_digest: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(30), default='queued', index=True)
+    result_json: Mapped[str] = mapped_column(Text, default='{}')
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
@@ -452,9 +471,12 @@ class SeriesApproval(BrandScoped, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine, tables=[table for table in Base.metadata.sorted_tables
+                                             if table is not LegacyPublication.__table__])
 from .migrations import run_migrations
 run_migrations(engine)
+from .migrations import run_legacy_queue_migration
+run_legacy_queue_migration(engine, LegacyPublication.__table__)
 
 
 def get_db(request: Request):

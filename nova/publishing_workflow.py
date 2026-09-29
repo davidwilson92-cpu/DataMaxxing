@@ -126,7 +126,7 @@ def prepare_review(db,uid,body):
     tz=planned["timezone"] if planned else get_preferences(db,uid).timezone
     scheduled=getattr(body,'scheduled_local',None)
     if scheduled:scheduled=schedule_time(scheduled,tz).isoformat()
-    payload={'draft_id':draft.id,'platforms':platforms,'variants':{p:variants[p] for p in platforms},'media_asset_ids':body.media_asset_ids,'media':[{'filename':a.filename,'kind':'video' if a.mime_type.startswith('video/') else 'image','url':a.public_url or f'/media/preview/{a.id}'} for a in media],
+    payload={'draft_id':draft.id,'platforms':platforms,'variants':{p:variants[p] for p in platforms},'media_asset_ids':body.media_asset_ids,'media':[{'filename':a.filename,'kind':'video' if a.mime_type.startswith('video/') else 'image','url':f'/media/preview/{a.id}'} for a in media],
              'link_url':body.link_url,'publish_options':options,'targets':targets,'scheduled_utc':scheduled,'timezone':tz}
     row=PublishReview(code=secrets.token_urlsafe(24),user_id=uid,draft_id=draft.id,revision=draft.revision,payload_json=json.dumps(payload,ensure_ascii=False),expires_at=utcnow()+timedelta(minutes=15))
     db.add(row);db.commit()
@@ -146,6 +146,26 @@ def results_for(db,uid,draft_id):
     return {'draft_status':draft.status,'results':results,'summary':' '.join(f"{'X' if p=='x' else p.title()}: {r['status'].replace('_',' ')}." for p,r in results.items())}
 
 
+def publication_connection(db, publication):
+    """Reconciliation is privileged provider access too; never fall back to an account."""
+    if not publication.connection_id:
+        raise RuntimeError('Publication connection missing')
+    conn=selected_connection(db,publication.user_id,publication.platform,publication.connection_id)
+    draft=db.get(Draft,publication.draft_id)
+    boundary=(publication.user_id,publication.brand_id)
+    if ((conn.user_id,conn.brand_id)!=boundary or not draft
+            or (draft.user_id,draft.brand_id)!=boundary):
+        raise RuntimeError('Publication boundary mismatch')
+    review=db.get(PublishReview,publication.review_code)
+    if (not review or (review.user_id,review.brand_id,review.draft_id)!=
+            (publication.user_id,publication.brand_id,publication.draft_id)):
+        raise RuntimeError('Publication review mismatch')
+    target=json.loads(review.payload_json)['targets'][publication.platform]
+    if target['connection_id']!=conn.id or target['account_id']!=conn.account_id:
+        raise RuntimeError('Reviewed account changed')
+    return conn
+
+
 def reconcile_instagram(db, publication):
     """Only authoritative PUBLISHED resolves an uncertain send; never resend here."""
     if publication.platform!='instagram' or publication.status!='unknown':return
@@ -156,7 +176,7 @@ def reconcile_instagram(db, publication):
     try:
         from .social import instagram_graph_base, access_token
         import httpx
-        conn=selected_connection(db,publication.user_id,'instagram',publication.connection_id)
+        conn=publication_connection(db,publication)
         response=httpx.get(f"{instagram_graph_base(conn)}/{result['container_id']}",params={'fields':'status_code','access_token':access_token(conn,db)},timeout=15)
         if response.status_code>=400 or response.json().get('status_code')!='PUBLISHED':return
     except Exception:return
@@ -172,7 +192,7 @@ def reconcile_instagram(db, publication):
 def update_draft_status(db,draft_id):
     rows=db.scalars(select(Publication).where(Publication.draft_id==draft_id)).all()
     statuses={r.status for r in rows}
-    status='needs_review' if statuses.intersection({'unknown','publishing','queued'}) else 'scheduled' if 'scheduled' in statuses else 'pending' if 'pending' in statuses else 'partial' if 'failed' in statuses and 'published' in statuses else 'failed' if 'failed' in statuses else 'published' if 'published' in statuses else 'cancelled'
+    status='needs_review' if 'unknown' in statuses else 'publishing' if 'publishing' in statuses else 'queued' if 'queued' in statuses else 'scheduled' if 'scheduled' in statuses else 'pending' if 'pending' in statuses else 'partial' if 'failed' in statuses and 'published' in statuses else 'failed' if 'failed' in statuses else 'published' if 'published' in statuses else 'cancelled'
     db.execute(update(Draft).where(Draft.id==draft_id).values(status=status));db.commit()
     from .readiness import event
     for row in rows:
@@ -187,9 +207,13 @@ def dispatch(db,publication,payload,publisher=publish_platform):
     # Fail before the provider call if the exact reviewed connection/media no longer exists.
     try:
         conn=selected_connection(db,publication.user_id,publication.platform,target['connection_id'])
-        if conn.account_id!=target['account_id']:raise RuntimeError('Account changed')
+        if (conn.account_id!=target['account_id'] or conn.brand_id!=publication.brand_id
+                or conn.id!=publication.connection_id):raise RuntimeError('Account changed')
+        draft=db.get(Draft,publication.draft_id)
+        if not draft or (draft.user_id,draft.brand_id)!=(publication.user_id,publication.brand_id):
+            raise RuntimeError('Draft ownership changed')
         media=[db.get(MediaAsset,i) for i in payload['media_asset_ids']]
-        if any(not a or a.user_id!=publication.user_id for a in media):raise RuntimeError('Media unavailable')
+        if any(not a or (a.user_id,a.brand_id)!=(publication.user_id,publication.brand_id) for a in media):raise RuntimeError('Media unavailable')
         if capability_error(conn,media):raise RuntimeError('Permission changed')
     except RuntimeError:
         publication.status='failed';publication.result_json=json.dumps({'error':'The reviewed account, media or permissions are unavailable. Reconnect/review before retrying.'});allowances.finish(db,f'publication:{publication.id}',False);db.commit();return
@@ -242,7 +266,7 @@ def confirm_review(db,uid,body,mode,publisher=publish_platform):
     if any(current.get(p)!=payload['variants'][p] for p in payload['platforms']) or (ws and (ws.get('media_asset_ids',[])!=payload['media_asset_ids'] or ws.get('link_url','')!=payload['link_url'])):
         raise HTTPException(409,'The draft changed after review. Review the latest version.')
     claimed=db.execute(update(PublishReview).where(PublishReview.code==review.code,PublishReview.status=='review',PublishReview.expires_at>utcnow()).values(status='submitted').execution_options(synchronize_session=False))
-    locked=db.execute(update(Draft).where(Draft.id==draft.id,Draft.revision==draft.revision,Draft.status.in_(EDITABLE)).values(status='scheduled' if mode=='schedule' else 'publishing').execution_options(synchronize_session=False))
+    locked=db.execute(update(Draft).where(Draft.id==draft.id,Draft.revision==draft.revision,Draft.status.in_(EDITABLE)).values(status='scheduled' if mode=='schedule' else 'queued').execution_options(synchronize_session=False))
     if claimed.rowcount!=1 or locked.rowcount!=1:db.rollback();raise HTTPException(409,'Review expired or this draft is already being submitted.')
     if mode=='schedule':schedule_time(payload['scheduled_utc'],payload['timezone'])
     jobs=[]
@@ -253,12 +277,11 @@ def confirm_review(db,uid,body,mode,publisher=publish_platform):
             if not row:row=Publication(user_id=uid,draft_id=draft.id,platform=platform,connection_id=target['connection_id'],review_code=review.code);db.add(row)
             row.status='scheduled' if mode=='schedule' else 'queued';row.connection_id=target['connection_id'];row.review_code=review.code;row.result_json='{}';db.flush();jobs.append(row)
             allowances.reserve(db,uid,'publications',f'publication:{row.id}',max(1,len(target['posts'])))
-            if mode=='schedule':db.add(ScheduledPost(user_id=uid,draft_id=draft.id,platform=platform,connection_id=target['connection_id'],content_json=json.dumps({'review_code':review.code,'publication_id':row.id,'posts':target['posts']}),media_asset_ids_json=json.dumps(payload['media_asset_ids']),scheduled_at=datetime.fromisoformat(payload['scheduled_utc']),status='scheduled'))
+            # Both immediate and future requests persist work in the same transaction
+            # as approval consumption and the idempotency ledger. Only workers send.
+            db.add(ScheduledPost(user_id=uid,draft_id=draft.id,platform=platform,connection_id=target['connection_id'],content_json=json.dumps({'review_code':review.code,'publication_id':row.id,'posts':target['posts']}),media_asset_ids_json=json.dumps(payload['media_asset_ids']),scheduled_at=datetime.fromisoformat(payload['scheduled_utc']) if mode=='schedule' else utcnow(),status='scheduled'))
         db.commit()
     except HTTPException:
         db.rollback();raise
     except IntegrityError:db.rollback();raise HTTPException(409,'This destination already has a submission. Check its results.')
-    if mode=='publish':
-        for job in jobs:dispatch(db,job,payload,publisher)
-        update_draft_status(db,draft.id)
     return results_for(db,uid,draft.id)

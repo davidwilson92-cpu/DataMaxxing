@@ -31,7 +31,7 @@ def cancel(schedule_id:int,request:Request):
         if not row or row.user_id!=uid:raise HTTPException(404,'Schedule not found')
         claimed=db.execute(update(ScheduledPost).where(ScheduledPost.id==row.id,ScheduledPost.status=='scheduled').values(status='cancelled',updated_at=utcnow()).execution_options(synchronize_session=False))
         if claimed.rowcount!=1:db.rollback();raise HTTPException(409,'This job has started or finished. It cannot be cancelled.')
-        db.execute(update(Publication).where(Publication.draft_id==row.draft_id,Publication.platform==row.platform,Publication.status=='scheduled').values(status='cancelled'))
+        db.execute(update(Publication).where(Publication.draft_id==row.draft_id,Publication.platform==row.platform,Publication.status.in_(['scheduled','queued'])).values(status='cancelled'))
         publication=db.scalar(select(Publication).where(Publication.draft_id==row.draft_id,Publication.platform==row.platform))
         if publication:allowances.finish(db,f'publication:{publication.id}',False)
         db.commit()

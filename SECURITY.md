@@ -1,3 +1,5 @@
+> This is historical context. The current mandatory baseline and open security findings are in [Production guardrails](docs/PRODUCTION_GUARDRAILS.md) and [the assessment](docs/guardrails/ASSESSMENT.md). Historical implemented-control lists are not a production certification.
+
 # Zova — security notes for V5
 
 ## Implemented controls

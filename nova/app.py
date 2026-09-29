@@ -36,6 +36,7 @@ from .db import (
 )
 from .scheduler import loop as scheduler_loop, process_due
 from .security import revoke_session, current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password
+from .password_policy import password_error
 from .user_data import normalize_country, normalize_email, normalize_name
 from .social import (
     INSTAGRAM_SCOPES, INSTAGRAM_FACEBOOK_SCOPES, META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, instagram_authorize_url, instagram_exchange, meta_authorize_url, meta_exchange,
@@ -48,6 +49,8 @@ log = logging.getLogger("nova")
 # OAuth exchanges put secrets and short-lived codes in query parameters. Never
 # allow the HTTP client to print those request URLs into provider logs.
 logging.getLogger("httpx").setLevel(logging.WARNING)
+from .safe_logging import install_access_filter
+install_access_filter()
 
 HERE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
@@ -160,19 +163,20 @@ def publish_legacy_creator(text: str, creator: Creator, db: Session) -> dict[str
         row.status="published"; row.x_post_id=pid; db.commit()
         return {"post_id": pid, "url": f"https://x.com/{creator.x_username}/status/{pid}"}
     except Exception as exc:
-        row.status="failed"; row.error=str(exc); db.commit(); raise HTTPException(502, f"X API error: {exc}") from exc
+        row.status="unknown"; row.error="Publication outcome unconfirmed; check X before retrying."; db.commit(); raise HTTPException(502, row.error) from None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     bootstrap_legacy_account()
-    task = asyncio.create_task(scheduler_loop())
+    task = asyncio.create_task(scheduler_loop()) if os.environ.get('EMBEDDED_SCHEDULER', 'true').lower() in {'true','1','yes'} else None
     try:
         yield
     finally:
-        task.cancel()
-        try: await task
-        except asyncio.CancelledError: pass
+        if task:
+            task.cancel()
+            try: await task
+            except asyncio.CancelledError: pass
 
 
 app = FastAPI(title="Zova Social Publishing", version="5.1.0", lifespan=lifespan)
@@ -253,7 +257,7 @@ def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str,
         return retry(f"/signup?error={quote_plus(str(exc))}", 303)
     if accept_terms != "yes": return retry("/signup?error=Please+accept+the+Terms+and+Privacy+Policy",303)
     if password != password_confirmation: return retry("/signup?error=Passwords+do+not+match",303)
-    if not 10 <= len(password) <= 256: return retry("/signup?error=Use+a+password+of+at+least+10+characters",303)
+    if problem := password_error(password): return retry("/signup?error="+quote_plus(problem),303)
     if db.scalar(select(User).where(User.email==email)): return retry("/signup?error=An+account+with+that+email+already+exists",303)
     now = utcnow()
     consent = marketing_consent == "yes"
@@ -624,7 +628,7 @@ async def update_profile(request: Request, display_name: Annotated[str, Form()] 
 def change_password(request: Request, current_password: Annotated[str, Form()], new_password: Annotated[str, Form()], new_password_confirmation: Annotated[str, Form()], db: Session = Depends(get_db)):
     user = db.get(User, current_user(request).id)
     if not verify_password(current_password, user.password_hash): return RedirectResponse("/account?error=current_password", 303)
-    if not 10 <= len(new_password) <= 256: return RedirectResponse("/account?error=password_length", 303)
+    if problem := password_error(new_password): return RedirectResponse("/account?error="+quote_plus(problem), 303)
     if new_password != new_password_confirmation: return RedirectResponse("/account?error=password_match", 303)
     user.password_hash = hash_password(new_password)
     user.auth_version += 1
@@ -637,7 +641,9 @@ def change_password(request: Request, current_password: Annotated[str, Form()], 
 def scan_social_voice(request: Request, db: Session = Depends(get_db)):
     user = current_user(request)
     try: profile = learn_voice_from_socials(db, user.id)
-    except Exception as exc: log.exception("Social voice scan failed"); raise HTTPException(502, f"Zova could not scan recent posts: {exc}") from exc
+    except Exception:
+        log.warning("Social voice scan failed")
+        raise HTTPException(502, "Zova could not scan recent posts. Your saved voice is unchanged. Try again later.") from None
     if not profile: return {"status": "waiting", "message": "Connect a social account so Zova can learn from recent posts."}
     return {"status": "learned", **profile}
 
@@ -847,6 +853,7 @@ class DraftSaveRequest(BaseModel):
     revision:int|None=None
 class LegacyPostRequest(BaseModel):
     text:str=Field(min_length=1,max_length=280); approved:bool=False
+    idempotency_key:str|None=Field(default=None,min_length=16,max_length=128,pattern=r'^[A-Za-z0-9_-]+$')
 
 
 @app.post("/api/voice/learn")
@@ -856,8 +863,8 @@ def learn_voice(payload: VoiceLearnRequest, request: Request, db: Session = Depe
         try:
             profile = ai.infer_voice_profile(payload.content)
         except Exception as exc:
-            log.exception("Voice learning failed")
-            raise HTTPException(502, f"Zova could not analyse that sample: {exc}") from exc
+            log.warning("Voice learning failed")
+            raise HTTPException(502, "Zova could not analyse that sample. Your saved voice is unchanged. Try again later.") from None
         prefs = get_preferences(db, user.id)
         prefs.writing_tone = profile["writing_tone"][:5000]
         prefs.audience = profile["audience"][:5000]
@@ -909,14 +916,17 @@ async def upload_media(request:Request,files:list[UploadFile]=File(...),db:Sessi
         stored=save_bytes(data,file.filename or 'media',mime,base_url())
         row=MediaAsset(user_id=user.id,filename=(file.filename or 'media')[:260],mime_type=mime,storage_key=stored.storage_key,public_url=stored.public_url,size_bytes=len(data))
         db.add(row); db.flush()
-        result.append({'id':row.id,'filename':row.filename,'kind':'video' if mime in VIDEO_TYPES else 'image','mime_type':mime,'url':stored.public_url or f'/media/preview/{row.id}'})
+        result.append({'id':row.id,'filename':row.filename,'kind':'video' if mime in VIDEO_TYPES else 'image','mime_type':mime,'url':f'/media/preview/{row.id}'})
     db.commit()
     return {'assets':result}
 
 @app.get("/media/raw/{filename}")
-def local_media(filename:str):
-    safe=Path(filename).name; path=UPLOAD_DIR/safe
-    if not path.exists():raise HTTPException(404,"Media not found")
+def local_media(filename:str,expires:str='',signature:str=''):
+    from .storage import valid_media_signature
+    safe=Path(filename).name; path=(UPLOAD_DIR/safe).resolve()
+    if (safe!=filename or path.parent!=UPLOAD_DIR.resolve() or not path.is_file()
+            or not valid_media_signature(filename,expires,signature)):
+        raise HTTPException(404,"Media not found")
     return FileResponse(path, headers={"X-Content-Type-Options":"nosniff","Content-Security-Policy":"sandbox; default-src 'none'"})
 
 @app.post("/api/ai/generate")
@@ -952,7 +962,7 @@ def api_rewrite(body:RewriteRequest,request:Request,db:Session=Depends(get_db)):
         from .media_inspection import inspect_assets, context as media_context
         inspected=inspect_assets(db,user.id,body.media_asset_ids)
         try:posts=ai.rewrite_variant(platform=body.platform,posts=body.posts,action=body.action,instruction=body.instruction+strategy_context(db,user.id)+media_context(inspected),preferences=prefs)
-        except RuntimeError as exc:raise HTTPException(502,str(exc))
+        except Exception:raise HTTPException(502,'The AI service could not complete this request. Nothing has been published. Try again later.') from None
         db.commit()
         return {"posts":posts}
 
@@ -962,7 +972,7 @@ def api_schedule_suggest(body:ScheduleSuggestRequest,request:Request,db:Session=
     with allowances.ai_action(db,current_user(request).id):
         user=current_user(request);subscription_guard(user);prefs=get_preferences(db,user.id);platforms=_validate_platforms(body.platforms)
         try:s=ai.propose_schedule(platforms=platforms,timezone_name=prefs.timezone,context=body.context)
-        except RuntimeError as exc:raise HTTPException(502,str(exc))
+        except Exception:raise HTTPException(502,'The AI service could not complete this request. Nothing has been published. Try again later.') from None
         return {"timezone":prefs.timezone,"suggestions":s,"note":"Suggested starting points, not recommendations based on your account performance."}
 
 
@@ -1141,10 +1151,33 @@ def run_due(authorization:Annotated[str|None,Header()]=None):
 def legacy_preview(body:LegacyPostRequest,creator:Creator=Depends(require_legacy_creator)):
     return {"text":body.text,"character_count":len(body.text),"valid":len(body.text)<=280,"account":f"@{creator.x_username}"}
 
-@app.post("/x/post")
+@app.post("/x/post", status_code=202)
 def legacy_publish(body:LegacyPostRequest,creator:Creator=Depends(require_legacy_creator),db:Session=Depends(get_db)):
     if body.approved is not True:raise HTTPException(400,"Publication requires approved=true after explicit user confirmation")
-    result=publish_legacy_creator(body.text,creator,db);return {"success":True,"post_id":result["post_id"],"url":result["url"],"text":body.text,"account":f"@{creator.x_username}"}
+    from .legacy_queue import enqueue
+    return enqueue(db,creator,body.text,body.idempotency_key)
+
+@app.get('/x/jobs/{job_id}')
+def legacy_job(job_id:str,creator:Creator=Depends(require_legacy_creator),db:Session=Depends(get_db)):
+    from .db import LegacyPublication
+    from .legacy_queue import response
+    row=db.get(LegacyPublication,job_id)
+    if not row or row.creator_id!=creator.id:raise HTTPException(404,'Publication job not found')
+    return response(row)
+
+@app.post('/x/jobs/{job_id}/cancel')
+def cancel_legacy_job(job_id:str,creator:Creator=Depends(require_legacy_creator),db:Session=Depends(get_db)):
+    from .db import LegacyPublication
+    from .legacy_queue import response
+    from sqlalchemy import update
+    row=db.get(LegacyPublication,job_id)
+    if not row or row.creator_id!=creator.id:raise HTTPException(404,'Publication job not found')
+    claimed=db.execute(update(LegacyPublication).where(LegacyPublication.id==job_id,
+                       LegacyPublication.creator_id==creator.id,LegacyPublication.status=='queued').values(status='cancelled'))
+    db.commit();db.refresh(row)
+    if not claimed.rowcount and row.status!='cancelled':
+        raise HTTPException(409,'This job has started or finished. Check its status; cancellation cannot recall an external request.')
+    return response(row)
 
 @app.get("/help",response_class=HTMLResponse)
 def help_page(request:Request):

@@ -24,6 +24,18 @@ MIGRATIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 
+def run_legacy_queue_migration(engine, table):
+    """Add an empty ledger; historical sends must never be backfilled as jobs."""
+    version = '20260929_legacy_publication_queue'
+    with engine.begin() as connection:
+        if connection.execute(text('SELECT 1 FROM zova_schema_migrations WHERE version=:version'),
+                              {'version': version}).first():
+            return
+        table.create(connection, checkfirst=True)
+        connection.execute(text('INSERT INTO zova_schema_migrations (version, applied_at) VALUES (:version, CURRENT_TIMESTAMP)'),
+                           {'version': version})
+
+
 def _user_columns(engine: Engine) -> set[str]:
     inspector = inspect(engine)
     if "nova_users" not in inspector.get_table_names():

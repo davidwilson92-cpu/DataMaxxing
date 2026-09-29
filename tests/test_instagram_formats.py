@@ -1,3 +1,4 @@
+from test_reviewed_publication import publish_and_run
 import json
 from datetime import timedelta
 from types import SimpleNamespace
@@ -32,12 +33,12 @@ def test_story_saved_review_immutable_and_dispatch(monkeypatch):
     assert snapshot['targets']['instagram']['posts']==[]
     assert snapshot['targets']['instagram']['format_label']=='Story'
     approved={**body,'review_token':reviewed.json()['review_token']}
-    monkeypatch.setattr(app,'publish_platform',lambda *a,**kw:calls.append(kw) or {'post_id':'mock','format':'story'})
-    assert client.post('/api/publish',json={**approved,'publish_options':{'instagram':{'format':'post'}}}).status_code==409
+    monkeypatch.setattr('nova.scheduler.publish_platform',lambda *a,**kw:calls.append(kw) or {'post_id':'mock','format':'story'})
+    assert publish_and_run(client,json={**approved,'publish_options':{'instagram':{'format':'post'}}}).status_code==409
     assert not calls
-    assert client.post('/api/publish',json=approved).status_code==200
+    assert publish_and_run(client,json=approved).status_code==200
     assert calls[0]['options']=={'format':'story'} and calls[0]['posts']==[]
-    client.post('/api/publish',json=approved)
+    publish_and_run(client,json=approved)
     assert len(calls)==1
 
 
@@ -101,7 +102,7 @@ def test_saved_format_change_invalidates_existing_review(monkeypatch):
     client,body=story_draft(monkeypatch)
     review=client.post('/api/publish-review',json=body).json()
     client.patch(f"/api/drafts/{body['draft_id']}",json={'platforms':['instagram'],'variants':body['variants'],'workspace':{'instagram_format':'post','media_asset_ids':body['media_asset_ids']}})
-    assert client.post('/api/publish',json={**body,'review_token':review['review_token']}).status_code==409
+    assert publish_and_run(client,json={**body,'review_token':review['review_token']}).status_code==409
 
 
 def test_story_counts_as_one_publication(monkeypatch):
@@ -112,9 +113,9 @@ def test_story_counts_as_one_publication(monkeypatch):
     def reserve(db,uid,kind,key,amount):
         units.append(amount);return original(db,uid,kind,key,amount)
     monkeypatch.setattr(allowances,'reserve',reserve)
-    monkeypatch.setattr(app,'publish_platform',lambda *a,**kw:{'post_id':'mock'})
+    monkeypatch.setattr('nova.scheduler.publish_platform',lambda *a,**kw:{'post_id':'mock'})
     reviewed=client.post('/api/publish-review',json=body).json()
-    assert client.post('/api/publish',json={**body,'review_token':reviewed['review_token']}).status_code==200
+    assert publish_and_run(client,json={**body,'review_token':reviewed['review_token']}).status_code==200
     assert units==[1]
 
 
