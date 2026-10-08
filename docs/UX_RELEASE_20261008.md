@@ -24,3 +24,5 @@ Unlike the broader candidate, this release does not change password formats or i
 ## Validation and release gates
 
 35 focused Python tests and three Node harnesses passed on the isolated release. Remote full SQLite/PostgreSQL tests, dependency audit, PostgreSQL dump/restore, Docker build/smoke and final live checks must pass before declaring deployment complete. Provider delivery and real-customer outcomes remain unverified by synthetic checks. Evidence and exact deployment revision are appended after release.
+
+Initial remote run: all 259 tests passed on SQLite and PostgreSQL; restore and hosting smoke passed. Dependency gate identified oauthlib 3.3.1 (GHSA-xpv3-w29h-x7cv); pinning patched 4.0.0 and rerunning all checks. Added synthetic legacy X OAuth signing and PostgreSQL old-schema migration rehearsal.

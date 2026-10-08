@@ -16,4 +16,3 @@ vm.runInContext(fs.readFileSync('nova/static/drafts.js','utf8'),context);
  const pending=[];context.fetch=url=>new Promise(resolve=>pending.push({url,resolve}));const older=context.moveAgendaWeek(1);const newer=context.moveAgendaWeek(1);pending[1].resolve({ok:true,headers:{get:()=> 'true'},json:async()=>[]});await newer;const rendered=node('scheduledJobs').innerHTML;pending[0].resolve({ok:true,headers:{get:()=> 'false'},json:async()=>[{id:99,draft_id:99,platform:'x',status:'unknown',scheduled_at:new Date().toISOString()}]});await older;assert.equal(node('scheduledJobs').innerHTML,rendered);assert.match(rendered,/view is incomplete/);
  console.log('Schedule agenda: 8 behavior groups passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
-

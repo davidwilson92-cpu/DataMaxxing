@@ -46,4 +46,3 @@ def test_performance_snapshot_export_and_erasure_are_account_scoped():
         erase_local_account(db, uid, "synthetic-performance-case", writes_paused=True)
         assert db.get(PerformanceSnapshot, own_id) is None
         assert "OTHER_CAPTION" in db.get(PerformanceSnapshot, other_id).payload_json
-
