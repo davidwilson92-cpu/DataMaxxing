@@ -53,7 +53,12 @@ def process_due(limit: int = 25) -> dict[str, int]:
             .limit(limit)
         ).all()
         for row in rows:
-            claimed=db.execute(update(ScheduledPost).where(ScheduledPost.id==row.id,ScheduledPost.status=='scheduled').values(status='publishing',updated_at=utcnow()).execution_options(synchronize_session=False))
+            claimed=db.execute(update(ScheduledPost).where(
+                ScheduledPost.id==row.id, ScheduledPost.status=='scheduled',
+                ScheduledPost.scheduled_at==row.scheduled_at,
+                ScheduledPost.updated_at==row.updated_at,
+                ScheduledPost.scheduled_at<=utcnow(),
+            ).values(status='publishing',updated_at=utcnow()).execution_options(synchronize_session=False))
             if claimed.rowcount!=1:db.rollback();continue
             db.commit();db.refresh(row)
             try:

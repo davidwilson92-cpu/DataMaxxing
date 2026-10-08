@@ -1,3 +1,9 @@
+# Focused UX release — 8 October 2026
+
+See [release scope and evidence](UX_RELEASE_20261008.md). Implemented: Studio scope/state/recovery UX; editable titles and status summary; goal-first strategy; bounded Performance context; weekly scheduling and reschedule race fix; compact signup and truthful beta offer. Local focused and frontend checks passed; remote CI/provider/deployment status remains separate. Earlier unreleased security/recovery/newsletter work is excluded.
+
+---
+
 # Current local increment — 27 September 2026
 
 The previous strategy release is live at 021aad7. The top-right Next move/source-discovery increment is NOT deployed. See [current evidence and release gates](NEXT_MOVE_SOURCES_20260927.md).

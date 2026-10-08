@@ -662,22 +662,27 @@ def analytics_tiktok(db: Session, conn: SocialConnection, ids: list[str]) -> dic
     return out
 
 
-def follower_count(db: Session, conn: SocialConnection) -> int:
+def follower_count(db: Session, conn: SocialConnection) -> int | None:
     token = access_token(conn, db)
     if conn.platform == "x":
         r = httpx.get(f"https://api.x.com/2/users/{conn.account_id}", headers={"Authorization": f"Bearer {token}"}, params={"user.fields": "public_metrics"}, timeout=20.0)
-        return int(((r.json().get("data") or {}).get("public_metrics") or {}).get("followers_count", 0)) if r.status_code < 400 else 0
-    if conn.platform in {"instagram", "facebook"}:
+        if r.status_code >= 400: return None
+        value = ((r.json().get("data") or {}).get("public_metrics") or {}).get("followers_count")
+    elif conn.platform in {"instagram", "facebook"}:
         version = os.environ.get("META_GRAPH_VERSION", "v23.0")
         fields = "followers_count" if conn.platform == "instagram" else "followers_count,fan_count"
         graph = instagram_graph_base(conn) if conn.platform == "instagram" else f"https://graph.facebook.com/{version}"
         r = httpx.get(f"{graph}/{conn.account_id}", params={"fields": fields, "access_token": token}, timeout=20.0)
-        data = r.json() if r.status_code < 400 else {}
-        return int(data.get("followers_count", data.get("fan_count", 0)) or 0)
-    if conn.platform == "tiktok":
+        if r.status_code >= 400: return None
+        data = r.json()
+        value = data.get("followers_count", data.get("fan_count"))
+    elif conn.platform == "tiktok":
         r = httpx.get("https://open.tiktokapis.com/v2/user/info/", headers={"Authorization": f"Bearer {token}"}, params={"fields": "follower_count"}, timeout=20.0)
-        return int((((r.json().get("data") or {}).get("user") or {}).get("follower_count", 0))) if r.status_code < 400 else 0
-    return 0
+        if r.status_code >= 400: return None
+        value = ((r.json().get("data") or {}).get("user") or {}).get("follower_count")
+    else:
+        return None
+    return value if type(value) is int and value >= 0 else None
 
 
 def analytics_for_user(db: Session, user_id: int) -> dict[str, Any]:

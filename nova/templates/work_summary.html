@@ -1,0 +1,14 @@
+<details class="work-summary">
+  <summary>Your week <span>{{ work_summary.scheduled }} scheduled {% if work_summary.unconfirmed or work_summary.needs_review or work_summary.overdue %}· Needs attention{% else %}· {{ work_summary.drafts }} saved draft{{ "s" if work_summary.drafts != 1 else "" }}{% endif %}</span></summary>
+  <div>
+    <p>For {{ brand.name }} · scheduled platform deliveries in the next seven days.</p>
+    {% if work_summary.unconfirmed %}<p><strong>{{ work_summary.unconfirmed }} {{ 'delivery' if work_summary.unconfirmed == 1 else 'deliveries' }} awaiting a confirmed outcome.</strong> <a href="/drafts?status=awaiting_results">Check publication results before retrying →</a></p>{% endif %}
+    {% if work_summary.overdue %}<p><strong>{{ work_summary.overdue }} scheduled {{ 'delivery is' if work_summary.overdue == 1 else 'deliveries are' }} overdue.</strong> Open schedules to check their status.</p>{% endif %}
+    {% if work_summary.needs_review %}<a href="/drafts?status=needs_review">{{ work_summary.needs_review }} saved {{ 'item needs' if work_summary.needs_review == 1 else 'items need' }} attention →</a>{% endif %}
+    <a href="/drafts?status=draft">{{ work_summary.drafts }} saved draft{{ "s" if work_summary.drafts != 1 else "" }} →</a>
+    <a href="/drafts#scheduled-posts">View schedules →</a>
+    <a href="/analytics">Review performance →</a>
+    {% if not work_summary.scheduled %}<p>No deliveries scheduled for the next seven days. Open a draft, review its destinations and choose Schedule when ready.</p>{% endif %}
+    <p class="fine">Based on saved records when this page opened. Pending does not mean published.</p>
+  </div>
+</details>

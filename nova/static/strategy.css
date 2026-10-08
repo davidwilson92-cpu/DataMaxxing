@@ -9,3 +9,26 @@
 @media(max-width:600px){.simple-chat .conversation-topbar{height:auto;min-height:100px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 8px;padding:4px 12px}.simple-chat .studio-header-actions{grid-column:2;grid-row:1;gap:0}.simple-chat .studio-header-actions #newChatBtn{font-size:12px;padding:8px}.simple-chat .studio-header-actions .next-move-launch{font-size:12px;padding:8px 10px;gap:5px}.simple-chat .studio-brand-context{grid-row:2;grid-column:1 / -1;max-width:100%;margin:0}.simple-chat .studio-brand-context button{padding-left:0}.simple-chat .chat-brand a{font-size:16px}.simple-chat .chat-brand{gap:0}}
 
 .strategy-panel .source-evidence summary{cursor:pointer;min-height:44px;display:list-item;align-content:center;line-height:24px}.strategy-panel .source-evidence[open] summary{margin-bottom:6px}.strategy-panel .next-move>p{margin:8px 0}.strategy-panel .next-move>div{gap:10px;margin-top:10px}.strategy-panel .next-move>div>details>summary{min-height:44px;line-height:44px;font-size:13px;font-weight:500;color:#716778}.strategy-panel .recommendation-help{font-size:13px}.strategy-panel #strategySourceNote{line-height:1.6}.strategy-panel button[disabled]{opacity:.5;cursor:not-allowed}
+
+/* Keep setup short; the saved plan remains fully editable. */
+.strategy-panel .strategy-quick-start{padding:12px 14px;background:#faf7ff;border:1px solid #e6dcf3;border-radius:14px;margin:12px 0}
+.strategy-panel .strategy-quick-start>summary{color:#5b21b6}
+.strategy-panel .strategy-import,.strategy-panel #strategyAdvanced{border-top:1px solid #e6dcf3;margin:14px 0;padding-top:4px}
+.strategy-panel #strategyReviewHeading{font-size:18px;margin:20px 0 8px;outline-offset:4px}
+.strategy-panel .strategy-search-disclosure{padding:12px;border-radius:10px;background:#faf7ff;font-size:13px;overflow-wrap:anywhere}
+.strategy-panel .strategy-search-disclosure .quiet-button{display:block;padding-left:0;color:#5b21b6}
+.strategy-panel .strategy-quick-start input,.strategy-panel .strategy-quick-start textarea{border:1px solid #d7cce3;border-radius:9px;padding:10px;background:white}
+
+.strategy-panel .next-move-checklist{white-space:pre-line;padding:12px;border-left:3px solid #b99ae9;background:#faf7ff;border-radius:0 8px 8px 0}.strategy-panel #strategyPerformanceNote{font-size:13px;color:#716778;line-height:1.6}.strategy-panel #strategyPerformanceNote a{color:#5b21b6}
+/* Keep the first proposal action near the essentials on shorter laptop screens. */
+.strategy-panel #strategyStatus:empty{margin:0}
+.strategy-panel header{padding-top:4px;padding-bottom:4px}
+.strategy-panel #strategyDetails{margin-top:8px;padding-top:4px}
+.strategy-panel #strategyConfirmedState{margin:4px 0;line-height:1.45}
+.strategy-panel .strategy-quick-start{margin:8px 0;padding:8px 12px}
+.strategy-panel .strategy-quick-start p{margin:4px 0 8px;line-height:1.45}
+.strategy-panel .strategy-quick-start label{margin-top:8px;margin-bottom:4px}
+.strategy-panel .strategy-quick-start textarea{height:72px;min-height:64px;padding:8px 10px}
+.strategy-panel .strategy-quick-start .strategy-import{margin:8px 0;padding-top:0}
+
+.strategy-goal-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.strategy-goal-chips button{border:1px solid #d9c9ed;border-radius:999px;background:white;color:#5b21b6;font:inherit;font-size:13px;min-height:44px;padding:7px 10px;cursor:pointer}.strategy-goal-chips button:hover{background:#eee5fb}.strategy-panel #strategyStepHint{margin:8px 0;line-height:1.45}
