@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 import jwt
-import tweepy
+from oauthlib.oauth1 import Client as OAuth1Client
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import Response, FileResponse, HTMLResponse, JSONResponse, RedirectResponse
@@ -156,8 +156,11 @@ def publish_legacy_creator(text: str, creator: Creator, db: Session) -> dict[str
             if r.status_code >= 400: raise RuntimeError(r.text)
             pid = str(r.json()["data"]["id"])
         else:
-            client = tweepy.Client(consumer_key=decrypt(creator.encrypted_x_api_key), consumer_secret=decrypt(creator.encrypted_x_api_secret), access_token=decrypt(creator.encrypted_x_access_token), access_token_secret=decrypt(creator.encrypted_x_access_token_secret))
-            resp = client.create_tweet(text=text); pid = str(resp.data["id"])
+            signer = OAuth1Client(decrypt(creator.encrypted_x_api_key), client_secret=decrypt(creator.encrypted_x_api_secret), resource_owner_key=decrypt(creator.encrypted_x_access_token), resource_owner_secret=decrypt(creator.encrypted_x_access_token_secret))
+            url, headers, payload = signer.sign('https://api.x.com/2/tweets', http_method='POST', body=json.dumps({'text':text}), headers={'Content-Type':'application/json'})
+            r = httpx.post(url, headers=headers, content=payload, timeout=30.0)
+            if r.status_code >= 400: raise RuntimeError(r.text)
+            pid = str(r.json()['data']['id'])
         row.status="published"; row.x_post_id=pid; db.commit()
         return {"post_id": pid, "url": f"https://x.com/{creator.x_username}/status/{pid}"}
     except Exception as exc:
