@@ -1,3 +1,13 @@
+# Current increment: atomic registration and one-use callback state
+
+Validated 0c11d2c: local/CI SQLite 428 passed / 62 expected skips; PostgreSQL 489 passed / one expected skip. CI run 38004625728 passed account rollback/retry, concurrent signup and callback claims, intervening MFA, preserved existing connections/membership, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/registration-atomicity-20261010.json. Production unchanged; full gate blocked and publication goal active.
+
+Read docs/guardrails/REGISTRATION_ATOMICITY_20261010.md. Password signup commits User/workspace/membership/preferences atomically, handles conflicting signup without adopting another identity, and binds cookie issuance to the precommit security version. Apple account/profile/identity setup is atomic. Apple and shared social callback state use conditional single claims before exchange, including both Instagram routes, X, Meta and TikTok. Failed setup requires a fresh callback; consumed states are not replayed. Existing consent, onboarding, encrypted connections and publishing confirmation remain unchanged.
+
+NEXT: integrate restricted registration/account lifecycle authority without broad User/workspace/membership grants or restoring revoked memberships. Signup/Apple/social remain unmapped in separated-service mode. Review validated callback identity authority, profile/billing, worker/legacy routing and exact grants. Account-level immutable references/RLS, historical incomplete-account reconciliation and operational/independent assurance remain open. Do not enable partial staged mode for customers. Preserve users/data/keys, explicit publishing approval and unknown outcomes; no paid staging, forced MFA or gate bypass.
+
+---
+
 # Current increment: isolated product and AI telemetry
 
 Validated 7f6c0e3: CI SQLite 417 passed / 62 expected skips; PostgreSQL 478 passed / one expected skip. CI run 38002819010 passed real telemetry inserts, permission attacks, missing-pool/outage behavior, ASGI background context, migrated restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/telemetry-pool-20261010.json. Production unchanged; full gate blocked and publication goal active.

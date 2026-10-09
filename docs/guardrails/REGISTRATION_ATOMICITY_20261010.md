@@ -1,6 +1,9 @@
 # Atomic signup and one-use callback state
 
-Candidate only; full local/PostgreSQL validation pending. No production accounts,
+Validated candidate 0c11d2c: local and CI SQLite 428 passed / 62 expected skips;
+PostgreSQL 489 passed / one expected skip. CI run 38004625728 also passed migrated
+RLS restore, restored context/policy verification, image build/smoke and Python
+dependency audit. Full production gate remains blocked. No production accounts,
 data, grants, keys, provider actions or deployment changed.
 
 Regressions reproduced five account-lifecycle defects before correction: password

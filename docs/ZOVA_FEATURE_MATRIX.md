@@ -17,6 +17,7 @@
 | Database policy integrity | All 16 forced policy sets, exact roles/operations/capabilities and full expressions verified at startup and after restore | CI 464 PostgreSQL tests passed; service routing/final grants and production activation remain open |
 | Draft service least privilege | Exact table/column grants; no social credentials, approval text, media locations or delivery mutations; issuer has no direct table grants; sequence rights checked | CI 472 PostgreSQL tests passed including attachment/Story/planning cleanup; request telemetry now integrated below; other services remain open |
 | Isolated telemetry writes | Separate append-only metadata role, task-local request/background factory and no shared fallback; measurement failures preserve saved/generated content | CI 478 PostgreSQL tests passed with real event records and mocked AI; worker/reporting/retention and operational rollout remain open |
+| Atomic registration and callback claims | Password and Apple account setup commits atomically; friendly duplicate signup; version-bound initial cookie; single-use concurrent callback state for all five social routes | CI 489 PostgreSQL tests passed with mocked providers; restricted lifecycle routing and historical reconciliation remain open; not deployed |
 | Database read isolation rollout | Web/auth/worker context integration, final grants and account/legacy mapping unfinished | Release blocker; no production activation |
 
 Earlier entries below are historical, not evidence of current deployment.

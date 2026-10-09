@@ -1,0 +1,30 @@
+{
+  "tested_commit": "0c11d2c90fa6e925be0aadcff1e328d8c077eebb",
+  "ci_runs": [
+    38004625728
+  ],
+  "sqlite": {
+    "passed": 428,
+    "skipped": 62
+  },
+  "postgresql": {
+    "passed": 489,
+    "skipped": 1
+  },
+  "verified": [
+    "Password signup rolls back User, workspace, membership and preferences on failure; fresh retry succeeds",
+    "Concurrent normalized-email signups create one complete account and a friendly conflict without adopting the winning identity",
+    "Signup session issuance cannot adopt an intervening MFA/security version",
+    "Duplicate signup preserves existing credentials, session version, revoked membership and social connection",
+    "Apple identity insertion failure rolls back the complete new account; fresh callback succeeds",
+    "Concurrent Apple callbacks exchange a state once",
+    "Shared X, Instagram Login, Instagram via Facebook, Meta and TikTok states allow one concurrent claim",
+    "Migrated RLS restore, complete context/policy verification, image build/smoke and Python dependency audit"
+  ],
+  "limits": [
+    "Provider exchanges mocked; no live provider or browser switching assurance",
+    "Signup, Apple and social routes remain unmapped in separated-service mode",
+    "Account-level isolation, historical incomplete-account reconciliation, remaining service routing/grants and operational/independent release evidence remain open"
+  ],
+  "deployment": "No production accounts, grants, keys, data, provider actions or deployment changed"
+}

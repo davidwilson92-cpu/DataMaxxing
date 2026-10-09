@@ -28,8 +28,8 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical owner workspaces/memberships, live capability checks, version-based session revocation and immutable references on all 16 brand-owned tables are implemented. Offline migrations, PostgreSQL forced/restrictive RLS and expiring transaction/backend-bound contexts are tested with real restricted identities. Staged draft, sign-in, optional MFA and recovery routes use separated pools without shared-credential fallback. Startup now verifies actual context-function definitions and all table policy flags, role identifiers, operations and full canonical predicates; drift attacks and restored-definition checks passed at e3376ef. Production is unchanged and staged mode remains disabled. Account-level and legacy references/isolation, shared-member routing, remaining callback/worker/account services, final grants and rollout remain incomplete. Exact table/column/sequence grants for the mapped draft database operations and a table-inaccessible issuer passed restricted-role tests at e2d9534. A separate append-only telemetry identity and task-local request/background routing passed at 7f6c0e3 without mocking draft-save events or shared-credential fallback; worker/reporting authority remains open.",
-      "next_action": "Make signup/lifecycle atomic and integrate restricted registration; finish account/callback/worker/legacy services, account-level isolation and verified rollout.",
+      "finding": "Canonical owner workspaces/memberships, live capability checks, version-based session revocation and immutable references on all 16 brand-owned tables are implemented. Offline migrations, PostgreSQL forced/restrictive RLS and expiring transaction/backend-bound contexts are tested with real restricted identities. Staged draft, sign-in, optional MFA and recovery routes use separated pools without shared-credential fallback. Startup now verifies actual context-function definitions and all table policy flags, role identifiers, operations and full canonical predicates; drift attacks and restored-definition checks passed at e3376ef. Production is unchanged and staged mode remains disabled. Account-level and legacy references/isolation, shared-member routing, remaining callback/worker/account services, final grants and rollout remain incomplete. Exact table/column/sequence grants for the mapped draft database operations and a table-inaccessible issuer passed restricted-role tests at e2d9534. A separate append-only telemetry identity and task-local request/background routing passed at 7f6c0e3 without mocking draft-save events or shared-credential fallback; worker/reporting authority remains open. Password and Apple signup now commit account/workspace/membership/preferences/identity atomically; duplicate signup preserves revoked membership and existing connections. Validated at 0c11d2c; restricted registration service and historical reconciliation remain open.",
+      "next_action": "Integrate restricted registration and account lifecycle; finish callback/worker/legacy services, account-level isolation, historical account reconciliation and verified rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
@@ -258,6 +258,22 @@
         {
           "path": "docs/guardrails/evidence/telemetry-pool-20261010.json",
           "sha256": "4402f8f53337384bfe17d8d79431d1bb6ca613c3e6207a29edc0c32fe9fe8c75"
+        },
+        {
+          "path": "nova/app.py",
+          "sha256": "56a8662ade98f2e872d6a7ea062629bc2eac036494b9d0c3ca98755187dd2083"
+        },
+        {
+          "path": "tests/test_registration_atomicity.py",
+          "sha256": "0705c1764899865ef6a7839c45b49cfeb3aa0e788c1e13629cc57d50e582d7a7"
+        },
+        {
+          "path": "docs/guardrails/REGISTRATION_ATOMICITY_20261010.md",
+          "sha256": "97f37c37b2ac8c38112eafae00ed30a6acc2986fe6b80f7697b2a0252da7a64b"
+        },
+        {
+          "path": "docs/guardrails/evidence/registration-atomicity-20261010.json",
+          "sha256": "4dd5c90c34750324742d503560903d6ff1cb928e0173e1499e3027af26b517bb"
         }
       ],
       "reviewed_by": null,
@@ -269,7 +285,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete. A staged fourth authentication service now maps password sign-in, optional MFA and logout with limited user-column grants; Validated at a9dd94b with restricted-role sign-in/MFA/concurrent recovery/logout tests; account-level RLS and remaining lifecycle routes are open. Production remains unchanged. Password changes now use version/hash-conditional updates and version-bound session issuance; a separate optional recovery pool routes password and reset-mail flows. Validated at 212794e with password/MFA race, restricted recovery and mocked delivery-failure checks; account-level isolation and production rollout remain open.",
+      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete. A staged fourth authentication service now maps password sign-in, optional MFA and logout with limited user-column grants; Validated at a9dd94b with restricted-role sign-in/MFA/concurrent recovery/logout tests; account-level RLS and remaining lifecycle routes are open. Production remains unchanged. Password changes now use version/hash-conditional updates and version-bound session issuance; a separate optional recovery pool routes password and reset-mail flows. Validated at 212794e with password/MFA race, restricted recovery and mocked delivery-failure checks; account-level isolation and production rollout remain open. Password signup uses precommit security-version session issuance and atomic account setup; Apple identity failure rolls back new account setup. Concurrent signup and intervening MFA tests passed at 0c11d2c.",
       "next_action": "Validate PostgreSQL/restore and browser journeys, obtain security review, establish verified recovery operations and privileged MFA rollout; add maintained compromised-password screening.",
       "evidence": [
         {
@@ -323,6 +339,22 @@
         {
           "path": "docs/guardrails/evidence/recovery-pools-20261009.json",
           "sha256": "e1c4594c6609219dc519098ba373bc5f830d7d096cee4624d68cdc3b21cb5226"
+        },
+        {
+          "path": "nova/app.py",
+          "sha256": "56a8662ade98f2e872d6a7ea062629bc2eac036494b9d0c3ca98755187dd2083"
+        },
+        {
+          "path": "tests/test_registration_atomicity.py",
+          "sha256": "0705c1764899865ef6a7839c45b49cfeb3aa0e788c1e13629cc57d50e582d7a7"
+        },
+        {
+          "path": "docs/guardrails/REGISTRATION_ATOMICITY_20261010.md",
+          "sha256": "97f37c37b2ac8c38112eafae00ed30a6acc2986fe6b80f7697b2a0252da7a64b"
+        },
+        {
+          "path": "docs/guardrails/evidence/registration-atomicity-20261010.json",
+          "sha256": "4dd5c90c34750324742d503560903d6ff1cb928e0173e1499e3027af26b517bb"
         }
       ],
       "reviewed_by": null,
@@ -403,12 +435,24 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Provider OAuth state and encrypted tokens exist. Disconnect clears local tokens but lacks a complete remote-revocation, audit and scheduled-work cancellation workflow.",
+      "finding": "Provider OAuth state and encrypted tokens exist. Disconnect clears local tokens but lacks a complete remote-revocation, audit and scheduled-work cancellation workflow. Shared OAuth state now uses a conditional single claim before exchange. Concurrent tests passed for X, Instagram Login, Instagram via Facebook, Meta and TikTok at 0c11d2c; provider requests remain mocked.",
       "next_action": "Implement provider-specific revocation and transactional local cancellation; test expired state, wrong scope, disconnect races and secret masking.",
       "evidence": [
         {
           "path": "nova/app.py",
           "sha256": "56a8662ade98f2e872d6a7ea062629bc2eac036494b9d0c3ca98755187dd2083"
+        },
+        {
+          "path": "tests/test_registration_atomicity.py",
+          "sha256": "0705c1764899865ef6a7839c45b49cfeb3aa0e788c1e13629cc57d50e582d7a7"
+        },
+        {
+          "path": "docs/guardrails/REGISTRATION_ATOMICITY_20261010.md",
+          "sha256": "97f37c37b2ac8c38112eafae00ed30a6acc2986fe6b80f7697b2a0252da7a64b"
+        },
+        {
+          "path": "docs/guardrails/evidence/registration-atomicity-20261010.json",
+          "sha256": "4dd5c90c34750324742d503560903d6ff1cb928e0173e1499e3027af26b517bb"
         }
       ],
       "reviewed_by": null,
@@ -449,12 +493,28 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Draft revisions, conditional job claims and selected transactions exist. Concurrency guarantees do not cover all mutable resources and disconnect races.",
+      "finding": "Draft revisions, conditional job claims and selected transactions exist. Concurrency guarantees do not cover all mutable resources and disconnect races. Concurrent normalized-email signup creates one complete account with a friendly losing response; Apple and social authorization states permit one claim. Regression and PostgreSQL validation passed at 0c11d2c.",
       "next_action": "Extend versioned writes and concurrency tests to account, schedule, strategy, connection and billing boundaries.",
       "evidence": [
         {
           "path": "nova/workspace.py",
           "sha256": "1cf54d3809518d380ef7655a87ec9d66c30369bdf427b7d1415e99016e3a8fde"
+        },
+        {
+          "path": "nova/app.py",
+          "sha256": "56a8662ade98f2e872d6a7ea062629bc2eac036494b9d0c3ca98755187dd2083"
+        },
+        {
+          "path": "tests/test_registration_atomicity.py",
+          "sha256": "0705c1764899865ef6a7839c45b49cfeb3aa0e788c1e13629cc57d50e582d7a7"
+        },
+        {
+          "path": "docs/guardrails/REGISTRATION_ATOMICITY_20261010.md",
+          "sha256": "97f37c37b2ac8c38112eafae00ed30a6acc2986fe6b80f7697b2a0252da7a64b"
+        },
+        {
+          "path": "docs/guardrails/evidence/registration-atomicity-20261010.json",
+          "sha256": "4dd5c90c34750324742d503560903d6ff1cb928e0173e1499e3027af26b517bb"
         }
       ],
       "reviewed_by": null,
@@ -2081,7 +2141,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "This assessment applies P0\u00e2\u20ac\u201cP3 and blocks all unresolved applicable sections; previously deployed code has not been certified against the model.",
+      "finding": "This assessment applies P0â€“P3 and blocks all unresolved applicable sections; previously deployed code has not been certified against the model.",
       "next_action": "Assign accountable owners and verify release policy is required in repository and hosting controls.",
       "evidence": [
         {
