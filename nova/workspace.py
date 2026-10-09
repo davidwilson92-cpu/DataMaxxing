@@ -43,7 +43,8 @@ def clean_workspace(value, db, user_id):
         raise HTTPException(400,'Invalid attachment selection')
     assets=[]
     for aid in dict.fromkeys(ids):
-        row=db.get(MediaAsset,aid)
+        row=db.execute(select(MediaAsset.id,MediaAsset.user_id,MediaAsset.filename,MediaAsset.mime_type)
+                       .where(MediaAsset.id==aid)).first()
         if not row or row.user_id!=user_id: raise HTTPException(404,'Attachment not found')
         assets.append({'id':row.id,'filename':row.filename,'url':f'/media/preview/{row.id}','kind':'video' if row.mime_type.startswith('video/') else 'image'})
     messages=value.get('conversation',[])

@@ -1097,7 +1097,7 @@ def api_drafts(request:Request,db:Session=Depends(get_db)):
     rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).limit(100)).all()
     output=[]
     for r in rows:
-        acts=db.scalars(select(Activity).where(Activity.user_id==user.id,Activity.draft_id==r.id,Activity.url.is_not(None)).order_by(Activity.id.desc())).all()
+        acts=db.execute(select(Activity.platform,Activity.url).where(Activity.user_id==user.id,Activity.draft_id==r.id,Activity.url.is_not(None)).order_by(Activity.id.desc())).all()
         title=draft_title(r)
         try:platforms=json.loads(r.platforms_json or "[]")
         except (TypeError,ValueError):platforms=[]

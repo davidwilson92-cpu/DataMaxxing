@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from nova import db as models
 from nova.database_services import create_services, IDENTITY_READ_TABLES, DRAFT_ROUTES
+from nova.service_permissions import DRAFT_TABLE_GRANTS, DRAFT_COLUMN_GRANTS
 from test_rls import rls_db
 from test_tenant_registry import registry_db
 
@@ -23,6 +24,15 @@ def service_pools(rls_db):
         c.execute(text(f"CREATE ROLE {role} LOGIN PASSWORD '{password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS"))
     try:
         with admin.begin() as c:
+            # The RLS foundation fixture is deliberately broad for policy
+            # attacks; actual draft service tests must use its exact grants.
+            c.execute(text(f'REVOKE ALL ON ALL TABLES IN SCHEMA {schema} FROM {roles[0]}'))
+            c.execute(text(f'REVOKE ALL ON ALL SEQUENCES IN SCHEMA {schema} FROM {roles[0]}'))
+            for table,operations in DRAFT_TABLE_GRANTS.items():
+                c.execute(text(f'GRANT {",".join(sorted(operations))} ON {schema}.{table} TO {roles[0]}'))
+            for (table,operation),columns in DRAFT_COLUMN_GRANTS.items():
+                c.execute(text(f'GRANT {operation} ({",".join(sorted(columns))}) ON {schema}.{table} TO {roles[0]}'))
+            c.execute(text(f'GRANT USAGE ON SEQUENCE {schema}.nova_drafts_id_seq TO {roles[0]}'))
             c.execute(text(f'GRANT USAGE ON SCHEMA {schema} TO {role}'))
             for name in IDENTITY_READ_TABLES:
                 c.execute(text(f'GRANT SELECT ON {schema}.{name} TO {role}'))
@@ -94,9 +104,26 @@ def test_normal_draft_dependency_uses_restricted_service_pools(service_pools,mon
         response=client.post('/api/drafts')
         assert response.status_code==200,response.text
         did=response.json()['id']
-        saved=client.patch(f'/api/drafts/{did}',json={'brief':'Real dependency save','revision':0})
+        with Session(admin) as db:
+            asset=models.MediaAsset(user_id=uids[0],brand_id=bid,filename='safe.jpg',mime_type='image/jpeg',storage_key='private-location')
+            foreign_asset=models.MediaAsset(user_id=uids[1],filename='foreign.jpg',mime_type='image/jpeg',storage_key='other-private-location')
+            series=models.ContentSeries(user_id=uids[0],brand_id=bid,request_key='draft-service',spec_json='{"timezone":"Europe/London"}')
+            db.add_all([asset,foreign_asset,series]);db.flush()
+            asset_id,foreign_asset_id=asset.id,foreign_asset.id
+            action=models.StrategyAction(user_id=uids[0],brand_id=bid,action_key='draft-service',strategy_revision=0,payload_json='{}',draft_id=did)
+            occurrence=models.SeriesOccurrence(user_id=uids[0],brand_id=bid,series_id=series.id,position=0,due_at=models.utcnow(),draft_id=did)
+            review=models.PublishReview(user_id=uids[0],brand_id=bid,code='draft-service-review',draft_id=did,revision=0,payload_json='{}',expires_at=models.utcnow())
+            db.add_all([action,occurrence,review]);db.commit()
+            action_id,occurrence_id=action.id,occurrence.id
+        refused=client.patch(f'/api/drafts/{did}',json={'brief':'Wrong attachment','revision':0,'workspace':{'media_asset_ids':[foreign_asset_id]}})
+        assert refused.status_code==404,refused.text
+        saved=client.patch(f'/api/drafts/{did}',json={'brief':'Real dependency save','revision':0,'workspace':{'media_asset_ids':[asset_id],'instagram_format':'story'}})
         assert saved.status_code==200,saved.text
-        assert client.get(f'/api/drafts/{did}').json()['brief']=='Real dependency save'
+        loaded=client.get(f'/api/drafts/{did}').json()
+        assert loaded['brief']=='Real dependency save'
+        assert loaded['workspace']['media_asset_ids']==[asset_id]
+        assert loaded['workspace']['instagram_format']=='story'
+        assert loaded['planned']['timezone']=='Europe/London'
         assert client.get(f'/api/drafts/{drafts[1]}').status_code==404
         assert client.get('/api/drafts',headers={'X-Zova-Brand':'invalid'}).status_code==400
         assert client.get('/api/drafts',headers={'X-Zova-Brand':'999999'}).status_code==404
@@ -118,6 +145,13 @@ def test_normal_draft_dependency_uses_restricted_service_pools(service_pools,mon
             assert db.scalar(select(models.RequestLimit.count)) > 0
         assert client.delete(f'/api/drafts/{did}').status_code==204
         assert client.get(f'/api/drafts/{did}').status_code==404
+        with Session(admin) as db:
+            assert db.get(models.PublishReview,'draft-service-review') is None
+            assert db.get(models.StrategyAction,action_id).draft_id is None
+            assert db.get(models.StrategyAction,action_id).status=='dismissed'
+            assert db.get(models.SeriesOccurrence,occurrence_id).draft_id is None
+            assert db.get(models.SeriesOccurrence,occurrence_id).status=='cancelled'
+            assert db.get(models.MediaAsset,asset_id).storage_key=='private-location'
         with admin.begin() as c:
             c.execute(text('UPDATE nova_users SET auth_version=auth_version+1 WHERE id=:uid'),{'uid':uids[0]})
         assert client.get('/api/drafts').status_code==401

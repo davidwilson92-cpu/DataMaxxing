@@ -13,6 +13,7 @@ from starlette.routing import compile_path
 
 from .schema_startup import verify_runtime_role
 from .rls import verify_context_functions, verify_workspace_policies
+from .service_permissions import DRAFT_TABLE_GRANTS, DRAFT_COLUMN_GRANTS, verify_sequence_grants
 from .tenant_access import WorkspaceDenied
 from .workspace_session import authenticated_authority, content_session
 
@@ -168,6 +169,7 @@ def create_services(identity_engine, runtime_engine, issuer_engine, *, authentic
         identity_grants={name:{'SELECT'} for name in IDENTITY_READ_TABLES}
         identity_grants['zova_request_limits']={'SELECT','INSERT','UPDATE','DELETE'}
         verify_pool_grants(c,Base.metadata,identity_grants)
+        verify_sequence_grants(c)
         signatures = {
             'issue': f'{schema}.zova_issue_context(text,integer,text,integer,integer,text,text,integer,text,integer)',
             'resolve': f'{schema}.zova_rls_workspace(text[])',
@@ -181,12 +183,20 @@ def create_services(identity_engine, runtime_engine, issuer_engine, *, authentic
                               {'role':role,'signature':signature})
                 if bool(execute) != expected or owns:
                     raise ValueError('Context functions must remain owned and granted to separate service identities')
+    with runtime_engine.connect() as c:
+        verify_pool_grants(c,Base.metadata,DRAFT_TABLE_GRANTS,DRAFT_COLUMN_GRANTS)
+        verify_sequence_grants(c,draft_ids=True)
+    with issuer_engine.connect() as c:
+        verify_pool_grants(c,Base.metadata,{})
+        verify_sequence_grants(c)
     if authentication_engine is not None:
         with authentication_engine.connect() as c:
             verify_pool_grants(c,Base.metadata,AUTH_TABLE_GRANTS,AUTH_COLUMN_GRANTS)
+            verify_sequence_grants(c)
     if recovery_engine is not None:
         with recovery_engine.connect() as c:
             verify_pool_grants(c,Base.metadata,RECOVERY_TABLE_GRANTS,RECOVERY_COLUMN_GRANTS)
+            verify_sequence_grants(c)
     return DatabaseServices(sessionmaker(bind=identity_engine, expire_on_commit=False),
                             runtime_engine, issuer_engine, roles[1],
                             sessionmaker(bind=authentication_engine,expire_on_commit=False) if authentication_engine is not None else None,

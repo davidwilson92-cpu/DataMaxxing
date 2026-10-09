@@ -185,11 +185,11 @@
         },
         {
           "path": "nova/database_services.py",
-          "sha256": "e11b984442589409428488bf0b4c2c58f67bc6c8a74fa916d10d0192ca04acd8"
+          "sha256": "9dac060742ea96b4408fa737b498e2edc2d9c1a16ea6c278c59d5808133143d0"
         },
         {
           "path": "tests/test_database_services.py",
-          "sha256": "aebe6093474fa3b9dd2780c9a49394556cf605807e64aef667a336549ec16faa"
+          "sha256": "cc58c8605c7c8567fe321f889370af1dc400da1845d029a1dcef75e957c056a5"
         },
         {
           "path": "docs/guardrails/SERVICE_POOLS_20261009.md",
@@ -258,7 +258,7 @@
         },
         {
           "path": "nova/database_services.py",
-          "sha256": "e11b984442589409428488bf0b4c2c58f67bc6c8a74fa916d10d0192ca04acd8"
+          "sha256": "9dac060742ea96b4408fa737b498e2edc2d9c1a16ea6c278c59d5808133143d0"
         },
         {
           "path": "tests/test_authentication_pool.py",
@@ -372,7 +372,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "e7dc96b661519af73a4824f9c2cb3c8c67a46dd81d417d9fb535e39088844726"
+          "sha256": "9bd93c28ec667c3232976cde107e1ad7b09a41ea3d4c372bd04c1611e47cfd1c"
         }
       ],
       "reviewed_by": null,
@@ -418,7 +418,7 @@
       "evidence": [
         {
           "path": "nova/workspace.py",
-          "sha256": "ea98cac1806a0b419cb2cbd53e826a1e9dcaf5ab13bfc24ef79bc30a4f7aac23"
+          "sha256": "1cf54d3809518d380ef7655a87ec9d66c30369bdf427b7d1415e99016e3a8fde"
         }
       ],
       "reviewed_by": null,
@@ -582,7 +582,7 @@
         },
         {
           "path": "nova/database_services.py",
-          "sha256": "e11b984442589409428488bf0b4c2c58f67bc6c8a74fa916d10d0192ca04acd8"
+          "sha256": "9dac060742ea96b4408fa737b498e2edc2d9c1a16ea6c278c59d5808133143d0"
         },
         {
           "path": "nova/rls.py",
@@ -788,7 +788,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "e7dc96b661519af73a4824f9c2cb3c8c67a46dd81d417d9fb535e39088844726"
+          "sha256": "9bd93c28ec667c3232976cde107e1ad7b09a41ea3d4c372bd04c1611e47cfd1c"
         }
       ],
       "reviewed_by": null,
@@ -941,7 +941,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "e7dc96b661519af73a4824f9c2cb3c8c67a46dd81d417d9fb535e39088844726"
+          "sha256": "9bd93c28ec667c3232976cde107e1ad7b09a41ea3d4c372bd04c1611e47cfd1c"
         }
       ],
       "reviewed_by": null,
