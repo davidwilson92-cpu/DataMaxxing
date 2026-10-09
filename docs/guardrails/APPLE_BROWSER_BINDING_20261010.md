@@ -1,6 +1,9 @@
 # Apple sign-in browser binding
 
-Candidate only; full local/PostgreSQL validation pending. Production unchanged.
+Validated c92e496: local/CI SQLite 435 passed / 62 expected skips; PostgreSQL
+496 passed / one expected skip. CI run 38005424259 passed migrated RLS restore,
+full context/policy verification, image build/smoke and Python dependency audit.
+Full release gate remains blocked. Production unchanged.
 
 The previous callback required a valid unused state and matching identity-token
 nonce, but did not bind that state to the browser that initiated sign-in. Tests

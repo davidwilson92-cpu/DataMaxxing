@@ -1,0 +1,29 @@
+{
+  "tested_commit": "c92e4968a62adb26c18e3aa71a80cccf764a3635",
+  "ci_runs": [
+    38005424259
+  ],
+  "sqlite": {
+    "passed": 435,
+    "skipped": 62
+  },
+  "postgresql": {
+    "passed": 496,
+    "skipped": 1
+  },
+  "verified": [
+    "Missing/different/tampered browser binding rejected before state consumption or provider exchange",
+    "Existing account session preserved after rejected callback",
+    "Original browser can finish after a foreign callback is rejected",
+    "Host-only Secure HttpOnly SameSite=None ten-minute cookie; cleared on success and MFA challenge",
+    "Expired/replayed/superseded attempts rejected; optional MFA retained",
+    "Migrated RLS restore, context/policy verification, image build/smoke and Python dependency audit"
+  ],
+  "limits": [
+    "TestClient is not real browser enforcement; live HTTPS desktop/mobile Apple flow remains unverified",
+    "Provider identity responses mocked; complete token validation and independent review remain open",
+    "Apple and registration remain unmapped in separated-service mode",
+    "In-flight pre-rollout Apple attempts must restart; existing Zova sessions are unchanged"
+  ],
+  "deployment": "No production accounts, credentials, data, provider actions or deployment changed"
+}

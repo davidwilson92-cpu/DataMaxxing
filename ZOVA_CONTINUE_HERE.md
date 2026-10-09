@@ -1,3 +1,13 @@
+# Current increment: Apple sign-in browser binding
+
+Validated c92e496: local/CI SQLite 435 passed / 62 expected skips; PostgreSQL 496 passed / one expected skip. CI run 38005424259 passed callback browser-binding/session preservation, expiry/replay/MFA checks, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/apple-browser-binding-20261010.json. Production unchanged; publication goal active and full gate blocked.
+
+Read docs/guardrails/APPLE_BROWSER_BINDING_20261010.md. A regression reproduced acceptance of an Apple callback in another browser. Apple start now sets a ten-minute host-only Secure HttpOnly SameSite=None cookie; callback requires it before state claim/provider exchange. The one-use database claim and nonce/expiry remain. Successful login/MFA challenge clears the binding. Latest attempt replaces earlier tabs. Existing sessions/data/social connections are untouched; pre-rollout in-flight Apple attempts must restart. Real HTTPS browser/live-provider validation remains open.
+
+NEXT: restricted registration/account lifecycle authority without broad User/workspace/membership grants; Apple token-validation/broker assurance, profile/billing and worker/legacy routing; account-level isolation and operational/independent evidence. Signup/Apple/social remain unmapped in separated-service mode. Do not activate partial mode or bypass the gate. Preserve users/data/keys and explicit publishing approvals; no paid staging or forced MFA.
+
+---
+
 # Current increment: atomic registration and one-use callback state
 
 Validated 0c11d2c: local/CI SQLite 428 passed / 62 expected skips; PostgreSQL 489 passed / one expected skip. CI run 38004625728 passed account rollback/retry, concurrent signup and callback claims, intervening MFA, preserved existing connections/membership, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/registration-atomicity-20261010.json. Production unchanged; full gate blocked and publication goal active.

@@ -285,7 +285,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete. A staged fourth authentication service now maps password sign-in, optional MFA and logout with limited user-column grants; Validated at a9dd94b with restricted-role sign-in/MFA/concurrent recovery/logout tests; account-level RLS and remaining lifecycle routes are open. Production remains unchanged. Password changes now use version/hash-conditional updates and version-bound session issuance; a separate optional recovery pool routes password and reset-mail flows. Validated at 212794e with password/MFA race, restricted recovery and mocked delivery-failure checks; account-level isolation and production rollout remain open. Password signup uses precommit security-version session issuance and atomic account setup; Apple identity failure rolls back new account setup. Concurrent signup and intervening MFA tests passed at 0c11d2c.",
+      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete. A staged fourth authentication service now maps password sign-in, optional MFA and logout with limited user-column grants; Validated at a9dd94b with restricted-role sign-in/MFA/concurrent recovery/logout tests; account-level RLS and remaining lifecycle routes are open. Production remains unchanged. Password changes now use version/hash-conditional updates and version-bound session issuance; a separate optional recovery pool routes password and reset-mail flows. Validated at 212794e with password/MFA race, restricted recovery and mocked delivery-failure checks; account-level isolation and production rollout remain open. Password signup uses precommit security-version session issuance and atomic account setup; Apple identity failure rolls back new account setup. Concurrent signup and intervening MFA tests passed at 0c11d2c. Apple sign-in now binds authorization state to a host-only Secure HttpOnly cross-site return cookie before claiming state or contacting Apple. Missing/foreign/tampered browser callbacks were reproduced and rejected; existing sessions and MFA retained. Validated at c92e496 with mocked providers; actual browser/provider validation remains open.",
       "next_action": "Validate PostgreSQL/restore and browser journeys, obtain security review, establish verified recovery operations and privileged MFA rollout; add maintained compromised-password screening.",
       "evidence": [
         {
@@ -355,6 +355,18 @@
         {
           "path": "docs/guardrails/evidence/registration-atomicity-20261010.json",
           "sha256": "4dd5c90c34750324742d503560903d6ff1cb928e0173e1499e3027af26b517bb"
+        },
+        {
+          "path": "tests/test_apple_browser_binding.py",
+          "sha256": "3c541c4afb4703fd901b12b22e6c1e4c4f7c30a7d7e150e76b3299a71ccb8963"
+        },
+        {
+          "path": "docs/guardrails/APPLE_BROWSER_BINDING_20261010.md",
+          "sha256": "ca0bb818e27abc36d313ce9ba74ee8af4860dd964ce8cb3623fc7682012607d7"
+        },
+        {
+          "path": "docs/guardrails/evidence/apple-browser-binding-20261010.json",
+          "sha256": "359a0e8b9ee7869e3c4373e7ffc3f6e18167b20c63254735f2ce6b2540323b9a"
         }
       ],
       "reviewed_by": null,
