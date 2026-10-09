@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 from fastapi import Request
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, select
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, CheckConstraint, event, inspect, func, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///./nova.db')
@@ -40,6 +40,24 @@ class Brand(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
     name: Mapped[str] = mapped_column(String(100))
+
+
+class TenantWorkspace(Base):
+    __tablename__ = 'zova_workspaces'
+    __table_args__ = (UniqueConstraint('owner_user_id','legacy_brand_id'), CheckConstraint('legacy_brand_id >= 0',name='workspace_nonnegative_brand'))
+    id: Mapped[str] = mapped_column(String(36),primary_key=True)
+    owner_user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'))
+    legacy_brand_id: Mapped[int] = mapped_column(Integer)
+
+
+class WorkspaceMembership(Base):
+    __tablename__ = 'zova_workspace_memberships'
+    __table_args__ = (CheckConstraint("role IN ('owner','admin','publisher','creator','analyst','viewer')",name='membership_known_role'), CheckConstraint('revision >= 1',name='membership_positive_revision'))
+    workspace_id: Mapped[str] = mapped_column(ForeignKey('zova_workspaces.id'),primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'),primary_key=True)
+    role: Mapped[str] = mapped_column(String(20),default='viewer')
+    active: Mapped[bool] = mapped_column(Boolean,default=False)
+    revision: Mapped[int] = mapped_column(Integer,default=1)
 
 
 class BrandVoice(BrandScoped, Base):
@@ -501,6 +519,14 @@ class MfaChallenge(Base):
     used: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+# Existing databases require the reviewed offline registry backfill before startup.
+# Never silently assign privileges while serving requests.
+with engine.connect() as registry_connection:
+    if inspect(registry_connection).has_table('nova_users'):
+        existing_users = registry_connection.scalar(select(func.count()).select_from(User.__table__))
+        if existing_users and not all(inspect(registry_connection).has_table(name) for name in ('zova_workspaces','zova_workspace_memberships')):
+            raise RuntimeError('Workspace registry migration required before application startup')
+
 Base.metadata.create_all(bind=engine, tables=[table for table in Base.metadata.sorted_tables
                                              if table not in (LegacyPublication.__table__, MfaSettings.__table__, MfaChallenge.__table__)])
 from .migrations import run_migrations
@@ -533,3 +559,23 @@ def get_preferences(db: Session, user_id: int) -> CreatorPreferences:
         db.commit()
         db.refresh(pref)
     return pref
+
+
+def _create_workspace(connection, uid, bid, active):
+    from .tenant_migration import workspace_key
+    wid = workspace_key(uid,bid)
+    connection.execute(TenantWorkspace.__table__.insert().values(id=wid,owner_user_id=uid,legacy_brand_id=bid))
+    connection.execute(WorkspaceMembership.__table__.insert().values(workspace_id=wid,user_id=uid,role='owner',active=active,revision=1))
+
+
+@event.listens_for(User,'after_insert')
+def _new_user_workspace(mapper,connection,user):
+    _create_workspace(connection,user.id,0,user.active)
+
+
+@event.listens_for(Brand,'after_insert')
+def _new_brand_workspace(mapper,connection,brand):
+    active = connection.scalar(select(User.active).where(User.id==brand.user_id))
+    if active is None:
+        raise ValueError('Brand owner is unavailable')
+    _create_workspace(connection,brand.user_id,brand.id,active)

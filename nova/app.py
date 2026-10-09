@@ -401,6 +401,9 @@ def switch_brand(request:Request,brand_id:Annotated[int,Form()],db:Session=Depen
 def rename_brand(brand_id:int,request:Request,name:Annotated[str,Form()],db:Session=Depends(get_db)):
     from .db import Brand
     user=current_user(request);name=name.strip()
+    from .tenant_access import require_member, WorkspaceDenied
+    try:require_member(db,user.id,brand_id,'workspace.edit')
+    except WorkspaceDenied as exc:raise HTTPException(403,str(exc)) from None
     if not name or len(name)>100:raise HTTPException(400,'Use a brand name between 1 and 100 characters.')
     if brand_id:
         row=db.get(Brand,brand_id)

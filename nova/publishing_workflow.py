@@ -206,6 +206,8 @@ def dispatch(db,publication,payload,publisher=publish_platform):
     db.commit();db.refresh(publication)
     # Fail before the provider call if the exact reviewed connection/media no longer exists.
     try:
+        from .tenant_access import require_member
+        require_member(db,publication.user_id,publication.brand_id,'posts.publish')
         conn=selected_connection(db,publication.user_id,publication.platform,target['connection_id'])
         if (conn.account_id!=target['account_id'] or conn.brand_id!=publication.brand_id
                 or conn.id!=publication.connection_id):raise RuntimeError('Account changed')

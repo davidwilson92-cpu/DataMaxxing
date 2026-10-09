@@ -1,11 +1,11 @@
 """Capability policy foundation. Routes must opt into enforcement before team rollout."""
-READ = frozenset({'posts.read', 'connections.read', 'analytics.read'})
+READ = frozenset({'workspace.enter', 'posts.read', 'connections.read', 'analytics.read'})
 WRITE = frozenset({'posts.create', 'posts.edit', 'posts.delete', 'media.create', 'media.delete'})
 PUBLISH = frozenset({'posts.publish', 'posts.schedule', 'posts.cancel'})
 MANAGE = frozenset({'connections.create', 'connections.delete', 'members.read', 'members.invite', 'members.remove', 'members.role', 'workspace.edit', 'automation.pause'})
 ROLE_CAPABILITIES = {
     'viewer': READ,
-    'analyst': frozenset({'analytics.read'}),
+    'analyst': frozenset({'workspace.enter','analytics.read'}),
     'creator': READ | WRITE,
     'publisher': READ | WRITE | PUBLISH,
     'admin': READ | WRITE | PUBLISH | MANAGE,

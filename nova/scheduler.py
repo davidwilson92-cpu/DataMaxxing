@@ -22,6 +22,8 @@ class SchedulePreflightError(RuntimeError):
 def scheduled_assets(db, job):
     """Legacy jobs have no review ledger; validate their exact persisted boundary."""
     try:
+        from .tenant_access import require_member
+        require_member(db,job.user_id,job.brand_id,'posts.publish')
         if not job.connection_id:
             raise RuntimeError('Missing connection')
         conn = selected_connection(db, job.user_id, job.platform, job.connection_id)

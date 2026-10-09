@@ -26,3 +26,8 @@ with source.connect() as a, restored.connect() as b:
     for table, order in [("zova_mfa_settings", "user_id"), ("zova_mfa_challenges", "token_hash")]:
         query = text(f"SELECT * FROM {table} ORDER BY {order}")
         assert a.execute(query).all() == b.execute(query).all(), table
+
+with source.connect() as a, restored.connect() as b:
+    for table,order in [('zova_workspaces','id'),('zova_workspace_memberships','workspace_id,user_id')]:
+        query = text(f'SELECT * FROM {table} ORDER BY {order}')
+        assert a.execute(query).all() == b.execute(query).all(), table

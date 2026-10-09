@@ -16,7 +16,7 @@
       "evidence": [
         {
           "path": "nova/publishing_workflow.py",
-          "sha256": "d18a23e1a185ba6ba3a1b3b0890c403c5507181b92551ba3731f095bd6f1fa3b"
+          "sha256": "93b815c0f223c6a8c0ba3cf58bc3ddc08d6a72b67ae4c6918570ac62893df6a1"
         }
       ],
       "reviewed_by": null,
@@ -25,19 +25,19 @@
     {
       "id": 2,
       "title": "MULTI-TENANCY",
-      "status": "gap",
+      "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "User plus brand scoping is application-side. No workspace membership model or PostgreSQL RLS exists; legacy creator tables use separate ownership. ORM ownership mutation and worker destination checks are tightened in this iteration. Pre-ledger scheduled jobs now also reject mismatched owner/brand/account/media/draft and missing publishing permissions before provider dispatch. A separately invoked canonical workspace/owner-membership registry migration and six-role capability policy are now implemented and tested on synthetic data; application activation, legacy mapping and RLS remain outstanding.",
-      "next_action": "Activate canonical workspace references and membership/capability enforcement in compatible increments; reconcile legacy objects and prove restricted-role PostgreSQL RLS before rollout.",
+      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete.",
+      "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
-          "sha256": "7c2254fa9a0eedce5897e3fc1e4150a5fa78cc08e57534d69497d58793a6355e"
+          "sha256": "beaee94d1fd5b23d98ce00eeb4aabbe95be98e596ce51197cefc65639e6a4aa7"
         },
         {
           "path": "nova/scheduler.py",
-          "sha256": "71bbe279b89515de5dd43f152e80d37adba76713428a683ceae256a1166fcf54"
+          "sha256": "07e51f3172da4bc8b3686c458f10ea54f2681bb1e3376dd535daf4c584f0d07a"
         },
         {
           "path": "tests/test_worker_boundaries.py",
@@ -45,7 +45,7 @@
         },
         {
           "path": "nova/publishing_workflow.py",
-          "sha256": "d18a23e1a185ba6ba3a1b3b0890c403c5507181b92551ba3731f095bd6f1fa3b"
+          "sha256": "93b815c0f223c6a8c0ba3cf58bc3ddc08d6a72b67ae4c6918570ac62893df6a1"
         },
         {
           "path": "tests/test_reconciliation_boundaries.py",
@@ -57,7 +57,7 @@
         },
         {
           "path": "nova/capabilities.py",
-          "sha256": "ca3d10cc4d5adbf6c9c941e020b7f870b9a59fbf4ede104dfc43679bba7a297c"
+          "sha256": "fdff8368448b11e048b10d665e85f3e99790a89c398cb20b2cd40e2ad3159f78"
         },
         {
           "path": "tests/test_tenant_registry.py",
@@ -70,6 +70,18 @@
         {
           "path": "docs/guardrails/evidence/tenant-registry-20261009.json",
           "sha256": "256536ca631a9778b6362b01bb0cf527d12ad1ddc973912819af47dbfac36bc1"
+        },
+        {
+          "path": "nova/tenant_access.py",
+          "sha256": "56ab100a475279999f21950c1bf8c69e9c0bd1e665fb13193f20c8d22aac9441"
+        },
+        {
+          "path": "tests/test_tenant_access.py",
+          "sha256": "396b909a7c9fe018ca9f029ff193495fce4e3032e3b5a2d265a71d31b21427d7"
+        },
+        {
+          "path": "docs/guardrails/TENANT_ACCESS_20261009.md",
+          "sha256": "91e01206b65738c194587d404f1aabffe8ccdb1ac95317f90e38c8bc3b03f606"
         }
       ],
       "reviewed_by": null,
@@ -111,15 +123,15 @@
     {
       "id": 4,
       "title": "AUTHORIZATION",
-      "status": "gap",
+      "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Ownership checks exist but workspace membership and the six required roles/capabilities are absent. A separately invoked canonical workspace/owner-membership registry migration and six-role capability policy are now implemented and tested on synthetic data; application activation, legacy mapping and RLS remain outstanding.",
-      "next_action": "Activate canonical workspace references and membership/capability enforcement in compatible increments; reconcile legacy objects and prove restricted-role PostgreSQL RLS before rollout.",
+      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete.",
+      "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
-          "sha256": "7c2254fa9a0eedce5897e3fc1e4150a5fa78cc08e57534d69497d58793a6355e"
+          "sha256": "beaee94d1fd5b23d98ce00eeb4aabbe95be98e596ce51197cefc65639e6a4aa7"
         },
         {
           "path": "nova/tenant_migration.py",
@@ -127,7 +139,7 @@
         },
         {
           "path": "nova/capabilities.py",
-          "sha256": "ca3d10cc4d5adbf6c9c941e020b7f870b9a59fbf4ede104dfc43679bba7a297c"
+          "sha256": "fdff8368448b11e048b10d665e85f3e99790a89c398cb20b2cd40e2ad3159f78"
         },
         {
           "path": "tests/test_tenant_registry.py",
@@ -140,6 +152,18 @@
         {
           "path": "docs/guardrails/evidence/tenant-registry-20261009.json",
           "sha256": "256536ca631a9778b6362b01bb0cf527d12ad1ddc973912819af47dbfac36bc1"
+        },
+        {
+          "path": "nova/tenant_access.py",
+          "sha256": "56ab100a475279999f21950c1bf8c69e9c0bd1e665fb13193f20c8d22aac9441"
+        },
+        {
+          "path": "tests/test_tenant_access.py",
+          "sha256": "396b909a7c9fe018ca9f029ff193495fce4e3032e3b5a2d265a71d31b21427d7"
+        },
+        {
+          "path": "docs/guardrails/TENANT_ACCESS_20261009.md",
+          "sha256": "91e01206b65738c194587d404f1aabffe8ccdb1ac95317f90e38c8bc3b03f606"
         }
       ],
       "reviewed_by": null,
@@ -156,7 +180,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "339000a25dca3a281e9dc2f38dfd23326fade8635d92dd8d0e85a602d9bca7b0"
+          "sha256": "26cb3a864fde7635a2246b83bc8f188865b950caee5a677a0c33651ddc184bc5"
         }
       ],
       "reviewed_by": null,
@@ -173,7 +197,7 @@
       "evidence": [
         {
           "path": "nova/publishing_workflow.py",
-          "sha256": "d18a23e1a185ba6ba3a1b3b0890c403c5507181b92551ba3731f095bd6f1fa3b"
+          "sha256": "93b815c0f223c6a8c0ba3cf58bc3ddc08d6a72b67ae4c6918570ac62893df6a1"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -219,7 +243,7 @@
       "evidence": [
         {
           "path": "nova/scheduler.py",
-          "sha256": "71bbe279b89515de5dd43f152e80d37adba76713428a683ceae256a1166fcf54"
+          "sha256": "07e51f3172da4bc8b3686c458f10ea54f2681bb1e3376dd535daf4c584f0d07a"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -265,7 +289,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
+          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
         }
       ],
       "reviewed_by": null,
@@ -282,7 +306,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
+          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
         }
       ],
       "reviewed_by": null,
@@ -316,7 +340,7 @@
       "evidence": [
         {
           "path": "nova/data_lifecycle.py",
-          "sha256": "1057f6598635a19a9bcdf1857456e2df1c30682ddce2978e618bbd4685da0ab0"
+          "sha256": "191c884465981ff68696fdf74598370ef70c1e74022dd1498526deb05def1ec0"
         }
       ],
       "reviewed_by": null,
@@ -333,7 +357,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
+          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
         }
       ],
       "reviewed_by": null,
@@ -350,7 +374,7 @@
       "evidence": [
         {
           "path": "nova/data_lifecycle.py",
-          "sha256": "1057f6598635a19a9bcdf1857456e2df1c30682ddce2978e618bbd4685da0ab0"
+          "sha256": "191c884465981ff68696fdf74598370ef70c1e74022dd1498526deb05def1ec0"
         }
       ],
       "reviewed_by": null,
@@ -367,7 +391,7 @@
       "evidence": [
         {
           "path": "nova/data_lifecycle.py",
-          "sha256": "1057f6598635a19a9bcdf1857456e2df1c30682ddce2978e618bbd4685da0ab0"
+          "sha256": "191c884465981ff68696fdf74598370ef70c1e74022dd1498526deb05def1ec0"
         },
         {
           "path": "nova/mfa.py",
@@ -396,7 +420,7 @@
       "evidence": [
         {
           "path": "nova/data_lifecycle.py",
-          "sha256": "1057f6598635a19a9bcdf1857456e2df1c30682ddce2978e618bbd4685da0ab0"
+          "sha256": "191c884465981ff68696fdf74598370ef70c1e74022dd1498526deb05def1ec0"
         }
       ],
       "reviewed_by": null,
@@ -476,7 +500,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "339000a25dca3a281e9dc2f38dfd23326fade8635d92dd8d0e85a602d9bca7b0"
+          "sha256": "26cb3a864fde7635a2246b83bc8f188865b950caee5a677a0c33651ddc184bc5"
         }
       ],
       "reviewed_by": null,
@@ -544,7 +568,7 @@
       "evidence": [
         {
           "path": "nova/publishing_workflow.py",
-          "sha256": "d18a23e1a185ba6ba3a1b3b0890c403c5507181b92551ba3731f095bd6f1fa3b"
+          "sha256": "93b815c0f223c6a8c0ba3cf58bc3ddc08d6a72b67ae4c6918570ac62893df6a1"
         }
       ],
       "reviewed_by": null,
@@ -629,7 +653,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "339000a25dca3a281e9dc2f38dfd23326fade8635d92dd8d0e85a602d9bca7b0"
+          "sha256": "26cb3a864fde7635a2246b83bc8f188865b950caee5a677a0c33651ddc184bc5"
         }
       ],
       "reviewed_by": null,
@@ -816,7 +840,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
+          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
         }
       ],
       "reviewed_by": null,
@@ -850,7 +874,7 @@
       "evidence": [
         {
           "path": "nova/operations.py",
-          "sha256": "e15641b7e35bffe4838216c2dcc2462e20d90bc665ca2b4372b6432340f4c2ac"
+          "sha256": "556e671bfe7d1fd547e941f5bd08912c90f26dbb0fc0461c22e7b5d605e039cb"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -879,7 +903,7 @@
       "evidence": [
         {
           "path": "nova/publishing_workflow.py",
-          "sha256": "d18a23e1a185ba6ba3a1b3b0890c403c5507181b92551ba3731f095bd6f1fa3b"
+          "sha256": "93b815c0f223c6a8c0ba3cf58bc3ddc08d6a72b67ae4c6918570ac62893df6a1"
         }
       ],
       "reviewed_by": null,
@@ -896,7 +920,7 @@
       "evidence": [
         {
           "path": "nova/operations.py",
-          "sha256": "e15641b7e35bffe4838216c2dcc2462e20d90bc665ca2b4372b6432340f4c2ac"
+          "sha256": "556e671bfe7d1fd547e941f5bd08912c90f26dbb0fc0461c22e7b5d605e039cb"
         }
       ],
       "reviewed_by": null,
@@ -947,7 +971,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
+          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -1005,7 +1029,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
+          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
         }
       ],
       "reviewed_by": null,
@@ -1073,7 +1097,7 @@
       "evidence": [
         {
           "path": "nova/operations.py",
-          "sha256": "e15641b7e35bffe4838216c2dcc2462e20d90bc665ca2b4372b6432340f4c2ac"
+          "sha256": "556e671bfe7d1fd547e941f5bd08912c90f26dbb0fc0461c22e7b5d605e039cb"
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
@@ -1243,7 +1267,7 @@
         },
         {
           "path": "nova/scheduler.py",
-          "sha256": "71bbe279b89515de5dd43f152e80d37adba76713428a683ceae256a1166fcf54"
+          "sha256": "07e51f3172da4bc8b3686c458f10ea54f2681bb1e3376dd535daf4c584f0d07a"
         },
         {
           "path": "tests/test_worker_boundaries.py",
@@ -1251,11 +1275,23 @@
         },
         {
           "path": "nova/publishing_workflow.py",
-          "sha256": "d18a23e1a185ba6ba3a1b3b0890c403c5507181b92551ba3731f095bd6f1fa3b"
+          "sha256": "93b815c0f223c6a8c0ba3cf58bc3ddc08d6a72b67ae4c6918570ac62893df6a1"
         },
         {
           "path": "tests/test_reconciliation_boundaries.py",
           "sha256": "b8d533832b018031bf2c4282008798c7396559cf8cf26c3b95c34415493bcccf"
+        },
+        {
+          "path": "nova/tenant_access.py",
+          "sha256": "56ab100a475279999f21950c1bf8c69e9c0bd1e665fb13193f20c8d22aac9441"
+        },
+        {
+          "path": "tests/test_tenant_access.py",
+          "sha256": "396b909a7c9fe018ca9f029ff193495fce4e3032e3b5a2d265a71d31b21427d7"
+        },
+        {
+          "path": "docs/guardrails/TENANT_ACCESS_20261009.md",
+          "sha256": "91e01206b65738c194587d404f1aabffe8ccdb1ac95317f90e38c8bc3b03f606"
         }
       ],
       "reviewed_by": null,
@@ -1276,7 +1312,7 @@
         },
         {
           "path": "nova/scheduler.py",
-          "sha256": "71bbe279b89515de5dd43f152e80d37adba76713428a683ceae256a1166fcf54"
+          "sha256": "07e51f3172da4bc8b3686c458f10ea54f2681bb1e3376dd535daf4c584f0d07a"
         },
         {
           "path": "tests/test_worker_boundaries.py",
@@ -1296,7 +1332,7 @@
         },
         {
           "path": "nova/publishing_workflow.py",
-          "sha256": "d18a23e1a185ba6ba3a1b3b0890c403c5507181b92551ba3731f095bd6f1fa3b"
+          "sha256": "93b815c0f223c6a8c0ba3cf58bc3ddc08d6a72b67ae4c6918570ac62893df6a1"
         },
         {
           "path": "tests/test_reconciliation_boundaries.py",
@@ -1440,7 +1476,7 @@
       "evidence": [
         {
           "path": "nova/data_lifecycle.py",
-          "sha256": "1057f6598635a19a9bcdf1857456e2df1c30682ddce2978e618bbd4685da0ab0"
+          "sha256": "191c884465981ff68696fdf74598370ef70c1e74022dd1498526deb05def1ec0"
         }
       ],
       "reviewed_by": null,
@@ -1625,7 +1661,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
+          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
         }
       ],
       "reviewed_by": null,

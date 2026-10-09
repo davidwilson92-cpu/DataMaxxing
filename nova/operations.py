@@ -20,10 +20,10 @@ def ready(authorization: str | None = Header(default=None)):
     if not secret or not hmac.compare_digest((authorization or '').removeprefix('Bearer '),secret):
         raise HTTPException(401,'Invalid operations credential')
     try:
-        from .db import User, Draft, PerformanceSnapshot, MfaSettings, MfaChallenge
+        from .db import User, Draft, PerformanceSnapshot, MfaSettings, MfaChallenge, TenantWorkspace, WorkspaceMembership
         with SessionLocal() as db:
             db.execute(text('SELECT 1'))
-            for model in (User, Draft, Publication, ScheduledPost, PerformanceSnapshot, MfaSettings, MfaChallenge):
+            for model in (User, Draft, Publication, ScheduledPost, PerformanceSnapshot, MfaSettings, MfaChallenge, TenantWorkspace, WorkspaceMembership):
                 db.execute(select(model).limit(1)).first()
     except Exception:
         # Do not expose database URLs, credentials, schema or driver errors.

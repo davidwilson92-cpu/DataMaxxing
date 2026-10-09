@@ -6,13 +6,14 @@ publication outcomes deliberately require operator reconciliation first.
 """
 import hashlib
 from pathlib import Path
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from . import db as models
 from .security import hash_password
 from .storage import UPLOAD_DIR
 import secrets
 
 EXPORT = {
+    models.WorkspaceMembership: ['workspace_id','role','active'],
     models.MfaSettings: ['enabled'],
     models.PerformanceSnapshot: ['brand_id','payload_json','fetched_at'],
     models.SeriesApproval: ['brand_id','series_id','revision','payload_json','expires_at'],
@@ -77,6 +78,7 @@ def erase_local_account(db, uid, verified_case, *, writes_paused=False):
     if plan['blockers']:db.rollback();raise ValueError('; '.join(plan['blockers']))
     user=db.get(models.User,uid)
     user.active=False;user.auth_version+=1
+    db.execute(update(models.WorkspaceMembership).where(models.WorkspaceMembership.user_id==uid).values(active=False,revision=models.WorkspaceMembership.revision+1))
     user.password_hash=hash_password(secrets.token_urlsafe(32))
     case=hashlib.sha256(f'{uid}:{verified_case}'.encode()).hexdigest()
     request=db.get(models.DeletionRequest,case)

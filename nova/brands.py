@@ -1,9 +1,9 @@
 """Brand boundaries for web sessions; legacy data belongs to workspace zero."""
 from fastapi import HTTPException
-from sqlalchemy import event, select, inspect
+from sqlalchemy import event, select, inspect, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, with_loader_criteria
-from .db import (Brand, BrandVoice, BrandScoped, SessionLocal, CreatorPreferences, LegacyPublication)
+from .db import (Brand, BrandVoice, BrandScoped, SessionLocal, CreatorPreferences, LegacyPublication, TenantWorkspace, WorkspaceMembership, User)
 
 
 def bind_request(db, request):
@@ -27,6 +27,8 @@ def bind_request(db, request):
             brand_id=0  # A cookie from another signed-in account is not authority.
     db.info.update(brand_id=brand_id, brand_user_id=user.id)
     request.state.brand_id = brand_id
+    from .tenant_access import authorize_request
+    authorize_request(db,request,user.id,brand_id)
 
 
 @event.listens_for(Session, 'do_orm_execute')
@@ -42,6 +44,14 @@ def scope_queries(state):
 @event.listens_for(Session, 'before_flush')
 def scope_writes(db, context, instances):
     for row in db.dirty:
+        if isinstance(row, (TenantWorkspace, WorkspaceMembership)):
+            state = inspect(row)
+            fields = ('id','owner_user_id','legacy_brand_id') if isinstance(row,TenantWorkspace) else ('workspace_id','user_id')
+            if any(state.attrs[field].history.has_changes() for field in fields):
+                raise HTTPException(409,'Workspace membership identity cannot be changed.')
+            if isinstance(row,WorkspaceMembership) and any(state.attrs[field].history.has_changes() for field in ('role','active')):
+                row.revision = (row.revision or 1) + 1
+                db.execute(update(User).where(User.id==row.user_id).values(auth_version=User.auth_version+1).execution_options(synchronize_session=False))
         if isinstance(row, LegacyPublication):
             state = inspect(row)
             if any(state.attrs[field].history.has_changes() for field in

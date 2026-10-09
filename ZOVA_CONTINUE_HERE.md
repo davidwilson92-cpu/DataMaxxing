@@ -1,3 +1,11 @@
+# Current increment: active owner membership checks
+
+Read docs/guardrails/TENANT_ACCESS_20261009.md first. The registry is now integrated with transactional signup/brand creation, owner-scoped request permissions, session revocation and Studio/older scheduled worker preflight. New account memberships are created explicitly; missing/revoked memberships never self-repair. Existing databases require an offline registry migration before startup. This has NOT been performed on production.
+
+Still next: workspace references on every customer record, legacy authority mapping, complete shared-team routing/capabilities, and restricted PostgreSQL identities/RLS. The release goal stays active. No staging charges, forced customer MFA or gate bypass authorised.
+
+---
+
 # Active release goal — 9 October 2026
 
 Owner asked to iterate until publication. Goal remains active; do not stop merely because the production check is red. Work through compatible changes and verified evidence; never weaken the gate or claim independent review. No production change has been made.
