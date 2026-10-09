@@ -59,13 +59,15 @@ print('Migrated canonical reference records and ownership guards survive restore
 import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from nova.rls import issue_context,bind_context
+from nova.rls import issue_context,bind_context,verify_context_functions,verify_workspace_policies
 from nova.tenant_references import BRAND_TABLES
 runtime=create_engine(url.set(database='zova_test_restored',username='zova_restore_runtime',password='synthetic-restore-only'),connect_args=fixture_options)
 issuer=create_engine(url.set(database='zova_test_restored',username='zova_restore_issuer',password='synthetic-restore-only'),connect_args=fixture_options)
 with reference_restored.connect() as a:
     uid,wid=a.execute(text('SELECT owner_user_id,id FROM zova_workspaces WHERE legacy_brand_id>0')).one()
 with runtime.connect() as c:
+    verify_context_functions(c,runtime_roles=['zova_restore_runtime'])
+    verify_workspace_policies(c,runtime_roles=['zova_restore_runtime'])
     for table in BRAND_TABLES:assert c.scalar(text(f'SELECT count(*) FROM {table}'))==0
     token=issue_context(issuer,c,user_id=uid,workspace_id=wid,auth_version=8,membership_revision=1,capability='posts.read',runtime_role='zova_restore_runtime')
     bind_context(c,token)
@@ -75,3 +77,4 @@ with runtime.connect() as c:
     assert c.scalar(text('SELECT count(*) FROM nova_drafts'))==0
 runtime.dispose();issuer.dispose();reference_restored.dispose()
 print('Restored RLS denies unbound reads, isolates tenants and blocks read-context writes.')
+print('Restored context definitions and complete workspace policy manifest verified.')

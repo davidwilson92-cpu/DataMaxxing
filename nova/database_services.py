@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from starlette.routing import compile_path
 
 from .schema_startup import verify_runtime_role
-from .rls import verify_context_functions
+from .rls import verify_context_functions, verify_workspace_policies
 from .tenant_access import WorkspaceDenied
 from .workspace_session import authenticated_authority, content_session
 
@@ -157,6 +157,7 @@ def create_services(identity_engine, runtime_engine, issuer_engine, *, authentic
         raise ValueError('Service identities must be distinct and use the same database and schema')
     with identity_engine.connect() as c:
         verify_context_functions(c, runtime_roles=[roles[1]])
+        verify_workspace_policies(c, runtime_roles=[roles[1]])
         for left in roles:
             for right in roles:
                 if left != right and c.scalar(text("SELECT pg_has_role(:left,:right,'MEMBER')"), {'left':left,'right':right}):

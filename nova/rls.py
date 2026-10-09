@@ -165,6 +165,56 @@ def verify_context_functions(c, *, runtime_roles):
             raise ValueError('Database context function definition does not match the reviewed implementation')
 
 
+def verify_workspace_policies(c, *, runtime_roles):
+    """Require the complete forced/restrictive policy manifest, without DDL.
+
+    PostgreSQL's canonical deparser emits text casts for the varchar workspace
+    column and array elements. Compare that complete expression, including the
+    scalar subquery and its resolved function, rather than searching for names
+    inside an otherwise arbitrary predicate. Unknown formatting fails closed.
+    """
+    if c.dialect.name != 'postgresql' or not runtime_roles:
+        raise ValueError('Workspace policy verification requires PostgreSQL runtime roles')
+    literal = String().literal_processor(c.dialect)
+    role_ids = dict(c.execute(text('SELECT rolname,oid::bigint FROM pg_roles')).all())
+    if not set(runtime_roles) <= role_ids.keys():
+        raise ValueError('Workspace policy runtime identities are missing')
+    tables = c.execute(text('''SELECT t.relname,t.relkind,t.relrowsecurity,t.relforcerowsecurity
+        FROM pg_class t JOIN pg_namespace n ON n.oid=t.relnamespace
+        WHERE n.nspname=current_schema()''')).mappings().all()
+    tables = {row['relname']: row for row in tables}
+    policies = c.execute(text('''SELECT t.relname,p.polname,p.polcmd,p.polpermissive,
+        ARRAY(SELECT role_id::bigint FROM unnest(p.polroles) role_id ORDER BY 1) AS roles,
+        pg_get_expr(p.polqual,p.polrelid,false) AS using_expression,
+        pg_get_expr(p.polwithcheck,p.polrelid,false) AS check_expression
+        FROM pg_policy p JOIN pg_class t ON t.oid=p.polrelid
+        JOIN pg_namespace n ON n.oid=t.relnamespace
+        WHERE n.nspname=current_schema()''')).mappings().all()
+    def canonical(value):
+        return re.sub(r'\s+', ' ', value).strip() if value is not None else None
+    for name in sorted(BRAND_TABLES):
+        table = tables.get(name)
+        if (table is None or table['relkind'] != 'r'
+                or not table['relrowsecurity'] or not table['relforcerowsecurity']):
+            raise ValueError('Workspace row policies are missing or disabled')
+        expected = {'zova_runtime_access': ('*', True, sorted({role_ids[role] for role in runtime_roles}), 'true', 'true')}
+        for operation, command in [('select','r'),('insert','a'),('update','w'),('delete','d')]:
+            argument = 'NULL::text[]' if operation == 'select' else (
+                'ARRAY[' + ', '.join(literal(cap)+'::text' for cap in sorted(
+                    operation_capabilities(name,operation))) + ']')
+            expression = ('((workspace_id)::text = ( SELECT zova_rls_workspace('
+                          + argument + ') AS zova_rls_workspace))')
+            expected['zova_tenant_'+operation] = (
+                command, False, [0],
+                None if operation == 'insert' else expression,
+                expression if operation in {'insert','update'} else None)
+        actual = {row['polname']: (row['polcmd'],row['polpermissive'],row['roles'],
+                  canonical(row['using_expression']),canonical(row['check_expression']))
+                  for row in policies if row['relname'] == name}
+        if actual != expected:
+            raise ValueError('Workspace policy definitions do not match the manifest')
+
+
 def apply_rls(engine, *, runtime_roles, issuer_roles, writes_paused=False):
     if not writes_paused:raise ValueError('Pause application and worker writes before RLS migration')
     if not runtime_roles or not issuer_roles or set(runtime_roles) & set(issuer_roles):
