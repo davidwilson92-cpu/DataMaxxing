@@ -8,7 +8,7 @@ Fresh installations create the schema then install reference guards before servi
 
 ## Validation and remaining boundaries
 
-Tests cover mapped model coverage, canonical filtered/aliased reads, cross-customer/brand lookup refusal, forged inserts, ORM and direct database reassignment, fresh startup/restart, missing migration refusal, and offline upgrade preserving password hash, auth version and draft content. Existing adversarial worker/reconciliation/allowance fixtures now create real separate brands rather than invalid brand IDs, preserving their original boundary assertions. Full local/PostgreSQL validation is pending for this candidate.
+Tests cover mapped model coverage, canonical filtered/aliased reads, cross-customer/brand lookup refusal, forged inserts, ORM and direct database reassignment, fresh startup/restart, missing migration refusal, and offline upgrade preserving password hash, auth version and draft content. Existing adversarial worker/reconciliation/allowance fixtures now create real separate brands rather than invalid brand IDs, preserving their original boundary assertions. At dc55d2b, local and CI SQLite: 398 passed / 6 expected skips; PostgreSQL: 403 passed / 1 expected skip. Both CI runs (37988211823 / 37988205275) passed application, migrated restore, hosting build/smoke and dependency checks. Provider tests are mocked. Evidence: evidence/canonical-runtime-20261009.json.
 
 This does not finish database read isolation. Raw SQL, unscoped worker sessions and deliberate server-side all-brand operations still require restricted PostgreSQL roles/RLS and validated transaction context. Shared teams, account-level objects and legacy creator authority remain unfinished. Do not mark tenant isolation or the release gate complete.
 

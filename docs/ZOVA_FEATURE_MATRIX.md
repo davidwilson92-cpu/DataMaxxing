@@ -5,7 +5,8 @@
 | Workspace membership | Atomic account/brand provisioning, current owner capability checks and revocation | SQLite/PostgreSQL regression evidence in tenant-access-20261009.json; not deployed |
 | Canonical content references | Offline backfill and immutable write guards across all 16 brand-owned tables | SQLite/PostgreSQL migration, direct SQL attack and restore evidence in tenant-references-20261009.json; not runtime read isolation |
 | Migration contention safety | Bounded PostgreSQL waits and truthful reference preview | SQLite 393 passed / 6 skipped; PostgreSQL 398 passed / 1 skipped at 09c5771; not deployed |
-| Database read isolation | Canonical runtime binding and restricted roles/RLS still incomplete | Release blocker; no completion claim |
+| Runtime canonical binding | All 16 brand-owned models, scoped content queries, fresh-install guards and populated-database migration checks | SQLite 398 passed / 6 skipped; PostgreSQL 403 passed / 1 skipped at dc55d2b; not deployed |
+| Database read isolation | Restricted roles/RLS and unscoped service authority still incomplete | Release blocker; no completion claim |
 
 Earlier entries below are historical, not evidence of current deployment.
 

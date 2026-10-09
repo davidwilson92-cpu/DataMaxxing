@@ -1,3 +1,13 @@
+# Current increment: canonical workspace runtime integration
+
+Validated dc55d2b: local/CI SQLite 398 passed / 6 expected skips; PostgreSQL 403 passed / one expected skip. Runs 37988211823 / 37988205275 passed application, migrated restore, build/smoke and dependency checks. Evidence: docs/guardrails/evidence/canonical-runtime-20261009.json. Production gate remains blocked; publication goal remains active. No production change.
+
+Read docs/guardrails/CANONICAL_RUNTIME_20261009.md. All 16 brand-owned ORM models now map workspace_id; inserts validate/populate it, immutable updates are rejected and scoped content queries use it alongside existing owner/brand predicates. Fresh installs activate reference guards. Existing populated databases verify references and version before startup: offline migration is mandatory before deployment. Both Instagram routes and explicit publishing confirmation remain in the regression suite.
+
+Next: restricted PostgreSQL identities/RLS, validated transaction contexts for web and workers, account-level and legacy creator authority. Inspect startup DDL and global worker/session queries before enabling restrictions. Do not claim ORM filtering protects raw SQL or unscoped jobs. Do not remove controls, force MFA or provision paid staging. Keep additive data and pending/unknown publication outcomes; use forward recovery.
+
+---
+
 # Current increment: bounded migration safety
 
 Validated commit 09c5771: SQLite 393 passed / 6 expected skips; PostgreSQL 398 passed / one expected skip. Runs 37986816507 / 37986810059 passed application, contention/cancellation, migrated restore, build/smoke and dependency checks. Evidence: docs/guardrails/evidence/migration-limits-20261009.json. No production changes; release goal remains active.
