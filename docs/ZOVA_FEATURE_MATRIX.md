@@ -1,3 +1,16 @@
+# 9 October workspace protection candidate
+
+| Capability | Implementation | Validation / deployment |
+|---|---|---|
+| Workspace membership | Atomic account/brand provisioning, current owner capability checks and revocation | SQLite/PostgreSQL regression evidence in tenant-access-20261009.json; not deployed |
+| Canonical content references | Offline backfill and immutable write guards across all 16 brand-owned tables | SQLite/PostgreSQL migration, direct SQL attack and restore evidence in tenant-references-20261009.json; not runtime read isolation |
+| Migration contention safety | Bounded PostgreSQL waits and truthful reference preview | SQLite 393 passed / 6 skipped; PostgreSQL 398 passed / 1 skipped at 09c5771; not deployed |
+| Database read isolation | Canonical runtime binding and restricted roles/RLS still incomplete | Release blocker; no completion claim |
+
+Earlier entries below are historical, not evidence of current deployment.
+
+---
+
 ## 9 October candidate update
 
 | Capability | Implementation | Validation / deployment |

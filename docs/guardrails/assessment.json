@@ -28,7 +28,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention validation is pending in this increment.",
+      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
@@ -110,6 +110,10 @@
         {
           "path": "tests/test_migration_limits.py",
           "sha256": "16a0560444544d3aee233d5717356db36af2ee7b1c16e45003263bc3cee1a07d"
+        },
+        {
+          "path": "docs/guardrails/evidence/migration-limits-20261009.json",
+          "sha256": "14259eed6a4891047a76ed9c5eb7a18d3e222843b5165d2ff61fccae138934eb"
         }
       ],
       "reviewed_by": null,
@@ -316,7 +320,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "SQLAlchemy relational entities and PostgreSQL support exist, but workspace identity and important state remain spread across legacy and JSON fields. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention validation is pending in this increment.",
+      "finding": "SQLAlchemy relational entities and PostgreSQL support exist, but workspace identity and important state remain spread across legacy and JSON fields. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open.",
       "next_action": "Review canonical relational constraints and migrate ownership with reconciliation and rollback evidence.",
       "evidence": [
         {
@@ -346,6 +350,10 @@
         {
           "path": "tests/test_migration_limits.py",
           "sha256": "16a0560444544d3aee233d5717356db36af2ee7b1c16e45003263bc3cee1a07d"
+        },
+        {
+          "path": "docs/guardrails/evidence/migration-limits-20261009.json",
+          "sha256": "14259eed6a4891047a76ed9c5eb7a18d3e222843b5165d2ff61fccae138934eb"
         }
       ],
       "reviewed_by": null,
@@ -1318,7 +1326,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access. An additional adversarial worker matrix covers older schedules, including same-owner cross-brand references, wrong-owner/inactive/wrong-platform accounts and malformed media IDs. Provider result reconciliation now binds owner, brand, draft, review and destination before external status access. Legacy job reads/cancellation are creator-scoped. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention validation is pending in this increment.",
+      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access. An additional adversarial worker matrix covers older schedules, including same-owner cross-brand references, wrong-owner/inactive/wrong-platform accounts and malformed media IDs. Provider result reconciliation now binds owner, brand, draft, review and destination before external status access. Legacy job reads/cancellation are creator-scoped. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open.",
       "next_action": "Build a complete object/operation attack matrix and run it under restricted PostgreSQL identities with RLS.",
       "evidence": [
         {
@@ -1380,6 +1388,10 @@
         {
           "path": "tests/test_migration_limits.py",
           "sha256": "16a0560444544d3aee233d5717356db36af2ee7b1c16e45003263bc3cee1a07d"
+        },
+        {
+          "path": "docs/guardrails/evidence/migration-limits-20261009.json",
+          "sha256": "14259eed6a4891047a76ed9c5eb7a18d3e222843b5165d2ff61fccae138934eb"
         }
       ],
       "reviewed_by": null,

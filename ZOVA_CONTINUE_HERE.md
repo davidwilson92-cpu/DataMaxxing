@@ -1,3 +1,13 @@
+# Current increment: bounded migration safety
+
+Validated commit 09c5771: SQLite 393 passed / 6 expected skips; PostgreSQL 398 passed / one expected skip. Runs 37986816507 / 37986810059 passed application, contention/cancellation, migrated restore, build/smoke and dependency checks. Evidence: docs/guardrails/evidence/migration-limits-20261009.json. No production changes; release goal remains active.
+
+Both registry/reference migrations now bound PostgreSQL lock acquisition to five seconds and statements to two minutes, using transaction-local settings before advisory locks. Contention rolls back cleanly and subsequent retry succeeds. Reference preview now rejects incorrect existing canonical values. These are per-statement limits, not a total migration deadline. Full production gate remains blocked; no waiver or deployment.
+
+Next: runtime canonical read binding/fresh-schema integration, restricted PostgreSQL roles/RLS, account-level and legacy authority mapping. Inspect db.py startup DDL and unscoped worker sessions before enabling restrictions. Preserve write compatibility, current identities and all pending/unknown publishing outcomes. Do not claim offline integrity guards establish read isolation.
+
+---
+
 # Current increment: canonical reference migration and database write guards
 
 Validated commit a3b7610: CI SQLite/PostgreSQL each 387 passed, one expected backend-specific skip; migrated-reference restore, restored-trigger attack, build/smoke and dependency checks passed. Runs 37985711932 / 37985706379. Evidence: docs/guardrails/evidence/tenant-references-20261009.json. No production changes; gate remains blocked.
