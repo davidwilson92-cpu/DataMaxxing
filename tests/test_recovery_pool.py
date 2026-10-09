@@ -72,8 +72,10 @@ def test_restricted_recovery_lifecycle_and_delivery_failure(recovery_pool,monkey
     def client():return TestClient(app,headers={'origin':'http://testserver'},follow_redirects=False)
     try:
         owner=client()
-        old=security.make_user_session(uids[0],session_factory=services.identity_sessions)
-        owner.cookies.set('nova_session',old)
+        login=owner.post('/login',data={'email':email,'password':password})
+        assert login.status_code==303
+        old=login.cookies.get('nova_session')
+        assert old
         replacement='Changed-synthetic-password!'
         changed=owner.post('/account/password',data={'current_password':password,
             'new_password':replacement,'new_password_confirmation':replacement})

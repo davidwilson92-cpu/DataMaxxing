@@ -254,7 +254,7 @@
         },
         {
           "path": "tests/test_recovery_pool.py",
-          "sha256": "145fa67e6caec3f89e95daefb5204d96eaf29f54c8104a4e342389c914c5f459"
+          "sha256": "5243021ab48f8a521cd4f5d345747a6523ce8c27b5279283038cbaede61e55ac"
         },
         {
           "path": "docs/guardrails/RECOVERY_POOLS_20261009.md",
