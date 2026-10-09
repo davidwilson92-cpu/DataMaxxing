@@ -51,7 +51,7 @@ def test_raw_sql_cannot_insert_cross_owner_or_forged_reference(registry_db,user,
 def test_workspace_mapping_cannot_be_reassigned_or_deleted_under_records(registry_db):
     engine,_=registry_db;setup_refs(engine)
     with pytest.raises(DBAPIError):
-        with engine.begin() as c:c.execute(text('UPDATE zova_workspaces SET owner_user_id=2 WHERE id=:wid'),{'wid':workspace_key(1)})
+        with engine.begin() as c:c.execute(text('UPDATE zova_workspaces SET legacy_brand_id=12345 WHERE id=:wid'),{'wid':workspace_key(1)})
     with pytest.raises(DBAPIError):
         with engine.begin() as c:c.execute(text('DELETE FROM zova_workspaces WHERE id=:wid'),{'wid':workspace_key(1)})
 
