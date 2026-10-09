@@ -42,7 +42,11 @@ def rls_db(registry_db):
     with Session(admin) as db:
         users=[models.User(email=f'rls-{i}@example.test',password_hash='synthetic') for i in range(2)]
         db.add_all(users);db.flush();uids=[u.id for u in users]
-        drafts=[seed_all(db,uid) for uid in uids];db.commit()
+        drafts=[seed_all(db,uid) for uid in uids]
+        secondary=models.Brand(user_id=uids[0],name='Same owner, separate workspace')
+        db.add(secondary);db.flush()
+        db.add(models.Draft(user_id=uids[0],brand_id=secondary.id,brief='Other brand private draft'))
+        db.commit()
     roles=['zova_rls_'+secrets.token_hex(8) for _ in range(2)]
     passwords=[secrets.token_hex(24) for _ in roles]
     engines=[]
@@ -150,6 +154,10 @@ def test_expiry_session_revocation_and_transaction_replay_fail_closed(rls_db):
         c.execute(text("SELECT set_config('zova.workspace_context',:token,false)"),{'token':token})
         c.commit()
         assert c.scalar(text('SELECT count(*) FROM nova_drafts'))==0
+        token=context(issuer,c,roles[0],uids[0])
+        c.rollback()
+        bind_context(c,token)
+        assert c.scalar(text('SELECT count(*) FROM nova_drafts'))==0
         context(issuer,c,roles[0],uids[0])
         with admin.begin() as a:a.execute(text('UPDATE zova_db_contexts SET expires_at=CURRENT_TIMESTAMP - interval \'1 second\''))
         assert c.scalar(text('SELECT count(*) FROM nova_drafts'))==0
@@ -180,3 +188,15 @@ def test_issuer_rejects_stale_or_wrong_authority(rls_db,override):
     with pytest.raises(DBAPIError) as caught:
         with runtime.connect() as c:context(issuer,c,roles[0],uids[0],**override)
     assert caught.value.orig.sqlstate=='42501'
+
+
+def test_reapply_preserves_boundary_and_rejects_truncate_privilege(rls_db):
+    admin,runtime,issuer,roles,uids,_=rls_db
+    apply_rls(admin,runtime_roles=[roles[0]],issuer_roles=[roles[1]],writes_paused=True)
+    with runtime.connect() as c:
+        context(issuer,c,roles[0],uids[0])
+        assert c.scalar(text('SELECT count(*) FROM nova_drafts'))==1
+    with admin.begin() as c:c.execute(text(f'GRANT TRUNCATE ON nova_drafts TO {roles[0]}'))
+    with pytest.raises(ValueError,match='destructive'):
+        apply_rls(admin,runtime_roles=[roles[0]],issuer_roles=[roles[1]],writes_paused=True)
+    with admin.begin() as c:c.execute(text(f'REVOKE TRUNCATE ON nova_drafts FROM {roles[0]}'))

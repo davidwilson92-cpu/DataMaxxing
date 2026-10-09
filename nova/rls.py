@@ -81,6 +81,9 @@ def apply_rls(engine, *, runtime_roles, issuer_roles, writes_paused=False):
                 WHERE n.nspname=current_schema() AND pg_has_role(:role,t.relowner,'MEMBER'))'''),{'role':role})
             creates=c.scalar(text("SELECT has_schema_privilege(:role,current_schema(),'CREATE') OR has_database_privilege(:role,current_database(),'CREATE')"),{'role':role})
             if broad or owns or creates:raise ValueError('RLS service identities must not inherit administrative or owner authority')
+            for name in BRAND_TABLES:
+                if c.scalar(text("SELECT has_table_privilege(:role,:table,'TRUNCATE,TRIGGER,REFERENCES')"),{'role':role,'table':f'{schema}.{q(name)}'}):
+                    raise ValueError('RLS service identities must not bypass row policies with destructive table privileges')
         for runtime in runtime_roles:
             for issuer in issuer_roles:
                 if c.scalar(text("SELECT pg_has_role(:runtime,:issuer,'MEMBER') OR pg_has_role(:issuer,:runtime,'MEMBER')"),{'runtime':runtime,'issuer':issuer}):
