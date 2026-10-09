@@ -26,7 +26,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, or_, select, update
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import set_committed_value
 
 from . import ai, billing, brands, allowances, customer_service, readiness
 from .connections import connection_options, safe_login_next
@@ -109,7 +111,14 @@ def _state_row(db: Session, raw_state: str, platform: str) -> OAuthState:
     created = row.created_at if row.created_at.tzinfo else row.created_at.replace(tzinfo=timezone.utc)
     if created < utcnow() - timedelta(minutes=20):
         raise HTTPException(400, "OAuth connection request expired. Please try again.")
-    row.used = True; db.commit()
+    claimed=db.execute(update(OAuthState).where(OAuthState.id==row.id,OAuthState.state_hash==row.state_hash,OAuthState.platform==platform,
+        OAuthState.used.is_(False),OAuthState.created_at>=utcnow()-timedelta(minutes=20))
+        .values(used=True).execution_options(synchronize_session=False))
+    if claimed.rowcount!=1:
+        db.rollback()
+        raise HTTPException(400,'Invalid or already-used OAuth state')
+    db.commit()
+    set_committed_value(row,'used',True)
     return row
 
 
@@ -269,11 +278,36 @@ def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str,
     if db.scalar(select(User).where(User.email==email)): return retry("/signup?error=An+account+with+that+email+already+exists",303)
     now = utcnow()
     consent = marketing_consent == "yes"
-    user=User(email=email,display_name=name,country_code=country,password_hash=hash_password(password),terms_accepted_at=now,marketing_consent=consent,marketing_consent_at=now if consent else None); db.add(user); db.commit(); db.refresh(user)
+    user=User(email=email,display_name=name,country_code=country,password_hash=hash_password(password),terms_accepted_at=now,marketing_consent=consent,marketing_consent_at=now if consent else None)
+    try:
+        db.add(user)
+        # Flush provisions the new canonical workspace/membership in the same
+        # transaction. Preferences must succeed before any of it is committed.
+        db.flush()
+        verified_version=user.auth_version
+        db.add(CreatorPreferences(user_id=user.id))
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        # A competing request may have created this email after the initial
+        # lookup. Never sign into that account or replace its submitted fields.
+        try:
+            duplicate=db.scalar(select(User.id).where(User.email==email)) is not None
+        except SQLAlchemyError:
+            db.rollback()
+            duplicate=False
+        if duplicate:return retry('/signup?error=An+account+with+that+email+already+exists',303)
+        log.warning('Account creation unavailable')
+        return retry('/signup?error=We+could+not+create+your+account.+Please+try+again.',303)
     db.info.update(brand_id=0,brand_user_id=user.id);request.state.brand_id=0
-    get_preferences(db,user.id)
     readiness.event(user.id,'signup',user.id)
-    resp=RedirectResponse("/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
+    resp=RedirectResponse('/onboarding/socials',303)
+    try:set_user_cookie(resp,user,expected_auth_version=verified_version,request=request)
+    except ValueError:
+        resp=RedirectResponse('/login?error=Your+account+was+created.+Please+sign+in.',303)
+        resp.delete_cookie('nova_session',path='/')
+    resp.delete_cookie('zova_brand',path='/');resp.delete_cookie('zova_onboarding',path='/');resp.delete_cookie('zova_signup_input',path='/signup')
+    return resp
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, error: str | None = None):
@@ -304,7 +338,13 @@ def apple_callback(request: Request, code: Annotated[str | None, Form()] = None,
     if error or not code or not id_token or not state: return RedirectResponse("/login?error=Apple+sign-in+was+cancelled", 303)
     row = db.scalar(select(AuthState).where(AuthState.state_hash == hash_api_key(state), AuthState.provider == "apple", AuthState.used.is_(False)))
     if not row or row.created_at.replace(tzinfo=row.created_at.tzinfo or timezone.utc) < utcnow() - timedelta(minutes=10): raise HTTPException(400, "Invalid or expired Apple sign-in state")
-    row.used = True; db.commit()
+    claimed=db.execute(update(AuthState).where(AuthState.id==row.id,AuthState.provider=='apple',
+        AuthState.state_hash==row.state_hash,AuthState.nonce_hash==row.nonce_hash,AuthState.used.is_(False),
+        AuthState.created_at>=utcnow()-timedelta(minutes=10)).values(used=True).execution_options(synchronize_session=False))
+    if claimed.rowcount!=1:
+        db.rollback()
+        raise HTTPException(400,'Invalid or expired Apple sign-in state')
+    db.commit()
     token_response = httpx.post("https://appleid.apple.com/auth/token", data={"client_id": os.environ["APPLE_CLIENT_ID"], "client_secret": apple_client_secret(), "code": code, "grant_type": "authorization_code", "redirect_uri": os.environ.get("APPLE_REDIRECT_URI", f"{base_url()}/auth/apple/callback")}, timeout=30.0)
     if token_response.status_code >= 400: raise HTTPException(502, "Apple token exchange failed")
     jwks = jwt.PyJWKClient("https://appleid.apple.com/auth/keys")
@@ -327,20 +367,27 @@ def apple_callback(request: Request, code: Annotated[str | None, Form()] = None,
     if user and not user.active:
         return RedirectResponse('/login?error=This+account+is+not+available.',303)
     created = user is None
-    if created:
-        now = utcnow()
-        user = User(email=email or f"apple-{hash_api_key(subject)[:20]}@private.zova.invalid", display_name=display_name, password_hash=hash_password(secrets.token_urlsafe(48)), email_verified_at=now if claims.get("email_verified") in {True, "true"} else None, last_login_at=now, terms_accepted_at=now); db.add(user); db.commit(); db.refresh(user)
-        db.info.update(brand_id=0,brand_user_id=user.id);request.state.brand_id=0
-        get_preferences(db,user.id)
-    else:
-        if display_name and not user.display_name:
-            user.display_name = display_name
-        user.last_login_at = utcnow()
+    try:
+        if created:
+            now = utcnow()
+            user = User(email=email or f"apple-{hash_api_key(subject)[:20]}@private.zova.invalid", display_name=display_name, password_hash=hash_password(secrets.token_urlsafe(48)), email_verified_at=now if claims.get("email_verified") in {True, "true"} else None, last_login_at=now, terms_accepted_at=now)
+            db.add(user);db.flush()
+            db.add(CreatorPreferences(user_id=user.id))
+        else:
+            if display_name and not user.display_name:
+                user.display_name = display_name
+            user.last_login_at = utcnow()
+        verified_version=user.auth_version
+        if not identity:db.add(AuthIdentity(user_id=user.id,provider='apple',subject=subject))
         db.commit()
-    if not identity: db.add(AuthIdentity(user_id=user.id, provider="apple", subject=subject)); db.commit()
-    if created:readiness.event(user.id,'signup',user.id)
+    except SQLAlchemyError:
+        db.rollback()
+        log.warning('Apple account setup unavailable')
+        return RedirectResponse('/login?error=Apple+sign-in+could+not+finish.+Please+try+again.',303)
+    if created:
+        db.info.update(brand_id=0,brand_user_id=user.id);request.state.brand_id=0
+        readiness.event(user.id,'signup',user.id)
     from .mfa import begin_login
-    verified_version=user.auth_version
     mfa_response=begin_login(db,user,verified_version,'/onboarding/socials' if created else '/studio')
     if mfa_response is not None:return mfa_response
     resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303)
