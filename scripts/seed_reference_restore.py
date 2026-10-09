@@ -8,6 +8,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 url=make_url(os.environ['ZOVA_TEST_POSTGRES'])
 assert url.host in {'localhost','127.0.0.1'} and url.database=='zova_test_ci'
 os.environ['DATABASE_URL']=url.render_as_string(hide_password=False)
+os.environ['ZOVA_SCHEMA_MODE']='bootstrap'  # Isolated CI migration identity only.
 from nova.db import Base,User,Brand,Draft,SocialConnection
 from nova.migrations import run_migrations
 from nova.tenant_references import apply_references

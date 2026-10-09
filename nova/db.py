@@ -525,33 +525,39 @@ class MfaChallenge(Base):
     used: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-# Existing databases require the reviewed offline registry backfill before startup.
-# Never silently assign privileges while serving requests.
-existing_users = 0
-with engine.connect() as registry_connection:
-    if inspect(registry_connection).has_table('nova_users'):
-        existing_users = registry_connection.scalar(select(func.count()).select_from(User.__table__))
-        if existing_users and not all(inspect(registry_connection).has_table(name) for name in ('zova_workspaces','zova_workspace_memberships')):
-            raise RuntimeError('Workspace registry migration required before application startup')
-        if existing_users:
-            from .tenant_references import verify_references, VERSION as reference_version
-            from sqlalchemy import text
-            verify_references(registry_connection)
-            if not inspect(registry_connection).has_table('zova_schema_migrations') or not registry_connection.scalar(
-                    text('SELECT COUNT(*) FROM zova_schema_migrations WHERE version=:version'), {'version':reference_version}):
-                raise RuntimeError('Workspace reference migration required before application startup')
+from .schema_startup import schema_mode, verify_runtime_schema, verify_runtime_role
+if schema_mode(engine) == 'verify':
+    with engine.connect() as schema_connection:
+        verify_runtime_role(schema_connection)
+        verify_runtime_schema(schema_connection, Base.metadata)
+else:
+    # Existing databases require the reviewed offline registry backfill before startup.
+    # Never silently assign privileges while serving requests.
+    existing_users = 0
+    with engine.connect() as registry_connection:
+        if inspect(registry_connection).has_table('nova_users'):
+            existing_users = registry_connection.scalar(select(func.count()).select_from(User.__table__))
+            if existing_users and not all(inspect(registry_connection).has_table(name) for name in ('zova_workspaces','zova_workspace_memberships')):
+                raise RuntimeError('Workspace registry migration required before application startup')
+            if existing_users:
+                from .tenant_references import verify_references, VERSION as reference_version
+                from sqlalchemy import text
+                verify_references(registry_connection)
+                if not inspect(registry_connection).has_table('zova_schema_migrations') or not registry_connection.scalar(
+                        text('SELECT COUNT(*) FROM zova_schema_migrations WHERE version=:version'), {'version':reference_version}):
+                    raise RuntimeError('Workspace reference migration required before application startup')
 
-Base.metadata.create_all(bind=engine, tables=[table for table in Base.metadata.sorted_tables
-                                             if table not in (LegacyPublication.__table__, MfaSettings.__table__, MfaChallenge.__table__)])
-from .migrations import run_migrations
-run_migrations(engine)
-from .migrations import run_legacy_queue_migration
-run_legacy_queue_migration(engine, LegacyPublication.__table__)
-from .migrations import run_mfa_migration
-run_mfa_migration(engine, (MfaSettings.__table__, MfaChallenge.__table__))
-if not existing_users:
-    from .tenant_references import apply_references
-    apply_references(engine, writes_paused=True)
+    Base.metadata.create_all(bind=engine, tables=[table for table in Base.metadata.sorted_tables
+                                                 if table not in (LegacyPublication.__table__, MfaSettings.__table__, MfaChallenge.__table__)])
+    from .migrations import run_migrations
+    run_migrations(engine)
+    from .migrations import run_legacy_queue_migration
+    run_legacy_queue_migration(engine, LegacyPublication.__table__)
+    from .migrations import run_mfa_migration
+    run_mfa_migration(engine, (MfaSettings.__table__, MfaChallenge.__table__))
+    if not existing_users:
+        from .tenant_references import apply_references
+        apply_references(engine, writes_paused=True)
 
 
 def get_db(request: Request):

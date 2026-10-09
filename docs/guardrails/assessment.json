@@ -28,7 +28,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime SQLite/PostgreSQL regression and synthetic restore passed at dc55d2b; PostgreSQL RLS and complete service authority remain open.",
+      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime SQLite/PostgreSQL regression and synthetic restore passed at dc55d2b; PostgreSQL RLS and complete service authority remain open. PostgreSQL runtime startup now defaults to read-only schema verification and refuses administrative/owner/destructive database permissions. Offline schema preparation has separate explicit credentials. Restricted-login CI validation is pending; RLS, final service grants and deployed credential separation remain open.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
@@ -117,7 +117,7 @@
         },
         {
           "path": "nova/db.py",
-          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
         },
         {
           "path": "tests/test_canonical_runtime.py",
@@ -130,6 +130,22 @@
         {
           "path": "docs/guardrails/evidence/canonical-runtime-20261009.json",
           "sha256": "eb3c253241938c9ea633148eba46aa1da91ff22fafc2337f7384ccf1ca7a2023"
+        },
+        {
+          "path": "nova/schema_startup.py",
+          "sha256": "7ff0612208c16ce9b8ba67499622af7f9c127e9ed4e46b02110140afc7372263"
+        },
+        {
+          "path": "tests/test_schema_startup.py",
+          "sha256": "7d8b4368b790d11dac10c99c6e1eb6907dcf8c583b1e52f7cb9a05eda9a30875"
+        },
+        {
+          "path": "scripts/prepare_database.py",
+          "sha256": "137e188dd98b1f3dfbb531f79cfa5ce22ed81dcdee9c9a6603757a23155ba571"
+        },
+        {
+          "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
+          "sha256": "2e682a12b37114e6de8140417a54e1d02c931223a4335c11b640c6f3721abad9"
         }
       ],
       "reviewed_by": null,
@@ -219,7 +235,7 @@
         },
         {
           "path": "nova/db.py",
-          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
         },
         {
           "path": "tests/test_canonical_runtime.py",
@@ -352,12 +368,12 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "SQLAlchemy relational entities and PostgreSQL support exist, but workspace identity and important state remain spread across legacy and JSON fields. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime SQLite/PostgreSQL regression and synthetic restore passed at dc55d2b; PostgreSQL RLS and complete service authority remain open.",
+      "finding": "SQLAlchemy relational entities and PostgreSQL support exist, but workspace identity and important state remain spread across legacy and JSON fields. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime SQLite/PostgreSQL regression and synthetic restore passed at dc55d2b; PostgreSQL RLS and complete service authority remain open. PostgreSQL runtime startup now defaults to read-only schema verification and refuses administrative/owner/destructive database permissions. Offline schema preparation has separate explicit credentials. Restricted-login CI validation is pending; RLS, final service grants and deployed credential separation remain open.",
       "next_action": "Review canonical relational constraints and migrate ownership with reconciliation and rollback evidence.",
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
         },
         {
           "path": "nova/tenant_references.py",
@@ -398,6 +414,22 @@
         {
           "path": "docs/guardrails/evidence/canonical-runtime-20261009.json",
           "sha256": "eb3c253241938c9ea633148eba46aa1da91ff22fafc2337f7384ccf1ca7a2023"
+        },
+        {
+          "path": "nova/schema_startup.py",
+          "sha256": "7ff0612208c16ce9b8ba67499622af7f9c127e9ed4e46b02110140afc7372263"
+        },
+        {
+          "path": "tests/test_schema_startup.py",
+          "sha256": "7d8b4368b790d11dac10c99c6e1eb6907dcf8c583b1e52f7cb9a05eda9a30875"
+        },
+        {
+          "path": "scripts/prepare_database.py",
+          "sha256": "137e188dd98b1f3dfbb531f79cfa5ce22ed81dcdee9c9a6603757a23155ba571"
+        },
+        {
+          "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
+          "sha256": "2e682a12b37114e6de8140417a54e1d02c931223a4335c11b640c6f3721abad9"
         }
       ],
       "reviewed_by": null,
@@ -414,7 +446,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
         }
       ],
       "reviewed_by": null,
@@ -469,7 +501,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
         }
       ],
       "reviewed_by": null,
@@ -566,7 +598,7 @@
       "evidence": [
         {
           "path": "render.yaml",
-          "sha256": "acc44ffca299e77fc4a8f888f730b0efa956b26bd186c7e11b746141e842869b"
+          "sha256": "0d3749623d0036be14432fc8cf46b3acc3ed74caf888f6e9fdc90653e354cd11"
         }
       ],
       "reviewed_by": null,
@@ -952,7 +984,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
         }
       ],
       "reviewed_by": null,
@@ -1083,7 +1115,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -1141,7 +1173,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
         }
       ],
       "reviewed_by": null,
@@ -1242,7 +1274,7 @@
       "evidence": [
         {
           "path": "tests/conftest.py",
-          "sha256": "6ce8d6b385683aab61b9824e3283e7162070b65d6aa5e573d4cd122c94ddab5f"
+          "sha256": "4f1786169909fca2a63b628ded2da614e1c4ed84dfa826048a2ca7ad6766b83e"
         },
         {
           "path": "docs/guardrails/STAGING_PLAN.md",
@@ -1370,7 +1402,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access. An additional adversarial worker matrix covers older schedules, including same-owner cross-brand references, wrong-owner/inactive/wrong-platform accounts and malformed media IDs. Provider result reconciliation now binds owner, brand, draft, review and destination before external status access. Legacy job reads/cancellation are creator-scoped. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime SQLite/PostgreSQL regression and synthetic restore passed at dc55d2b; PostgreSQL RLS and complete service authority remain open.",
+      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access. An additional adversarial worker matrix covers older schedules, including same-owner cross-brand references, wrong-owner/inactive/wrong-platform accounts and malformed media IDs. Provider result reconciliation now binds owner, brand, draft, review and destination before external status access. Legacy job reads/cancellation are creator-scoped. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime SQLite/PostgreSQL regression and synthetic restore passed at dc55d2b; PostgreSQL RLS and complete service authority remain open. PostgreSQL runtime startup now defaults to read-only schema verification and refuses administrative/owner/destructive database permissions. Offline schema preparation has separate explicit credentials. Restricted-login CI validation is pending; RLS, final service grants and deployed credential separation remain open.",
       "next_action": "Build a complete object/operation attack matrix and run it under restricted PostgreSQL identities with RLS.",
       "evidence": [
         {
@@ -1439,7 +1471,7 @@
         },
         {
           "path": "nova/db.py",
-          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
         },
         {
           "path": "tests/test_canonical_runtime.py",
@@ -1452,6 +1484,22 @@
         {
           "path": "docs/guardrails/evidence/canonical-runtime-20261009.json",
           "sha256": "eb3c253241938c9ea633148eba46aa1da91ff22fafc2337f7384ccf1ca7a2023"
+        },
+        {
+          "path": "nova/schema_startup.py",
+          "sha256": "7ff0612208c16ce9b8ba67499622af7f9c127e9ed4e46b02110140afc7372263"
+        },
+        {
+          "path": "tests/test_schema_startup.py",
+          "sha256": "7d8b4368b790d11dac10c99c6e1eb6907dcf8c583b1e52f7cb9a05eda9a30875"
+        },
+        {
+          "path": "scripts/prepare_database.py",
+          "sha256": "137e188dd98b1f3dfbb531f79cfa5ce22ed81dcdee9c9a6603757a23155ba571"
+        },
+        {
+          "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
+          "sha256": "2e682a12b37114e6de8140417a54e1d02c931223a4335c11b640c6f3721abad9"
         }
       ],
       "reviewed_by": null,
@@ -1708,7 +1756,7 @@
       "evidence": [
         {
           "path": "render.yaml",
-          "sha256": "acc44ffca299e77fc4a8f888f730b0efa956b26bd186c7e11b746141e842869b"
+          "sha256": "0d3749623d0036be14432fc8cf46b3acc3ed74caf888f6e9fdc90653e354cd11"
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
@@ -1820,12 +1868,28 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "API, ORM and provider layers exist; restricted PostgreSQL/RLS, independent worker/queue, private object storage and central telemetry remain incomplete.",
+      "finding": "API, ORM and provider layers exist; restricted PostgreSQL/RLS, independent worker/queue, private object storage and central telemetry remain incomplete. PostgreSQL runtime startup now defaults to read-only schema verification and refuses administrative/owner/destructive database permissions. Offline schema preparation has separate explicit credentials. Restricted-login CI validation is pending; RLS, final service grants and deployed credential separation remain open.",
       "next_action": "Migrate incrementally to the target architecture with compatibility, recovery and failure tests at each stage.",
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
+        },
+        {
+          "path": "nova/schema_startup.py",
+          "sha256": "7ff0612208c16ce9b8ba67499622af7f9c127e9ed4e46b02110140afc7372263"
+        },
+        {
+          "path": "tests/test_schema_startup.py",
+          "sha256": "7d8b4368b790d11dac10c99c6e1eb6907dcf8c583b1e52f7cb9a05eda9a30875"
+        },
+        {
+          "path": "scripts/prepare_database.py",
+          "sha256": "137e188dd98b1f3dfbb531f79cfa5ce22ed81dcdee9c9a6603757a23155ba571"
+        },
+        {
+          "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
+          "sha256": "2e682a12b37114e6de8140417a54e1d02c931223a4335c11b640c6f3721abad9"
         }
       ],
       "reviewed_by": null,
