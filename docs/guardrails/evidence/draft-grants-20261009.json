@@ -1,0 +1,31 @@
+{
+  "tested_commit": "e2d95347ff0effa241b386fc435cbe8ce4e17612",
+  "ci_runs": [
+    38001835142
+  ],
+  "sqlite": {
+    "passed": 415,
+    "skipped": 58
+  },
+  "postgresql": {
+    "passed": 472,
+    "skipped": 1
+  },
+  "verified": [
+    "Explicit draft table/column permissions and issuer with no direct table access",
+    "All configured services have exact sequence grants; draft ID allocation only, no reset privilege",
+    "Credential, approval payload, media storage location, account and delivery-state attacks denied under real restricted role",
+    "Missing/excess table, column and sequence grants rejected at service startup",
+    "Default and second-brand HTTP save/reload preserve attachments and Instagram Story selection",
+    "Foreign attachment rejection and linked series context verified",
+    "Atomic unsubmitted-draft cleanup removes obsolete review and detaches planning records while preserving media",
+    "Migrated RLS restore, context/policy definition restore checks, image build/smoke and dependency audit"
+  ],
+  "limits": [
+    "Grant manifest covers mapped draft database operations, not all Studio/publishing/worker operations",
+    "Draft-save product telemetry is still mocked in restricted HTTP tests; isolated telemetry routing is next",
+    "Account-level isolation, signup/lifecycle/callback/worker routing and production grant restore rehearsal remain open"
+  ],
+  "provider_validation": "Synthetic records and mocked providers only",
+  "deployment": "No production grants, roles, records, credentials, connections or deployment changed"
+}

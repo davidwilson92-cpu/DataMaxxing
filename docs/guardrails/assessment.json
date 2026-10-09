@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "assessed_at": "2026-10-09",
+  "assessed_at": "2026-10-10",
   "base_commit": "38f1c265d5eeaa6f8ba6cf09445570cc7943d961",
   "baseline_sha256": "953d7d3686edf255b6cda9f2b47b8982aeb97aa7bb9b53ca7171cfd1c77e0388",
   "reviewed_source_digest": null,
@@ -28,8 +28,8 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical owner workspaces/memberships, live capability checks, version-based session revocation and immutable references on all 16 brand-owned tables are implemented. Offline migrations, PostgreSQL forced/restrictive RLS and expiring transaction/backend-bound contexts are tested with real restricted identities. Staged draft, sign-in, optional MFA and recovery routes use separated pools without shared-credential fallback. Startup now verifies actual context-function definitions and all table policy flags, role identifiers, operations and full canonical predicates; drift attacks and restored-definition checks passed at e3376ef. Production is unchanged and staged mode remains disabled. Account-level and legacy references/isolation, shared-member routing, remaining callback/worker/account services, final grants and rollout remain incomplete.",
-      "next_action": "Complete final content/worker grants and account-level/legacy isolation, then remaining account/callback/worker service routing and verified production rollout.",
+      "finding": "Canonical owner workspaces/memberships, live capability checks, version-based session revocation and immutable references on all 16 brand-owned tables are implemented. Offline migrations, PostgreSQL forced/restrictive RLS and expiring transaction/backend-bound contexts are tested with real restricted identities. Staged draft, sign-in, optional MFA and recovery routes use separated pools without shared-credential fallback. Startup now verifies actual context-function definitions and all table policy flags, role identifiers, operations and full canonical predicates; drift attacks and restored-definition checks passed at e3376ef. Production is unchanged and staged mode remains disabled. Account-level and legacy references/isolation, shared-member routing, remaining callback/worker/account services, final grants and rollout remain incomplete. Exact table/column/sequence grants for the mapped draft database operations and a table-inaccessible issuer passed restricted-role tests at e2d9534. Draft-save telemetry is still mocked and must be isolated before activation.",
+      "next_action": "Isolate telemetry and finish account/callback/worker/legacy services with exact grants, then account-level isolation, shared-member routing and verified production rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
@@ -222,6 +222,22 @@
         {
           "path": "docs/guardrails/evidence/policy-verification-20261009.json",
           "sha256": "307930893647501374218ffb3776d55c2589e70116069f194ca38d90802968e0"
+        },
+        {
+          "path": "nova/service_permissions.py",
+          "sha256": "64ceea1e85ce34bd6853e34124f709d357e35dea2bfd31cd488b9d6d2ce1e86b"
+        },
+        {
+          "path": "tests/test_service_permissions.py",
+          "sha256": "b0d0aaea06f226cf23ea63e085b296a62e8b83ba7c94bb8bff5b748b4c8036f0"
+        },
+        {
+          "path": "docs/guardrails/DRAFT_GRANTS_20261009.md",
+          "sha256": "9fb7679f32b70f775be03e6cb662d07ef34f65e8e6f896c14a9ae183783f16ab"
+        },
+        {
+          "path": "docs/guardrails/evidence/draft-grants-20261009.json",
+          "sha256": "f9b9214ed397ea580477cd177319a03913b1fbc301478619fe3658af2781daf6"
         }
       ],
       "reviewed_by": null,
@@ -591,6 +607,22 @@
         {
           "path": "docs/guardrails/evidence/policy-verification-20261009.json",
           "sha256": "307930893647501374218ffb3776d55c2589e70116069f194ca38d90802968e0"
+        },
+        {
+          "path": "nova/service_permissions.py",
+          "sha256": "64ceea1e85ce34bd6853e34124f709d357e35dea2bfd31cd488b9d6d2ce1e86b"
+        },
+        {
+          "path": "tests/test_service_permissions.py",
+          "sha256": "b0d0aaea06f226cf23ea63e085b296a62e8b83ba7c94bb8bff5b748b4c8036f0"
+        },
+        {
+          "path": "docs/guardrails/DRAFT_GRANTS_20261009.md",
+          "sha256": "9fb7679f32b70f775be03e6cb662d07ef34f65e8e6f896c14a9ae183783f16ab"
+        },
+        {
+          "path": "docs/guardrails/evidence/draft-grants-20261009.json",
+          "sha256": "f9b9214ed397ea580477cd177319a03913b1fbc301478619fe3658af2781daf6"
         }
       ],
       "reviewed_by": null,

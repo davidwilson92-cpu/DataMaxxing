@@ -15,6 +15,7 @@
 | Restricted password recovery | Version-safe password changes; explicit recovery/mail pool, single-use reset and truthful failed-attempt records | CI 446 PostgreSQL tests passed with mocked SMTP; account RLS, real delivery and production rollout remain open |
 | Database context integrity | Read-only startup verifies actual function bodies, security properties, defaults and runtime audience against installation source | CI 455 PostgreSQL tests passed including altered-definition attacks; table-policy verification and production activation remain open |
 | Database policy integrity | All 16 forced policy sets, exact roles/operations/capabilities and full expressions verified at startup and after restore | CI 464 PostgreSQL tests passed; service routing/final grants and production activation remain open |
+| Draft service least privilege | Exact table/column grants; no social credentials, approval text, media locations or delivery mutations; issuer has no direct table grants; sequence rights checked | CI 472 PostgreSQL tests passed including attachment/Story/planning cleanup; telemetry and other service integration still open |
 | Database read isolation rollout | Web/auth/worker context integration, final grants and account/legacy mapping unfinished | Release blocker; no production activation |
 
 Earlier entries below are historical, not evidence of current deployment.

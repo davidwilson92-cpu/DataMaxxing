@@ -1,3 +1,13 @@
+# Current increment: restricted draft and issuer privileges
+
+Validated e2d9534: local/CI SQLite 415 passed / 58 expected skips; PostgreSQL 472 passed / one expected skip. CI run 38001835142 passed real restricted-role attachment/Story/planning/delete flows, privilege attacks, migrated restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/draft-grants-20261009.json. Production unchanged; full gate blocked and publication goal active.
+
+Read docs/guardrails/DRAFT_GRANTS_20261009.md. nova/service_permissions.py defines exact table/column grants for mapped draft database operations, verified by create_services. Draft role cannot read social credentials, private media locations, approval payloads or account secrets; it cannot mutate approval content, ownership, draft delivery status or publishing records. Issuer has zero direct table grants. All configured pools verify sequence rights: draft allocator USAGE only, no resets or other allocators. clean_workspace and draft activity summaries select only needed metadata. Service fixtures use these grants, while the broader RLS foundation fixture remains isolated policy-test machinery.
+
+NEXT: isolate product/AI telemetry factories before enabling mapped routes; current draft-save tests still mock readiness.event, whose implementation uses shared SessionLocal. Then signup/profile/account lifecycle, Apple/social/billing callback brokers, worker/legacy routing and their final grant manifests. Signup must atomically provision account/workspace/membership without broad authority grants or restoring revoked memberships. Account-level immutable references/RLS and production grant/restore rehearsal remain open. Do not enable partial staged mode for customers. Preserve all users/data/keys, explicit publishing approval and unknown outcomes; no paid staging, forced MFA or gate bypass.
+
+---
+
 # Current increment: complete installed workspace policy verification
 
 Validated e3376ef: CI SQLite 415 passed / 50 expected skips; PostgreSQL 464 passed / one expected skip. CI run 38000761139 passed policy drift attacks, migrated RLS restore, full restored policy/context definitions, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/policy-verification-20261009.json. Production unchanged; full gate remains blocked (80 entries) and publication goal active.

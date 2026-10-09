@@ -1,6 +1,9 @@
 # Restricted draft-service privileges
 
-Candidate only; local and PostgreSQL validation pending. No production role,
+Candidate only. Validated at e2d9534: local/CI SQLite 415 passed / 58 expected
+skips; PostgreSQL 472 passed / one expected skip. CI run 38001835142 passed
+restricted-role flows/attacks, migrated restore, build/smoke and dependency
+audit. Evidence: `evidence/draft-grants-20261009.json`. No production role,
 grant, data, credential, provider or deployment changed.
 
 The earlier row-policy fixture granted broad operations on every workspace
@@ -34,12 +37,14 @@ default/second-brand HTTP flows include attachment persistence, Instagram Story
 selection, foreign-attachment rejection, linked planning context and atomic
 review/plan cleanup. Providers remain mocked and data is synthetic.
 
-This manifest is complete for the currently mapped draft routes, not for all
+This manifest covers the currently mapped draft database operations, not all
 Studio, publishing or worker routes. Additional services require separate
 authority/grants and tested route integration. Trusted identity/auth/recovery
 account isolation, signup/lifecycle, callback/telemetry/worker integration,
 production grant provisioning/restore rehearsal and operational review remain
-open. The partially mapped mode must remain disabled for customers.
+open. Draft-save product telemetry is mocked in restricted HTTP tests and still
+needs an isolated factory, without shared-credential fallback. The partially
+mapped mode must remain disabled for customers.
 
 Before activation, rollback is code-only. After activation, do not restore broad
 grants to make a route pass: pause the affected service, verify the manifest and
