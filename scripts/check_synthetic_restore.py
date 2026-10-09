@@ -53,3 +53,25 @@ else:
     raise AssertionError('Restored ownership guard did not reject reassignment')
 reference_source.dispose();reference_restored.dispose()
 print('Migrated canonical reference records and ownership guards survive restore.')
+
+# Database roles persist in this isolated CI cluster; pg_dump restores schema
+# grants/policies/functions into the second database. No production credentials.
+import sys
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from nova.rls import issue_context,bind_context
+from nova.tenant_references import BRAND_TABLES
+runtime=create_engine(url.set(database='zova_test_restored',username='zova_restore_runtime',password='synthetic-restore-only'),connect_args=fixture_options)
+issuer=create_engine(url.set(database='zova_test_restored',username='zova_restore_issuer',password='synthetic-restore-only'),connect_args=fixture_options)
+with reference_restored.connect() as a:
+    uid,wid=a.execute(text('SELECT owner_user_id,id FROM zova_workspaces WHERE legacy_brand_id>0')).one()
+with runtime.connect() as c:
+    for table in BRAND_TABLES:assert c.scalar(text(f'SELECT count(*) FROM {table}'))==0
+    token=issue_context(issuer,c,user_id=uid,workspace_id=wid,auth_version=8,membership_revision=1,capability='posts.read',runtime_role='zova_restore_runtime')
+    bind_context(c,token)
+    assert c.scalars(text('SELECT workspace_id FROM nova_drafts')).all()==[wid]
+    assert c.execute(text("UPDATE nova_drafts SET brief='forbidden'")).rowcount==0
+    c.commit()
+    assert c.scalar(text('SELECT count(*) FROM nova_drafts'))==0
+runtime.dispose();issuer.dispose();reference_restored.dispose()
+print('Restored RLS denies unbound reads, isolates tenants and blocks read-context writes.')

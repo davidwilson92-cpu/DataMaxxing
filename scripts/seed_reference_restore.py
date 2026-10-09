@@ -24,8 +24,21 @@ with Session(engine) as db:
     brand=Brand(user_id=user.id,name='Restore fixture');db.add(brand);db.flush()
     db.add(Draft(user_id=user.id,brand_id=brand.id,brief='Keep canonical references across restore'))
     db.add(SocialConnection(user_id=user.id,brand_id=brand.id,platform='instagram',account_id='synthetic-only',encrypted_access_token='opaque-synthetic-only'))
+    other=User(email='other-restore-fixture@example.test',password_hash='other-synthetic-hash')
+    db.add(other);db.flush()
+    db.add(Draft(user_id=other.id,brief='Other tenant restore fixture'))
     db.commit()
 report=apply_references(engine,writes_paused=True)
 assert len(report['mapped_table_counts'])==16
+from nova.rls import apply_rls
+from nova.tenant_references import BRAND_TABLES
+with engine.begin() as c:
+    for role in ('zova_restore_runtime','zova_restore_issuer'):
+        c.execute(text(f"CREATE ROLE {role} LOGIN PASSWORD 'synthetic-restore-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS"))
+        c.execute(text(f'GRANT USAGE ON SCHEMA zova_reference_restore_fixture TO {role}'))
+    for name in BRAND_TABLES:
+        c.execute(text(f'GRANT SELECT,INSERT,UPDATE,DELETE ON {name} TO zova_restore_runtime'))
+    c.execute(text('GRANT SELECT ON zova_workspaces TO zova_restore_runtime'))
+apply_rls(engine,runtime_roles=['zova_restore_runtime'],issuer_roles=['zova_restore_issuer'],writes_paused=True)
 engine.dispose();admin.dispose()
 print('Synthetic reference schema ready for full database backup.')

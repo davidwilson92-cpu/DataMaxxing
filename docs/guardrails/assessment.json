@@ -28,7 +28,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open.",
+      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation are pending. It is not activated in normal web/worker flows or production.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
@@ -150,6 +150,18 @@
         {
           "path": "docs/guardrails/evidence/restricted-startup-20261009.json",
           "sha256": "ced5f14a4931716386bc0a6f737acceeeeca1d52f1b49facf1b9c3033bce2310"
+        },
+        {
+          "path": "nova/rls.py",
+          "sha256": "54c43341509f85085fe8eb3598f1e8fe21a288335aa0c7fcaff4d05021be8e70"
+        },
+        {
+          "path": "tests/test_rls.py",
+          "sha256": "aef9325bbb09278d8d6b24e406a587a78ab5cce11d95ccfde7c68b14a9602b4e"
+        },
+        {
+          "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
+          "sha256": "8010f5e2a2a1fa0a92a504d49792b1605b79027766e13d2924983f7296f06227"
         }
       ],
       "reviewed_by": null,
@@ -372,7 +384,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Versioned registry/reference migrations preserve legacy ownership and representative credentials/content; immutable write guards and canonical ORM mappings are exercised on SQLite/PostgreSQL. Migration lock/statement waits are bounded. PostgreSQL runtime now only verifies schema and refuses privileged identities; separate explicit offline preparation is tested. Full restricted service grants/RLS, migration sizing and production restore/rollout evidence remain incomplete.",
+      "finding": "Versioned registry/reference migrations preserve legacy ownership and representative credentials/content; immutable write guards and canonical ORM mappings are exercised on SQLite/PostgreSQL. Migration lock/statement waits are bounded. PostgreSQL runtime now only verifies schema and refuses privileged identities; separate explicit offline preparation is tested. Full restricted service grants/RLS, migration sizing and production restore/rollout evidence remain incomplete. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation are pending. It is not activated in normal web/worker flows or production.",
       "next_action": "Review canonical relational constraints and migrate ownership with reconciliation and rollback evidence.",
       "evidence": [
         {
@@ -438,6 +450,18 @@
         {
           "path": "docs/guardrails/evidence/restricted-startup-20261009.json",
           "sha256": "ced5f14a4931716386bc0a6f737acceeeeca1d52f1b49facf1b9c3033bce2310"
+        },
+        {
+          "path": "nova/rls.py",
+          "sha256": "54c43341509f85085fe8eb3598f1e8fe21a288335aa0c7fcaff4d05021be8e70"
+        },
+        {
+          "path": "tests/test_rls.py",
+          "sha256": "aef9325bbb09278d8d6b24e406a587a78ab5cce11d95ccfde7c68b14a9602b4e"
+        },
+        {
+          "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
+          "sha256": "8010f5e2a2a1fa0a92a504d49792b1605b79027766e13d2924983f7296f06227"
         }
       ],
       "reviewed_by": null,
@@ -1418,7 +1442,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Synthetic tests cover current owner membership, cross-owner/brand endpoints, worker/reconciliation boundaries, direct SQL ownership attacks, canonical runtime reads and migrated restore. A real restricted PostgreSQL login serves a draft and cannot change schema/guards/migration records. RLS read attacks across every sensitive table, complete shared/legacy service authority and deployed-role validation are still required.",
+      "finding": "Synthetic tests cover current owner membership, cross-owner/brand endpoints, worker/reconciliation boundaries, direct SQL ownership attacks, canonical runtime reads and migrated restore. A real restricted PostgreSQL login serves a draft and cannot change schema/guards/migration records. RLS read attacks across every sensitive table, complete shared/legacy service authority and deployed-role validation are still required. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation are pending. It is not activated in normal web/worker flows or production.",
       "next_action": "Build a complete object/operation attack matrix and run it under restricted PostgreSQL identities with RLS.",
       "evidence": [
         {
@@ -1520,6 +1544,18 @@
         {
           "path": "docs/guardrails/evidence/restricted-startup-20261009.json",
           "sha256": "ced5f14a4931716386bc0a6f737acceeeeca1d52f1b49facf1b9c3033bce2310"
+        },
+        {
+          "path": "nova/rls.py",
+          "sha256": "54c43341509f85085fe8eb3598f1e8fe21a288335aa0c7fcaff4d05021be8e70"
+        },
+        {
+          "path": "tests/test_rls.py",
+          "sha256": "aef9325bbb09278d8d6b24e406a587a78ab5cce11d95ccfde7c68b14a9602b4e"
+        },
+        {
+          "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
+          "sha256": "8010f5e2a2a1fa0a92a504d49792b1605b79027766e13d2924983f7296f06227"
         }
       ],
       "reviewed_by": null,
