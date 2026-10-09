@@ -8,7 +8,8 @@
 | Runtime canonical binding | All 16 brand-owned models, scoped content queries, fresh-install guards and populated-database migration checks | SQLite 398 passed / 6 skipped; PostgreSQL 403 passed / 1 skipped at dc55d2b; not deployed |
 | Restricted runtime startup | PostgreSQL verifies schema without DDL and rejects privileged/destructive credentials; explicit offline preparation | Real restricted-login application/attack tests; CI 405 SQLite / 411 PostgreSQL passed; not deployed |
 | Build image consistency | Pinned official Python/PostgreSQL manifests; byte-identical official mirror used in CI | Build/smoke passed after Docker Hub quota failures; OS image scan still outstanding |
-| Database read isolation | Restricted roles/RLS and unscoped service authority still incomplete | Release blocker; no completion claim |
+| Database workspace policies | Forced/restrictive RLS and expiring transaction-bound server contexts for all 16 brand-owned tables | Direct SQL, revocation, replay and restored-policy tests passed; isolated migration only |
+| Database read isolation rollout | Web/auth/worker context integration, final grants and account/legacy mapping unfinished | Release blocker; no production activation |
 
 Earlier entries below are historical, not evidence of current deployment.
 

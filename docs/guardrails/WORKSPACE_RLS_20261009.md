@@ -14,7 +14,7 @@ Security-definer functions have a fixed catalog/schema search path and narrowly 
 
 ## Validation
 
-PostgreSQL tests seed every protected table for two synthetic owners and exercise unfiltered direct reads, forged context/IDs, permissive-policy coexistence, write refusal under read contexts, cross-tenant writes, revocation, expiry, transaction/connection replay and issuer separation. The CI restore fixture also enables these policies and validates default denial, own-workspace reads, read-context write refusal and cleared transaction authority after restoration. PostgreSQL CI validation pending. Local SQLite cannot establish RLS correctness.
+PostgreSQL tests seed every protected table for two synthetic owners and exercise unfiltered direct reads, forged context/IDs, permissive-policy coexistence, write refusal under read contexts, cross-tenant writes, revocation, expiry, transaction/connection replay and issuer separation. The CI restore fixture also enables these policies and validates default denial, own-workspace reads, read-context write refusal and cleared transaction authority after restoration. At b6e1475, CI SQLite passed 408 tests with 20 expected skips; PostgreSQL passed 427 with one expected skip. Runs 37992138379 / 37992133548 passed restored RLS, image build/smoke and Python dependency audit. Evidence: evidence/workspace-rls-20261009.json. Local SQLite cannot establish RLS correctness.
 
 ## Remaining integration and rollback
 

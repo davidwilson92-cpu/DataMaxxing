@@ -1,3 +1,15 @@
+# Current increment: tested PostgreSQL workspace policy foundation
+
+Validated b6e1475: CI SQLite 408 passed / 20 expected skips; PostgreSQL 427 passed / one expected skip. Runs 37992138379 / 37992133548 passed direct SQL attacks, restored RLS, image build/smoke and Python dependency audit. Evidence: docs/guardrails/evidence/workspace-rls-20261009.json. No production changes; full release gate blocked, publication goal active.
+
+Read docs/guardrails/WORKSPACE_RLS_20261009.md. nova/rls.py provides an offline apply_rls migration for all 16 brand-owned tables with forced restrictive policies. It is NOT called by application startup. Separate runtime/issuer identities are mandatory. The issuer validates live owner membership/capability/auth version/revision; a random server-only token is stored only as a hash, bound to runtime login/backend/transaction and 60-second (maximum 300-second) expiry. issue_context takes the issuer engine AND the current runtime connection; bind_context sets transaction-local authority. READ COMMITTED is required. Commit/rollback/session-setting replay, other connections, forged IDs/tokens and revocation fail closed.
+
+Runtime cannot mint/read/edit contexts or mutate authority tables. Migration rejects owner/admin/inherited broad privileges, destructive table rights and overlapping issuer/runtime identities. Write capabilities are per-table; RLS does not replace endpoint/object checks or immutable publishing approval. Security-definer search paths and execution grants are fixed/restricted. CI dump/restore now rehearses restricted-login policy behavior too. No production roles, credentials, grants or posts were changed.
+
+NEXT: integrate web/auth/account transaction pools and worker claim/recovery authority before activating RLS. Existing SessionLocal is still shared across those paths, so simply enabling policies would break legitimate account/worker operations. Map every route/service to exact credentials/capabilities; introduce isolated issuer credentials without fallback; use parameter-hidden database engines and never log server tokens. Extend startup verification to require expected active policies/grants for the integrated mode. Complete account-level/legacy mapping and shared-role service routing. Keep the production gate intact; no paid staging or forced MFA.
+
+---
+
 # Current increment: restricted runtime startup and verified image pins
 
 Validated 80db06c: CI SQLite 405 passed / 7 expected skips; PostgreSQL 411 passed / one expected skip. Runs 37990057499 / 37990050801 passed application, real restricted-login/DDL attack checks, migrated restore, build/smoke and Python dependency audit. Local SQLite also passed 405 / 7. Evidence: docs/guardrails/evidence/restricted-startup-20261009.json. No production change; goal active, full production gate still blocked.
