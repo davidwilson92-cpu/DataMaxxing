@@ -28,7 +28,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation passed at b6e1475. It is not activated in normal web/worker flows or production. An opt-in protected SQLAlchemy session factory now rebinds frozen authority on each outer transaction; Restricted draft HTTP and transaction/revocation integration passed at 5ac264d; global routing remains disabled.",
+      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation passed at b6e1475. It is not activated in normal web/worker flows or production. An opt-in protected SQLAlchemy session factory now rebinds frozen authority on each outer transaction; Restricted draft HTTP and transaction/revocation integration passed at 5ac264d; global routing remains disabled. Second-brand draft HTTP and operation-specific unsubmitted-draft cleanup passed at cc70b7d, including reproduction of the old foreign-key failure; final service/column grants remain open.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
@@ -173,11 +173,15 @@
         },
         {
           "path": "docs/guardrails/WORKSPACE_SESSIONS_20261009.md",
-          "sha256": "dfe75912832a6fdbefdad79616201c818f258b8a8fe2bd78bfa4b7041270687b"
+          "sha256": "8431f8e7019835a66d48c3579f7ff418b65d14fbbfee232607c0a61f8e0b8e1a"
         },
         {
           "path": "docs/guardrails/evidence/workspace-sessions-20261009.json",
           "sha256": "a9a78220c66ea155549abfac01c9526dcec4da50425b4478e27400954d5d1b98"
+        },
+        {
+          "path": "docs/guardrails/evidence/draft-policy-20261009.json",
+          "sha256": "a9f3de7dc670b99e6def10f4edcc2de9448c500b5a44c2049aa8b60f53346d58"
         }
       ],
       "reviewed_by": null,

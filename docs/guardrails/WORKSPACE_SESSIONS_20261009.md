@@ -29,11 +29,33 @@ not an end-to-end production credential or worker validation.
 Remaining before activation: route the web dependencies through independently
 restricted authentication/account and content pools; map signed OAuth callbacks,
 billing webhooks, legacy API identities, account telemetry, worker claim/recovery
-and maintenance; verify active policies and exact grants at startup. Current
-RLS permissions must be reconciled with cross-table operations such as deleting
-a draft and dismissing its strategy action. Do not globally enable policies until
+and maintenance; verify active policies and exact grants at startup. Draft deletion cleanup is now verified; reconcile the remaining compound operations
+and exact service/column grants. Do not globally enable policies until
 those paths pass. No production credentials, roles or data have been changed.
 
 Rollback before activation is code-only. After future policy activation, preserve
 the policies and use forward recovery; do not restore unprotected credentials or
 drop customer records to recover an application failure.
+
+
+## Brand and deletion compatibility follow-up
+
+Validated cc70b7d: local/CI SQLite 410 passed / 25 expected skips; PostgreSQL
+434 passed / one expected skip. Runs 37994384382 and 37994380750 also passed
+migrated RLS restore, hosting image build/smoke and dependency audit.
+Evidence: evidence/draft-policy-20261009.json.
+
+The content factory explicitly installs existing brand ownership hooks, including
+for entry points that have not imported the web app. Existing draft HTTP handlers
+now have default- and second-brand integration coverage for create/save/reload,
+canonical mapping and isolation from the same owner's other brand.
+
+The old review-delete policy was restored in an isolated test to reproduce the
+foreign-key failure during unsubmitted draft deletion. Reapplying the corrected
+policies allows the existing service to remove the review, dismiss the strategy
+action and cancel its occurrence atomically. Other workspaces and delivery
+history remain intact. The added posts.delete permission applies only to review
+DELETE and strategy-action/occurrence UPDATE, not their other mutations. Exact
+column-level service grants remain open; this is not a claim of complete least
+privilege. Policies still apply live membership and canonical workspace checks.
+No production policy, grants, data, provider state or deployment changed.

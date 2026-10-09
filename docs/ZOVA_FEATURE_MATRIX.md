@@ -9,6 +9,7 @@
 | Restricted runtime startup | PostgreSQL verifies schema without DDL and rejects privileged/destructive credentials; explicit offline preparation | Real restricted-login application/attack tests; CI 405 SQLite / 411 PostgreSQL passed; not deployed |
 | Build image consistency | Pinned official Python/PostgreSQL manifests; byte-identical official mirror used in CI | Build/smoke passed after Docker Hub quota failures; OS image scan still outstanding |
 | Database workspace policies | Forced/restrictive RLS and expiring transaction-bound server contexts for all 16 brand-owned tables | Direct SQL, revocation, replay and restored-policy tests passed; isolated migration only |
+| Protected content transactions | Frozen authority across transactions; default/second-brand draft save/reload and reference cleanup | 434 PostgreSQL tests passed; opt-in, auth/account/worker routing incomplete; not deployed |
 | Database read isolation rollout | Web/auth/worker context integration, final grants and account/legacy mapping unfinished | Release blocker; no production activation |
 
 Earlier entries below are historical, not evidence of current deployment.
@@ -107,4 +108,3 @@ Current production baseline: main `78d9924` (21 September Instagram reauthentica
 
 See `COMMERCIAL_OPERATIONS_20260920.md`, `CUSTOMER_VALIDATION_20260920.md` and `COMMERCIAL_READINESS_EVIDENCE_20260920.md`. Provider approval is never inferred from code, old credentials, a connected status or a mock.
 
-| Protected content transactions | Frozen authenticated claims and per-transaction RLS contexts; draft HTTP save/reload tested | 431 PostgreSQL tests passed; opt-in only, auth/account/worker routing incomplete; not deployed |

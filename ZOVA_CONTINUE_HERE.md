@@ -1,3 +1,13 @@
+# Current increment: brand and draft deletion compatibility under RLS
+
+Validated cc70b7d: local/CI SQLite 410 passed / 25 expected skips; PostgreSQL 434 passed / one expected skip. CI runs 37994384382 / 37994380750 passed second-brand draft HTTP create/save/reload, reproduced old policy deletion failure and verified corrected atomic cleanup, migration/RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/draft-policy-20261009.json. Production unchanged; full gate blocked, publication goal active.
+
+Read the follow-up in docs/guardrails/WORKSPACE_SESSIONS_20261009.md. The content factory explicitly installs existing brand ownership hooks. RLS operation_capabilities grants posts.delete only for review DELETE and strategy-action/occurrence UPDATE, enabling delete_unsubmitted_draft without granting review creation/content mutation or plan deletion. Tests preserve other-workspace references and published history. Final column-level service grants remain open. The RLS factory remains opt-in and no production roles/policies were changed.
+
+NEXT: integrate independently restricted auth/account and content pools into web dependencies. Map signed OAuth callbacks, billing, legacy API identities, account telemetry and worker claim/recovery. Verify startup policies and exact grants before activation. Audit remaining compound operations and cross-record workspace references. Do not globally enable RLS while shared SessionLocal account/worker flows remain unintegrated. Preserve all existing user/data/provider state and unknown publication outcomes; no paid staging or forced MFA, no gate bypass.
+
+---
+
 # Current increment: protected application content transactions
 
 Validated 5ac264d: local/CI SQLite 409 passed / 23 expected skips; PostgreSQL 431 passed / one expected skip. CI runs 37993492489 / 37993486479 passed draft HTTP integration under restricted content credentials, transaction/revocation attacks, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/workspace-sessions-20261009.json. Production unchanged; full gate still blocked and publication goal active.
