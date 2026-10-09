@@ -261,11 +261,11 @@
         },
         {
           "path": "nova/app.py",
-          "sha256": "0e9631baaa5a51a2507aedde8f3b01645fff3cac3850cae7e21fa9281031ead4"
+          "sha256": "c3c5a62e513d467ca94fe764824f2dd998ab8c695d7fce0962d8a67ad7b9d4ba"
         },
         {
           "path": "tests/test_registration_atomicity.py",
-          "sha256": "58dc885055c7f30d57cb0c0ae1493bb86a8f97b00e26b362d3cc39b4689db15f"
+          "sha256": "58b8a7bc5f98c8efc8bac33689d9a25815240f2e23019b7be3ff4b076a17141b"
         },
         {
           "path": "docs/guardrails/REGISTRATION_ATOMICITY_20261010.md",
@@ -342,11 +342,11 @@
         },
         {
           "path": "nova/app.py",
-          "sha256": "0e9631baaa5a51a2507aedde8f3b01645fff3cac3850cae7e21fa9281031ead4"
+          "sha256": "c3c5a62e513d467ca94fe764824f2dd998ab8c695d7fce0962d8a67ad7b9d4ba"
         },
         {
           "path": "tests/test_registration_atomicity.py",
-          "sha256": "58dc885055c7f30d57cb0c0ae1493bb86a8f97b00e26b362d3cc39b4689db15f"
+          "sha256": "58b8a7bc5f98c8efc8bac33689d9a25815240f2e23019b7be3ff4b076a17141b"
         },
         {
           "path": "docs/guardrails/REGISTRATION_ATOMICITY_20261010.md",
@@ -358,7 +358,7 @@
         },
         {
           "path": "tests/test_apple_browser_binding.py",
-          "sha256": "3c541c4afb4703fd901b12b22e6c1e4c4f7c30a7d7e150e76b3299a71ccb8963"
+          "sha256": "ede4b10d5969319c4b46bcfedfe5a310c7502956fa0698fa36c55f6df717c10f"
         },
         {
           "path": "docs/guardrails/APPLE_BROWSER_BINDING_20261010.md",
@@ -452,11 +452,11 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "0e9631baaa5a51a2507aedde8f3b01645fff3cac3850cae7e21fa9281031ead4"
+          "sha256": "c3c5a62e513d467ca94fe764824f2dd998ab8c695d7fce0962d8a67ad7b9d4ba"
         },
         {
           "path": "tests/test_registration_atomicity.py",
-          "sha256": "58dc885055c7f30d57cb0c0ae1493bb86a8f97b00e26b362d3cc39b4689db15f"
+          "sha256": "58b8a7bc5f98c8efc8bac33689d9a25815240f2e23019b7be3ff4b076a17141b"
         },
         {
           "path": "docs/guardrails/REGISTRATION_ATOMICITY_20261010.md",
@@ -514,11 +514,11 @@
         },
         {
           "path": "nova/app.py",
-          "sha256": "0e9631baaa5a51a2507aedde8f3b01645fff3cac3850cae7e21fa9281031ead4"
+          "sha256": "c3c5a62e513d467ca94fe764824f2dd998ab8c695d7fce0962d8a67ad7b9d4ba"
         },
         {
           "path": "tests/test_registration_atomicity.py",
-          "sha256": "58dc885055c7f30d57cb0c0ae1493bb86a8f97b00e26b362d3cc39b4689db15f"
+          "sha256": "58b8a7bc5f98c8efc8bac33689d9a25815240f2e23019b7be3ff4b076a17141b"
         },
         {
           "path": "docs/guardrails/REGISTRATION_ATOMICITY_20261010.md",
@@ -932,7 +932,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "0e9631baaa5a51a2507aedde8f3b01645fff3cac3850cae7e21fa9281031ead4"
+          "sha256": "c3c5a62e513d467ca94fe764824f2dd998ab8c695d7fce0962d8a67ad7b9d4ba"
         }
       ],
       "reviewed_by": null,
@@ -1085,7 +1085,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "0e9631baaa5a51a2507aedde8f3b01645fff3cac3850cae7e21fa9281031ead4"
+          "sha256": "c3c5a62e513d467ca94fe764824f2dd998ab8c695d7fce0962d8a67ad7b9d4ba"
         }
       ],
       "reviewed_by": null,

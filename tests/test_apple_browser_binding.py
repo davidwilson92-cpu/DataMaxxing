@@ -25,12 +25,13 @@ def provider(monkeypatch, nonce):
     monkeypatch.setattr(module, 'apple_client_secret', lambda: 'synthetic-secret')
     def exchange(*args, **kwargs):
         exchanges.append(True)
-        return SimpleNamespace(status_code=200)
+        return SimpleNamespace(status_code=200,json=lambda:{'id_token':'synthetic'})
     monkeypatch.setattr(module.httpx, 'post', exchange)
-    monkeypatch.setattr(module.jwt, 'PyJWKClient', lambda *a: SimpleNamespace(
-        get_signing_key_from_jwt=lambda *a: SimpleNamespace(key='synthetic-key')))
-    monkeypatch.setattr(module.jwt, 'decode', lambda *a, **k: {
-        'nonce': nonce, 'sub': secrets.token_hex(16), 'email': email, 'email_verified': True})
+    monkeypatch.setattr(module.jwt, 'PyJWKClient', lambda *a, **k: SimpleNamespace(
+        get_signing_key_from_jwt=lambda *a, **k: SimpleNamespace(key='synthetic-key')))
+    from test_apple_token_validation import identity_claims
+    claims=identity_claims(nonce,email=email)
+    monkeypatch.setattr(module.jwt, 'decode', lambda *a, **k: claims)
     return email, exchanges
 
 

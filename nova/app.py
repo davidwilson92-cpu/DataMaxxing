@@ -353,11 +353,23 @@ def apple_callback(request: Request, code: Annotated[str | None, Form()] = None,
         db.rollback()
         raise HTTPException(400,'Invalid or expired Apple sign-in state')
     db.commit()
-    token_response = httpx.post("https://appleid.apple.com/auth/token", data={"client_id": os.environ["APPLE_CLIENT_ID"], "client_secret": apple_client_secret(), "code": code, "grant_type": "authorization_code", "redirect_uri": os.environ.get("APPLE_REDIRECT_URI", f"{base_url()}/auth/apple/callback")}, timeout=30.0)
-    if token_response.status_code >= 400: raise HTTPException(502, "Apple token exchange failed")
-    jwks = jwt.PyJWKClient("https://appleid.apple.com/auth/keys")
-    claims = jwt.decode(id_token, jwks.get_signing_key_from_jwt(id_token).key, algorithms=["RS256"], audience=os.environ["APPLE_CLIENT_ID"], issuer="https://appleid.apple.com")
-    if hash_api_key(str(claims.get("nonce", ""))) != row.nonce_hash: raise HTTPException(400, "Invalid Apple sign-in nonce")
+    from .apple_identity import verify_identity
+    jwks = jwt.PyJWKClient("https://appleid.apple.com/auth/keys",timeout=10)
+    try:
+        claims=verify_identity(id_token,jwks,os.environ['APPLE_CLIENT_ID'],row.nonce_hash,code=code)
+        token_response = httpx.post("https://appleid.apple.com/auth/token", data={"client_id": os.environ["APPLE_CLIENT_ID"], "client_secret": apple_client_secret(), "code": code, "grant_type": "authorization_code", "redirect_uri": os.environ.get("APPLE_REDIRECT_URI", f"{base_url()}/auth/apple/callback")}, timeout=30.0)
+        if token_response.status_code != 200:raise HTTPException(502,'Apple token exchange failed. Start sign-in again.')
+        try:payload=token_response.json()
+        except ValueError:raise HTTPException(502,'Apple returned an invalid response. Start sign-in again.') from None
+        if not isinstance(payload,dict) or not isinstance(payload.get('id_token'),str):
+            raise HTTPException(502,'Apple returned an invalid response. Start sign-in again.')
+        exchanged=verify_identity(payload['id_token'],jwks,os.environ['APPLE_CLIENT_ID'],row.nonce_hash)
+        if any(claims[key]!=exchanged[key] for key in ('iss','sub','aud','nonce')):
+            raise jwt.InvalidTokenError('Exchanged identity mismatch')
+    except (httpx.RequestError,jwt.PyJWKClientConnectionError):
+        raise HTTPException(503,'Apple sign-in is temporarily unavailable. Start sign-in again.') from None
+    except jwt.PyJWTError:
+        raise HTTPException(400,'Apple sign-in could not be verified. Start sign-in again.') from None
     subject, email = str(claims["sub"]), str(claims.get("email") or "").strip().lower()
     display_name = ""
     if user:

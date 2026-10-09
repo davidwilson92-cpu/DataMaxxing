@@ -165,12 +165,14 @@ def test_apple_state_is_claimed_once_before_provider_exchange(monkeypatch):
     exchanges=[]
     def exchange(*args,**kwargs):
         exchanges.append(True)
-        return SimpleNamespace(status_code=200)
+        return SimpleNamespace(status_code=200,json=lambda:{'id_token':'synthetic'})
     monkeypatch.setenv('APPLE_CLIENT_ID','synthetic-client')
     monkeypatch.setattr(module,'apple_client_secret',lambda:'synthetic-secret')
     monkeypatch.setattr(module.httpx,'post',exchange)
-    monkeypatch.setattr(module.jwt,'PyJWKClient',lambda *a:SimpleNamespace(get_signing_key_from_jwt=lambda *a:SimpleNamespace(key='synthetic-key')))
-    monkeypatch.setattr(module.jwt,'decode',lambda *a,**k:{'nonce':'synthetic-nonce','sub':state,'email':email,'email_verified':True})
+    monkeypatch.setattr(module.jwt,'PyJWKClient',lambda *a,**k:SimpleNamespace(get_signing_key_from_jwt=lambda *a:SimpleNamespace(key='synthetic-key')))
+    from test_apple_token_validation import identity_claims
+    claims=identity_claims('synthetic-nonce',sub=state,email=email,email_verified=True)
+    monkeypatch.setattr(module.jwt,'decode',lambda *a,**k:claims)
     def submit(_):
         client=TestClient(module.app,base_url='https://testserver',raise_server_exceptions=False)
         client.cookies.set('__Host-zova_apple_state',state)
