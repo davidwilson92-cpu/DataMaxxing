@@ -149,6 +149,12 @@ assert client.get('/api/drafts/'+str(did)).status_code==200
         with restricted.connect() as c, pytest.raises(RuntimeError,match='privileges'):
             verify_runtime_role(c)
         with engine.begin() as c:c.execute(text(f'REVOKE pg_read_all_data FROM {role}'))
+        with engine.begin() as c:
+            database=c.dialect.identifier_preparer.quote(c.scalar(text('SELECT current_database()')))
+            c.execute(text(f'GRANT CREATE ON DATABASE {database} TO {role}'))
+        with restricted.connect() as c, pytest.raises(RuntimeError,match='privileges'):
+            verify_runtime_role(c)
+        with engine.begin() as c:c.execute(text(f'REVOKE CREATE ON DATABASE {database} FROM {role}'))
         with engine.begin() as c:c.execute(text(f'GRANT CREATE ON SCHEMA {schema} TO {role}'))
         with restricted.connect() as c, pytest.raises(RuntimeError,match='privileges'):
             verify_runtime_role(c)

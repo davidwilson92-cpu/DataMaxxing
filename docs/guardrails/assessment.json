@@ -133,11 +133,11 @@
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "95dcd135743c27b00fae25771eb265d2ec8538fc77e4728c9433c2f022613724"
+          "sha256": "4316afe8418f99c39995fca0a534296d33cce7be0996f226b34f0f94a416d21e"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "253849dbb7bc306e10d5e419a51a111ff89ee079ebaa492c3795e380a73376a5"
+          "sha256": "c43e95a81c34b9f5e64e7bdb60d0a0a98919aa37b954ee52cfceb101e91dd1f3"
         },
         {
           "path": "scripts/prepare_database.py",
@@ -417,11 +417,11 @@
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "95dcd135743c27b00fae25771eb265d2ec8538fc77e4728c9433c2f022613724"
+          "sha256": "4316afe8418f99c39995fca0a534296d33cce7be0996f226b34f0f94a416d21e"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "253849dbb7bc306e10d5e419a51a111ff89ee079ebaa492c3795e380a73376a5"
+          "sha256": "c43e95a81c34b9f5e64e7bdb60d0a0a98919aa37b954ee52cfceb101e91dd1f3"
         },
         {
           "path": "scripts/prepare_database.py",
@@ -1487,11 +1487,11 @@
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "95dcd135743c27b00fae25771eb265d2ec8538fc77e4728c9433c2f022613724"
+          "sha256": "4316afe8418f99c39995fca0a534296d33cce7be0996f226b34f0f94a416d21e"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "253849dbb7bc306e10d5e419a51a111ff89ee079ebaa492c3795e380a73376a5"
+          "sha256": "c43e95a81c34b9f5e64e7bdb60d0a0a98919aa37b954ee52cfceb101e91dd1f3"
         },
         {
           "path": "scripts/prepare_database.py",
@@ -1877,11 +1877,11 @@
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "95dcd135743c27b00fae25771eb265d2ec8538fc77e4728c9433c2f022613724"
+          "sha256": "4316afe8418f99c39995fca0a534296d33cce7be0996f226b34f0f94a416d21e"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "253849dbb7bc306e10d5e419a51a111ff89ee079ebaa492c3795e380a73376a5"
+          "sha256": "c43e95a81c34b9f5e64e7bdb60d0a0a98919aa37b954ee52cfceb101e91dd1f3"
         },
         {
           "path": "scripts/prepare_database.py",

@@ -31,11 +31,12 @@ def verify_runtime_role(c):
         WHERE n.nspname=current_schema() AND t.relkind IN ('r','p')
         AND (pg_has_role(current_user,t.relowner,'MEMBER') OR pg_has_role(session_user,t.relowner,'MEMBER')))'''))
     creates = c.scalar(text("SELECT has_schema_privilege(current_user,current_schema(),'CREATE') OR has_schema_privilege(session_user,current_schema(),'CREATE')"))
+    creates_schema = c.scalar(text("SELECT has_database_privilege(current_user,current_database(),'CREATE') OR has_database_privilege(session_user,current_database(),'CREATE')"))
     truncates = c.scalar(text('''SELECT EXISTS (
         SELECT 1 FROM pg_class t JOIN pg_namespace n ON n.oid=t.relnamespace
         WHERE n.nspname=current_schema() AND t.relkind IN ('r','p')
         AND (has_table_privilege(current_user,t.oid,'TRUNCATE') OR has_table_privilege(session_user,t.oid,'TRUNCATE')))'''))
-    if privileged or owns_database or owns_tables or creates or truncates:
+    if privileged or owns_database or owns_tables or creates or creates_schema or truncates:
         raise RuntimeError('Runtime database identity has administrative, schema-owner or destructive privileges')
 
 
