@@ -28,7 +28,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete.",
+      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
@@ -86,6 +86,18 @@
         {
           "path": "docs/guardrails/evidence/tenant-access-20261009.json",
           "sha256": "3d957e6f395046b71d41ac9967743e882b7ae771f7343ba7508d04ae10c5aef1"
+        },
+        {
+          "path": "nova/tenant_references.py",
+          "sha256": "f334af8cf2e2ecfa3d8592dfc45edb33e3e557f9cfe99a6789435454bb601e95"
+        },
+        {
+          "path": "tests/test_tenant_references.py",
+          "sha256": "de37bd37ee60477ebe7d6ce57743df22e26d71df1438c92f3bbcf5740ae8f5a4"
+        },
+        {
+          "path": "docs/guardrails/TENANT_REFERENCES_20261009.md",
+          "sha256": "08b7abdcf68ec540b230561cbedbcd7bf118ad1cb016a18094aa7af191248544"
         }
       ],
       "reviewed_by": null,
@@ -292,12 +304,24 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "SQLAlchemy relational entities and PostgreSQL support exist, but workspace identity and important state remain spread across legacy and JSON fields.",
+      "finding": "SQLAlchemy relational entities and PostgreSQL support exist, but workspace identity and important state remain spread across legacy and JSON fields. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete.",
       "next_action": "Review canonical relational constraints and migrate ownership with reconciliation and rollback evidence.",
       "evidence": [
         {
           "path": "nova/db.py",
           "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
+        },
+        {
+          "path": "nova/tenant_references.py",
+          "sha256": "f334af8cf2e2ecfa3d8592dfc45edb33e3e557f9cfe99a6789435454bb601e95"
+        },
+        {
+          "path": "tests/test_tenant_references.py",
+          "sha256": "de37bd37ee60477ebe7d6ce57743df22e26d71df1438c92f3bbcf5740ae8f5a4"
+        },
+        {
+          "path": "docs/guardrails/TENANT_REFERENCES_20261009.md",
+          "sha256": "08b7abdcf68ec540b230561cbedbcd7bf118ad1cb016a18094aa7af191248544"
         }
       ],
       "reviewed_by": null,
@@ -1266,7 +1290,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access. An additional adversarial worker matrix covers older schedules, including same-owner cross-brand references, wrong-owner/inactive/wrong-platform accounts and malformed media IDs. Provider result reconciliation now binds owner, brand, draft, review and destination before external status access. Legacy job reads/cancellation are creator-scoped.",
+      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access. An additional adversarial worker matrix covers older schedules, including same-owner cross-brand references, wrong-owner/inactive/wrong-platform accounts and malformed media IDs. Provider result reconciliation now binds owner, brand, draft, review and destination before external status access. Legacy job reads/cancellation are creator-scoped. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete.",
       "next_action": "Build a complete object/operation attack matrix and run it under restricted PostgreSQL identities with RLS.",
       "evidence": [
         {
@@ -1304,6 +1328,18 @@
         {
           "path": "docs/guardrails/evidence/tenant-access-20261009.json",
           "sha256": "3d957e6f395046b71d41ac9967743e882b7ae771f7343ba7508d04ae10c5aef1"
+        },
+        {
+          "path": "nova/tenant_references.py",
+          "sha256": "f334af8cf2e2ecfa3d8592dfc45edb33e3e557f9cfe99a6789435454bb601e95"
+        },
+        {
+          "path": "tests/test_tenant_references.py",
+          "sha256": "de37bd37ee60477ebe7d6ce57743df22e26d71df1438c92f3bbcf5740ae8f5a4"
+        },
+        {
+          "path": "docs/guardrails/TENANT_REFERENCES_20261009.md",
+          "sha256": "08b7abdcf68ec540b230561cbedbcd7bf118ad1cb016a18094aa7af191248544"
         }
       ],
       "reviewed_by": null,
