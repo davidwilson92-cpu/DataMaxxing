@@ -46,9 +46,9 @@ with reference_source.connect() as a,reference_restored.connect() as b:
         assert a.execute(query).all()==b.execute(query).all(), 'reference fixture '+table
 try:
     with reference_restored.begin() as c:
-        c.execute(text('UPDATE nova_drafts SET workspace_id=NULL'))
-except DBAPIError:
-    pass
+        c.execute(text('UPDATE nova_drafts SET brand_id=0 WHERE brand_id <> 0'))
+except DBAPIError as exc:
+    assert getattr(exc.orig,'sqlstate',None)=='23514', 'Expected restored ownership check constraint failure'
 else:
     raise AssertionError('Restored ownership guard did not reject reassignment')
 reference_source.dispose();reference_restored.dispose()
