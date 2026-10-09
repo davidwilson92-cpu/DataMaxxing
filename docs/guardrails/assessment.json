@@ -185,11 +185,11 @@
         },
         {
           "path": "nova/database_services.py",
-          "sha256": "9dac060742ea96b4408fa737b498e2edc2d9c1a16ea6c278c59d5808133143d0"
+          "sha256": "b6ae6300af37853fec24a399d755add756eb81cf092ea3baf422b51223ad0083"
         },
         {
           "path": "tests/test_database_services.py",
-          "sha256": "cc58c8605c7c8567fe321f889370af1dc400da1845d029a1dcef75e957c056a5"
+          "sha256": "68ac5b246191b17fb45271f05ab9938880d9374a98c9cf6c5d568697ace30d44"
         },
         {
           "path": "docs/guardrails/SERVICE_POOLS_20261009.md",
@@ -225,7 +225,7 @@
         },
         {
           "path": "nova/service_permissions.py",
-          "sha256": "64ceea1e85ce34bd6853e34124f709d357e35dea2bfd31cd488b9d6d2ce1e86b"
+          "sha256": "285a66d48823f55f4661b5ac1450e2395f8510ec0671a201468929abf2cbd56e"
         },
         {
           "path": "tests/test_service_permissions.py",
@@ -274,7 +274,7 @@
         },
         {
           "path": "nova/database_services.py",
-          "sha256": "9dac060742ea96b4408fa737b498e2edc2d9c1a16ea6c278c59d5808133143d0"
+          "sha256": "b6ae6300af37853fec24a399d755add756eb81cf092ea3baf422b51223ad0083"
         },
         {
           "path": "tests/test_authentication_pool.py",
@@ -480,7 +480,7 @@
       "evidence": [
         {
           "path": "nova/request_security.py",
-          "sha256": "72fd4e150b941c7d374ceff362c822ef682b4af36b01f56da2e6a506f14eaa25"
+          "sha256": "2f4dab0377ba212914b058b0b740f1c660c6c6da6a51bcd2a0074208c077d776"
         }
       ],
       "reviewed_by": null,
@@ -598,7 +598,7 @@
         },
         {
           "path": "nova/database_services.py",
-          "sha256": "9dac060742ea96b4408fa737b498e2edc2d9c1a16ea6c278c59d5808133143d0"
+          "sha256": "b6ae6300af37853fec24a399d755add756eb81cf092ea3baf422b51223ad0083"
         },
         {
           "path": "nova/rls.py",
@@ -610,7 +610,7 @@
         },
         {
           "path": "nova/service_permissions.py",
-          "sha256": "64ceea1e85ce34bd6853e34124f709d357e35dea2bfd31cd488b9d6d2ce1e86b"
+          "sha256": "285a66d48823f55f4661b5ac1450e2395f8510ec0671a201468929abf2cbd56e"
         },
         {
           "path": "tests/test_service_permissions.py",
@@ -871,7 +871,7 @@
       "evidence": [
         {
           "path": "nova/request_security.py",
-          "sha256": "72fd4e150b941c7d374ceff362c822ef682b4af36b01f56da2e6a506f14eaa25"
+          "sha256": "2f4dab0377ba212914b058b0b740f1c660c6c6da6a51bcd2a0074208c077d776"
         }
       ],
       "reviewed_by": null,
@@ -1177,7 +1177,7 @@
       "evidence": [
         {
           "path": "nova/request_security.py",
-          "sha256": "72fd4e150b941c7d374ceff362c822ef682b4af36b01f56da2e6a506f14eaa25"
+          "sha256": "2f4dab0377ba212914b058b0b740f1c660c6c6da6a51bcd2a0074208c077d776"
         }
       ],
       "reviewed_by": null,
@@ -1871,7 +1871,7 @@
       "evidence": [
         {
           "path": "nova/readiness.py",
-          "sha256": "5801a24030d66f29d74fb1d620c7c53963f6e05f8801700d017f2d0388eec574"
+          "sha256": "d3799fc676ab678e017246716aa0579279437fe61725224b612de96dc94e2c8e"
         },
         {
           "path": "nova/safe_logging.py",

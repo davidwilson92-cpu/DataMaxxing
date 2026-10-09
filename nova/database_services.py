@@ -13,7 +13,7 @@ from starlette.routing import compile_path
 
 from .schema_startup import verify_runtime_role
 from .rls import verify_context_functions, verify_workspace_policies
-from .service_permissions import DRAFT_TABLE_GRANTS, DRAFT_COLUMN_GRANTS, verify_sequence_grants
+from .service_permissions import DRAFT_TABLE_GRANTS, DRAFT_COLUMN_GRANTS, TELEMETRY_COLUMN_GRANTS, verify_sequence_grants
 from .tenant_access import WorkspaceDenied
 from .workspace_session import authenticated_authority, content_session
 
@@ -55,6 +55,7 @@ class DatabaseServices:
     runtime_role: str
     authentication_sessions: object = None
     recovery_sessions: object = None
+    telemetry_sessions: object = None
 
     def supports_request(self, method, path):
         if method in {'GET','HEAD'} and (path == '/health' or path.startswith('/static/')):
@@ -136,7 +137,7 @@ def verify_pool_grants(c, metadata, table_grants, column_grants=None):
                     raise ValueError('Service pool column grants do not match the manifest')
 
 
-def create_services(identity_engine, runtime_engine, issuer_engine, *, authentication_engine=None, recovery_engine=None):
+def create_services(identity_engine, runtime_engine, issuer_engine, *, authentication_engine=None, recovery_engine=None, telemetry_engine=None):
     """Verify existing identities; never create roles, grants, schema or credentials."""
     from .db import Base
     engines = (identity_engine, runtime_engine, issuer_engine)
@@ -144,8 +145,9 @@ def create_services(identity_engine, runtime_engine, issuer_engine, *, authentic
     if recovery_engine is not None:
         if authentication_engine is None:raise ValueError('Recovery integration requires the authentication service')
         engines += (recovery_engine,)
+    if telemetry_engine is not None:engines += (telemetry_engine,)
     if len({id(engine) for engine in engines}) != len(engines):
-        raise ValueError({3:'Three',4:'Four',5:'Five'}[len(engines)]+' separate service engines are required')
+        raise ValueError({3:'Three',4:'Four',5:'Five',6:'Six'}[len(engines)]+' separate service engines are required')
     details = []
     for engine in engines:
         if engine.dialect.name != 'postgresql' or not engine.hide_parameters or engine.echo:
@@ -197,7 +199,12 @@ def create_services(identity_engine, runtime_engine, issuer_engine, *, authentic
         with recovery_engine.connect() as c:
             verify_pool_grants(c,Base.metadata,RECOVERY_TABLE_GRANTS,RECOVERY_COLUMN_GRANTS)
             verify_sequence_grants(c)
+    if telemetry_engine is not None:
+        with telemetry_engine.connect() as c:
+            verify_pool_grants(c,Base.metadata,{},TELEMETRY_COLUMN_GRANTS)
+            verify_sequence_grants(c)
     return DatabaseServices(sessionmaker(bind=identity_engine, expire_on_commit=False),
                             runtime_engine, issuer_engine, roles[1],
                             sessionmaker(bind=authentication_engine,expire_on_commit=False) if authentication_engine is not None else None,
-                            sessionmaker(bind=recovery_engine,expire_on_commit=False) if recovery_engine is not None else None)
+                            sessionmaker(bind=recovery_engine,expire_on_commit=False) if recovery_engine is not None else None,
+                            sessionmaker(bind=telemetry_engine,expire_on_commit=False) if telemetry_engine is not None else None)

@@ -71,7 +71,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             if not await run_in_threadpool(allowed_request, f'{identity}:{"auth" if path in {"/login","/signup","/forgot-password","/reset-password"} else "ai" if ai_request else "mutations"}', maximum, seconds, **options):
                 response = JSONResponse({'detail':'Too many requests. Please wait before trying again.'},429,headers={'Retry-After':str(seconds)})
         if response is None:
-            response = await call_next(request)
+            from .readiness import telemetry_scope, unavailable_telemetry
+            factory = (services.telemetry_sessions or unavailable_telemetry) if services is not None else None
+            with telemetry_scope(factory):
+                response = await call_next(request)
         if response.status_code==303 and hasattr(request.state,'brand_id') and path not in {'/brands','/brands/switch','/logout','/login','/signup'} and not path.startswith('/billing/'):
             from urllib.parse import urlunsplit, parse_qsl, urlencode
             location=response.headers.get('location','')

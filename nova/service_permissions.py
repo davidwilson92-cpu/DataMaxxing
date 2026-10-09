@@ -31,6 +31,14 @@ DRAFT_COLUMN_GRANTS = {
     ('zova_series_occurrences','UPDATE'): {'draft_id','status'},
 }
 
+# Append-only, explicitly enumerated metadata. A future model column does not
+# automatically become writable by the measurement service.
+TELEMETRY_COLUMN_GRANTS = {
+    ('zova_product_events','INSERT'): {'key','user_id','kind','created_at'},
+    ('zova_ai_calls','INSERT'): {'id','user_id','model','status','input_tokens',
+        'cached_tokens','output_tokens','estimated_gbp','rate_date','rate_snapshot','created_at'},
+}
+
 
 def verify_sequence_grants(c, *, draft_ids=False):
     """Only the draft allocator may advance; no service may reset a sequence."""

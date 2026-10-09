@@ -92,10 +92,12 @@ def test_normal_draft_dependency_uses_restricted_service_pools(service_pools,mon
         db.add(foreign);db.commit();foreign_id=foreign.id
     previous=getattr(app.state,'database_services',None)
     app.state.database_services=services
-    monkeypatch.setattr(readiness,'event',lambda *args,**kwargs:None)
+    monkeypatch.setenv('PRODUCT_METRICS_ENABLED','true')
+    fallback_attempts=[]
     def forbidden_fallback(*args,**kwargs):
+        fallback_attempts.append(True)
         raise AssertionError('Configured requests must not use the shared credential pool')
-    for module in (models,security,request_security):
+    for module in (models,security,request_security,readiness):
         monkeypatch.setattr(module,'SessionLocal',forbidden_fallback)
     try:
         client=TestClient(app)
@@ -155,6 +157,7 @@ def test_normal_draft_dependency_uses_restricted_service_pools(service_pools,mon
         with admin.begin() as c:
             c.execute(text('UPDATE nova_users SET auth_version=auth_version+1 WHERE id=:uid'),{'uid':uids[0]})
         assert client.get('/api/drafts').status_code==401
+        assert fallback_attempts==[]
     finally:
         if previous is None:del app.state.database_services
         else:app.state.database_services=previous
