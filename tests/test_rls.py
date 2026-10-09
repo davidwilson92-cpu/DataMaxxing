@@ -95,6 +95,20 @@ def test_context_and_migration_inputs_fail_before_database_access():
         with pytest.raises(ValueError,match='Invalid'):bind_context(None,token)
 
 
+def test_context_binding_failure_does_not_disclose_bearer_in_traceback():
+    import traceback
+    from types import SimpleNamespace
+    from sqlalchemy.exc import SQLAlchemyError
+    marker='synthetic-private-context-marker'
+    def fail(*args,**kwargs):raise SQLAlchemyError(marker)
+    connection=SimpleNamespace(dialect=SimpleNamespace(name='postgresql'),execute=fail)
+    try:bind_context(connection,secrets.token_urlsafe(32))
+    except RuntimeError as error:
+        assert str(error)=='Database workspace context could not be bound'
+        assert marker not in traceback.format_exc()
+    else:pytest.fail('Expected a sanitized binding failure')
+
+
 def test_direct_reads_default_deny_and_isolate_all_sixteen_tables(rls_db):
     admin,runtime,issuer,roles,uids,_=rls_db
     with runtime.connect() as c:

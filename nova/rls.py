@@ -7,6 +7,7 @@ import json
 import re
 import secrets
 from sqlalchemy import text, String
+from sqlalchemy.exc import SQLAlchemyError
 from .capabilities import ROLE_CAPABILITIES
 from .migration_limits import bound_migration
 from .tenant_references import BRAND_TABLES, verify_references
@@ -56,7 +57,12 @@ def bind_context(connection, token):
         raise ValueError('Invalid database context')
     if connection.dialect.name != 'postgresql':raise RuntimeError('Database contexts require PostgreSQL')
     # Transaction-local: commit/rollback must clear authority before pool reuse.
-    connection.execute(text("SELECT set_config('zova.workspace_context',:token,true)"),{'token':token})
+    try:
+        connection.execute(text("SELECT set_config('zova.workspace_context',:token,true)"),{'token':token})
+    except SQLAlchemyError:
+        # SQLAlchemy errors can contain bound parameters. Do not propagate the
+        # server-only bearer into ordinary application exception diagnostics.
+        raise RuntimeError('Database workspace context could not be bound') from None
 
 
 def apply_rls(engine, *, runtime_roles, issuer_roles, writes_paused=False):
