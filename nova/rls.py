@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import secrets
+from textwrap import dedent
 from sqlalchemy import text, String
 from sqlalchemy.exc import SQLAlchemyError
 from .capabilities import ROLE_CAPABILITIES
@@ -80,6 +81,90 @@ def bind_context(connection, token):
         raise RuntimeError('Database workspace context could not be bound') from None
 
 
+def context_function_definitions(c, runtime_roles):
+    """One source for offline installation and read-only definition verification."""
+    schema = c.dialect.identifier_preparer.quote(c.scalar(text('SELECT current_schema()')))
+    literal = String().literal_processor(c.dialect)
+    caps=literal(json.dumps({role:sorted(values) for role,values in ROLE_CAPABILITIES.items()}))
+    audiences='ARRAY['+','.join(literal(role) for role in sorted(set(runtime_roles)))+']::text[]'
+    issue = f'''CREATE OR REPLACE FUNCTION {schema}.zova_issue_context(
+        p_digest text, p_uid integer, p_wid text, p_version integer, p_revision integer,
+        p_cap text, p_audience text, p_ttl integer, p_transaction_id text, p_backend integer) RETURNS void
+        LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,{schema} AS $$
+        BEGIN
+          IF p_ttl IS NULL OR p_ttl < 1 OR p_ttl > 300 OR p_digest IS NULL OR p_digest !~ '^[0-9a-f]{{64}}$'
+            OR p_audience IS NULL OR NOT (p_audience=ANY({audiences}))
+            OR p_transaction_id IS NULL OR p_transaction_id !~ '^[0-9]+$' OR p_backend IS NULL OR p_backend < 1
+            OR NOT EXISTS (SELECT 1 FROM {schema}.zova_workspace_memberships m
+              JOIN {schema}.nova_users u ON u.id=m.user_id
+              JOIN {schema}.zova_workspaces w ON w.id=m.workspace_id
+              WHERE m.user_id=p_uid AND m.workspace_id=p_wid AND w.owner_user_id=p_uid
+              AND u.active AND m.active AND u.auth_version=p_version AND m.revision=p_revision
+              AND ({caps}::jsonb -> m.role) ? p_cap) THEN
+            RAISE EXCEPTION 'Database workspace authority denied' USING ERRCODE='42501';
+          END IF;
+          DELETE FROM {schema}.zova_db_contexts WHERE token_hash IN (
+            SELECT token_hash FROM {schema}.zova_db_contexts WHERE expires_at < clock_timestamp()
+            ORDER BY expires_at LIMIT 1000 FOR UPDATE SKIP LOCKED);
+          INSERT INTO {schema}.zova_db_contexts VALUES
+            (p_digest,p_uid,p_wid,p_version,p_revision,p_cap,p_audience,clock_timestamp()+p_ttl*interval '1 second',p_transaction_id,p_backend);
+        END $$'''
+    resolve = f'''CREATE OR REPLACE FUNCTION {schema}.zova_rls_workspace(allowed text[] DEFAULT NULL)
+        RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,{schema} AS $$
+        SELECT d.workspace_id FROM {schema}.zova_db_contexts d
+        JOIN {schema}.nova_users u ON u.id=d.user_id
+        JOIN {schema}.zova_workspace_memberships m ON m.user_id=d.user_id AND m.workspace_id=d.workspace_id
+        JOIN {schema}.zova_workspaces w ON w.id=d.workspace_id AND w.owner_user_id=d.user_id
+        WHERE d.token_hash=encode(sha256(convert_to(current_setting('zova.workspace_context',true),'UTF8')),'hex')
+        AND d.runtime_role=session_user AND d.expires_at > statement_timestamp()
+        AND d.transaction_id=pg_current_xact_id_if_assigned()::text AND d.backend_pid=pg_backend_pid()
+        AND u.active AND m.active AND u.auth_version=d.auth_version AND m.revision=d.membership_revision
+        AND ({caps}::jsonb -> m.role) ? d.capability
+        AND (allowed IS NULL OR d.capability=ANY(allowed))
+        $$'''
+    return {'issue': issue, 'resolve': resolve}
+
+
+def verify_context_functions(c, *, runtime_roles):
+    """Read catalog definitions; never execute, repair or trust a stored digest.
+
+    This validates the two context functions, not the complete table-policy or
+    service-grant manifest. It belongs alongside those separate checks.
+    """
+    if c.dialect.name != 'postgresql':
+        raise ValueError('Context verification requires PostgreSQL')
+    schema = c.dialect.identifier_preparer.quote(c.scalar(text('SELECT current_schema()')))
+    specs = {
+        'issue': ('zova_issue_context(text,integer,text,integer,integer,text,text,integer,text,integer)',
+                  'plpgsql', 'v', 'void',
+                  ['p_digest','p_uid','p_wid','p_version','p_revision','p_cap',
+                   'p_audience','p_ttl','p_transaction_id','p_backend'], None),
+        'resolve': ('zova_rls_workspace(text[])', 'sql', 's', 'text', ['allowed'], 'NULL::text[]'),
+    }
+    for purpose, definition in context_function_definitions(c, runtime_roles).items():
+        signature, language, volatility, result, arguments, default = specs[purpose]
+        row = c.execute(text('''SELECT p.prosrc, l.lanname, p.provolatile,
+            p.prorettype=CAST(:result AS regtype) AS return_type_matches,
+            p.prosecdef, p.proleakproof, p.proisstrict, p.proretset, p.prokind,
+            p.proparallel, p.prosupport=0 AS no_support, p.proconfig,
+            p.proargnames, p.proargmodes, p.pronargdefaults,
+            pg_get_expr(p.proargdefaults,0) AS argument_defaults
+            FROM pg_proc p JOIN pg_language l ON l.oid=p.prolang
+            WHERE p.oid=to_regprocedure(:signature)'''),
+            {'signature': f'{schema}.{signature}', 'result': result}).mappings().first()
+        expected_body = dedent(definition.split('$$')[1]).strip()
+        if (row is None or dedent(row['prosrc']).strip() != expected_body
+                or row['lanname'] != language or row['provolatile'] != volatility
+                or not row['return_type_matches'] or not row['prosecdef']
+                or row['proleakproof'] or row['proisstrict'] or row['proretset']
+                or row['prokind'] != 'f' or row['proparallel'] != 'u' or not row['no_support']
+                or row['proconfig'] != [f'search_path=pg_catalog, {schema}']
+                or row['proargnames'] != arguments or row['proargmodes'] is not None
+                or row['pronargdefaults'] != (1 if default else 0)
+                or row['argument_defaults'] != default):
+            raise ValueError('Database context function definition does not match the reviewed implementation')
+
+
 def apply_rls(engine, *, runtime_roles, issuer_roles, writes_paused=False):
     if not writes_paused:raise ValueError('Pause application and worker writes before RLS migration')
     if not runtime_roles or not issuer_roles or set(runtime_roles) & set(issuer_roles):
@@ -124,43 +209,8 @@ def apply_rls(engine, *, runtime_roles, issuer_roles, writes_paused=False):
             capability TEXT NOT NULL, runtime_role TEXT NOT NULL,
             expires_at TIMESTAMPTZ NOT NULL, transaction_id TEXT NOT NULL, backend_pid INTEGER NOT NULL)'''))
         c.execute(text(f'CREATE INDEX IF NOT EXISTS zova_db_context_expiry ON {schema}.zova_db_contexts(expires_at)'))
-        caps=literal(json.dumps({role:sorted(values) for role,values in ROLE_CAPABILITIES.items()}))
-        audiences='ARRAY['+','.join(literal(role) for role in sorted(set(runtime_roles)))+']::text[]'
-        c.execute(text(f'''CREATE OR REPLACE FUNCTION {schema}.zova_issue_context(
-            p_digest text, p_uid integer, p_wid text, p_version integer, p_revision integer,
-            p_cap text, p_audience text, p_ttl integer, p_transaction_id text, p_backend integer) RETURNS void
-            LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,{schema} AS $$
-            BEGIN
-              IF p_ttl IS NULL OR p_ttl < 1 OR p_ttl > 300 OR p_digest IS NULL OR p_digest !~ '^[0-9a-f]{{64}}$'
-                OR p_audience IS NULL OR NOT (p_audience=ANY({audiences}))
-                OR p_transaction_id IS NULL OR p_transaction_id !~ '^[0-9]+$' OR p_backend IS NULL OR p_backend < 1
-                OR NOT EXISTS (SELECT 1 FROM {schema}.zova_workspace_memberships m
-                  JOIN {schema}.nova_users u ON u.id=m.user_id
-                  JOIN {schema}.zova_workspaces w ON w.id=m.workspace_id
-                  WHERE m.user_id=p_uid AND m.workspace_id=p_wid AND w.owner_user_id=p_uid
-                  AND u.active AND m.active AND u.auth_version=p_version AND m.revision=p_revision
-                  AND ({caps}::jsonb -> m.role) ? p_cap) THEN
-                RAISE EXCEPTION 'Database workspace authority denied' USING ERRCODE='42501';
-              END IF;
-              DELETE FROM {schema}.zova_db_contexts WHERE token_hash IN (
-                SELECT token_hash FROM {schema}.zova_db_contexts WHERE expires_at < clock_timestamp()
-                ORDER BY expires_at LIMIT 1000 FOR UPDATE SKIP LOCKED);
-              INSERT INTO {schema}.zova_db_contexts VALUES
-                (p_digest,p_uid,p_wid,p_version,p_revision,p_cap,p_audience,clock_timestamp()+p_ttl*interval '1 second',p_transaction_id,p_backend);
-            END $$'''))
-        c.execute(text(f'''CREATE OR REPLACE FUNCTION {schema}.zova_rls_workspace(allowed text[] DEFAULT NULL)
-            RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,{schema} AS $$
-            SELECT d.workspace_id FROM {schema}.zova_db_contexts d
-            JOIN {schema}.nova_users u ON u.id=d.user_id
-            JOIN {schema}.zova_workspace_memberships m ON m.user_id=d.user_id AND m.workspace_id=d.workspace_id
-            JOIN {schema}.zova_workspaces w ON w.id=d.workspace_id AND w.owner_user_id=d.user_id
-            WHERE d.token_hash=encode(sha256(convert_to(current_setting('zova.workspace_context',true),'UTF8')),'hex')
-            AND d.runtime_role=session_user AND d.expires_at > statement_timestamp()
-            AND d.transaction_id=pg_current_xact_id_if_assigned()::text AND d.backend_pid=pg_backend_pid()
-            AND u.active AND m.active AND u.auth_version=d.auth_version AND m.revision=d.membership_revision
-            AND ({caps}::jsonb -> m.role) ? d.capability
-            AND (allowed IS NULL OR d.capability=ANY(allowed))
-            $$'''))
+        for definition in context_function_definitions(c, runtime_roles).values():
+            c.execute(text(definition))
         issue=f'{schema}.zova_issue_context(text,integer,text,integer,integer,text,text,integer,text,integer)'
         resolve=f'{schema}.zova_rls_workspace(text[])'
         identities=','.join(q(role) for role in sorted(set(runtime_roles)|set(issuer_roles)))
