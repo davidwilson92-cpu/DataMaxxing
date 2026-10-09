@@ -172,7 +172,9 @@ def test_apple_state_is_claimed_once_before_provider_exchange(monkeypatch):
     monkeypatch.setattr(module.jwt,'PyJWKClient',lambda *a:SimpleNamespace(get_signing_key_from_jwt=lambda *a:SimpleNamespace(key='synthetic-key')))
     monkeypatch.setattr(module.jwt,'decode',lambda *a,**k:{'nonce':'synthetic-nonce','sub':state,'email':email,'email_verified':True})
     def submit(_):
-        return TestClient(module.app,raise_server_exceptions=False).post('/auth/apple/callback',
+        client=TestClient(module.app,base_url='https://testserver',raise_server_exceptions=False)
+        client.cookies.set('__Host-zova_apple_state',state)
+        return client.post('/auth/apple/callback',
             data={'code':'synthetic','id_token':'synthetic','state':state},follow_redirects=False)
     try:
         with ThreadPoolExecutor(max_workers=2) as pool:responses=list(pool.map(submit,[0,1]))

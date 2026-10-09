@@ -330,12 +330,20 @@ def apple_start(intent: str = "login", db: Session = Depends(get_db)):
     state, nonce = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
     db.add(AuthState(provider="apple", state_hash=hash_api_key(state), nonce_hash=hash_api_key(nonce), intent="signup" if intent == "signup" else "login")); db.commit()
     params = httpx.QueryParams({"client_id": os.environ["APPLE_CLIENT_ID"], "redirect_uri": os.environ.get("APPLE_REDIRECT_URI", f"{base_url()}/auth/apple/callback"), "response_type": "code id_token", "response_mode": "form_post", "scope": "name email", "state": state, "nonce": nonce})
-    return RedirectResponse(f"https://appleid.apple.com/auth/authorize?{params}", 302)
+    response=RedirectResponse(f"https://appleid.apple.com/auth/authorize?{params}", 302)
+    # Apple returns a cross-site form POST. A host-only Secure cookie binds the
+    # state to this browser without exposing the normal session cross-site.
+    response.set_cookie('__Host-zova_apple_state',state,max_age=600,secure=True,
+                        httponly=True,samesite='none',path='/')
+    return response
 
 
 @app.post("/auth/apple/callback")
 def apple_callback(request: Request, code: Annotated[str | None, Form()] = None, id_token: Annotated[str | None, Form()] = None, state: Annotated[str | None, Form()] = None, error: Annotated[str | None, Form()] = None, user: Annotated[str | None, Form()] = None, db: Session = Depends(get_db)):
     if error or not code or not id_token or not state: return RedirectResponse("/login?error=Apple+sign-in+was+cancelled", 303)
+    browser_state=request.cookies.get('__Host-zova_apple_state','')
+    if not browser_state or len(browser_state)>128 or not secrets.compare_digest(hash_api_key(browser_state),hash_api_key(state)):
+        raise HTTPException(400,'Start Apple sign-in again in this browser.')
     row = db.scalar(select(AuthState).where(AuthState.state_hash == hash_api_key(state), AuthState.provider == "apple", AuthState.used.is_(False)))
     if not row or row.created_at.replace(tzinfo=row.created_at.tzinfo or timezone.utc) < utcnow() - timedelta(minutes=10): raise HTTPException(400, "Invalid or expired Apple sign-in state")
     claimed=db.execute(update(AuthState).where(AuthState.id==row.id,AuthState.provider=='apple',
@@ -389,10 +397,13 @@ def apple_callback(request: Request, code: Annotated[str | None, Form()] = None,
         readiness.event(user.id,'signup',user.id)
     from .mfa import begin_login
     mfa_response=begin_login(db,user,verified_version,'/onboarding/socials' if created else '/studio')
-    if mfa_response is not None:return mfa_response
+    if mfa_response is not None:
+        mfa_response.delete_cookie('__Host-zova_apple_state',secure=True,httponly=True,samesite='none',path='/')
+        return mfa_response
     resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303)
     try:set_user_cookie(resp,user,expected_auth_version=verified_version,request=request)
     except ValueError:return RedirectResponse('/login?error=Your+sign-in+changed.+Please+sign+in+again.',303)
+    resp.delete_cookie('__Host-zova_apple_state',secure=True,httponly=True,samesite='none',path='/')
     resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 
 @app.post("/login")

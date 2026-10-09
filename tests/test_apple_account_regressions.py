@@ -18,7 +18,9 @@ def callback(monkeypatch, email, verified=True):
     monkeypatch.setattr(app_module.httpx,'post',lambda *a,**k:SimpleNamespace(status_code=200))
     monkeypatch.setattr(app_module.jwt,'PyJWKClient',lambda *a:SimpleNamespace(get_signing_key_from_jwt=lambda *a:SimpleNamespace(key='synthetic-key')))
     monkeypatch.setattr(app_module.jwt,'decode',lambda *a,**k:{'nonce':'synthetic-nonce','sub':state,'email':email,'email_verified':verified})
-    return TestClient(app).post('/auth/apple/callback',data={'code':'synthetic','id_token':'synthetic','state':state},follow_redirects=False)
+    client=TestClient(app,base_url='https://testserver')
+    client.cookies.set('__Host-zova_apple_state',state)
+    return client.post('/auth/apple/callback',data={'code':'synthetic','id_token':'synthetic','state':state},follow_redirects=False)
 
 
 def test_new_apple_account_initialises_own_workspace(monkeypatch):
