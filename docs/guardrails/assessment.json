@@ -238,7 +238,7 @@
         },
         {
           "path": "tests/test_authentication_pool.py",
-          "sha256": "6996f811618f7dcb1f52c78532c817687b1af161318a48681b0361a2228a9fe1"
+          "sha256": "cb7afb1a99f0581b1e337c3cb1989e5bd76aa86f16ad7b2bcfb54ca5d40c962c"
         },
         {
           "path": "docs/guardrails/AUTHENTICATION_POOLS_20261009.md",

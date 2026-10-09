@@ -81,7 +81,7 @@ def test_login_optional_mfa_recovery_logout_with_no_shared_pool(authentication_p
     def client():return TestClient(app,headers={'origin':'http://testserver'},follow_redirects=False)
     def password_login():
         user=client()
-        response=user.post('/login',data={'email':email,'password':password,'next':'/api/drafts'})
+        response=user.post('/login',data={'email':email,'password':password,'next':'/studio'})
         assert response.status_code==303,response.text
         return user,response
     try:
@@ -92,7 +92,7 @@ def test_login_optional_mfa_recovery_logout_with_no_shared_pool(authentication_p
         assert invalid.status_code==303 and 'Incorrect' in invalid.headers['location']
         assert 'nova_session' not in owner.cookies
         owner,response=password_login()
-        assert response.headers['location']=='/api/drafts'
+        assert response.headers['location']=='/studio'
         assert owner.get('/api/drafts').status_code==200
         original_cookie=owner.cookies.get('nova_session')
         # No automatic enrollment: an existing password-only account still works.
@@ -129,7 +129,7 @@ def test_login_optional_mfa_recovery_logout_with_no_shared_pool(authentication_p
         assert owner.post('/mfa/disable',data={'password':password,'code':codes[1]}).status_code==303
         with Session(admin) as db:assert not db.get(models.MfaSettings,uids[0]).enabled
         plain,response=password_login()
-        assert response.headers['location']=='/api/drafts'
+        assert response.headers['location']=='/studio'
         assert plain.get('/api/drafts').status_code==200
     finally:
         if previous is None:del app.state.database_services
