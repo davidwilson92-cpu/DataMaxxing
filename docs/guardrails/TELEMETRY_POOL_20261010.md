@@ -1,6 +1,10 @@
 # Isolated product and AI measurement writes
 
-Candidate only; local and PostgreSQL validation pending. No production roles,
+Candidate only. Validated at 7f6c0e3: CI SQLite 417 passed / 62 expected skips;
+PostgreSQL 478 passed / one expected skip. CI run 38002819010 passed restricted
+telemetry/background/outage tests, migrated restore, image build/smoke and
+Python dependency audit. Evidence: `evidence/telemetry-pool-20261010.json`.
+No production roles,
 credentials, account records, provider calls or deployment changed.
 
 Previously, readiness.event and record_ai opened the shared SessionLocal pool.

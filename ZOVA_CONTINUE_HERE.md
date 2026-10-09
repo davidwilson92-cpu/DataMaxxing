@@ -1,3 +1,13 @@
+# Current increment: isolated product and AI telemetry
+
+Validated 7f6c0e3: CI SQLite 417 passed / 62 expected skips; PostgreSQL 478 passed / one expected skip. CI run 38002819010 passed real telemetry inserts, permission attacks, missing-pool/outage behavior, ASGI background context, migrated restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/telemetry-pool-20261010.json. Production unchanged; full gate blocked and publication goal active.
+
+Read docs/guardrails/TELEMETRY_POOL_20261010.md. create_services accepts a distinct optional telemetry_engine (up to six service pools). Its role has INSERT only on named ProductEvent/AICall metadata columns, no reads/updates/deletes/sequences/context functions. SecurityMiddleware binds readiness.telemetry_scope around call_next; handlers and child/background tasks inherit a task-local factory, reset safely on exit. Configured requests with no telemetry pool bind unavailable_telemetry and never fall back to SessionLocal. event/record_ai preserve successful customer output on measurement failure. Draft service HTTP tests no longer mock readiness.event. AI provider calls remain mocked and full AI routes still unmapped.
+
+NEXT: signup and account lifecycle. Inspect signup's separate User commit followed by preference commit; make account/workspace/membership/preferences atomic and handle concurrent duplicate signup safely, preserving fields/cookies/consent. Integrate restricted registration authority without broad grants or restoring revoked memberships. Continue profile, Apple/social/billing callbacks and worker/legacy routing with exact grants. Non-HTTP workers must explicitly establish telemetry_scope; account-level immutable references/RLS, reporting/retention and operational/independent evidence remain open. Do not enable partial staged mode for customers. Preserve all users/data/keys, explicit publishing approval and unknown outcomes; no paid staging, forced MFA or gate bypass.
+
+---
+
 # Current increment: restricted draft and issuer privileges
 
 Validated e2d9534: local/CI SQLite 415 passed / 58 expected skips; PostgreSQL 472 passed / one expected skip. CI run 38001835142 passed real restricted-role attachment/Story/planning/delete flows, privilege attacks, migrated restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/draft-grants-20261009.json. Production unchanged; full gate blocked and publication goal active.

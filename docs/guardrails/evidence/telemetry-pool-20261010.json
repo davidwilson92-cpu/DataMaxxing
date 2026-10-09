@@ -1,0 +1,31 @@
+{
+  "tested_commit": "7f6c0e3131b0a8ee5cfdaf242a14bc7da471737a",
+  "ci_runs": [
+    38002819010
+  ],
+  "sqlite": {
+    "passed": 417,
+    "skipped": 62
+  },
+  "postgresql": {
+    "passed": 478,
+    "skipped": 1
+  },
+  "verified": [
+    "Separate telemetry identity with exact INSERT-only metadata columns and no table reads, mutation, sequences or context functions",
+    "Real draft-save event persists without mocking readiness.event or using shared credentials",
+    "Duplicate events are harmless and recording outages leave saved content intact",
+    "Missing configured telemetry never falls back to shared credentials",
+    "AI recording stores usage metadata rather than prompt/output and recording failure does not retry the provider",
+    "Concurrent task and error-scope restoration checks",
+    "ASGI background work retains the restricted telemetry factory",
+    "Migrated RLS restore, image build/smoke and Python dependency audit"
+  ],
+  "limits": [
+    "Trusted cross-account append service; account-level isolation and reporting/retention access remain open",
+    "Non-HTTP workers need explicit telemetry scope during later integration",
+    "Full AI routes remain unmapped in staged mode; provider requests were mocked",
+    "Production observability, alert delivery, cost calibration and rollout remain unverified"
+  ],
+  "deployment": "No production roles, credentials, data, provider actions or deployment changed"
+}

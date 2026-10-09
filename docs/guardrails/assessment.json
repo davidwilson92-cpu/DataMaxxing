@@ -28,8 +28,8 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical owner workspaces/memberships, live capability checks, version-based session revocation and immutable references on all 16 brand-owned tables are implemented. Offline migrations, PostgreSQL forced/restrictive RLS and expiring transaction/backend-bound contexts are tested with real restricted identities. Staged draft, sign-in, optional MFA and recovery routes use separated pools without shared-credential fallback. Startup now verifies actual context-function definitions and all table policy flags, role identifiers, operations and full canonical predicates; drift attacks and restored-definition checks passed at e3376ef. Production is unchanged and staged mode remains disabled. Account-level and legacy references/isolation, shared-member routing, remaining callback/worker/account services, final grants and rollout remain incomplete. Exact table/column/sequence grants for the mapped draft database operations and a table-inaccessible issuer passed restricted-role tests at e2d9534. Draft-save telemetry is still mocked and must be isolated before activation.",
-      "next_action": "Isolate telemetry and finish account/callback/worker/legacy services with exact grants, then account-level isolation, shared-member routing and verified production rollout.",
+      "finding": "Canonical owner workspaces/memberships, live capability checks, version-based session revocation and immutable references on all 16 brand-owned tables are implemented. Offline migrations, PostgreSQL forced/restrictive RLS and expiring transaction/backend-bound contexts are tested with real restricted identities. Staged draft, sign-in, optional MFA and recovery routes use separated pools without shared-credential fallback. Startup now verifies actual context-function definitions and all table policy flags, role identifiers, operations and full canonical predicates; drift attacks and restored-definition checks passed at e3376ef. Production is unchanged and staged mode remains disabled. Account-level and legacy references/isolation, shared-member routing, remaining callback/worker/account services, final grants and rollout remain incomplete. Exact table/column/sequence grants for the mapped draft database operations and a table-inaccessible issuer passed restricted-role tests at e2d9534. A separate append-only telemetry identity and task-local request/background routing passed at 7f6c0e3 without mocking draft-save events or shared-credential fallback; worker/reporting authority remains open.",
+      "next_action": "Make signup/lifecycle atomic and integrate restricted registration; finish account/callback/worker/legacy services, account-level isolation and verified rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
@@ -238,6 +238,26 @@
         {
           "path": "docs/guardrails/evidence/draft-grants-20261009.json",
           "sha256": "f9b9214ed397ea580477cd177319a03913b1fbc301478619fe3658af2781daf6"
+        },
+        {
+          "path": "nova/readiness.py",
+          "sha256": "d3799fc676ab678e017246716aa0579279437fe61725224b612de96dc94e2c8e"
+        },
+        {
+          "path": "nova/request_security.py",
+          "sha256": "2f4dab0377ba212914b058b0b740f1c660c6c6da6a51bcd2a0074208c077d776"
+        },
+        {
+          "path": "tests/test_telemetry_pool.py",
+          "sha256": "05eb5edc5b86b2117b2d8a81773e97c6bf59268232a055dcb451c498d46551be"
+        },
+        {
+          "path": "docs/guardrails/TELEMETRY_POOL_20261010.md",
+          "sha256": "f327d0fb14ce65bec54abc0d89376917e07d8c03fefde1ed630f0d59bb2b4f58"
+        },
+        {
+          "path": "docs/guardrails/evidence/telemetry-pool-20261010.json",
+          "sha256": "4402f8f53337384bfe17d8d79431d1bb6ca613c3e6207a29edc0c32fe9fe8c75"
         }
       ],
       "reviewed_by": null,
@@ -623,6 +643,26 @@
         {
           "path": "docs/guardrails/evidence/draft-grants-20261009.json",
           "sha256": "f9b9214ed397ea580477cd177319a03913b1fbc301478619fe3658af2781daf6"
+        },
+        {
+          "path": "nova/readiness.py",
+          "sha256": "d3799fc676ab678e017246716aa0579279437fe61725224b612de96dc94e2c8e"
+        },
+        {
+          "path": "nova/request_security.py",
+          "sha256": "2f4dab0377ba212914b058b0b740f1c660c6c6da6a51bcd2a0074208c077d776"
+        },
+        {
+          "path": "tests/test_telemetry_pool.py",
+          "sha256": "05eb5edc5b86b2117b2d8a81773e97c6bf59268232a055dcb451c498d46551be"
+        },
+        {
+          "path": "docs/guardrails/TELEMETRY_POOL_20261010.md",
+          "sha256": "f327d0fb14ce65bec54abc0d89376917e07d8c03fefde1ed630f0d59bb2b4f58"
+        },
+        {
+          "path": "docs/guardrails/evidence/telemetry-pool-20261010.json",
+          "sha256": "4402f8f53337384bfe17d8d79431d1bb6ca613c3e6207a29edc0c32fe9fe8c75"
         }
       ],
       "reviewed_by": null,
@@ -1866,7 +1906,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Privacy and engineering",
-      "finding": "Product events and AI usage records favor categorical metadata. Complete third-party analytics/log data-flow exclusion is not verified. Uvicorn access logs now exclude query strings, including signed-media and OAuth parameters; hosting/proxy logging remains unverified.",
+      "finding": "Product events and AI usage records favor categorical metadata. Complete third-party analytics/log data-flow exclusion is not verified. Uvicorn access logs now exclude query strings, including signed-media and OAuth parameters; hosting/proxy logging remains unverified. An optional separate telemetry identity now has INSERT-only named metadata fields and task-local request/background routing; real draft-event and mocked AI-output privacy/failure checks passed at 7f6c0e3. Production collection settings are unchanged; worker/reporting/retention and account-level authority remain open.",
       "next_action": "Test telemetry allowlists against synthetic credentials, draft text, emails and secret-bearing URLs.",
       "evidence": [
         {
@@ -1876,6 +1916,30 @@
         {
           "path": "nova/safe_logging.py",
           "sha256": "e233993657289479163932e708b81d931c4f4de50d9abfbd620bf0d9f21aaca9"
+        },
+        {
+          "path": "nova/database_services.py",
+          "sha256": "b6ae6300af37853fec24a399d755add756eb81cf092ea3baf422b51223ad0083"
+        },
+        {
+          "path": "nova/service_permissions.py",
+          "sha256": "285a66d48823f55f4661b5ac1450e2395f8510ec0671a201468929abf2cbd56e"
+        },
+        {
+          "path": "nova/request_security.py",
+          "sha256": "2f4dab0377ba212914b058b0b740f1c660c6c6da6a51bcd2a0074208c077d776"
+        },
+        {
+          "path": "tests/test_telemetry_pool.py",
+          "sha256": "05eb5edc5b86b2117b2d8a81773e97c6bf59268232a055dcb451c498d46551be"
+        },
+        {
+          "path": "docs/guardrails/TELEMETRY_POOL_20261010.md",
+          "sha256": "f327d0fb14ce65bec54abc0d89376917e07d8c03fefde1ed630f0d59bb2b4f58"
+        },
+        {
+          "path": "docs/guardrails/evidence/telemetry-pool-20261010.json",
+          "sha256": "4402f8f53337384bfe17d8d79431d1bb6ca613c3e6207a29edc0c32fe9fe8c75"
         }
       ],
       "reviewed_by": null,
