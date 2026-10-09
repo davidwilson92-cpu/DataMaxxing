@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy import event, select, inspect, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, with_loader_criteria
-from .db import (Brand, BrandVoice, BrandScoped, SessionLocal, CreatorPreferences, LegacyPublication, TenantWorkspace, WorkspaceMembership, User)
+from .db import (Brand, BrandVoice, BrandScoped, CanonicalWorkspace, SessionLocal, CreatorPreferences, LegacyPublication, TenantWorkspace, WorkspaceMembership, User)
 
 
 def bind_request(db, request):
@@ -37,13 +37,19 @@ def scope_queries(state):
         return
     brand_id = state.session.info['brand_id']
     user_id = state.session.info['brand_user_id']
+    from .tenant_migration import workspace_key
+    wid = workspace_key(user_id, brand_id)
     state.statement = state.statement.options(with_loader_criteria(
-        BrandScoped, lambda cls: (cls.brand_id == brand_id) & (cls.user_id == user_id), include_aliases=True))
+        BrandScoped, lambda cls: (cls.workspace_id == wid) & (cls.brand_id == brand_id) & (cls.user_id == user_id), include_aliases=True))
 
 
 @event.listens_for(Session, 'before_flush')
 def scope_writes(db, context, instances):
     for row in db.dirty:
+        if isinstance(row, CanonicalWorkspace):
+            state = inspect(row)
+            if any(state.attrs[field].history.has_changes() for field in ('workspace_id','user_id','brand_id')):
+                raise HTTPException(409, 'Workspace ownership cannot be changed.')
         if isinstance(row, (TenantWorkspace, WorkspaceMembership)):
             state = inspect(row)
             fields = ('id','owner_user_id','legacy_brand_id') if isinstance(row,TenantWorkspace) else ('workspace_id','user_id')

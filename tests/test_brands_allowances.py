@@ -84,7 +84,8 @@ def test_publication_retry_and_release_are_idempotent():
 def test_connection_limit_counts_all_brands(monkeypatch):
     _,uid,*_=account();configure(monkeypatch,uid)
     with SessionLocal() as db:
-        for i in range(4):db.add(SocialConnection(user_id=uid,brand_id=i%2,platform='x',account_id=str(i),encrypted_access_token='synthetic'))
+        brand=Brand(user_id=uid,name='Other allowance brand');db.add(brand);db.flush()
+        for i in range(4):db.add(SocialConnection(user_id=uid,brand_id=brand.id if i%2 else 0,platform='x',account_id=str(i),encrypted_access_token='synthetic'))
         db.commit();db.info.update(brand_id=0,brand_user_id=uid)
         with pytest.raises(HTTPException):allowances.connection_slot(db,uid)
 

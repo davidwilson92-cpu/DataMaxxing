@@ -30,7 +30,13 @@ class Base(DeclarativeBase):
     pass
 
 
-class BrandScoped:
+class CanonicalWorkspace:
+    # SQLite's compatible legacy inserts are filled by an AFTER INSERT guard.
+    # PostgreSQL enforces NOT NULL during the offline reference migration.
+    workspace_id: Mapped[str] = mapped_column(ForeignKey('zova_workspaces.id'), nullable=True)
+
+
+class BrandScoped(CanonicalWorkspace):
     brand_id: Mapped[int] = mapped_column(Integer, default=0, server_default='0', index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
 
@@ -247,7 +253,7 @@ class SocialConnection(BrandScoped, Base):
     user: Mapped[User] = relationship(back_populates='social_connections')
 
 
-class OAuthState(Base):
+class OAuthState(CanonicalWorkspace, Base):
     __tablename__ = 'nova_oauth_states'
     brand_id: Mapped[int] = mapped_column(Integer, default=0, server_default='0')
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -424,7 +430,7 @@ class EmailVerification(Base):
     used: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class PendingConnection(Base):
+class PendingConnection(CanonicalWorkspace, Base):
     __tablename__ = 'zova_pending_connections'
     code_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
@@ -521,11 +527,19 @@ class MfaChallenge(Base):
 
 # Existing databases require the reviewed offline registry backfill before startup.
 # Never silently assign privileges while serving requests.
+existing_users = 0
 with engine.connect() as registry_connection:
     if inspect(registry_connection).has_table('nova_users'):
         existing_users = registry_connection.scalar(select(func.count()).select_from(User.__table__))
         if existing_users and not all(inspect(registry_connection).has_table(name) for name in ('zova_workspaces','zova_workspace_memberships')):
             raise RuntimeError('Workspace registry migration required before application startup')
+        if existing_users:
+            from .tenant_references import verify_references, VERSION as reference_version
+            from sqlalchemy import text
+            verify_references(registry_connection)
+            if not inspect(registry_connection).has_table('zova_schema_migrations') or not registry_connection.scalar(
+                    text('SELECT COUNT(*) FROM zova_schema_migrations WHERE version=:version'), {'version':reference_version}):
+                raise RuntimeError('Workspace reference migration required before application startup')
 
 Base.metadata.create_all(bind=engine, tables=[table for table in Base.metadata.sorted_tables
                                              if table not in (LegacyPublication.__table__, MfaSettings.__table__, MfaChallenge.__table__)])
@@ -535,6 +549,9 @@ from .migrations import run_legacy_queue_migration
 run_legacy_queue_migration(engine, LegacyPublication.__table__)
 from .migrations import run_mfa_migration
 run_mfa_migration(engine, (MfaSettings.__table__, MfaChallenge.__table__))
+if not existing_users:
+    from .tenant_references import apply_references
+    apply_references(engine, writes_paused=True)
 
 
 def get_db(request: Request):
@@ -579,3 +596,18 @@ def _new_brand_workspace(mapper,connection,brand):
     if active is None:
         raise ValueError('Brand owner is unavailable')
     _create_workspace(connection,brand.user_id,brand.id,active)
+
+
+@event.listens_for(Base, 'before_insert', propagate=True)
+def _canonical_record_workspace(mapper, connection, row):
+    if not isinstance(row, CanonicalWorkspace):
+        return
+    from .tenant_migration import workspace_key
+    bid = row.brand_id if row.brand_id is not None else 0
+    expected = workspace_key(row.user_id, bid)
+    found = connection.scalar(select(TenantWorkspace.id).where(
+        TenantWorkspace.id == expected, TenantWorkspace.owner_user_id == row.user_id,
+        TenantWorkspace.legacy_brand_id == bid))
+    if found is None or row.workspace_id not in (None, expected):
+        raise ValueError('Invalid canonical workspace ownership')
+    row.workspace_id = expected

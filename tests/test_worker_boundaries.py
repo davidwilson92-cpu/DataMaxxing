@@ -4,7 +4,7 @@ import json
 import pytest
 from sqlalchemy import select
 
-from nova.db import Draft, MediaAsset, ScheduledPost, SessionLocal, SocialConnection, utcnow
+from nova.db import Brand, Draft, MediaAsset, ScheduledPost, SessionLocal, SocialConnection, utcnow
 from nova.scheduler import process_due
 from test_reviewed_publication import prepared
 from test_account_integrity import account
@@ -17,18 +17,20 @@ def test_old_schedule_checks_every_resource_before_provider_call(monkeypatch, mi
     _, uid, _, body = prepared()
     owner = account()[1] if mismatch == 'other_owner' else uid
     with SessionLocal() as db:
+        other_brand = Brand(user_id=uid, name='Other worker boundary brand')
+        db.add(other_brand); db.flush()
         original = db.scalar(select(SocialConnection).where(SocialConnection.user_id == uid))
-        conn = SocialConnection(user_id=owner, brand_id=99 if mismatch == 'connection' else 0,
+        conn = SocialConnection(user_id=owner, brand_id=other_brand.id if mismatch == 'connection' else 0,
                                 platform='facebook' if mismatch == 'wrong_platform' else 'x',
                                 active=mismatch != 'inactive', account_id='worker-test',
                                 scope='tweet.read' if mismatch == 'permission' else 'tweet.write',
                                 encrypted_access_token=original.encrypted_access_token)
-        asset = MediaAsset(user_id=uid, brand_id=99 if mismatch == 'media' else 0,
+        asset = MediaAsset(user_id=uid, brand_id=other_brand.id if mismatch == 'media' else 0,
                            filename='synthetic.jpg', mime_type='image/jpeg', storage_key='synthetic')
         db.add_all([conn, asset]); db.flush()
         draft_id = body['draft_id']
         if mismatch == 'draft':
-            draft = Draft(user_id=uid, brand_id=99)
+            draft = Draft(user_id=uid, brand_id=other_brand.id)
             db.add(draft); db.flush(); draft_id = draft.id
         job = ScheduledPost(user_id=uid, brand_id=0, draft_id=draft_id,
                             platform='x', connection_id=None if mismatch == 'missing_connection' else conn.id,

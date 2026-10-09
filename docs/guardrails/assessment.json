@@ -28,12 +28,12 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open.",
+      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime regression validation is pending; PostgreSQL RLS and complete service authority remain open.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
-          "sha256": "beaee94d1fd5b23d98ce00eeb4aabbe95be98e596ce51197cefc65639e6a4aa7"
+          "sha256": "b88dc51609c03694240ce739ed05338be7a397193af28081f33ff66e9cf94a8d"
         },
         {
           "path": "nova/scheduler.py",
@@ -41,7 +41,7 @@
         },
         {
           "path": "tests/test_worker_boundaries.py",
-          "sha256": "ab559fa3c6a2ce52fe5a803dda484ef52c2d5ddb68b2468b96769749d90669da"
+          "sha256": "4680ff84ec6df3fd3e0a2caa62832f3d70a6a018088ef6edba0b01dd0e154ed4"
         },
         {
           "path": "nova/publishing_workflow.py",
@@ -49,7 +49,7 @@
         },
         {
           "path": "tests/test_reconciliation_boundaries.py",
-          "sha256": "b8d533832b018031bf2c4282008798c7396559cf8cf26c3b95c34415493bcccf"
+          "sha256": "283ffe600d408da720484e73761c8e384ae2971eb09289dad4dc7ab83678be29"
         },
         {
           "path": "nova/tenant_migration.py",
@@ -114,6 +114,18 @@
         {
           "path": "docs/guardrails/evidence/migration-limits-20261009.json",
           "sha256": "14259eed6a4891047a76ed9c5eb7a18d3e222843b5165d2ff61fccae138934eb"
+        },
+        {
+          "path": "nova/db.py",
+          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+        },
+        {
+          "path": "tests/test_canonical_runtime.py",
+          "sha256": "d82bde6e040c8d3b8b84bf6583591c9946eca0f23bd171cbd1f5127d4c02e25e"
+        },
+        {
+          "path": "docs/guardrails/CANONICAL_RUNTIME_20261009.md",
+          "sha256": "10c6faebc45ce784e8e96e24d66110d0f5ab054e870ba85259298038c8cc63df"
         }
       ],
       "reviewed_by": null,
@@ -158,12 +170,12 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete.",
+      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime regression validation is pending; PostgreSQL RLS and complete service authority remain open.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
-          "sha256": "beaee94d1fd5b23d98ce00eeb4aabbe95be98e596ce51197cefc65639e6a4aa7"
+          "sha256": "b88dc51609c03694240ce739ed05338be7a397193af28081f33ff66e9cf94a8d"
         },
         {
           "path": "nova/tenant_migration.py",
@@ -200,6 +212,18 @@
         {
           "path": "docs/guardrails/evidence/tenant-access-20261009.json",
           "sha256": "3d957e6f395046b71d41ac9967743e882b7ae771f7343ba7508d04ae10c5aef1"
+        },
+        {
+          "path": "nova/db.py",
+          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+        },
+        {
+          "path": "tests/test_canonical_runtime.py",
+          "sha256": "d82bde6e040c8d3b8b84bf6583591c9946eca0f23bd171cbd1f5127d4c02e25e"
+        },
+        {
+          "path": "docs/guardrails/CANONICAL_RUNTIME_20261009.md",
+          "sha256": "10c6faebc45ce784e8e96e24d66110d0f5ab054e870ba85259298038c8cc63df"
         }
       ],
       "reviewed_by": null,
@@ -320,12 +344,12 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "SQLAlchemy relational entities and PostgreSQL support exist, but workspace identity and important state remain spread across legacy and JSON fields. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open.",
+      "finding": "SQLAlchemy relational entities and PostgreSQL support exist, but workspace identity and important state remain spread across legacy and JSON fields. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime regression validation is pending; PostgreSQL RLS and complete service authority remain open.",
       "next_action": "Review canonical relational constraints and migrate ownership with reconciliation and rollback evidence.",
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
+          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
         },
         {
           "path": "nova/tenant_references.py",
@@ -354,6 +378,14 @@
         {
           "path": "docs/guardrails/evidence/migration-limits-20261009.json",
           "sha256": "14259eed6a4891047a76ed9c5eb7a18d3e222843b5165d2ff61fccae138934eb"
+        },
+        {
+          "path": "tests/test_canonical_runtime.py",
+          "sha256": "d82bde6e040c8d3b8b84bf6583591c9946eca0f23bd171cbd1f5127d4c02e25e"
+        },
+        {
+          "path": "docs/guardrails/CANONICAL_RUNTIME_20261009.md",
+          "sha256": "10c6faebc45ce784e8e96e24d66110d0f5ab054e870ba85259298038c8cc63df"
         }
       ],
       "reviewed_by": null,
@@ -370,7 +402,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
+          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
         }
       ],
       "reviewed_by": null,
@@ -425,7 +457,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
+          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
         }
       ],
       "reviewed_by": null,
@@ -908,7 +940,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
+          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
         }
       ],
       "reviewed_by": null,
@@ -1039,7 +1071,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
+          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -1097,7 +1129,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
+          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
         }
       ],
       "reviewed_by": null,
@@ -1326,7 +1358,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access. An additional adversarial worker matrix covers older schedules, including same-owner cross-brand references, wrong-owner/inactive/wrong-platform accounts and malformed media IDs. Provider result reconciliation now binds owner, brand, draft, review and destination before external status access. Legacy job reads/cancellation are creator-scoped. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open.",
+      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access. An additional adversarial worker matrix covers older schedules, including same-owner cross-brand references, wrong-owner/inactive/wrong-platform accounts and malformed media IDs. Provider result reconciliation now binds owner, brand, draft, review and destination before external status access. Legacy job reads/cancellation are creator-scoped. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime regression validation is pending; PostgreSQL RLS and complete service authority remain open.",
       "next_action": "Build a complete object/operation attack matrix and run it under restricted PostgreSQL identities with RLS.",
       "evidence": [
         {
@@ -1339,7 +1371,7 @@
         },
         {
           "path": "tests/test_worker_boundaries.py",
-          "sha256": "ab559fa3c6a2ce52fe5a803dda484ef52c2d5ddb68b2468b96769749d90669da"
+          "sha256": "4680ff84ec6df3fd3e0a2caa62832f3d70a6a018088ef6edba0b01dd0e154ed4"
         },
         {
           "path": "nova/publishing_workflow.py",
@@ -1347,7 +1379,7 @@
         },
         {
           "path": "tests/test_reconciliation_boundaries.py",
-          "sha256": "b8d533832b018031bf2c4282008798c7396559cf8cf26c3b95c34415493bcccf"
+          "sha256": "283ffe600d408da720484e73761c8e384ae2971eb09289dad4dc7ab83678be29"
         },
         {
           "path": "nova/tenant_access.py",
@@ -1392,6 +1424,18 @@
         {
           "path": "docs/guardrails/evidence/migration-limits-20261009.json",
           "sha256": "14259eed6a4891047a76ed9c5eb7a18d3e222843b5165d2ff61fccae138934eb"
+        },
+        {
+          "path": "nova/db.py",
+          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
+        },
+        {
+          "path": "tests/test_canonical_runtime.py",
+          "sha256": "d82bde6e040c8d3b8b84bf6583591c9946eca0f23bd171cbd1f5127d4c02e25e"
+        },
+        {
+          "path": "docs/guardrails/CANONICAL_RUNTIME_20261009.md",
+          "sha256": "10c6faebc45ce784e8e96e24d66110d0f5ab054e870ba85259298038c8cc63df"
         }
       ],
       "reviewed_by": null,
@@ -1416,7 +1460,7 @@
         },
         {
           "path": "tests/test_worker_boundaries.py",
-          "sha256": "ab559fa3c6a2ce52fe5a803dda484ef52c2d5ddb68b2468b96769749d90669da"
+          "sha256": "4680ff84ec6df3fd3e0a2caa62832f3d70a6a018088ef6edba0b01dd0e154ed4"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -1436,7 +1480,7 @@
         },
         {
           "path": "tests/test_reconciliation_boundaries.py",
-          "sha256": "b8d533832b018031bf2c4282008798c7396559cf8cf26c3b95c34415493bcccf"
+          "sha256": "283ffe600d408da720484e73761c8e384ae2971eb09289dad4dc7ab83678be29"
         }
       ],
       "reviewed_by": null,
@@ -1765,7 +1809,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "355a07975f6b10eaa9cb6cf2f788d7a9799f649461dce400269396f608d22e2f"
+          "sha256": "c88b9a3686564fbe0c9971dc602a37cffe2dd814af7e604aad67292d87b8e3a6"
         }
       ],
       "reviewed_by": null,

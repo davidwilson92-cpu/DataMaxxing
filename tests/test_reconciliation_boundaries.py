@@ -3,7 +3,7 @@ import secrets
 
 import pytest
 
-from nova.db import SessionLocal, Draft, PublishReview, Publication, SocialConnection
+from nova.db import SessionLocal, Brand, Draft, PublishReview, Publication, SocialConnection
 from nova.publishing_workflow import publication_connection, reconcile_instagram
 from nova.security import encrypt
 from test_account_integrity import account
@@ -13,12 +13,14 @@ from test_account_integrity import account
 def test_reconciliation_requires_exact_reviewed_boundary(mismatch, monkeypatch):
     _, uid, _, _ = account()
     with SessionLocal() as db:
-        draft=Draft(user_id=uid,brand_id=1 if mismatch=='draft_brand' else 0)
-        conn=SocialConnection(user_id=uid,brand_id=1 if mismatch=='connection_brand' else 0,
+        other_brand=Brand(user_id=uid,name='Other reconciliation brand')
+        db.add(other_brand);db.flush()
+        draft=Draft(user_id=uid,brand_id=other_brand.id if mismatch=='draft_brand' else 0)
+        conn=SocialConnection(user_id=uid,brand_id=other_brand.id if mismatch=='connection_brand' else 0,
                               platform='instagram',account_id='expected',encrypted_access_token=encrypt('synthetic'))
         db.add_all([draft,conn]);db.flush()
         review=PublishReview(code=secrets.token_hex(16),user_id=uid,
-                             brand_id=1 if mismatch=='review_brand' else 0,draft_id=draft.id,revision=0,
+                             brand_id=other_brand.id if mismatch=='review_brand' else 0,draft_id=draft.id,revision=0,
                              payload_json=json.dumps({'targets':{'instagram':{'connection_id':conn.id,
                              'account_id':'changed' if mismatch=='account' else 'expected'}}}))
         from nova.db import utcnow
