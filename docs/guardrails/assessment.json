@@ -28,7 +28,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation passed at b6e1475. It is not activated in normal web/worker flows or production. An opt-in protected SQLAlchemy session factory now rebinds frozen authority on each outer transaction; Restricted draft HTTP and transaction/revocation integration passed at 5ac264d; global routing remains disabled. Second-brand draft HTTP and operation-specific unsubmitted-draft cleanup passed at cc70b7d, including reproduction of the old foreign-key failure; final service/column grants remain open. Normal draft dependency, authentication checks and request rate limits can now use three separated service identities; Validated at 4038fb2 under real restricted identities without shared-credential fallback. Unmapped routes fail closed in this unactivated staged mode.",
+      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation passed at b6e1475. It is not activated in normal web/worker flows or production. An opt-in protected SQLAlchemy session factory now rebinds frozen authority on each outer transaction; Restricted draft HTTP and transaction/revocation integration passed at 5ac264d; global routing remains disabled. Second-brand draft HTTP and operation-specific unsubmitted-draft cleanup passed at cc70b7d, including reproduction of the old foreign-key failure; final service/column grants remain open. Normal draft dependency, authentication checks and request rate limits can now use three separated service identities; Validated at 4038fb2 under real restricted identities without shared-credential fallback. Unmapped routes fail closed in this unactivated staged mode. Startup context-function definitions and execution properties now verify against shared installation source; PostgreSQL drift attacks passed at 18d1fa7. Exact table-policy verification and final grants remain open.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
@@ -198,6 +198,18 @@
         {
           "path": "docs/guardrails/evidence/service-pools-20261009.json",
           "sha256": "a17aba8b4b062f8a77217ad193b0d350c6a1ffbf5ec2efc53be85ef24c11e76e"
+        },
+        {
+          "path": "tests/test_context_verification.py",
+          "sha256": "613e1a2b07521cad04256f108938f2f099c6b6d0033359e1523b7e30e641c475"
+        },
+        {
+          "path": "docs/guardrails/CONTEXT_VERIFICATION_20261009.md",
+          "sha256": "49dd050f40e2a04e86725f080f1a5f96f38bd232e6331bd19698b0cb4e435a3b"
+        },
+        {
+          "path": "docs/guardrails/evidence/context-verification-20261009.json",
+          "sha256": "5452e4ee6b78da47b52e120a078a827eeccc6eec366649ba60a15430b79a5efb"
         }
       ],
       "reviewed_by": null,

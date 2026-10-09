@@ -1,6 +1,9 @@
 # Database access-control function verification
 
-Candidate only. Local and PostgreSQL validation are pending for this increment.
+Candidate only. Validated at 18d1fa7: local/CI SQLite 415 passed / 41 expected
+skips; PostgreSQL 455 passed / one expected skip. CI run 37999971907 also passed
+migrated RLS restore, image build/smoke and dependency audit. Evidence:
+`evidence/context-verification-20261009.json`.
 No live deployment, database role, credential, policy or provider was changed.
 
 Before this increment, staged service construction checked function ownership

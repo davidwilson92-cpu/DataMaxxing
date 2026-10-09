@@ -1,3 +1,13 @@
+# Current increment: verify installed database context functions
+
+Validated 18d1fa7: local/CI SQLite 415 passed / 41 expected skips; PostgreSQL 455 passed / one expected skip. CI run 37999971907 passed altered-definition attacks, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/context-verification-20261009.json. Production unchanged; full release gate blocked and publication goal active.
+
+Read docs/guardrails/CONTEXT_VERIFICATION_20261009.md. Offline migration and startup now share context_function_definitions in nova/rls.py. create_services verifies catalog bodies and execution properties, parameter/default semantics and the exact issuer runtime audience before accepting service pools. It rejects changed/missing definitions without executing or repairing them. Tests demonstrate the old grant-only check accepted the altered functions. This verifies the two functions only, not exact table policies or live post-startup integrity.
+
+NEXT: complete exact installed table-policy expressions/role/operation verification and final content/worker column grants. Continue signup/profile/account lifecycle, Apple/social/billing callback brokers, telemetry and worker/legacy mapping. Signup must provision User/workspace/membership atomically without broad authority grants or restoring revoked memberships. Account-level RLS and immutable account references remain open. No customer activation until all routes and operational assurance pass. Preserve users/data/keys, explicit publishing approval and unknown outcomes; no paid staging, forced MFA or release-gate bypass.
+
+---
+
 # Current increment: password races and restricted recovery service
 
 Validated 212794e: CI SQLite 415 passed / 32 expected skips; PostgreSQL 446 passed / one expected skip. Runs 37998910309 / 37998904763 passed concurrent password/MFA races, real restricted recovery lifecycle with mocked SMTP, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/recovery-pools-20261009.json. Production unchanged; full gate still blocked and publication goal active.
