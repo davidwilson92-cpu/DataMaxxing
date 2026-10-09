@@ -18,7 +18,7 @@ pool_options = {} if DATABASE_URL.startswith('sqlite') else {
     'pool_timeout': 10,
     'pool_recycle': 1800,
 }
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args, **pool_options)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, hide_parameters=True, connect_args=connect_args, **pool_options)
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 

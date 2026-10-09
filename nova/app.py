@@ -682,15 +682,26 @@ async def update_profile(request: Request, display_name: Annotated[str, Form()] 
 
 @app.post("/account/password")
 def change_password(request: Request, current_password: Annotated[str, Form()], new_password: Annotated[str, Form()], new_password_confirmation: Annotated[str, Form()], db: Session = Depends(get_db)):
-    user = db.get(User, current_user(request).id)
+    authenticated = current_user(request)
+    user = db.get(User, authenticated.id)
+    version = authenticated.auth_version
+    if not user or not user.active or user.auth_version != version:
+        raise HTTPException(409, 'Account security changed. Sign in again.')
     if not verify_password(current_password, user.password_hash): return RedirectResponse("/account?error=current_password", 303)
     if problem := password_error(new_password): return RedirectResponse("/account?error="+quote_plus(problem), 303)
     if new_password != new_password_confirmation: return RedirectResponse("/account?error=password_match", 303)
-    user.password_hash = hash_password(new_password)
-    user.auth_version += 1
+    changed = db.execute(update(User).where(User.id == user.id, User.active.is_(True),
+        User.auth_version == version, User.password_hash == user.password_hash)
+        .values(password_hash=hash_password(new_password), auth_version=User.auth_version+1)
+        .execution_options(synchronize_session=False))
+    if changed.rowcount != 1:
+        db.rollback()
+        raise HTTPException(409, 'Account security changed. Sign in again before changing your password.')
     db.commit()
     response = RedirectResponse("/account?saved=password", 303)
-    set_user_cookie(response, user)
+    try:set_user_cookie(response, user, expected_auth_version=version+1, request=request)
+    except ValueError:
+        return RedirectResponse('/login?error=Password+updated.+Account+security+changed.+Sign+in+again.',303)
     return response
 
 @app.post("/api/voice/scan-socials")

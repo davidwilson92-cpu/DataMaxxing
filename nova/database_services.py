@@ -35,6 +35,14 @@ AUTH_TABLE_GRANTS = {
     'zova_mfa_challenges': {'SELECT','INSERT','UPDATE','DELETE'},
 }
 AUTH_COLUMN_GRANTS = {('nova_users','UPDATE'): {'last_login_at','auth_version','updated_at'}}
+RECOVERY_ROUTES = {('/forgot-password','GET'),('/forgot-password','POST'),
+                   ('/reset-password','GET'),('/reset-password','POST'),('/account/password','POST')}
+RECOVERY_TABLE_GRANTS = {
+    'nova_users': {'SELECT'},
+    'zova_recovery_tokens': {'SELECT','INSERT','UPDATE'},
+    'zova_mail_deliveries': {'SELECT','INSERT','UPDATE'},
+}
+RECOVERY_COLUMN_GRANTS = {('nova_users','UPDATE'): {'password_hash','auth_version','updated_at'}}
 
 
 @dataclass(frozen=True)
@@ -44,11 +52,14 @@ class DatabaseServices:
     issuer_engine: object
     runtime_role: str
     authentication_sessions: object = None
+    recovery_sessions: object = None
 
     def supports_request(self, method, path):
         if method in {'GET','HEAD'} and (path == '/health' or path.startswith('/static/')):
             return True
         if self.authentication_sessions is not None and (path,method) in AUTH_ROUTES:
+            return True
+        if self.recovery_sessions is not None and (path,method) in RECOVERY_ROUTES:
             return True
         return any(method == allowed_method and compile_path(route)[0].fullmatch(path)
                    for route,allowed_method in DRAFT_ROUTES)
@@ -57,6 +68,10 @@ class DatabaseServices:
         from .brands import request_brand
         from .security import current_user
         route = getattr(request.scope.get('route'), 'path', request.url.path)
+        if self.recovery_sessions is not None and (route,request.method) in RECOVERY_ROUTES:
+            with self.recovery_sessions() as recovery:
+                yield recovery
+            return
         if self.authentication_sessions is not None and (route,request.method) in AUTH_ROUTES:
             with self.authentication_sessions() as auth:
                 yield auth
@@ -90,6 +105,13 @@ def authentication_factory(request):
     return services.authentication_sessions if services is not None else None
 
 
+def recovery_factory(request):
+    services = getattr(request.app.state, 'database_services', None)
+    if services is not None and services.recovery_sessions is None:
+        raise HTTPException(503, 'Password recovery is not available during database migration.')
+    return services.recovery_sessions if services is not None else None
+
+
 def verify_pool_grants(c, metadata, table_grants, column_grants=None):
     """Reject excess and missing table/column privileges for a service pool."""
     column_grants = column_grants or {}
@@ -112,13 +134,16 @@ def verify_pool_grants(c, metadata, table_grants, column_grants=None):
                     raise ValueError('Service pool column grants do not match the manifest')
 
 
-def create_services(identity_engine, runtime_engine, issuer_engine, *, authentication_engine=None):
+def create_services(identity_engine, runtime_engine, issuer_engine, *, authentication_engine=None, recovery_engine=None):
     """Verify existing identities; never create roles, grants, schema or credentials."""
     from .db import Base
     engines = (identity_engine, runtime_engine, issuer_engine)
     if authentication_engine is not None:engines += (authentication_engine,)
+    if recovery_engine is not None:
+        if authentication_engine is None:raise ValueError('Recovery integration requires the authentication service')
+        engines += (recovery_engine,)
     if len({id(engine) for engine in engines}) != len(engines):
-        raise ValueError(('Three' if len(engines)==3 else 'Four')+' separate service engines are required')
+        raise ValueError({3:'Three',4:'Four',5:'Five'}[len(engines)]+' separate service engines are required')
     details = []
     for engine in engines:
         if engine.dialect.name != 'postgresql' or not engine.hide_parameters or engine.echo:
@@ -156,6 +181,10 @@ def create_services(identity_engine, runtime_engine, issuer_engine, *, authentic
     if authentication_engine is not None:
         with authentication_engine.connect() as c:
             verify_pool_grants(c,Base.metadata,AUTH_TABLE_GRANTS,AUTH_COLUMN_GRANTS)
+    if recovery_engine is not None:
+        with recovery_engine.connect() as c:
+            verify_pool_grants(c,Base.metadata,RECOVERY_TABLE_GRANTS,RECOVERY_COLUMN_GRANTS)
     return DatabaseServices(sessionmaker(bind=identity_engine, expire_on_commit=False),
                             runtime_engine, issuer_engine, roles[1],
-                            sessionmaker(bind=authentication_engine,expire_on_commit=False) if authentication_engine is not None else None)
+                            sessionmaker(bind=authentication_engine,expire_on_commit=False) if authentication_engine is not None else None,
+                            sessionmaker(bind=recovery_engine,expire_on_commit=False) if recovery_engine is not None else None)
