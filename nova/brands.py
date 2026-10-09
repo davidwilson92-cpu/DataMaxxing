@@ -14,6 +14,15 @@ def bind_request(db, request):
     user = user_from_session(request.cookies.get('nova_session'))
     if not user:
         return
+    brand_id = request_brand(db, request, user)
+    db.info.update(brand_id=brand_id, brand_user_id=user.id)
+    request.state.brand_id = brand_id
+    from .tenant_access import authorize_request
+    authorize_request(db,request,user.id,brand_id)
+
+
+def request_brand(db, request, user):
+    """Shared brand selection: explicit foreign IDs fail; stale cookies reset."""
     raw = request.headers.get('X-Zova-Brand', request.query_params.get('workspace', request.cookies.get('zova_brand', '0')))
     try:
         brand_id = int(raw)
@@ -25,10 +34,7 @@ def bind_request(db, request):
             if 'X-Zova-Brand' in request.headers or 'workspace' in request.query_params:
                 raise HTTPException(404, 'Brand workspace not found')
             brand_id=0  # A cookie from another signed-in account is not authority.
-    db.info.update(brand_id=brand_id, brand_user_id=user.id)
-    request.state.brand_id = brand_id
-    from .tenant_access import authorize_request
-    authorize_request(db,request,user.id,brand_id)
+    return brand_id
 
 
 @event.listens_for(Session, 'do_orm_execute')

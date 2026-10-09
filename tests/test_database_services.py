@@ -1,0 +1,126 @@
+import secrets
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, text, select
+from sqlalchemy.exc import DBAPIError
+from sqlalchemy.orm import Session
+
+from nova import db as models
+from nova.database_services import create_services, IDENTITY_READ_TABLES, DRAFT_ROUTES
+from test_rls import rls_db
+from test_tenant_registry import registry_db
+
+
+@pytest.fixture
+def service_pools(rls_db):
+    admin,runtime,issuer,roles,uids,drafts=rls_db
+    role='zova_identity_'+secrets.token_hex(8)
+    password=secrets.token_hex(24)
+    identity=None
+    with admin.begin() as c:
+        schema=c.scalar(text('SELECT current_schema()'))
+        c.execute(text(f"CREATE ROLE {role} LOGIN PASSWORD '{password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS"))
+    try:
+        with admin.begin() as c:
+            c.execute(text(f'GRANT USAGE ON SCHEMA {schema} TO {role}'))
+            for name in IDENTITY_READ_TABLES:
+                c.execute(text(f'GRANT SELECT ON {schema}.{name} TO {role}'))
+            c.execute(text(f'GRANT SELECT,INSERT,UPDATE,DELETE ON {schema}.zova_request_limits TO {role}'))
+        identity=create_engine(admin.url.set(username=role,password=password).update_query_dict(
+            {'options':f'-csearch_path={schema}'}),hide_parameters=True,pool_size=2,max_overflow=0)
+        services=create_services(identity,runtime,issuer)
+        yield services,identity,admin,runtime,issuer,role,uids,drafts
+    finally:
+        if identity:identity.dispose()
+        with admin.begin() as c:
+            c.execute(text(f'DROP OWNED BY {role}'))
+            c.execute(text(f'DROP ROLE {role}'))
+
+
+def test_service_configuration_requires_distinct_engines_and_explicit_route_capabilities():
+    with pytest.raises(ValueError,match='Three separate'):
+        create_services(None,None,None)
+    assert DRAFT_ROUTES[('/api/drafts/{draft_id}','DELETE')]=='posts.delete'
+    assert ('/api/publish','POST') not in DRAFT_ROUTES
+
+
+def test_identity_pool_cannot_read_content_or_change_account_authority(service_pools):
+    services,identity,admin,runtime,issuer,role,uids,drafts=service_pools
+    for sql in ('SELECT * FROM nova_drafts','UPDATE nova_users SET auth_version=0',
+                'UPDATE zova_workspace_memberships SET role=\'owner\'',
+                'SELECT * FROM zova_db_contexts'):
+        with pytest.raises(DBAPIError) as caught:
+            with identity.begin() as c:c.execute(text(sql))
+        assert caught.value.orig.sqlstate=='42501'
+    # Even a single unauthorized column grant must fail service startup checks.
+    with admin.begin() as c:
+        schema=c.scalar(text('SELECT current_schema()'))
+        c.execute(text(f'GRANT SELECT (brief) ON {schema}.nova_drafts TO {role}'))
+    with pytest.raises(ValueError,match='manifest'):
+        create_services(identity,runtime,issuer)
+
+
+def test_identity_pool_cannot_inherit_context_issuer_privilege(service_pools):
+    services,identity,admin,runtime,issuer,role,uids,drafts=service_pools
+    with admin.begin() as c:
+        schema=c.scalar(text('SELECT current_schema()'))
+        c.execute(text(f'GRANT EXECUTE ON FUNCTION {schema}.zova_issue_context(text,integer,text,integer,integer,text,text,integer,text,integer) TO {role}'))
+    with pytest.raises(ValueError,match='Context functions'):
+        create_services(identity,runtime,issuer)
+
+
+@pytest.mark.parametrize('second_brand',[False,True])
+def test_normal_draft_dependency_uses_restricted_service_pools(service_pools,monkeypatch,second_brand):
+    from nova.app import app
+    from nova import readiness, security, request_security
+    services,identity,admin,runtime,issuer,role,uids,drafts=service_pools
+    assert models.get_db not in app.dependency_overrides
+    with Session(admin) as db:
+        bid=db.scalar(select(models.Brand.id).where(models.Brand.user_id==uids[0])) if second_brand else 0
+        foreign=models.Brand(user_id=uids[1],name='Another customer brand')
+        db.add(foreign);db.commit();foreign_id=foreign.id
+    previous=getattr(app.state,'database_services',None)
+    app.state.database_services=services
+    monkeypatch.setattr(readiness,'event',lambda *args,**kwargs:None)
+    def forbidden_fallback(*args,**kwargs):
+        raise AssertionError('Configured requests must not use the shared credential pool')
+    for module in (models,security,request_security):
+        monkeypatch.setattr(module,'SessionLocal',forbidden_fallback)
+    try:
+        client=TestClient(app)
+        client.cookies.set('nova_session',security.make_user_session(uids[0],session_factory=services.identity_sessions))
+        client.headers.update({'origin':'http://testserver','X-Zova-Brand':str(bid)})
+        response=client.post('/api/drafts')
+        assert response.status_code==200,response.text
+        did=response.json()['id']
+        saved=client.patch(f'/api/drafts/{did}',json={'brief':'Real dependency save','revision':0})
+        assert saved.status_code==200,saved.text
+        assert client.get(f'/api/drafts/{did}').json()['brief']=='Real dependency save'
+        assert client.get(f'/api/drafts/{drafts[1]}').status_code==404
+        assert client.get('/api/drafts',headers={'X-Zova-Brand':'invalid'}).status_code==400
+        assert client.get('/api/drafts',headers={'X-Zova-Brand':'999999'}).status_code==404
+        assert client.get('/api/drafts',headers={'X-Zova-Brand':str(foreign_id)}).status_code==404
+        client.headers.pop('X-Zova-Brand')
+        client.cookies.set('zova_brand',str(foreign_id))
+        default=client.get('/api/drafts')
+        assert default.status_code==200
+        assert drafts[0] in {row['id'] for row in default.json()}
+        client.headers['X-Zova-Brand']=str(bid)
+        # The rollout cannot fall back to broad credentials for an unmapped route.
+        assert client.get('/account').status_code==503
+        assert client.post('/logout').status_code==503
+        assert client.get('/').status_code==503
+        assert client.get('/health').status_code==200
+        with Session(admin) as db:
+            stored=db.get(models.Draft,did)
+            assert stored.brand_id==bid and stored.user_id==uids[0]
+            assert db.scalar(select(models.RequestLimit.count)) > 0
+        assert client.delete(f'/api/drafts/{did}').status_code==204
+        assert client.get(f'/api/drafts/{did}').status_code==404
+        with admin.begin() as c:
+            c.execute(text('UPDATE nova_users SET auth_version=auth_version+1 WHERE id=:uid'),{'uid':uids[0]})
+        assert client.get('/api/drafts').status_code==401
+    finally:
+        if previous is None:del app.state.database_services
+        else:app.state.database_services=previous

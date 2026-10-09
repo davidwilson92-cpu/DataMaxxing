@@ -56,9 +56,9 @@ def session_secret() -> str:
     return value
 
 
-def make_user_session(user_id: int, *, expected_auth_version: int | None = None) -> str:
+def make_user_session(user_id: int, *, expected_auth_version: int | None = None, session_factory=None) -> str:
     expires = int((utcnow() + timedelta(days=30)).timestamp())
-    with SessionLocal() as db:
+    with (session_factory or SessionLocal)() as db:
         user = db.get(User, user_id)
         if not user or not user.active:
             raise ValueError('Active user required')
@@ -69,7 +69,7 @@ def make_user_session(user_id: int, *, expected_auth_version: int | None = None)
     return f'{payload}.{signature}'
 
 
-def user_from_session(token: str | None) -> User | None:
+def user_from_session(token: str | None, *, session_factory=None) -> User | None:
     if not token:
         return None
     try:
@@ -86,7 +86,7 @@ def user_from_session(token: str | None) -> User | None:
         expected = hmac.new(session_secret().encode(), payload.encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(signature, expected) or int(expires) < int(utcnow().timestamp()):
             return None
-        with SessionLocal() as db:
+        with (session_factory or SessionLocal)() as db:
             if db.get(RevokedSession, hash_api_key(token)):
                 return None
             user = db.get(User, int(user_id))
@@ -99,7 +99,8 @@ def user_from_session(token: str | None) -> User | None:
 
 
 def current_user(request: Request) -> User:
-    user = user_from_session(request.cookies.get('nova_session'))
+    from .database_services import identity_factory
+    user = user_from_session(request.cookies.get('nova_session'), session_factory=identity_factory(request))
     if not user:
         raise HTTPException(status_code=401, detail='Sign in required')
     return user

@@ -561,6 +561,10 @@ else:
 
 
 def get_db(request: Request):
+    services = getattr(request.app.state, 'database_services', None)
+    if services is not None:
+        yield from services.request_session(request)
+        return
     db = SessionLocal()
     try:
         from .brands import bind_request

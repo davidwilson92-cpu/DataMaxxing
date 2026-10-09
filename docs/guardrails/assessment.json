@@ -28,12 +28,12 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation passed at b6e1475. It is not activated in normal web/worker flows or production. An opt-in protected SQLAlchemy session factory now rebinds frozen authority on each outer transaction; Restricted draft HTTP and transaction/revocation integration passed at 5ac264d; global routing remains disabled. Second-brand draft HTTP and operation-specific unsubmitted-draft cleanup passed at cc70b7d, including reproduction of the old foreign-key failure; final service/column grants remain open.",
+      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation passed at b6e1475. It is not activated in normal web/worker flows or production. An opt-in protected SQLAlchemy session factory now rebinds frozen authority on each outer transaction; Restricted draft HTTP and transaction/revocation integration passed at 5ac264d; global routing remains disabled. Second-brand draft HTTP and operation-specific unsubmitted-draft cleanup passed at cc70b7d, including reproduction of the old foreign-key failure; final service/column grants remain open. Normal draft dependency, authentication checks and request rate limits can now use three separated service identities; PostgreSQL validation pending. Unmapped routes fail closed in this unactivated staged mode.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
-          "sha256": "b88dc51609c03694240ce739ed05338be7a397193af28081f33ff66e9cf94a8d"
+          "sha256": "b8ffa227168690d058af8b21ceb8db2210c4ce3a9b6bc01a65e4b7cbacfc7414"
         },
         {
           "path": "nova/scheduler.py",
@@ -117,7 +117,7 @@
         },
         {
           "path": "nova/db.py",
-          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
+          "sha256": "f95697cdf2dfd035162ae6ea7e3e524fc311c411e02a9e1ab5a5576830e93393"
         },
         {
           "path": "tests/test_canonical_runtime.py",
@@ -182,6 +182,18 @@
         {
           "path": "docs/guardrails/evidence/draft-policy-20261009.json",
           "sha256": "a9f3de7dc670b99e6def10f4edcc2de9448c500b5a44c2049aa8b60f53346d58"
+        },
+        {
+          "path": "nova/database_services.py",
+          "sha256": "81faaf43df1e201c3cc310a6e035fa7ba30d676067498e7a81a3c539a7110731"
+        },
+        {
+          "path": "tests/test_database_services.py",
+          "sha256": "aebe6093474fa3b9dd2780c9a49394556cf605807e64aef667a336549ec16faa"
+        },
+        {
+          "path": "docs/guardrails/SERVICE_POOLS_20261009.md",
+          "sha256": "9a54f824c963dbe788e83ce1efa4594cad39297dcb2b5cfd4b6ed747e1a8234c"
         }
       ],
       "reviewed_by": null,
@@ -198,7 +210,7 @@
       "evidence": [
         {
           "path": "nova/security.py",
-          "sha256": "4910ed169215b662033d0afee359b2d942499df0789b7343046c67eb0e0d1020"
+          "sha256": "2e62bfc0af4078e4226db46e680f9e46b9019d560c234c395eefef118f8cff48"
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
@@ -231,7 +243,7 @@
       "evidence": [
         {
           "path": "nova/brands.py",
-          "sha256": "b88dc51609c03694240ce739ed05338be7a397193af28081f33ff66e9cf94a8d"
+          "sha256": "b8ffa227168690d058af8b21ceb8db2210c4ce3a9b6bc01a65e4b7cbacfc7414"
         },
         {
           "path": "nova/tenant_migration.py",
@@ -271,7 +283,7 @@
         },
         {
           "path": "nova/db.py",
-          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
+          "sha256": "f95697cdf2dfd035162ae6ea7e3e524fc311c411e02a9e1ab5a5576830e93393"
         },
         {
           "path": "tests/test_canonical_runtime.py",
@@ -392,7 +404,7 @@
       "evidence": [
         {
           "path": "nova/request_security.py",
-          "sha256": "98d09d053737f88121f13399e4f60822e7d8d7b50fb57a29e06a6303f235e2bb"
+          "sha256": "72fd4e150b941c7d374ceff362c822ef682b4af36b01f56da2e6a506f14eaa25"
         }
       ],
       "reviewed_by": null,
@@ -409,7 +421,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
+          "sha256": "f95697cdf2dfd035162ae6ea7e3e524fc311c411e02a9e1ab5a5576830e93393"
         },
         {
           "path": "nova/tenant_references.py",
@@ -502,7 +514,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
+          "sha256": "f95697cdf2dfd035162ae6ea7e3e524fc311c411e02a9e1ab5a5576830e93393"
         }
       ],
       "reviewed_by": null,
@@ -557,7 +569,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
+          "sha256": "f95697cdf2dfd035162ae6ea7e3e524fc311c411e02a9e1ab5a5576830e93393"
         }
       ],
       "reviewed_by": null,
@@ -637,7 +649,7 @@
       "evidence": [
         {
           "path": "nova/security.py",
-          "sha256": "4910ed169215b662033d0afee359b2d942499df0789b7343046c67eb0e0d1020"
+          "sha256": "2e62bfc0af4078e4226db46e680f9e46b9019d560c234c395eefef118f8cff48"
         }
       ],
       "reviewed_by": null,
@@ -751,7 +763,7 @@
       "evidence": [
         {
           "path": "nova/request_security.py",
-          "sha256": "98d09d053737f88121f13399e4f60822e7d8d7b50fb57a29e06a6303f235e2bb"
+          "sha256": "72fd4e150b941c7d374ceff362c822ef682b4af36b01f56da2e6a506f14eaa25"
         }
       ],
       "reviewed_by": null,
@@ -1040,7 +1052,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
+          "sha256": "f95697cdf2dfd035162ae6ea7e3e524fc311c411e02a9e1ab5a5576830e93393"
         }
       ],
       "reviewed_by": null,
@@ -1057,7 +1069,7 @@
       "evidence": [
         {
           "path": "nova/request_security.py",
-          "sha256": "98d09d053737f88121f13399e4f60822e7d8d7b50fb57a29e06a6303f235e2bb"
+          "sha256": "72fd4e150b941c7d374ceff362c822ef682b4af36b01f56da2e6a506f14eaa25"
         }
       ],
       "reviewed_by": null,
@@ -1171,7 +1183,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
+          "sha256": "f95697cdf2dfd035162ae6ea7e3e524fc311c411e02a9e1ab5a5576830e93393"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -1229,7 +1241,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
+          "sha256": "f95697cdf2dfd035162ae6ea7e3e524fc311c411e02a9e1ab5a5576830e93393"
         }
       ],
       "reviewed_by": null,
@@ -1535,7 +1547,7 @@
         },
         {
           "path": "nova/db.py",
-          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
+          "sha256": "f95697cdf2dfd035162ae6ea7e3e524fc311c411e02a9e1ab5a5576830e93393"
         },
         {
           "path": "tests/test_canonical_runtime.py",
@@ -1957,7 +1969,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "a9615ab79e4910415c86de27db9163eb63560a1825d70336283fa1308dd9c42f"
+          "sha256": "f95697cdf2dfd035162ae6ea7e3e524fc311c411e02a9e1ab5a5576830e93393"
         },
         {
           "path": "nova/schema_startup.py",
