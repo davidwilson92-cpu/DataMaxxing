@@ -58,8 +58,11 @@ def _new_recovery_codes():
     return codes, json.dumps([_code_hash(code) for code in codes])
 
 
-def _limit(uid):
-    if not allowed_request(f'mfa-factor:{uid}', 8, 300):
+def _limit(uid, request):
+    from .database_services import identity_factory
+    factory=identity_factory(request)
+    options={'session_factory':factory} if factory is not None else {}
+    if not allowed_request(f'mfa-factor:{uid}', 8, 300, **options):
         raise HTTPException(429, 'Too many security-code attempts. Wait five minutes and try again.')
 
 
@@ -70,8 +73,9 @@ def _page(request, **values):
     return response
 
 
-def _cookie(response, user_id, version):
-    token = make_user_session(user_id, expected_auth_version=version)
+def _cookie(response, user_id, version, request):
+    from .database_services import identity_factory
+    token = make_user_session(user_id, expected_auth_version=version, session_factory=identity_factory(request))
     response.set_cookie('nova_session', token, max_age=30*86400, httponly=True,
                         secure=os.environ.get('PUBLIC_BASE_URL', '').startswith('https://'), samesite='lax', path='/')
     response.delete_cookie(COOKIE, path='/mfa')
@@ -144,7 +148,7 @@ def challenge_page(request: Request, db=Depends(get_db)):
 @router.post('/mfa/challenge')
 def complete_login(request: Request, code: str = Form(...), db=Depends(get_db)):
     challenge, settings = _challenge(db, request)
-    _limit(challenge.user_id)
+    _limit(challenge.user_id,request)
     claimed = db.execute(update(MfaChallenge).where(MfaChallenge.token_hash == challenge.token_hash,
         MfaChallenge.used.is_(False), MfaChallenge.expires_at > utcnow()).values(used=True)
         .execution_options(synchronize_session=False))
@@ -161,7 +165,7 @@ def complete_login(request: Request, code: str = Form(...), db=Depends(get_db)):
     response.delete_cookie('zova_brand', path='/')
     response.delete_cookie('zova_onboarding', path='/')
     try:
-        return _cookie(response, challenge.user_id, challenge.auth_version)
+        return _cookie(response, challenge.user_id, challenge.auth_version,request)
     except ValueError:
         return RedirectResponse('/login?error=Your+account+security+changed.+Sign+in+again.', 303)
 
@@ -180,7 +184,7 @@ def settings_page(request: Request, db=Depends(get_db)):
 @router.post('/mfa/setup')
 def start_setup(request: Request, password: str = Form(...), db=Depends(get_db)):
     user, settings = _owned(db, request)
-    _limit(user.id)
+    _limit(user.id,request)
     if not verify_password(password, user.password_hash):
         return _page(request, user=user, enabled=bool(settings and settings.enabled), error='Check your current Zova password.')
     if settings and settings.enabled:
@@ -207,7 +211,7 @@ def start_setup(request: Request, password: str = Form(...), db=Depends(get_db))
 @router.post('/mfa/enable')
 def enable(request: Request, code: str = Form(...), db=Depends(get_db)):
     user, settings = _owned(db, request)
-    _limit(user.id)
+    _limit(user.id,request)
     if not settings or settings.enabled or settings.setup_auth_version != user.auth_version or not _future(settings.setup_expires_at):
         raise HTTPException(400, 'Start authenticator setup again.')
     secret = decrypt(settings.encrypted_secret)
@@ -229,7 +233,7 @@ def enable(request: Request, code: str = Form(...), db=Depends(get_db)):
     db.commit()
     response = _page(request, user=user, enabled=True, recovery_codes=codes)
     try:
-        return _cookie(response, user.id, version+1)
+        return _cookie(response, user.id, version+1,request)
     except ValueError:
         return RedirectResponse('/login?error=Account+security+changed.+Sign+in+again.', 303)
 
@@ -237,7 +241,7 @@ def enable(request: Request, code: str = Form(...), db=Depends(get_db)):
 @router.post('/mfa/disable')
 def disable(request: Request, password: str = Form(...), code: str = Form(...), db=Depends(get_db)):
     user, settings = _owned(db, request)
-    _limit(user.id)
+    _limit(user.id,request)
     if not settings or not settings.enabled or not verify_password(password, user.password_hash):
         return _page(request, user=user, enabled=bool(settings and settings.enabled), error='Check your password and security code.')
     if not _consume_factor(db, settings, code):
@@ -254,6 +258,6 @@ def disable(request: Request, password: str = Form(...), code: str = Form(...), 
     db.commit()
     response = RedirectResponse('/mfa/setup', 303)
     try:
-        return _cookie(response, user.id, version+1)
+        return _cookie(response, user.id, version+1,request)
     except ValueError:
         return RedirectResponse('/login?error=Account+security+changed.+Sign+in+again.', 303)

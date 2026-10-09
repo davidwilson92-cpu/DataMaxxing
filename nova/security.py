@@ -106,13 +106,13 @@ def current_user(request: Request) -> User:
     return user
 
 
-def revoke_session(token: str | None) -> None:
-    if not token or not user_from_session(token):
+def revoke_session(token: str | None, *, session_factory=None, verification_factory=None) -> None:
+    if not token or not user_from_session(token, session_factory=verification_factory or session_factory):
         return
     parts = token.split('.')
     expires = int(parts[1] if len(parts) == 3 else parts[3])
     from sqlalchemy.exc import IntegrityError
-    with SessionLocal() as db:
+    with (session_factory or SessionLocal)() as db:
         db.add(RevokedSession(token_hash=hash_api_key(token), expires_at=datetime.fromtimestamp(expires, timezone.utc)))
         try:
             db.commit()

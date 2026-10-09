@@ -185,7 +185,7 @@
         },
         {
           "path": "nova/database_services.py",
-          "sha256": "81faaf43df1e201c3cc310a6e035fa7ba30d676067498e7a81a3c539a7110731"
+          "sha256": "76d0fff55ad7a1a1f49d9c58db4080d5f628229e03d2b5248d9ff560925b382d"
         },
         {
           "path": "tests/test_database_services.py",
@@ -209,12 +209,12 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete.",
+      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete. A staged fourth authentication service now maps password sign-in, optional MFA and logout with limited user-column grants; PostgreSQL validation pending and production remains unchanged.",
       "next_action": "Validate PostgreSQL/restore and browser journeys, obtain security review, establish verified recovery operations and privileged MFA rollout; add maintained compromised-password screening.",
       "evidence": [
         {
           "path": "nova/security.py",
-          "sha256": "2e62bfc0af4078e4226db46e680f9e46b9019d560c234c395eefef118f8cff48"
+          "sha256": "710f50c39e5859bb936ec9dc24942122865acd6a54ee3b14d064483eedddc29b"
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
@@ -222,7 +222,7 @@
         },
         {
           "path": "nova/mfa.py",
-          "sha256": "202ea505c054ddaf679efca54acb36a9661bf97c168787f7efe1b5e04717a6b5"
+          "sha256": "ea5e81cb9d7790bbe7bbb4ebe8b6eb2e217e84269c0f9c9c50ca517cf7b984e0"
         },
         {
           "path": "tests/test_mfa.py",
@@ -231,6 +231,18 @@
         {
           "path": "docs/guardrails/OPTIONAL_MFA_20261009.md",
           "sha256": "b50718f60f018b1f48891ccf9bb246ded74022a57b39c2dc91da3cf987bc8a4c"
+        },
+        {
+          "path": "nova/database_services.py",
+          "sha256": "76d0fff55ad7a1a1f49d9c58db4080d5f628229e03d2b5248d9ff560925b382d"
+        },
+        {
+          "path": "tests/test_authentication_pool.py",
+          "sha256": "6996f811618f7dcb1f52c78532c817687b1af161318a48681b0361a2228a9fe1"
+        },
+        {
+          "path": "docs/guardrails/AUTHENTICATION_POOLS_20261009.md",
+          "sha256": "cea33ef1720f48a35a63dbb1d0f41de5653e305268a4f8ff472b84be288ddfe4"
         }
       ],
       "reviewed_by": null,
@@ -316,7 +328,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "26cb3a864fde7635a2246b83bc8f188865b950caee5a677a0c33651ddc184bc5"
+          "sha256": "9fde6823de70572ef28c05596077eddf1be0c2df0bf1061136b3f4986eb37a81"
         }
       ],
       "reviewed_by": null,
@@ -611,7 +623,7 @@
         },
         {
           "path": "nova/mfa.py",
-          "sha256": "202ea505c054ddaf679efca54acb36a9661bf97c168787f7efe1b5e04717a6b5"
+          "sha256": "ea5e81cb9d7790bbe7bbb4ebe8b6eb2e217e84269c0f9c9c50ca517cf7b984e0"
         },
         {
           "path": "tests/test_mfa.py",
@@ -653,7 +665,7 @@
       "evidence": [
         {
           "path": "nova/security.py",
-          "sha256": "2e62bfc0af4078e4226db46e680f9e46b9019d560c234c395eefef118f8cff48"
+          "sha256": "710f50c39e5859bb936ec9dc24942122865acd6a54ee3b14d064483eedddc29b"
         }
       ],
       "reviewed_by": null,
@@ -716,7 +728,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "26cb3a864fde7635a2246b83bc8f188865b950caee5a677a0c33651ddc184bc5"
+          "sha256": "9fde6823de70572ef28c05596077eddf1be0c2df0bf1061136b3f4986eb37a81"
         }
       ],
       "reviewed_by": null,
@@ -869,7 +881,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "26cb3a864fde7635a2246b83bc8f188865b950caee5a677a0c33651ddc184bc5"
+          "sha256": "9fde6823de70572ef28c05596077eddf1be0c2df0bf1061136b3f4986eb37a81"
         }
       ],
       "reviewed_by": null,
@@ -1321,7 +1333,7 @@
         },
         {
           "path": "nova/mfa.py",
-          "sha256": "202ea505c054ddaf679efca54acb36a9661bf97c168787f7efe1b5e04717a6b5"
+          "sha256": "ea5e81cb9d7790bbe7bbb4ebe8b6eb2e217e84269c0f9c9c50ca517cf7b984e0"
         },
         {
           "path": "tests/test_mfa.py",
@@ -1462,7 +1474,7 @@
         },
         {
           "path": "nova/mfa.py",
-          "sha256": "202ea505c054ddaf679efca54acb36a9661bf97c168787f7efe1b5e04717a6b5"
+          "sha256": "ea5e81cb9d7790bbe7bbb4ebe8b6eb2e217e84269c0f9c9c50ca517cf7b984e0"
         },
         {
           "path": "tests/test_mfa.py",
@@ -1876,7 +1888,7 @@
         },
         {
           "path": "nova/mfa.py",
-          "sha256": "202ea505c054ddaf679efca54acb36a9661bf97c168787f7efe1b5e04717a6b5"
+          "sha256": "ea5e81cb9d7790bbe7bbb4ebe8b6eb2e217e84269c0f9c9c50ca517cf7b984e0"
         },
         {
           "path": "tests/test_mfa.py",

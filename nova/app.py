@@ -74,9 +74,13 @@ def template_context(request: Request, user: User | None = None, **kwargs: Any) 
     return {"request": request, "user": user, "brand": brand, "connections": connection_options(), **customer_service.context(), **kwargs}
 
 
-def set_user_cookie(response: RedirectResponse | JSONResponse, user: User, *, expected_auth_version: int | None = None) -> None:
+def set_user_cookie(response: RedirectResponse | JSONResponse, user: User, *, expected_auth_version: int | None = None, request: Request | None = None) -> None:
+    from .database_services import identity_factory
+    factory=identity_factory(request) if request is not None else None
+    options={'session_factory':factory} if factory is not None else {}
     response.set_cookie(
-        "nova_session", make_user_session(user.id, expected_auth_version=expected_auth_version), max_age=30 * 86400, httponly=True,
+        "nova_session", make_user_session(user.id, expected_auth_version=expected_auth_version,
+            **options), max_age=30 * 86400, httponly=True,
         secure=base_url().startswith("https://"), samesite="lax", path="/",
     )
 
@@ -340,7 +344,7 @@ def apple_callback(request: Request, code: Annotated[str | None, Form()] = None,
     mfa_response=begin_login(db,user,verified_version,'/onboarding/socials' if created else '/studio')
     if mfa_response is not None:return mfa_response
     resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303)
-    try:set_user_cookie(resp,user,expected_auth_version=verified_version)
+    try:set_user_cookie(resp,user,expected_auth_version=verified_version,request=request)
     except ValueError:return RedirectResponse('/login?error=Your+sign-in+changed.+Please+sign+in+again.',303)
     resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 
@@ -355,13 +359,15 @@ def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Fo
     if mfa_response is not None:return mfa_response
     user.last_login_at=utcnow(); db.commit()
     resp=RedirectResponse(destination,303)
-    try:set_user_cookie(resp,user,expected_auth_version=verified_version)
+    try:set_user_cookie(resp,user,expected_auth_version=verified_version,request=request)
     except ValueError:return RedirectResponse('/login?error=Your+sign-in+changed.+Please+sign+in+again.',303)
     resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 
 @app.post("/logout")
 def logout(request: Request):
-    revoke_session(request.cookies.get("nova_session"))
+    from .database_services import identity_factory, authentication_factory
+    revoke_session(request.cookies.get("nova_session"),session_factory=authentication_factory(request),
+                   verification_factory=identity_factory(request))
     resp=RedirectResponse("/",303); resp.delete_cookie("nova_session",path="/"); resp.delete_cookie("zova_brand",path="/"); return resp
 
 @app.get("/subscribe", response_class=HTMLResponse)
