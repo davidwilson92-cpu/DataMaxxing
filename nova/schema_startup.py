@@ -21,7 +21,11 @@ def verify_runtime_role(c):
     # not provide a route back to a privileged or table-owning identity.
     privileged = c.scalar(text('''SELECT EXISTS (
         SELECT 1 FROM pg_roles r WHERE (pg_has_role(current_user,r.oid,'MEMBER') OR pg_has_role(session_user,r.oid,'MEMBER'))
-        AND (r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication OR r.rolbypassrls))'''))
+        AND (r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication OR r.rolbypassrls
+             OR r.rolname LIKE 'pg_%'))'''))
+    owns_database = c.scalar(text('''SELECT EXISTS (
+        SELECT 1 FROM pg_database d WHERE d.datname=current_database()
+        AND (pg_has_role(current_user,d.datdba,'MEMBER') OR pg_has_role(session_user,d.datdba,'MEMBER')))'''))
     owns_tables = c.scalar(text('''SELECT EXISTS (
         SELECT 1 FROM pg_class t JOIN pg_namespace n ON n.oid=t.relnamespace
         WHERE n.nspname=current_schema() AND t.relkind IN ('r','p')
@@ -31,7 +35,7 @@ def verify_runtime_role(c):
         SELECT 1 FROM pg_class t JOIN pg_namespace n ON n.oid=t.relnamespace
         WHERE n.nspname=current_schema() AND t.relkind IN ('r','p')
         AND (has_table_privilege(current_user,t.oid,'TRUNCATE') OR has_table_privilege(session_user,t.oid,'TRUNCATE')))'''))
-    if privileged or owns_tables or creates or truncates:
+    if privileged or owns_database or owns_tables or creates or truncates:
         raise RuntimeError('Runtime database identity has administrative, schema-owner or destructive privileges')
 
 

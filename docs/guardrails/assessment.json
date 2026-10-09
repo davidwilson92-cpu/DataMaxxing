@@ -133,11 +133,11 @@
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "7ff0612208c16ce9b8ba67499622af7f9c127e9ed4e46b02110140afc7372263"
+          "sha256": "95dcd135743c27b00fae25771eb265d2ec8538fc77e4728c9433c2f022613724"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "7d8b4368b790d11dac10c99c6e1eb6907dcf8c583b1e52f7cb9a05eda9a30875"
+          "sha256": "253849dbb7bc306e10d5e419a51a111ff89ee079ebaa492c3795e380a73376a5"
         },
         {
           "path": "scripts/prepare_database.py",
@@ -145,7 +145,7 @@
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
-          "sha256": "2e682a12b37114e6de8140417a54e1d02c931223a4335c11b640c6f3721abad9"
+          "sha256": "3a40ee95033f161d0fb4dd5485583144eceda0bf7f90a409d825d27a0d22a5b8"
         }
       ],
       "reviewed_by": null,
@@ -417,11 +417,11 @@
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "7ff0612208c16ce9b8ba67499622af7f9c127e9ed4e46b02110140afc7372263"
+          "sha256": "95dcd135743c27b00fae25771eb265d2ec8538fc77e4728c9433c2f022613724"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "7d8b4368b790d11dac10c99c6e1eb6907dcf8c583b1e52f7cb9a05eda9a30875"
+          "sha256": "253849dbb7bc306e10d5e419a51a111ff89ee079ebaa492c3795e380a73376a5"
         },
         {
           "path": "scripts/prepare_database.py",
@@ -429,7 +429,7 @@
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
-          "sha256": "2e682a12b37114e6de8140417a54e1d02c931223a4335c11b640c6f3721abad9"
+          "sha256": "3a40ee95033f161d0fb4dd5485583144eceda0bf7f90a409d825d27a0d22a5b8"
         }
       ],
       "reviewed_by": null,
@@ -1487,11 +1487,11 @@
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "7ff0612208c16ce9b8ba67499622af7f9c127e9ed4e46b02110140afc7372263"
+          "sha256": "95dcd135743c27b00fae25771eb265d2ec8538fc77e4728c9433c2f022613724"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "7d8b4368b790d11dac10c99c6e1eb6907dcf8c583b1e52f7cb9a05eda9a30875"
+          "sha256": "253849dbb7bc306e10d5e419a51a111ff89ee079ebaa492c3795e380a73376a5"
         },
         {
           "path": "scripts/prepare_database.py",
@@ -1499,7 +1499,7 @@
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
-          "sha256": "2e682a12b37114e6de8140417a54e1d02c931223a4335c11b640c6f3721abad9"
+          "sha256": "3a40ee95033f161d0fb4dd5485583144eceda0bf7f90a409d825d27a0d22a5b8"
         }
       ],
       "reviewed_by": null,
@@ -1877,11 +1877,11 @@
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "7ff0612208c16ce9b8ba67499622af7f9c127e9ed4e46b02110140afc7372263"
+          "sha256": "95dcd135743c27b00fae25771eb265d2ec8538fc77e4728c9433c2f022613724"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "7d8b4368b790d11dac10c99c6e1eb6907dcf8c583b1e52f7cb9a05eda9a30875"
+          "sha256": "253849dbb7bc306e10d5e419a51a111ff89ee079ebaa492c3795e380a73376a5"
         },
         {
           "path": "scripts/prepare_database.py",
@@ -1889,7 +1889,7 @@
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
-          "sha256": "2e682a12b37114e6de8140417a54e1d02c931223a4335c11b640c6f3721abad9"
+          "sha256": "3a40ee95033f161d0fb4dd5485583144eceda0bf7f90a409d825d27a0d22a5b8"
         }
       ],
       "reviewed_by": null,
