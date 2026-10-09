@@ -28,8 +28,8 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation passed at b6e1475. It is not activated in normal web/worker flows or production. An opt-in protected SQLAlchemy session factory now rebinds frozen authority on each outer transaction; Restricted draft HTTP and transaction/revocation integration passed at 5ac264d; global routing remains disabled. Second-brand draft HTTP and operation-specific unsubmitted-draft cleanup passed at cc70b7d, including reproduction of the old foreign-key failure; final service/column grants remain open. Normal draft dependency, authentication checks and request rate limits can now use three separated service identities; Validated at 4038fb2 under real restricted identities without shared-credential fallback. Unmapped routes fail closed in this unactivated staged mode. Startup context-function definitions and execution properties now verify against shared installation source; PostgreSQL drift attacks passed at 18d1fa7. Exact table-policy verification and final grants remain open.",
-      "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
+      "finding": "Canonical owner workspaces/memberships, live capability checks, version-based session revocation and immutable references on all 16 brand-owned tables are implemented. Offline migrations, PostgreSQL forced/restrictive RLS and expiring transaction/backend-bound contexts are tested with real restricted identities. Staged draft, sign-in, optional MFA and recovery routes use separated pools without shared-credential fallback. Startup now verifies actual context-function definitions and all table policy flags, role identifiers, operations and full canonical predicates; drift attacks and restored-definition checks passed at e3376ef. Production is unchanged and staged mode remains disabled. Account-level and legacy references/isolation, shared-member routing, remaining callback/worker/account services, final grants and rollout remain incomplete.",
+      "next_action": "Complete final content/worker grants and account-level/legacy isolation, then remaining account/callback/worker service routing and verified production rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
@@ -210,6 +210,18 @@
         {
           "path": "docs/guardrails/evidence/context-verification-20261009.json",
           "sha256": "5452e4ee6b78da47b52e120a078a827eeccc6eec366649ba60a15430b79a5efb"
+        },
+        {
+          "path": "tests/test_policy_verification.py",
+          "sha256": "db9069a4e4c71265194dfec972e70b3b87dac845219e740a01e23d7e34da2ea1"
+        },
+        {
+          "path": "docs/guardrails/POLICY_VERIFICATION_20261009.md",
+          "sha256": "af9801b6a11d32e1ad3ace4ddd311f5fccbbc761efced688128101ba255a6520"
+        },
+        {
+          "path": "docs/guardrails/evidence/policy-verification-20261009.json",
+          "sha256": "307930893647501374218ffb3776d55c2589e70116069f194ca38d90802968e0"
         }
       ],
       "reviewed_by": null,
@@ -557,12 +569,28 @@
       "status": "unverified",
       "severity": "P1",
       "owner": "Operations and security",
-      "finding": "Production private networking, TLS enforcement and restricted identities cannot be proved from this checkout; migrations run during application import.",
+      "finding": "Candidate PostgreSQL startup is read-only, rejects privileged identities and verifies schema; offline migration and separated restricted service pools are implemented but not production-enabled. Context-function and table-policy drift checks and synthetic restore are tested. Production private networking, TLS enforcement, encrypted storage/backups, credential rotation and complete application/worker/administration identity separation remain unverified.",
       "next_action": "Supply deployment configuration evidence and separate migration/application/worker identities with least privilege.",
       "evidence": [
         {
           "path": "nova/db.py",
           "sha256": "97352bbfd6b2cf464badeb4e0645a4f490ee23fe53383ca539be2115abe25376"
+        },
+        {
+          "path": "nova/schema_startup.py",
+          "sha256": "4316afe8418f99c39995fca0a534296d33cce7be0996f226b34f0f94a416d21e"
+        },
+        {
+          "path": "nova/database_services.py",
+          "sha256": "e11b984442589409428488bf0b4c2c58f67bc6c8a74fa916d10d0192ca04acd8"
+        },
+        {
+          "path": "nova/rls.py",
+          "sha256": "a0c9524cb4abfadc324edad480b278051117d7062e523addff1e584c1c2af921"
+        },
+        {
+          "path": "docs/guardrails/evidence/policy-verification-20261009.json",
+          "sha256": "307930893647501374218ffb3776d55c2589e70116069f194ca38d90802968e0"
         }
       ],
       "reviewed_by": null,

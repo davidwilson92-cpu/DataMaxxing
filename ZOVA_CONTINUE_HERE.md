@@ -1,3 +1,13 @@
+# Current increment: complete installed workspace policy verification
+
+Validated e3376ef: CI SQLite 415 passed / 50 expected skips; PostgreSQL 464 passed / one expected skip. CI run 38000761139 passed policy drift attacks, migrated RLS restore, full restored policy/context definitions, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/policy-verification-20261009.json. Production unchanged; full gate remains blocked (80 entries) and publication goal active.
+
+Read docs/guardrails/POLICY_VERIFICATION_20261009.md. create_services now verifies all 16 table policy sets, forced/enabled state, actual role OIDs, commands, permissiveness and full canonical predicates/checks with exact capability lists. It rejects disabled/missing/weakened/extra policies without DDL or automatic repair. Tests reproduce the previous startup acceptance and unbound draft disclosure when isolation is disabled/weakened. The restore script validates both context functions and the complete policy manifest. Unknown PostgreSQL deparser formatting fails closed; CI validates PostgreSQL 18.
+
+NEXT: final content/worker column-grant manifests; signup/profile/account lifecycle, Apple/social/billing callback brokers, telemetry and worker/legacy routing. Signup must atomically provision User/workspace/membership without broad authority grants or restoring revoked memberships. Account-level immutable references/RLS remain open. Do not enable the partial staged service mode for customers. Runtime post-startup integrity monitoring and operational/independent assurance remain open. Preserve all users/data/keys, explicit publishing approval and unknown outcomes; no paid staging, forced MFA or gate bypass.
+
+---
+
 # Current increment: verify installed database context functions
 
 Validated 18d1fa7: local/CI SQLite 415 passed / 41 expected skips; PostgreSQL 455 passed / one expected skip. CI run 37999971907 passed altered-definition attacks, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/context-verification-20261009.json. Production unchanged; full release gate blocked and publication goal active.

@@ -1,0 +1,34 @@
+{
+  "tested_commit": "e3376ef1d79fb3f95840f1ed792a0c20465f17d5",
+  "ci_runs": [
+    38000761139
+  ],
+  "sqlite": {
+    "passed": 415,
+    "skipped": 50
+  },
+  "postgresql": {
+    "passed": 464,
+    "skipped": 1
+  },
+  "verified": [
+    "All 16 table policy sets, forced/enabled state, exact role identifiers, commands and complete canonical predicates verified read-only",
+    "Disabled/missing/weakened policies reproduce acceptance by previous startup checks",
+    "Unbound synthetic draft disclosure reproduced for disabled or weakened row protection",
+    "Unknown permissive policy cannot bypass restrictive isolation and is rejected by manifest check",
+    "Explicit offline repair restores accepted configuration without automatic startup rewriting",
+    "Restored database passes context-function and workspace-policy definition verification",
+    "Migrated RLS restore, image build/smoke and dependency audit"
+  ],
+  "limits": [
+    "Final runtime/worker column grants, account-level isolation and remaining service routing are incomplete",
+    "Startup verification does not detect later administrator changes",
+    "Supported PostgreSQL deparser formatting is verified in CI; unknown formatting fails closed"
+  ],
+  "release_gate": {
+    "exit_code": 1,
+    "unresolved_entries": 80
+  },
+  "provider_validation": "Synthetic records and mocked providers only",
+  "deployment": "No production deployment, roles, data, credentials or provider state changed"
+}

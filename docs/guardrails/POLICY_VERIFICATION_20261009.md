@@ -1,6 +1,10 @@
 # Installed workspace policy verification
 
-Candidate only; local and PostgreSQL validation pending. No live deployment,
+Candidate only. Validated at e3376ef: CI SQLite 415 passed / 50 expected skips;
+PostgreSQL 464 passed / one expected skip. CI run 38000761139 passed migration/
+restore, full restored access-control verification, image build/smoke and
+dependency audit. Evidence: `evidence/policy-verification-20261009.json`.
+No live deployment,
 schema, role, account, credential or provider state changed.
 
 The previous startup check proved the context-function definitions and selected
