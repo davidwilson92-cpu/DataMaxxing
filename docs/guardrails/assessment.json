@@ -28,7 +28,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation passed at b6e1475. It is not activated in normal web/worker flows or production.",
+      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation passed at b6e1475. It is not activated in normal web/worker flows or production. An opt-in protected SQLAlchemy session factory now rebinds frozen authority on each outer transaction; PostgreSQL integration validation is pending and global routing remains disabled.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
@@ -157,7 +157,7 @@
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "8fe53612f4adbb0cc8a93efb94547301a36aaa3f0d273fcc5f006309bc26bef3"
+          "sha256": "11eb576c8e6ab1b977966fa25bbe15175d3b36103152d11e7a425633cc13230e"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
@@ -166,6 +166,14 @@
         {
           "path": "docs/guardrails/evidence/workspace-rls-20261009.json",
           "sha256": "1abb817e9e5a15b3d842fda285f3698d3c97e26831fccbd293e832c7c934da77"
+        },
+        {
+          "path": "nova/workspace_session.py",
+          "sha256": "58448df8ce5bc492a69a4cf76e8004945a0f779aa8df2f5369d2b3a07b3f9939"
+        },
+        {
+          "path": "docs/guardrails/WORKSPACE_SESSIONS_20261009.md",
+          "sha256": "dc62667de2614b42a9e02deafc4bd783825d04c4ababea173e5af4a75028bf33"
         }
       ],
       "reviewed_by": null,
@@ -461,7 +469,7 @@
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "8fe53612f4adbb0cc8a93efb94547301a36aaa3f0d273fcc5f006309bc26bef3"
+          "sha256": "11eb576c8e6ab1b977966fa25bbe15175d3b36103152d11e7a425633cc13230e"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
@@ -1559,7 +1567,7 @@
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "8fe53612f4adbb0cc8a93efb94547301a36aaa3f0d273fcc5f006309bc26bef3"
+          "sha256": "11eb576c8e6ab1b977966fa25bbe15175d3b36103152d11e7a425633cc13230e"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",

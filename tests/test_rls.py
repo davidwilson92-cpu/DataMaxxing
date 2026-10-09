@@ -64,7 +64,7 @@ def rls_db(registry_db):
         assert report['protected_tables']==16 and not report['runtime_integrated']
         for role,password in zip(roles,passwords):
             url=admin.url.set(username=role,password=password).update_query_dict({'options':f'-csearch_path={schema}'})
-            engines.append(create_engine(url,pool_size=2,max_overflow=0))
+            engines.append(create_engine(url,pool_size=2,max_overflow=0,hide_parameters=True))
         yield admin,engines[0],engines[1],roles,uids,drafts
     finally:
         for engine in engines:engine.dispose()
@@ -80,6 +80,133 @@ def context(issuer,c,role,uid,cap='posts.read',**changes):
     args.update(changes)
     token=issue_context(issuer,c,**args);bind_context(c,token)
     return token
+
+
+def authority(admin, uid, capability='posts.edit'):
+    from nova.workspace_session import authenticated_authority
+    with Session(admin) as db:
+        return authenticated_authority(db, db.get(models.User, uid), 0, capability)
+
+
+def test_protected_session_configuration_and_immutable_claims():
+    from dataclasses import FrozenInstanceError
+    from types import SimpleNamespace
+    from nova.workspace_session import WorkspaceAuthority, content_session
+    claim = WorkspaceAuthority(1, 0, workspace_key(1), 0, 1, 'posts.read')
+    with pytest.raises(FrozenInstanceError):claim.auth_version = 10
+    with pytest.raises(ValueError, match='Validated'):
+        content_session(None, None, {}, runtime_role='runtime')
+    with pytest.raises(ValueError, match='Separate'):
+        content_session(None, None, claim, runtime_role='runtime')
+    unsafe = SimpleNamespace(dialect=SimpleNamespace(name='postgresql'), hide_parameters=False, echo=False)
+    with pytest.raises(ValueError, match='hidden'):
+        content_session(unsafe, object(), claim, runtime_role='runtime')
+
+
+def test_protected_session_rebinds_after_commit_rollback_and_pool_reuse(rls_db):
+    from nova.workspace_session import content_session
+    admin, runtime, issuer, roles, uids, drafts = rls_db
+    claim = authority(admin, uids[0])
+    with content_session(runtime, issuer, claim, runtime_role=roles[0]) as db:
+        row = db.get(models.Draft, drafts[0])
+        assert row and db.get(models.Draft, drafts[1]) is None
+        row.brief = 'Committed content'
+        db.commit()
+        db.refresh(row)
+        assert row.brief == 'Committed content'
+        row.brief = 'Rolled back content'
+        db.flush()
+        db.rollback()
+        assert db.get(models.Draft, drafts[0]).brief == 'Committed content'
+        with db.begin_nested():
+            assert db.get(models.Draft, drafts[0]) is not None
+        # Mutating the legacy filter metadata must not change database authority.
+        db.info.update(brand_user_id=uids[1], workspace_id=workspace_key(uids[1]))
+        assert db.scalar(text('SELECT count(*) FROM nova_drafts WHERE user_id=:uid'), {'uid':uids[1]}) == 0
+    with runtime.connect() as connection:
+        assert connection.scalar(text('SELECT count(*) FROM nova_drafts')) == 0
+    with content_session(runtime, issuer, authority(admin,uids[1]), runtime_role=roles[0]) as db:
+        assert db.get(models.Draft,drafts[0]) is None
+        assert db.get(models.Draft,drafts[1]) is not None
+
+
+def test_protected_session_does_not_upgrade_revoked_identity_or_cache_reads(rls_db):
+    from nova.workspace_session import content_session, authenticated_authority
+    from nova.tenant_access import WorkspaceDenied
+    admin, runtime, issuer, roles, uids, drafts = rls_db
+    claim = authority(admin,uids[0])
+    with Session(admin) as auth:
+        previously_authenticated = auth.get(models.User,uids[0])
+        auth.expunge(previously_authenticated)
+    with content_session(runtime,issuer,claim,runtime_role=roles[0]) as db:
+        cached = db.get(models.Draft,drafts[0])
+        assert cached is not None
+        with admin.begin() as c:
+            c.execute(text('UPDATE nova_users SET auth_version=auth_version+1 WHERE id=:uid'),{'uid':uids[0]})
+        # get() must not reuse the already loaded identity without policy checks.
+        assert db.get(models.Draft,drafts[0]) is None
+        db.rollback()
+        with pytest.raises(WorkspaceDenied,match='verified'):
+            db.get(models.Draft,drafts[0])
+    with Session(admin) as auth, pytest.raises(WorkspaceDenied):
+        authenticated_authority(auth,previously_authenticated,0,'posts.read')
+
+
+def test_real_draft_http_create_save_reload_under_rls(rls_db, monkeypatch):
+    from fastapi import Request, HTTPException
+    from fastapi.testclient import TestClient
+    from sqlalchemy.orm import sessionmaker
+    from nova import security, request_security
+    from nova.app import app
+    from nova import readiness
+    from nova.workspace_session import authenticated_authority, content_session
+    from nova.tenant_access import request_capability, WorkspaceDenied
+    admin,runtime,issuer,roles,uids,drafts = rls_db
+    monkeypatch.setattr(security,'SessionLocal',sessionmaker(bind=admin))
+    monkeypatch.setattr(request_security,'SessionLocal',sessionmaker(bind=admin))
+    # Readiness telemetry is account-level and awaits separate pool integration.
+    monkeypatch.setattr(readiness,'event',lambda *args,**kwargs:None)
+    def protected_db(request: Request):
+        user = security.current_user(request)
+        try:
+            with Session(admin) as auth:
+                claim = authenticated_authority(auth,user,0,request_capability(request))
+            with content_session(runtime,issuer,claim,runtime_role=roles[0]) as db:
+                yield db
+        except WorkspaceDenied:
+            raise HTTPException(403,'Workspace access unavailable') from None
+    previous = dict(app.dependency_overrides)
+    app.dependency_overrides[models.get_db] = protected_db
+    try:
+        client=TestClient(app)
+        client.cookies.set('nova_session',security.make_user_session(uids[0]))
+        headers={'origin':'http://testserver'}
+        result=client.post('/api/drafts',headers=headers)
+        assert result.status_code==200, result.text
+        did=result.json()['id']
+        result=client.patch(f'/api/drafts/{did}',headers=headers,json={
+            'brief':'A saved proposal','revision':0,'platforms':['instagram'],
+            'variants':{'instagram':{'posts':['A synthetic caption']}},
+            'workspace':{'conversation':[{'role':'user','content':'Keep this conversation'}],
+                         'selected_platforms':['instagram'],'instagram_format':'story'}})
+        assert result.status_code==200, result.text
+        loaded=client.get(f'/api/drafts/{did}')
+        assert loaded.status_code==200, loaded.text
+        assert loaded.json()['brief']=='A saved proposal'
+        assert loaded.json()['workspace']['instagram_format']=='story'
+        assert loaded.json()['workspace']['conversation'][0]['content']=='Keep this conversation'
+        assert client.get(f'/api/drafts/{drafts[1]}').status_code==404
+        # Optimistic save protection still works through restricted transactions.
+        stale=client.patch(f'/api/drafts/{did}',headers=headers,json={'revision':0,'brief':'Stale'})
+        assert stale.status_code==409
+        assert client.get(f'/api/drafts/{did}').json()['brief']=='A saved proposal'
+        assert did in {item['id'] for item in client.get('/api/drafts').json()}
+        with admin.begin() as c:
+            c.execute(text('UPDATE zova_workspace_memberships SET active=false WHERE user_id=:uid'),{'uid':uids[0]})
+        assert client.get(f'/api/drafts/{did}').status_code==403
+    finally:
+        app.dependency_overrides.clear()
+        app.dependency_overrides.update(previous)
 
 
 def test_policy_manifest_covers_every_brand_owned_table():
