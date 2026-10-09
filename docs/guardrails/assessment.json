@@ -28,8 +28,8 @@
       "status": "gap",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "User plus brand scoping is application-side. No workspace membership model or PostgreSQL RLS exists; legacy creator tables use separate ownership. ORM ownership mutation and worker destination checks are tightened in this iteration. Pre-ledger scheduled jobs now also reject mismatched owner/brand/account/media/draft and missing publishing permissions before provider dispatch.",
-      "next_action": "Design an additive tenant migration with a verified owner mapping, restrictive application/worker roles, RLS and adversarial tests on every sensitive table.",
+      "finding": "User plus brand scoping is application-side. No workspace membership model or PostgreSQL RLS exists; legacy creator tables use separate ownership. ORM ownership mutation and worker destination checks are tightened in this iteration. Pre-ledger scheduled jobs now also reject mismatched owner/brand/account/media/draft and missing publishing permissions before provider dispatch. A separately invoked canonical workspace/owner-membership registry migration and six-role capability policy are now implemented and tested on synthetic data; application activation, legacy mapping and RLS remain outstanding.",
+      "next_action": "Activate canonical workspace references and membership/capability enforcement in compatible increments; reconcile legacy objects and prove restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
@@ -50,6 +50,22 @@
         {
           "path": "tests/test_reconciliation_boundaries.py",
           "sha256": "b8d533832b018031bf2c4282008798c7396559cf8cf26c3b95c34415493bcccf"
+        },
+        {
+          "path": "nova/tenant_migration.py",
+          "sha256": "e8c97064f01f94cac3eb69b04423eb951beb7fe3dc78c6dbc1a83d3298315995"
+        },
+        {
+          "path": "nova/capabilities.py",
+          "sha256": "ca3d10cc4d5adbf6c9c941e020b7f870b9a59fbf4ede104dfc43679bba7a297c"
+        },
+        {
+          "path": "tests/test_tenant_registry.py",
+          "sha256": "e218b33714f46799f579cbb87ea06fd509813399bcd135c1e1201c9e6bdbeafd"
+        },
+        {
+          "path": "docs/guardrails/TENANT_REGISTRY_20261009.md",
+          "sha256": "c10322cd992a49d2282d894b9715434afc38fa1a37978459935f77cb3cc09f1a"
         }
       ],
       "reviewed_by": null,
@@ -94,12 +110,28 @@
       "status": "gap",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Ownership checks exist but workspace membership and the six required roles/capabilities are absent.",
-      "next_action": "Implement server-side capabilities and membership before enabling team access; test object and operation denial across roles.",
+      "finding": "Ownership checks exist but workspace membership and the six required roles/capabilities are absent. A separately invoked canonical workspace/owner-membership registry migration and six-role capability policy are now implemented and tested on synthetic data; application activation, legacy mapping and RLS remain outstanding.",
+      "next_action": "Activate canonical workspace references and membership/capability enforcement in compatible increments; reconcile legacy objects and prove restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
           "sha256": "7c2254fa9a0eedce5897e3fc1e4150a5fa78cc08e57534d69497d58793a6355e"
+        },
+        {
+          "path": "nova/tenant_migration.py",
+          "sha256": "e8c97064f01f94cac3eb69b04423eb951beb7fe3dc78c6dbc1a83d3298315995"
+        },
+        {
+          "path": "nova/capabilities.py",
+          "sha256": "ca3d10cc4d5adbf6c9c941e020b7f870b9a59fbf4ede104dfc43679bba7a297c"
+        },
+        {
+          "path": "tests/test_tenant_registry.py",
+          "sha256": "e218b33714f46799f579cbb87ea06fd509813399bcd135c1e1201c9e6bdbeafd"
+        },
+        {
+          "path": "docs/guardrails/TENANT_REGISTRY_20261009.md",
+          "sha256": "c10322cd992a49d2282d894b9715434afc38fa1a37978459935f77cb3cc09f1a"
         }
       ],
       "reviewed_by": null,

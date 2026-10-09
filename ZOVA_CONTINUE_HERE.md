@@ -1,3 +1,11 @@
+# Active release goal — 9 October 2026
+
+Owner asked to iterate until publication. Goal remains active; do not stop merely because the production check is red. Work through compatible changes and verified evidence; never weaken the gate or claim independent review. No production change has been made.
+
+Current increment: canonical workspace registry migration and six-role policy foundation. Read docs/guardrails/TENANT_REGISTRY_20261009.md. It is deliberately not yet used as an authorization boundary. Next: workspace references, transactional identity lifecycle, route/worker capability enforcement, restricted PostgreSQL roles/RLS. No paid staging or mandatory customer MFA authorised.
+
+---
+
 # Current guardrails integration — 9 October 2026
 
 Worktree: zova-guardrails; branch codex/guardrails-closure-20261009. Candidate only, not deployed. Combines guardrails PR #16 and UX PR #17 with owner-authorised optional MFA. Read docs/guardrails/OPTIONAL_MFA_20261009.md and assessment.json first. Earlier deployment statements below are historical.
