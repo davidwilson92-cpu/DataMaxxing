@@ -153,11 +153,11 @@
         },
         {
           "path": "nova/rls.py",
-          "sha256": "1326e565a63691f4baab2028393d9fb010d8538125ac1b314272345099dc8e89"
+          "sha256": "70f03c12af98fdf661e9626efa0c7caa8be177ac6780e63ee0bfdabe8abf0e62"
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "11eb576c8e6ab1b977966fa25bbe15175d3b36103152d11e7a425633cc13230e"
+          "sha256": "39937cb18a7f4de1afce4bd3501598ce9e79a6a741b19bd9185910d075e15cbe"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
@@ -169,7 +169,7 @@
         },
         {
           "path": "nova/workspace_session.py",
-          "sha256": "58448df8ce5bc492a69a4cf76e8004945a0f779aa8df2f5369d2b3a07b3f9939"
+          "sha256": "43cf781915cc1b0cd41adb21af4074a21884eec96acdb72e9f38a2e2bf6c3f6b"
         },
         {
           "path": "docs/guardrails/WORKSPACE_SESSIONS_20261009.md",
@@ -469,11 +469,11 @@
         },
         {
           "path": "nova/rls.py",
-          "sha256": "1326e565a63691f4baab2028393d9fb010d8538125ac1b314272345099dc8e89"
+          "sha256": "70f03c12af98fdf661e9626efa0c7caa8be177ac6780e63ee0bfdabe8abf0e62"
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "11eb576c8e6ab1b977966fa25bbe15175d3b36103152d11e7a425633cc13230e"
+          "sha256": "39937cb18a7f4de1afce4bd3501598ce9e79a6a741b19bd9185910d075e15cbe"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
@@ -1567,11 +1567,11 @@
         },
         {
           "path": "nova/rls.py",
-          "sha256": "1326e565a63691f4baab2028393d9fb010d8538125ac1b314272345099dc8e89"
+          "sha256": "70f03c12af98fdf661e9626efa0c7caa8be177ac6780e63ee0bfdabe8abf0e62"
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "11eb576c8e6ab1b977966fa25bbe15175d3b36103152d11e7a425633cc13230e"
+          "sha256": "39937cb18a7f4de1afce4bd3501598ce9e79a6a741b19bd9185910d075e15cbe"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",

@@ -70,6 +70,9 @@ def content_session(runtime_engine, issuer_engine, authority, *, runtime_role):
     for engine in (runtime_engine, issuer_engine):
         if engine.dialect.name != 'postgresql' or not engine.hide_parameters or engine.echo:
             raise ValueError('Protected sessions require PostgreSQL with hidden parameters and SQL logging disabled')
+    # Factory-only entry points must install the same ownership/brand hooks as
+    # the web application before constructing or flushing any content records.
+    from . import brands  # noqa: F401
     db = WorkspaceSession(bind=runtime_engine, expire_on_commit=True,
                           info={'brand_id': authority.brand_id, 'brand_user_id': authority.user_id,
                                 'workspace_id': authority.workspace_id})

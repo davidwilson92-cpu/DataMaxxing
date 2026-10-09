@@ -152,7 +152,8 @@ def test_protected_session_does_not_upgrade_revoked_identity_or_cache_reads(rls_
         authenticated_authority(auth,previously_authenticated,0,'posts.read')
 
 
-def test_real_draft_http_create_save_reload_under_rls(rls_db, monkeypatch):
+@pytest.mark.parametrize('second_brand',[False,True])
+def test_real_draft_http_create_save_reload_under_rls(rls_db, monkeypatch, second_brand):
     from fastapi import Request, HTTPException
     from fastapi.testclient import TestClient
     from sqlalchemy.orm import sessionmaker
@@ -162,6 +163,8 @@ def test_real_draft_http_create_save_reload_under_rls(rls_db, monkeypatch):
     from nova.workspace_session import authenticated_authority, content_session
     from nova.tenant_access import request_capability, WorkspaceDenied
     admin,runtime,issuer,roles,uids,drafts = rls_db
+    with Session(admin) as auth:
+        brand_id = auth.scalar(text('SELECT id FROM zova_brands WHERE user_id=:uid'), {'uid':uids[0]}) if second_brand else 0
     monkeypatch.setattr(security,'SessionLocal',sessionmaker(bind=admin))
     monkeypatch.setattr(request_security,'SessionLocal',sessionmaker(bind=admin))
     # Readiness telemetry is account-level and awaits separate pool integration.
@@ -170,7 +173,7 @@ def test_real_draft_http_create_save_reload_under_rls(rls_db, monkeypatch):
         user = security.current_user(request)
         try:
             with Session(admin) as auth:
-                claim = authenticated_authority(auth,user,0,request_capability(request))
+                claim = authenticated_authority(auth,user,brand_id,request_capability(request))
             with content_session(runtime,issuer,claim,runtime_role=roles[0]) as db:
                 yield db
         except WorkspaceDenied:
@@ -184,6 +187,10 @@ def test_real_draft_http_create_save_reload_under_rls(rls_db, monkeypatch):
         result=client.post('/api/drafts',headers=headers)
         assert result.status_code==200, result.text
         did=result.json()['id']
+        with Session(admin) as check:
+            stored=check.get(models.Draft,did)
+            assert stored.brand_id==brand_id
+            assert stored.workspace_id==workspace_key(uids[0],brand_id)
         result=client.patch(f'/api/drafts/{did}',headers=headers,json={
             'brief':'A saved proposal','revision':0,'platforms':['instagram'],
             'variants':{'instagram':{'posts':['A synthetic caption']}},
@@ -196,6 +203,8 @@ def test_real_draft_http_create_save_reload_under_rls(rls_db, monkeypatch):
         assert loaded.json()['workspace']['instagram_format']=='story'
         assert loaded.json()['workspace']['conversation'][0]['content']=='Keep this conversation'
         assert client.get(f'/api/drafts/{drafts[1]}').status_code==404
+        if second_brand:
+            assert client.get(f'/api/drafts/{drafts[0]}').status_code==404
         # Optimistic save protection still works through restricted transactions.
         stale=client.patch(f'/api/drafts/{did}',headers=headers,json={'revision':0,'brief':'Stale'})
         assert stale.status_code==409
@@ -207,6 +216,78 @@ def test_real_draft_http_create_save_reload_under_rls(rls_db, monkeypatch):
     finally:
         app.dependency_overrides.clear()
         app.dependency_overrides.update(previous)
+
+
+def test_draft_cleanup_permission_is_limited_to_required_operations():
+    from nova.rls import OPERATION_EXTRAS, operation_capabilities
+    permitted={('zova_publish_reviews','delete'),('zova_strategy_actions','update'),
+               ('zova_series_occurrences','update')}
+    assert set(OPERATION_EXTRAS)==permitted
+    for table in ('zova_publish_reviews','zova_strategy_actions','zova_series_occurrences'):
+        for operation in ('insert','update','delete'):
+            assert ('posts.delete' in operation_capabilities(table,operation)) == ((table,operation) in permitted)
+
+
+def test_restricted_draft_delete_cleans_own_references_and_preserves_other_workspaces(rls_db):
+    from sqlalchemy import select
+    from sqlalchemy.exc import IntegrityError
+    from fastapi import HTTPException
+    from nova.workspace import delete_unsubmitted_draft
+    from nova.workspace_session import content_session
+    admin,runtime,issuer,roles,uids,published_drafts = rls_db
+    ids=[]
+    with Session(admin) as seed:
+        for uid in uids:
+            draft=models.Draft(user_id=uid,brief='Unsubmitted planned draft')
+            seed.add(draft);seed.flush()
+            series=seed.scalar(select(models.ContentSeries).where(models.ContentSeries.user_id==uid))
+            seed.add_all([
+                models.PublishReview(user_id=uid,code='unsubmitted-'+str(uid),draft_id=draft.id,
+                    revision=0,payload_json='{}',expires_at=models.utcnow()),
+                models.StrategyAction(user_id=uid,action_key='linked',strategy_revision=0,payload_json='{}',draft_id=draft.id),
+                models.SeriesOccurrence(user_id=uid,series_id=series.id,position=1,due_at=models.utcnow(),draft_id=draft.id)])
+            ids.append(draft.id)
+        seed.commit()
+    claim=authority(admin,uids[0],'posts.delete')
+    # Reproduce the original missing cleanup permission using its old policy.
+    # The real service must fail and roll back, not leave a half-deleted draft.
+    with admin.begin() as c:
+        c.execute(text('DROP POLICY zova_tenant_delete ON zova_publish_reviews'))
+        c.execute(text("CREATE POLICY zova_tenant_delete ON zova_publish_reviews AS RESTRICTIVE FOR DELETE TO PUBLIC USING (workspace_id=(SELECT zova_rls_workspace(ARRAY['posts.publish','posts.schedule']::text[])))"))
+    with content_session(runtime,issuer,claim,runtime_role=roles[0]) as db:
+        with pytest.raises(IntegrityError):delete_unsubmitted_draft(db,db.get(models.Draft,ids[0]))
+        db.rollback()
+    apply_rls(admin,runtime_roles=[roles[0]],issuer_roles=[roles[1]],writes_paused=True)
+    with content_session(runtime,issuer,claim,runtime_role=roles[0]) as db:
+        # Existing delivery history remains protected by the service guard.
+        with pytest.raises(HTTPException) as caught:
+            delete_unsubmitted_draft(db,db.get(models.Draft,published_drafts[0]))
+        assert caught.value.status_code==409
+        delete_unsubmitted_draft(db,db.get(models.Draft,ids[0]))
+    with Session(admin) as check:
+        assert check.get(models.Draft,ids[0]) is None
+        assert check.get(models.Draft,ids[1]) is not None
+        assert check.get(models.PublishReview,'unsubmitted-'+str(uids[0])) is None
+        assert check.get(models.PublishReview,'unsubmitted-'+str(uids[1])) is not None
+        for uid,expected_status,expected_id in [(uids[0],'dismissed',None),(uids[1],'open',ids[1])]:
+            action=check.scalar(select(models.StrategyAction).where(models.StrategyAction.user_id==uid,models.StrategyAction.action_key=='linked'))
+            assert (action.status,action.draft_id)==(expected_status,expected_id)
+        own=check.scalar(select(models.SeriesOccurrence).where(models.SeriesOccurrence.user_id==uids[0],models.SeriesOccurrence.position==1))
+        other=check.scalar(select(models.SeriesOccurrence).where(models.SeriesOccurrence.user_id==uids[1],models.SeriesOccurrence.position==1))
+        assert (own.status,own.draft_id)==('cancelled',None)
+        assert (other.status,other.draft_id)==('planned',ids[1])
+    # A deletion context must not gain insert authority for approval/plan tables.
+    for statement in (
+        "UPDATE zova_publish_reviews SET payload_json='{}'",
+        "DELETE FROM zova_strategy_actions",
+        "DELETE FROM zova_series_occurrences",
+    ):
+        with content_session(runtime,issuer,claim,runtime_role=roles[0]) as db:
+            assert db.execute(text(statement)).rowcount==0
+    with content_session(runtime,issuer,claim,runtime_role=roles[0]) as db, pytest.raises(DBAPIError) as caught:
+        db.execute(models.PublishReview.__table__.insert().values(user_id=uids[0],code='forged-delete-approval',
+            draft_id=published_drafts[0],revision=0,payload_json='{}',expires_at=models.utcnow()))
+    assert caught.value.orig.sqlstate=='42501'
 
 
 def test_policy_manifest_covers_every_brand_owned_table():

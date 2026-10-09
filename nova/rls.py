@@ -32,6 +32,21 @@ WRITE_CAPABILITIES = {
     'zova_series_approvals': {'posts.publish'},
 }
 
+# Deleting an unsubmitted draft removes its review and detaches linked plans.
+# Do not grant this capability to all writes on these tables: deleting a draft
+# must not confer permission to create approval records or delete whole plans.
+OPERATION_EXTRAS = {
+    ('zova_publish_reviews', 'delete'): {'posts.delete'},
+    ('zova_strategy_actions', 'update'): {'posts.delete'},
+    ('zova_series_occurrences', 'update'): {'posts.delete'},
+}
+
+
+def operation_capabilities(table, operation):
+    if operation not in {'insert', 'update', 'delete'}:
+        raise ValueError('Unsupported row mutation')
+    return WRITE_CAPABILITIES[table] | OPERATION_EXTRAS.get((table, operation), set())
+
 
 def issue_context(issuer_engine, runtime_connection, *, user_id, workspace_id, auth_version,
                   membership_revision, capability, runtime_role, ttl_seconds=60):
@@ -164,13 +179,17 @@ def apply_rls(engine, *, runtime_roles, issuer_roles, writes_paused=False):
         c.execute(text(f'GRANT EXECUTE ON FUNCTION {resolve} TO '+','.join(q(role) for role in runtime_roles)))
         for name in sorted(BRAND_TABLES):
             table=f'{schema}.{q(name)}'
-            write_caps='ARRAY['+','.join(literal(cap) for cap in sorted(WRITE_CAPABILITIES[name]))+']::text[]'
             read=f'workspace_id=(SELECT {schema}.zova_rls_workspace(NULL))'
-            write=f'workspace_id=(SELECT {schema}.zova_rls_workspace({write_caps}))'
             # Restrictive policies prevent an unrelated permissive policy from
             # turning this boundary into an OR-condition that leaks other tenants.
-            for operation,clause in [('select',f'USING ({read})'),('insert',f'WITH CHECK ({write})'),
-                                     ('update',f'USING ({write}) WITH CHECK ({write})'),('delete',f'USING ({write})')]:
+            for operation in ('select','insert','update','delete'):
+                if operation == 'select':
+                    clause=f'USING ({read})'
+                else:
+                    write_caps='ARRAY['+','.join(literal(cap) for cap in sorted(operation_capabilities(name,operation)))+']::text[]'
+                    write=f'workspace_id=(SELECT {schema}.zova_rls_workspace({write_caps}))'
+                    clause={'insert':f'WITH CHECK ({write})','update':f'USING ({write}) WITH CHECK ({write})',
+                            'delete':f'USING ({write})'}[operation]
                 policy='zova_tenant_'+operation
                 c.execute(text(f'DROP POLICY IF EXISTS {policy} ON {table}'))
                 c.execute(text(f'CREATE POLICY {policy} ON {table} AS RESTRICTIVE FOR {operation.upper()} TO PUBLIC {clause}'))
