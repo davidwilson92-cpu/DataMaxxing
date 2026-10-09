@@ -1,7 +1,7 @@
 # Protected content transaction integration
 
 Candidate only. `nova/workspace_session.py` is an opt-in factory, not a change to
-the shared production `SessionLocal`. PostgreSQL CI validation is pending.
+the shared production `SessionLocal`. Validated at 5ac264d: 409 SQLite / 431 PostgreSQL tests passed; expected skips 23 / 1. CI runs 37993492489 and 37993486479 also passed migrated restore, hosting build/smoke and dependency checks. See evidence/workspace-sessions-20261009.json. Production remains blocked.
 
 Authority is frozen for the lifetime of one request. The authentication database
 checks the authenticated user's original security version, current active

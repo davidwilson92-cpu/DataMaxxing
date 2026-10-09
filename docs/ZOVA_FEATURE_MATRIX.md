@@ -106,3 +106,5 @@ Current production baseline: main `78d9924` (21 September Instagram reauthentica
 | Privacy | Measurement disclosure and assisted workflow documented | Legal bases, exact retention/transfer/provider facts and operator approval remain external; no compliance certification |
 
 See `COMMERCIAL_OPERATIONS_20260920.md`, `CUSTOMER_VALIDATION_20260920.md` and `COMMERCIAL_READINESS_EVIDENCE_20260920.md`. Provider approval is never inferred from code, old credentials, a connected status or a mock.
+
+| Protected content transactions | Frozen authenticated claims and per-transaction RLS contexts; draft HTTP save/reload tested | 431 PostgreSQL tests passed; opt-in only, auth/account/worker routing incomplete; not deployed |

@@ -1,3 +1,13 @@
+# Current increment: protected application content transactions
+
+Validated 5ac264d: local/CI SQLite 409 passed / 23 expected skips; PostgreSQL 431 passed / one expected skip. CI runs 37993492489 / 37993486479 passed draft HTTP integration under restricted content credentials, transaction/revocation attacks, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/workspace-sessions-20261009.json. Production unchanged; full gate still blocked and publication goal active.
+
+Read docs/guardrails/WORKSPACE_SESSIONS_20261009.md. nova/workspace_session.py derives frozen workspace claims from validated authentication through a separate auth session, preserves the original auth_version and rejects revoked claims. content_session rebinds a fresh issuer context on every outer transaction, including commit/refresh and rollback. Savepoints retain transaction authority. Session.get refreshes against policies instead of trusting cached identity. Require hidden SQL parameters and no engine echo. This factory is opt-in and NOT globally wired into SessionLocal. Tests use fixture-admin authentication/rate-limit pools and mocked readiness telemetry; final restricted auth grants are unvalidated.
+
+NEXT: integrate independently restricted auth/account and content pools into web dependencies; explicitly register existing brand ORM hooks for factory-only entry points and test nonzero-brand inserts. Map signed OAuth callbacks, billing, legacy API identities, account telemetry and worker claims/recovery. Reconcile per-table write capabilities with legitimate compound operations (draft deletion also dismisses strategy actions/series occurrences). Add active-policy/grant startup verification before activation. Do not just enable RLS globally; shared account/worker flows would break. Preserve all user/data/provider state, no paid staging or forced customer MFA, no gate bypass.
+
+---
+
 # Current increment: tested PostgreSQL workspace policy foundation
 
 Validated b6e1475: CI SQLite 408 passed / 20 expected skips; PostgreSQL 427 passed / one expected skip. Runs 37992138379 / 37992133548 passed direct SQL attacks, restored RLS, image build/smoke and Python dependency audit. Evidence: docs/guardrails/evidence/workspace-rls-20261009.json. No production changes; full release gate blocked, publication goal active.

@@ -1,0 +1,33 @@
+{
+  "tested_commit": "5ac264dd44d423a86bffa10e60dce3d55d1f7eef",
+  "ci_runs": [
+    37993492489,
+    37993486479
+  ],
+  "sqlite": {
+    "passed": 409,
+    "skipped": 23
+  },
+  "postgresql": {
+    "passed": 431,
+    "skipped": 1
+  },
+  "verified": [
+    "Frozen authenticated authority preserves original security version",
+    "New context on each outer transaction, including commit refresh and rollback",
+    "Savepoint and connection pool reuse isolation",
+    "Cached Session.get consults current policies after revocation",
+    "Existing draft HTTP create/save/read/list under restricted content credentials",
+    "Conversation and Instagram Story choice persistence",
+    "Optimistic save conflicts and cross-owner reads",
+    "Migrated RLS backup restore, hosting image build/smoke and dependency audit"
+  ],
+  "limits": [
+    "Opt-in factory only; shared SessionLocal not replaced",
+    "Synthetic authentication and rate-limit pools use fixture administrator credentials",
+    "Readiness account telemetry mocked",
+    "Final service grants, full route/worker integration and deployed assurance remain open"
+  ],
+  "provider_validation": "Synthetic data and mocked providers; no live writes",
+  "deployment": "Not deployed; production gate remains blocked"
+}
