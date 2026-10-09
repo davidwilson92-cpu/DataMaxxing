@@ -69,7 +69,7 @@
         },
         {
           "path": "docs/guardrails/evidence/tenant-registry-20261009.json",
-          "sha256": "9b68768c0979a47a710da3f2e28bf7718e3e271f21faeed0f6c3b9e396f8ecb1"
+          "sha256": "256536ca631a9778b6362b01bb0cf527d12ad1ddc973912819af47dbfac36bc1"
         }
       ],
       "reviewed_by": null,
@@ -139,7 +139,7 @@
         },
         {
           "path": "docs/guardrails/evidence/tenant-registry-20261009.json",
-          "sha256": "9b68768c0979a47a710da3f2e28bf7718e3e271f21faeed0f6c3b9e396f8ecb1"
+          "sha256": "256536ca631a9778b6362b01bb0cf527d12ad1ddc973912819af47dbfac36bc1"
         }
       ],
       "reviewed_by": null,
