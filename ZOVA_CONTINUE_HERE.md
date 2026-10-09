@@ -1,5 +1,7 @@
 # Current increment: active owner membership checks
 
+Validated at 447b357: CI SQLite and PostgreSQL each 370 passed and one expected backend-specific skip. Backup restore including workspace/membership content, build, smoke and dependency checks passed. Runs 37983897804 / 37983892861. Production guardrail remains blocked; no deployment. Evidence: docs/guardrails/evidence/tenant-access-20261009.json.
+
 Read docs/guardrails/TENANT_ACCESS_20261009.md first. The registry is now integrated with transactional signup/brand creation, owner-scoped request permissions, session revocation and Studio/older scheduled worker preflight. New account memberships are created explicitly; missing/revoked memberships never self-repair. Existing databases require an offline registry migration before startup. This has NOT been performed on production.
 
 Still next: workspace references on every customer record, legacy authority mapping, complete shared-team routing/capabilities, and restricted PostgreSQL identities/RLS. The release goal stays active. No staging charges, forced customer MFA or gate bypass authorised.

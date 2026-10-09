@@ -1,0 +1,30 @@
+{
+  "tested_commit": "447b357a7f2998ca04882a961a4d45c26bb2b537",
+  "ci_runs": [
+    37983897804,
+    37983892861
+  ],
+  "sqlite": {
+    "passed": 370,
+    "skipped": 1,
+    "skip": "PostgreSQL-only migration"
+  },
+  "postgresql": {
+    "passed": 370,
+    "skipped": 1,
+    "skip": "SQLite-only backup test"
+  },
+  "restore": "passed, includes workspace and membership table content",
+  "build_smoke": "passed",
+  "dependency_audit": "no known vulnerabilities found",
+  "production_guardrail": "blocked; baseline incomplete",
+  "deployment": "not deployed",
+  "coverage": "Owner-scoped capabilities, transactional user/brand registry provisioning, membership revocation, queued publishing preflight, lifecycle/restore",
+  "limits": [
+    "No complete shared-team routing or invitations",
+    "No workspace_id on all customer objects yet",
+    "No PostgreSQL RLS or restricted identities yet",
+    "Legacy creator authority still separate",
+    "Independent review and operational rollout evidence remain outstanding"
+  ]
+}

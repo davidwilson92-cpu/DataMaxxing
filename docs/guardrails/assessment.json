@@ -82,6 +82,10 @@
         {
           "path": "docs/guardrails/TENANT_ACCESS_20261009.md",
           "sha256": "91e01206b65738c194587d404f1aabffe8ccdb1ac95317f90e38c8bc3b03f606"
+        },
+        {
+          "path": "docs/guardrails/evidence/tenant-access-20261009.json",
+          "sha256": "3d957e6f395046b71d41ac9967743e882b7ae771f7343ba7508d04ae10c5aef1"
         }
       ],
       "reviewed_by": null,
@@ -164,6 +168,10 @@
         {
           "path": "docs/guardrails/TENANT_ACCESS_20261009.md",
           "sha256": "91e01206b65738c194587d404f1aabffe8ccdb1ac95317f90e38c8bc3b03f606"
+        },
+        {
+          "path": "docs/guardrails/evidence/tenant-access-20261009.json",
+          "sha256": "3d957e6f395046b71d41ac9967743e882b7ae771f7343ba7508d04ae10c5aef1"
         }
       ],
       "reviewed_by": null,
@@ -1292,6 +1300,10 @@
         {
           "path": "docs/guardrails/TENANT_ACCESS_20261009.md",
           "sha256": "91e01206b65738c194587d404f1aabffe8ccdb1ac95317f90e38c8bc3b03f606"
+        },
+        {
+          "path": "docs/guardrails/evidence/tenant-access-20261009.json",
+          "sha256": "3d957e6f395046b71d41ac9967743e882b7ae771f7343ba7508d04ae10c5aef1"
         }
       ],
       "reviewed_by": null,
