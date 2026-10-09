@@ -102,10 +102,12 @@ def verify_registry(connection):
     return {**report, 'verified_workspaces': len(expected), 'verified_owner_memberships': len(expected)}
 
 
-def apply_registry(engine, *, writes_paused=False):
+def apply_registry(engine, *, writes_paused=False, lock_timeout_ms=5000, statement_timeout_ms=120000):
     if not writes_paused:
         raise MappingError('Pause application and worker writes before applying this migration')
     with engine.begin() as connection:
+        from .migration_limits import bound_migration
+        bound_migration(connection, lock_timeout_ms=lock_timeout_ms, statement_timeout_ms=statement_timeout_ms)
         if connection.dialect.name == 'sqlite':
             # sqlite3 legacy transaction mode otherwise auto-commits CREATE TABLE.
             connection.exec_driver_sql('BEGIN IMMEDIATE')

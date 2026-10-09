@@ -66,6 +66,9 @@ def test_migration_rejects_existing_wrong_reference_without_repair(registry_db):
     with engine.connect() as c:
         assert c.scalar(text('SELECT workspace_id FROM nova_drafts WHERE id=1'))==workspace_key(2)
         assert 'workspace_id' not in {col['name'] for col in inspect(c).get_columns('nova_social_connections')}
+        from nova.tenant_references import plan_references
+        with pytest.raises(MappingError,match='invalid canonical'):
+            plan_references(c)
 
 
 def test_interrupted_backfill_rolls_back_added_columns(registry_db,monkeypatch):

@@ -36,6 +36,11 @@ def plan_references(c):
         quoted=_q(c,name)
         if 'workspace_id' not in {col['name'] for col in inspect(c).get_columns(name)}:
             missing.append(name)
+        else:
+            invalid=c.scalar(text(f'''SELECT COUNT(*) FROM {quoted} s LEFT JOIN zova_workspaces w
+                ON w.id=s.workspace_id AND w.owner_user_id=s.user_id AND w.legacy_brand_id=s.brand_id
+                WHERE w.id IS NULL'''))
+            if invalid:raise MappingError(f'{name}: {invalid} invalid canonical references')
         invalid=c.scalar(text(f"SELECT COUNT(*) FROM {quoted} s LEFT JOIN zova_workspaces w ON w.owner_user_id=s.user_id AND w.legacy_brand_id=s.brand_id WHERE w.id IS NULL"))
         if invalid:raise MappingError(f'{name}: canonical ownership mapping is missing')
     return {'version':VERSION,'tables':tables,'tables_needing_column':missing,'writes_performed':False,'read_isolation_enforced':False}
@@ -130,9 +135,11 @@ def _sqlite_guards(c,tables):
         BEGIN SELECT RAISE(ABORT,'Workspace identity is immutable'); END''')
 
 
-def apply_references(engine, *, writes_paused=False):
+def apply_references(engine, *, writes_paused=False, lock_timeout_ms=5000, statement_timeout_ms=120000):
     if not writes_paused:raise MappingError('Pause application and worker writes before applying references')
     with engine.begin() as c:
+        from .migration_limits import bound_migration
+        bound_migration(c, lock_timeout_ms=lock_timeout_ms, statement_timeout_ms=statement_timeout_ms)
         if c.dialect.name=='sqlite':c.exec_driver_sql('BEGIN IMMEDIATE')
         elif c.dialect.name=='postgresql':c.execute(text('SELECT pg_advisory_xact_lock(61009002)'))
         else:raise MappingError('Unsupported migration database')
