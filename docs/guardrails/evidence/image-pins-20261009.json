@@ -1,0 +1,17 @@
+{
+  "verified_at": "2026-10-09",
+  "method": "Fetched official Docker Hub and Docker-owned ECR manifest bodies over HTTPS. SHA-256 computed over each returned body; both registries matched. ECR omitted Docker-Content-Digest header; body hashes matched Docker Hub declared digests. No image was pushed.",
+  "publisher_reference": "https://www.docker.com/blog/news-from-aws-reinvent-docker-official-images-on-amazon-ecr-public/",
+  "images": {
+    "python:3.12-slim": {
+      "docker_hub_and_ecr_digest": "sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1",
+      "linux_amd64_manifest": "sha256:2b4f19dae3a777dfc3b76730bda1e82e1f66ab2a2686fa93ca78edbfb4f04ffe"
+    },
+    "postgres:18": {
+      "docker_hub_and_ecr_digest": "sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336",
+      "linux_amd64_manifest": "sha256:885953109528ad3dfc90362b1a6f50a78620b5315be19f187753d267e484dc5b"
+    }
+  },
+  "reason": "Repeated CI anonymous Docker Hub pull quota errors; use official byte-identical mirror for CI, retain pinned Docker Hub Python default for hosting builds",
+  "limits": "Pin equality does not establish operating-system vulnerability clearance or image-signature verification. CI image build/smoke still required."
+}

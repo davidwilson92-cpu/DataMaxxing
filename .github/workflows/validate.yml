@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:18
+        image: public.ecr.aws/docker/library/postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: synthetic-ci-only
@@ -73,7 +73,7 @@ jobs:
           docker exec "$PG_CONTAINER" pg_restore -U postgres -d zova_test_restored /tmp/synthetic.dump
           python scripts/check_synthetic_restore.py
       - name: Build hosting image
-        run: docker build -t zova-release .
+        run: docker build --build-arg PYTHON_BASE=public.ecr.aws/docker/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 -t zova-release .
       - name: Smoke-test isolated hosting image
         run: |
           docker run -d --name zova-smoke -p 8772:10000 -e DATABASE_URL=sqlite:////tmp/synthetic.db -e PUBLIC_BASE_URL=http://localhost:8772 -e SESSION_SECRET=synthetic-ci-only -e CREDENTIAL_ENCRYPTION_KEY=eV7ZGbkgONCU5t6fVtxgBMvCKx6-4UlAHWVHN2LoflE= -e REQUIRE_SUBSCRIPTION=false zova-release

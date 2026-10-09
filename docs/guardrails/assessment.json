@@ -463,7 +463,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "248b9acef0fd4be26f22f19d9dce5403b2c9d7a2163cc4f44905126c59ddafcb"
+          "sha256": "b2844a3b21e3b0295aaf677c8dc297ea2b7f12183a43613a10e268dc3bddb85e"
         },
         {
           "path": "docs/guardrails/evidence/tenant-references-20261009.json",
@@ -1013,7 +1013,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Operations and security",
-      "finding": "Operational status exposes overdue/unknown jobs and failures; structured logs, distributed traces and paging evidence are incomplete. Operations status now includes content-free counts of overdue and unknown legacy publishing jobs.",
+      "finding": "Operational status exposes overdue/unknown jobs and failures; structured logs, distributed traces and paging evidence are incomplete. Operations status now includes content-free counts of overdue and unknown legacy publishing jobs. Python and CI PostgreSQL image digests are now pinned with verified Docker Hub/ECR manifest equality. OS image scanning and full supply-chain assurance remain open.",
       "next_action": "Implement safe structured telemetry, metrics, trace propagation and alert-delivery tests.",
       "evidence": [
         {
@@ -1031,6 +1031,10 @@
         {
           "path": "docs/guardrails/LEGACY_QUEUE_ROLLOUT.md",
           "sha256": "ef197339f697d5e44a2ec9b0ec477926acea266a7f04e74ffe56c94aa69490a0"
+        },
+        {
+          "path": "docs/guardrails/evidence/image-pins-20261009.json",
+          "sha256": "e7703544a4e2ee68d09c71eb9dda29c991dd58826d3ff0b94e5e5fe372c734fd"
         }
       ],
       "reviewed_by": null,
@@ -1295,11 +1299,11 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "248b9acef0fd4be26f22f19d9dce5403b2c9d7a2163cc4f44905126c59ddafcb"
+          "sha256": "b2844a3b21e3b0295aaf677c8dc297ea2b7f12183a43613a10e268dc3bddb85e"
         },
         {
           "path": "docs/guardrails/CI_SECURITY.md",
-          "sha256": "cf010c0314aa4c246cb92751cde4950a68abbd037631fbb306ce5b70124bdb3d"
+          "sha256": "7e29fa28769d3addc304f63f4644564e59793d3945cb7cc7772e730d3ae86b20"
         },
         {
           "path": ".github/dependabot.yml",
@@ -1324,11 +1328,11 @@
         },
         {
           "path": "docs/guardrails/CI_SECURITY.md",
-          "sha256": "cf010c0314aa4c246cb92751cde4950a68abbd037631fbb306ce5b70124bdb3d"
+          "sha256": "7e29fa28769d3addc304f63f4644564e59793d3945cb7cc7772e730d3ae86b20"
         },
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "248b9acef0fd4be26f22f19d9dce5403b2c9d7a2163cc4f44905126c59ddafcb"
+          "sha256": "b2844a3b21e3b0295aaf677c8dc297ea2b7f12183a43613a10e268dc3bddb85e"
         },
         {
           "path": ".github/dependabot.yml",
@@ -1349,7 +1353,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "248b9acef0fd4be26f22f19d9dce5403b2c9d7a2163cc4f44905126c59ddafcb"
+          "sha256": "b2844a3b21e3b0295aaf677c8dc297ea2b7f12183a43613a10e268dc3bddb85e"
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
@@ -1357,7 +1361,7 @@
         },
         {
           "path": "docs/guardrails/CI_SECURITY.md",
-          "sha256": "cf010c0314aa4c246cb92751cde4950a68abbd037631fbb306ce5b70124bdb3d"
+          "sha256": "7e29fa28769d3addc304f63f4644564e59793d3945cb7cc7772e730d3ae86b20"
         },
         {
           "path": ".github/dependabot.yml",
@@ -1578,7 +1582,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "248b9acef0fd4be26f22f19d9dce5403b2c9d7a2163cc4f44905126c59ddafcb"
+          "sha256": "b2844a3b21e3b0295aaf677c8dc297ea2b7f12183a43613a10e268dc3bddb85e"
         }
       ],
       "reviewed_by": null,

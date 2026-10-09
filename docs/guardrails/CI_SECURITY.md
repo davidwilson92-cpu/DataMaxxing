@@ -30,3 +30,9 @@ all supply-chain requirements are met. Preserve the existing required checks
 and keep the production gate blocking while the assessment remains open.
 
 Reference: [GitHub secure use guidance](https://docs.github.com/en/actions/reference/security/secure-use).
+
+## Pinned container images and registry availability
+
+Python 3.12-slim and CI PostgreSQL 18 are pinned to multi-platform manifest digests verified on 9 October 2026. CI uses Docker's official ECR public mirror after repeated Docker Hub anonymous pull quota failures. Dockerfile's default stays on Docker Hub; CI overrides PYTHON_BASE with the same digest. Manifest bodies from both registries were byte-identical: see evidence/image-pins-20261009.json. No paid account, registry or infrastructure was created.
+
+Update the Python default and CI override together after verifying the exact manifest digest in both official registries, then run full application/PostgreSQL, restore, image build/smoke and vulnerability checks. Update PostgreSQL's CI pin separately with the same checks. Do not fall back to mutable tags or an unrelated publisher on a pull failure. Digest pinning does not establish OS-package vulnerability clearance; that review and signed supply-chain assurance remain open. Both public registries have availability/rate limits; do not mark a failed image pull as a successful build.
