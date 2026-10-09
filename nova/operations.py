@@ -9,6 +9,28 @@ from .readiness import spend_summary, cohort_report
 
 router=APIRouter()
 
+@router.get('/internal/ready')
+def ready(authorization: str | None = Header(default=None)):
+    """Dependency readiness, separate from public process liveness.
+
+    This does not make provider requests or claim the scheduler is healthy.
+    Full table selections validate required columns even on an empty database.
+    """
+    secret=os.environ.get('SCHEDULER_SECRET') or os.environ.get('ADMIN_API_KEY')
+    if not secret or not hmac.compare_digest((authorization or '').removeprefix('Bearer '),secret):
+        raise HTTPException(401,'Invalid operations credential')
+    try:
+        from .db import User, Draft, PerformanceSnapshot, MfaSettings, MfaChallenge
+        with SessionLocal() as db:
+            db.execute(text('SELECT 1'))
+            for model in (User, Draft, Publication, ScheduledPost, PerformanceSnapshot, MfaSettings, MfaChallenge):
+                db.execute(select(model).limit(1)).first()
+    except Exception:
+        # Do not expose database URLs, credentials, schema or driver errors.
+        raise HTTPException(503,'Application dependencies are not ready') from None
+    return {'status':'ready','database':'reachable','required_schema':'available',
+            'worker':'not_checked','providers':'not_checked'}
+
 @router.get('/internal/status')
 def status(authorization: str | None = Header(default=None)):
     secret=os.environ.get('SCHEDULER_SECRET') or os.environ.get('ADMIN_API_KEY')

@@ -40,6 +40,7 @@ def test_recent_post_titles_are_bounded_persistent_and_account_owned():
     saved=client.patch(f"/api/drafts/{row['id']}",json={'workspace':{'composer':'Unsent continuation','conversation':[{'role':'user','content':title}]}})
     assert saved.status_code==200
     recent=client.get('/api/drafts').json()
-    assert recent[0]['id']==row['id'] and recent[0]['title']==title[:100]
+    assert recent[0]['id']==row['id'] and recent[0]['title'].startswith('A private saved conversation')
+    assert len(recent[0]['title'])<=72
     assert all(r['id']!=row['id'] for r in other.get('/api/drafts').json())
     assert client.get(f"/api/drafts/{row['id']}").json()['workspace']['conversation'][0]['content']==title

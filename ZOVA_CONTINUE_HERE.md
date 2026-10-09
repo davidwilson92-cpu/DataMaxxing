@@ -1,3 +1,17 @@
+# Current guardrails integration — 9 October 2026
+
+Worktree: zova-guardrails; branch codex/guardrails-closure-20261009. Candidate only, not deployed. Combines guardrails PR #16 and UX PR #17 with owner-authorised optional MFA. Read docs/guardrails/OPTIONAL_MFA_20261009.md and assessment.json first. Earlier deployment statements below are historical.
+
+Preserve all users, credentials, data, explicit publishing confirmation and testing billing settings. No paid staging provisioning authorised. Do not force MFA enrollment. Do not roll back to MFA-unaware authentication once enrolled accounts exist. Production guardrail check remains fail-closed; engineering tests do not certify all 79 requirements.
+
+---
+
+# Focused UX release candidate — 8 October 2026
+
+Publication authorised. Read `docs/UX_RELEASE_20261008.md` for exact scope and rollback. This separate release excludes the broader September authentication, recovery, storage and newsletter candidate. Remote release checks and live verification are required before marking it live.
+
+---
+
 # Next move top-right and current-topic search — LOCAL CANDIDATE, 27 September 2026
 
 Current increment is NOT deployed. Branch `codex/next-move-sources` in the existing `zova-strategy` workspace, based on production-equivalent 653528a / 021aad7. Read `docs/NEXT_MOVE_SOURCES_20260927.md` for details, evidence, limitations and rollback. Sources under the mirrored project remain read-only.

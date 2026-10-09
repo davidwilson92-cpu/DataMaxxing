@@ -246,6 +246,7 @@ class Draft(BrandScoped, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
     brief: Mapped[str] = mapped_column(Text, default='')
+    title: Mapped[str] = mapped_column(String(120), default='', server_default='')
     instruction: Mapped[str] = mapped_column(Text, default='')
     platforms_json: Mapped[str] = mapped_column(Text, default='[]')
     variants_json: Mapped[str] = mapped_column(Text, default='{}')
@@ -417,6 +418,14 @@ class PendingConnection(Base):
     used: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class PerformanceSnapshot(BrandScoped, Base):
+    __tablename__ = 'zova_performance_snapshots'
+    __table_args__ = (UniqueConstraint('user_id', 'brand_id', name='uq_performance_snapshot_brand'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    payload_json: Mapped[str] = mapped_column(Text, default='{}')
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class Strategy(BrandScoped, Base):
     __tablename__ = 'zova_strategies'
     __table_args__ = (UniqueConstraint('user_id', 'brand_id'),)
@@ -471,12 +480,35 @@ class SeriesApproval(BrandScoped, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class MfaSettings(Base):
+    __tablename__ = 'zova_mfa_settings'
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), primary_key=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    encrypted_secret: Mapped[str] = mapped_column(Text, default='')
+    setup_auth_version: Mapped[int] = mapped_column(Integer, default=0)
+    setup_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_counter: Mapped[int] = mapped_column(Integer, default=-1)
+    recovery_hashes_json: Mapped[str] = mapped_column(Text, default='[]')
+
+
+class MfaChallenge(Base):
+    __tablename__ = 'zova_mfa_challenges'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    auth_version: Mapped[int] = mapped_column(Integer)
+    destination: Mapped[str] = mapped_column(String(500), default='/studio')
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 Base.metadata.create_all(bind=engine, tables=[table for table in Base.metadata.sorted_tables
-                                             if table is not LegacyPublication.__table__])
+                                             if table not in (LegacyPublication.__table__, MfaSettings.__table__, MfaChallenge.__table__)])
 from .migrations import run_migrations
 run_migrations(engine)
 from .migrations import run_legacy_queue_migration
 run_legacy_queue_migration(engine, LegacyPublication.__table__)
+from .migrations import run_mfa_migration
+run_mfa_migration(engine, (MfaSettings.__table__, MfaChallenge.__table__))
 
 
 def get_db(request: Request):

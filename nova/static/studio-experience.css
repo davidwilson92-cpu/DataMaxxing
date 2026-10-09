@@ -119,3 +119,6 @@
 .simple-chat .instagram-format-choices input:checked{background:#783bc0;border-color:#783bc0}
 .simple-chat .instagram-format-choices input:checked::after{content:'✓';color:white;font-size:12px;line-height:1}
 @media(min-width:761px){.simple-chat .composer-toolbar{grid-row:2;grid-column:2}}
+
+/* Keep the working version clear without adding a separate canvas. */
+.draft-working-title{font-size:1rem;margin:0 0 6px;line-height:1.4;overflow-wrap:anywhere}.draft-scope{font-size:.8125rem;color:#62546f;margin:0 0 10px}

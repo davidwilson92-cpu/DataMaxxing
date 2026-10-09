@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "assessed_at": "2026-09-29",
+  "assessed_at": "2026-10-09",
   "base_commit": "38f1c265d5eeaa6f8ba6cf09445570cc7943d961",
   "baseline_sha256": "953d7d3686edf255b6cda9f2b47b8982aeb97aa7bb9b53ca7171cfd1c77e0388",
   "reviewed_source_digest": null,
@@ -37,7 +37,7 @@
         },
         {
           "path": "nova/scheduler.py",
-          "sha256": "b28eee4f69bf54ded41a0299b6fae0fd64be102cb1035b9c4b6dd572cd20b8b2"
+          "sha256": "71bbe279b89515de5dd43f152e80d37adba76713428a683ceae256a1166fcf54"
         },
         {
           "path": "tests/test_worker_boundaries.py",
@@ -61,16 +61,28 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Custom scrypt/session authentication exists. New-password minimum is now 15 with a small common-password denylist; MFA and a maintained compromised-password corpus are absent. Owner deferred MFA implementation on 28 September 2026; the requirement remains open and sign-in is unchanged.",
-      "next_action": "Continue compromised-password and session/recovery assurance work. Resume MFA only when the owner lifts the deferral; do not waive its release requirement.",
+      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete.",
+      "next_action": "Validate PostgreSQL/restore and browser journeys, obtain security review, establish verified recovery operations and privileged MFA rollout; add maintained compromised-password screening.",
       "evidence": [
         {
           "path": "nova/security.py",
-          "sha256": "75abf664ca6ac1ef9b304bebcc2997fa1bea4578873cb6d77337283596a68c6c"
+          "sha256": "4910ed169215b662033d0afee359b2d942499df0789b7343046c67eb0e0d1020"
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
-          "sha256": "ea32f678a5b8330d947e7a401dcc7eaa297af414bf6788f52a94c32dd1531d3e"
+          "sha256": "f3e34c9b509bc78a561f78a118782e395749eea3799afd104deada3d50798932"
+        },
+        {
+          "path": "nova/mfa.py",
+          "sha256": "202ea505c054ddaf679efca54acb36a9661bf97c168787f7efe1b5e04717a6b5"
+        },
+        {
+          "path": "tests/test_mfa.py",
+          "sha256": "527248dc0f832b3c8701c95ae12e06433e163a59ca60a5ca502d00fc691ceb56"
+        },
+        {
+          "path": "docs/guardrails/OPTIONAL_MFA_20261009.md",
+          "sha256": "b50718f60f018b1f48891ccf9bb246ded74022a57b39c2dc91da3cf987bc8a4c"
         }
       ],
       "reviewed_by": null,
@@ -104,7 +116,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "58b89899cc004af92f6afcd913af2443788e056d37735b76a06a2401be524027"
+          "sha256": "339000a25dca3a281e9dc2f38dfd23326fade8635d92dd8d0e85a602d9bca7b0"
         }
       ],
       "reviewed_by": null,
@@ -150,7 +162,7 @@
       "evidence": [
         {
           "path": "nova/workspace.py",
-          "sha256": "3608b3d1e9cbe8e4ec9461d64e819676eea456e461d30f89f7efc290ee992303"
+          "sha256": "ea98cac1806a0b419cb2cbd53e826a1e9dcaf5ab13bfc24ef79bc30a4f7aac23"
         }
       ],
       "reviewed_by": null,
@@ -167,7 +179,7 @@
       "evidence": [
         {
           "path": "nova/scheduler.py",
-          "sha256": "b28eee4f69bf54ded41a0299b6fae0fd64be102cb1035b9c4b6dd572cd20b8b2"
+          "sha256": "71bbe279b89515de5dd43f152e80d37adba76713428a683ceae256a1166fcf54"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -213,7 +225,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "b1d41c3bf38fd58c6aec9ad054bec27fc000126c26699cfe730ae803537397ab"
+          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
         }
       ],
       "reviewed_by": null,
@@ -230,7 +242,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "b1d41c3bf38fd58c6aec9ad054bec27fc000126c26699cfe730ae803537397ab"
+          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
         }
       ],
       "reviewed_by": null,
@@ -247,7 +259,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "c344f27ff8a79a3b2998d20d04c396f2980f8437356a9e6b8754348cc0bdfb92"
+          "sha256": "ea44c2ec25338058984737516f616babb47a0a7d757d6e69cccd4ae154f4bfcc"
         }
       ],
       "reviewed_by": null,
@@ -264,7 +276,7 @@
       "evidence": [
         {
           "path": "nova/data_lifecycle.py",
-          "sha256": "aab266d06bbdd83c9771cc51515b94b43dc7837d9b627862fd26a4a859ee5593"
+          "sha256": "1057f6598635a19a9bcdf1857456e2df1c30682ddce2978e618bbd4685da0ab0"
         }
       ],
       "reviewed_by": null,
@@ -281,7 +293,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "b1d41c3bf38fd58c6aec9ad054bec27fc000126c26699cfe730ae803537397ab"
+          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
         }
       ],
       "reviewed_by": null,
@@ -298,7 +310,7 @@
       "evidence": [
         {
           "path": "nova/data_lifecycle.py",
-          "sha256": "aab266d06bbdd83c9771cc51515b94b43dc7837d9b627862fd26a4a859ee5593"
+          "sha256": "1057f6598635a19a9bcdf1857456e2df1c30682ddce2978e618bbd4685da0ab0"
         }
       ],
       "reviewed_by": null,
@@ -315,7 +327,19 @@
       "evidence": [
         {
           "path": "nova/data_lifecycle.py",
-          "sha256": "aab266d06bbdd83c9771cc51515b94b43dc7837d9b627862fd26a4a859ee5593"
+          "sha256": "1057f6598635a19a9bcdf1857456e2df1c30682ddce2978e618bbd4685da0ab0"
+        },
+        {
+          "path": "nova/mfa.py",
+          "sha256": "202ea505c054ddaf679efca54acb36a9661bf97c168787f7efe1b5e04717a6b5"
+        },
+        {
+          "path": "tests/test_mfa.py",
+          "sha256": "527248dc0f832b3c8701c95ae12e06433e163a59ca60a5ca502d00fc691ceb56"
+        },
+        {
+          "path": "docs/guardrails/OPTIONAL_MFA_20261009.md",
+          "sha256": "b50718f60f018b1f48891ccf9bb246ded74022a57b39c2dc91da3cf987bc8a4c"
         }
       ],
       "reviewed_by": null,
@@ -332,7 +356,7 @@
       "evidence": [
         {
           "path": "nova/data_lifecycle.py",
-          "sha256": "aab266d06bbdd83c9771cc51515b94b43dc7837d9b627862fd26a4a859ee5593"
+          "sha256": "1057f6598635a19a9bcdf1857456e2df1c30682ddce2978e618bbd4685da0ab0"
         }
       ],
       "reviewed_by": null,
@@ -349,7 +373,7 @@
       "evidence": [
         {
           "path": "nova/security.py",
-          "sha256": "75abf664ca6ac1ef9b304bebcc2997fa1bea4578873cb6d77337283596a68c6c"
+          "sha256": "4910ed169215b662033d0afee359b2d942499df0789b7343046c67eb0e0d1020"
         }
       ],
       "reviewed_by": null,
@@ -412,7 +436,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "58b89899cc004af92f6afcd913af2443788e056d37735b76a06a2401be524027"
+          "sha256": "339000a25dca3a281e9dc2f38dfd23326fade8635d92dd8d0e85a602d9bca7b0"
         }
       ],
       "reviewed_by": null,
@@ -446,7 +470,7 @@
       "evidence": [
         {
           "path": "nova/social.py",
-          "sha256": "fe4c95c8eb30740a191ec20ca1b562cb79210a7ad5ca2bef96914f93165805b2"
+          "sha256": "cc8136965e40f684bfc4891b0738161fc20a0b015ecc021640383fdd43933f4f"
         }
       ],
       "reviewed_by": null,
@@ -514,7 +538,7 @@
       "evidence": [
         {
           "path": "tests/test_workspace_persistence.py",
-          "sha256": "b642b59f28e45b96db41e542ba56671425d87d20c8efa9c3fa9925e26e6df4d1"
+          "sha256": "fb6dfbfccb9fb706f876d01db2075d5afad152b561115292456f2df33662d752"
         }
       ],
       "reviewed_by": null,
@@ -548,7 +572,7 @@
       "evidence": [
         {
           "path": "nova/static/studio-publish.js",
-          "sha256": "461764214d04696a9b262cd743ee797f9a137a2649db3e0c76325b348cd8a748"
+          "sha256": "500e78c6c9d922664f03e5f5b31cd59872e95987e6031f1cd624503cd28c2a3c"
         }
       ],
       "reviewed_by": null,
@@ -565,7 +589,7 @@
       "evidence": [
         {
           "path": "nova/app.py",
-          "sha256": "58b89899cc004af92f6afcd913af2443788e056d37735b76a06a2401be524027"
+          "sha256": "339000a25dca3a281e9dc2f38dfd23326fade8635d92dd8d0e85a602d9bca7b0"
         }
       ],
       "reviewed_by": null,
@@ -582,7 +606,7 @@
       "evidence": [
         {
           "path": "nova/templates/studio.html",
-          "sha256": "a79f5516da83b08ba838f1591eae7621c85f1f15e499289de63221b428f00bc5"
+          "sha256": "a1836697461efb24b402fd699987d26f84c9e3eae2d5254b7c572e2dc82b8d7d"
         }
       ],
       "reviewed_by": null,
@@ -616,7 +640,7 @@
       "evidence": [
         {
           "path": "nova/templates/base.html",
-          "sha256": "a94abc82ee49e1cbd354e3db31ce9ad0a3f78aac57c11257632af3c0df38ec0c"
+          "sha256": "2d476b231c23b183d91cef2ec8e25c07ab95f64b8f3910222a04cb6e6cf54331"
         }
       ],
       "reviewed_by": null,
@@ -684,7 +708,7 @@
       "evidence": [
         {
           "path": "nova/strategy.py",
-          "sha256": "52f4a123b070876c46d569f58b87e3373b723a4e6266891d6c1df8aa7dc1e038"
+          "sha256": "24054b86364e28ef0db122848e260ff22ddfa33d07eaead4ca12c583dba95fdf"
         }
       ],
       "reviewed_by": null,
@@ -752,7 +776,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "b1d41c3bf38fd58c6aec9ad054bec27fc000126c26699cfe730ae803537397ab"
+          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
         }
       ],
       "reviewed_by": null,
@@ -786,7 +810,7 @@
       "evidence": [
         {
           "path": "nova/operations.py",
-          "sha256": "1e95d0f77403be958e10c34f19086f1f62291d557e5c65ed07929763c5147ece"
+          "sha256": "e15641b7e35bffe4838216c2dcc2462e20d90bc665ca2b4372b6432340f4c2ac"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -832,7 +856,7 @@
       "evidence": [
         {
           "path": "nova/operations.py",
-          "sha256": "1e95d0f77403be958e10c34f19086f1f62291d557e5c65ed07929763c5147ece"
+          "sha256": "e15641b7e35bffe4838216c2dcc2462e20d90bc665ca2b4372b6432340f4c2ac"
         }
       ],
       "reviewed_by": null,
@@ -849,7 +873,7 @@
       "evidence": [
         {
           "path": "nova/social.py",
-          "sha256": "fe4c95c8eb30740a191ec20ca1b562cb79210a7ad5ca2bef96914f93165805b2"
+          "sha256": "cc8136965e40f684bfc4891b0738161fc20a0b015ecc021640383fdd43933f4f"
         }
       ],
       "reviewed_by": null,
@@ -866,7 +890,7 @@
       "evidence": [
         {
           "path": "nova/social.py",
-          "sha256": "fe4c95c8eb30740a191ec20ca1b562cb79210a7ad5ca2bef96914f93165805b2"
+          "sha256": "cc8136965e40f684bfc4891b0738161fc20a0b015ecc021640383fdd43933f4f"
         }
       ],
       "reviewed_by": null,
@@ -883,7 +907,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "b1d41c3bf38fd58c6aec9ad054bec27fc000126c26699cfe730ae803537397ab"
+          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -941,7 +965,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "b1d41c3bf38fd58c6aec9ad054bec27fc000126c26699cfe730ae803537397ab"
+          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
         }
       ],
       "reviewed_by": null,
@@ -958,7 +982,7 @@
       "evidence": [
         {
           "path": "nova/strategy.py",
-          "sha256": "52f4a123b070876c46d569f58b87e3373b723a4e6266891d6c1df8aa7dc1e038"
+          "sha256": "24054b86364e28ef0db122848e260ff22ddfa33d07eaead4ca12c583dba95fdf"
         }
       ],
       "reviewed_by": null,
@@ -1004,16 +1028,28 @@
       "status": "gap",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Internal operations use bearer secrets; staff MFA, separate capabilities and audited support access are absent. Owner deferred MFA implementation on 28 September 2026; the requirement remains open and sign-in is unchanged.",
-      "next_action": "Continue least-privilege capabilities and attributable support/operations audits. MFA is deferred, not satisfied.",
+      "finding": "Optional customer MFA is implemented but internal operations still use bearer secrets; staff identity, mandatory MFA, separate capabilities and audited support access remain absent.",
+      "next_action": "Put privileged operations behind verified staff identity, mandatory MFA and least-privilege audited actions; do not force existing customer enrollment.",
       "evidence": [
         {
           "path": "nova/operations.py",
-          "sha256": "1e95d0f77403be958e10c34f19086f1f62291d557e5c65ed07929763c5147ece"
+          "sha256": "e15641b7e35bffe4838216c2dcc2462e20d90bc665ca2b4372b6432340f4c2ac"
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
-          "sha256": "ea32f678a5b8330d947e7a401dcc7eaa297af414bf6788f52a94c32dd1531d3e"
+          "sha256": "f3e34c9b509bc78a561f78a118782e395749eea3799afd104deada3d50798932"
+        },
+        {
+          "path": "nova/mfa.py",
+          "sha256": "202ea505c054ddaf679efca54acb36a9661bf97c168787f7efe1b5e04717a6b5"
+        },
+        {
+          "path": "tests/test_mfa.py",
+          "sha256": "527248dc0f832b3c8701c95ae12e06433e163a59ca60a5ca502d00fc691ceb56"
+        },
+        {
+          "path": "docs/guardrails/OPTIONAL_MFA_20261009.md",
+          "sha256": "b50718f60f018b1f48891ccf9bb246ded74022a57b39c2dc91da3cf987bc8a4c"
         }
       ],
       "reviewed_by": null,
@@ -1051,7 +1087,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "c344f27ff8a79a3b2998d20d04c396f2980f8437356a9e6b8754348cc0bdfb92"
+          "sha256": "ea44c2ec25338058984737516f616babb47a0a7d757d6e69cccd4ae154f4bfcc"
         },
         {
           "path": "docs/guardrails/CI_SECURITY.md",
@@ -1076,7 +1112,7 @@
       "evidence": [
         {
           "path": "requirements.txt",
-          "sha256": "cf1442c3839d1da646c55d1d1129df4f4cfb056c83b494956567a2db3ce87cbc"
+          "sha256": "cb84d234a9bd6a63b5dbbaac25fbb81e4432a3054281cd167984c841d18f8d1b"
         },
         {
           "path": "docs/guardrails/CI_SECURITY.md",
@@ -1084,7 +1120,7 @@
         },
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "c344f27ff8a79a3b2998d20d04c396f2980f8437356a9e6b8754348cc0bdfb92"
+          "sha256": "ea44c2ec25338058984737516f616babb47a0a7d757d6e69cccd4ae154f4bfcc"
         },
         {
           "path": ".github/dependabot.yml",
@@ -1101,15 +1137,15 @@
       "severity": "P1",
       "owner": "Operations and security",
       "finding": "GitHub ruleset 24140009 is verified Active on main: three GitHub Actions checks required, no bypass actors, up-to-date branches and resolved conversations required, force pushes/deletions blocked. PR approval count is zero; all validation actions are pinned to official upstream commits and checkout credential persistence is disabled. Full dependency/image locks and remaining cloud/registry controls still need assurance.",
-      "next_action": "Keep the active required checks; establish independent review, finish dependency/image pinning and verify least-privilege cloud/registry access. App MFA remains deferred; do not change existing account MFA settings.",
+      "next_action": "Keep the active required checks; establish independent review, finish dependency/image pinning and verify least-privilege cloud/registry access. Optional MFA is authorised; privileged MFA and independent review remain unresolved.",
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "c344f27ff8a79a3b2998d20d04c396f2980f8437356a9e6b8754348cc0bdfb92"
+          "sha256": "ea44c2ec25338058984737516f616babb47a0a7d757d6e69cccd4ae154f4bfcc"
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
-          "sha256": "ea32f678a5b8330d947e7a401dcc7eaa297af414bf6788f52a94c32dd1531d3e"
+          "sha256": "f3e34c9b509bc78a561f78a118782e395749eea3799afd104deada3d50798932"
         },
         {
           "path": "docs/guardrails/CI_SECURITY.md",
@@ -1135,6 +1171,18 @@
         {
           "path": "tests/test_reviewed_publication.py",
           "sha256": "882697be84891f0f83f7e2517984e040fa2a3128a8fa8586f0df81e3e8303de0"
+        },
+        {
+          "path": "nova/mfa.py",
+          "sha256": "202ea505c054ddaf679efca54acb36a9661bf97c168787f7efe1b5e04717a6b5"
+        },
+        {
+          "path": "tests/test_mfa.py",
+          "sha256": "527248dc0f832b3c8701c95ae12e06433e163a59ca60a5ca502d00fc691ceb56"
+        },
+        {
+          "path": "docs/guardrails/OPTIONAL_MFA_20261009.md",
+          "sha256": "b50718f60f018b1f48891ccf9bb246ded74022a57b39c2dc91da3cf987bc8a4c"
         }
       ],
       "reviewed_by": null,
@@ -1155,7 +1203,7 @@
         },
         {
           "path": "nova/scheduler.py",
-          "sha256": "b28eee4f69bf54ded41a0299b6fae0fd64be102cb1035b9c4b6dd572cd20b8b2"
+          "sha256": "71bbe279b89515de5dd43f152e80d37adba76713428a683ceae256a1166fcf54"
         },
         {
           "path": "tests/test_worker_boundaries.py",
@@ -1188,7 +1236,7 @@
         },
         {
           "path": "nova/scheduler.py",
-          "sha256": "b28eee4f69bf54ded41a0299b6fae0fd64be102cb1035b9c4b6dd572cd20b8b2"
+          "sha256": "71bbe279b89515de5dd43f152e80d37adba76713428a683ceae256a1166fcf54"
         },
         {
           "path": "tests/test_worker_boundaries.py",
@@ -1246,7 +1294,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "c344f27ff8a79a3b2998d20d04c396f2980f8437356a9e6b8754348cc0bdfb92"
+          "sha256": "ea44c2ec25338058984737516f616babb47a0a7d757d6e69cccd4ae154f4bfcc"
         }
       ],
       "reviewed_by": null,
@@ -1352,7 +1400,7 @@
       "evidence": [
         {
           "path": "nova/data_lifecycle.py",
-          "sha256": "aab266d06bbdd83c9771cc51515b94b43dc7837d9b627862fd26a4a859ee5593"
+          "sha256": "1057f6598635a19a9bcdf1857456e2df1c30682ddce2978e618bbd4685da0ab0"
         }
       ],
       "reviewed_by": null,
@@ -1415,8 +1463,8 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Product and engineering",
-      "finding": "Marketing consent is off and publishing requires review. Public media configuration and MFA defaults do not meet the complete safe-default requirement. Owner deferred MFA implementation on 28 September 2026; the requirement remains open and sign-in is unchanged. Browser media now uses owner-authenticated previews and short-lived signed downloads. S3 delivery generates presigned URLs instead of returning stored permanent URLs. Existing bucket policy and cache access remain unverified.",
-      "next_action": "Continue private storage and explicit opt-in automation. MFA defaults remain deferred and unresolved.",
+      "finding": "Marketing consent is off and publishing requires review. Public media configuration and MFA defaults do not meet the complete safe-default requirement. Owner authorised optional MFA on 9 October 2026. Existing accounts remain unchanged until enrollment; privileged MFA defaults are unresolved. Browser media now uses owner-authenticated previews and short-lived signed downloads. S3 delivery generates presigned URLs instead of returning stored permanent URLs. Existing bucket policy and cache access remain unverified.",
+      "next_action": "Verify private storage policies, explicit opt-in automation and privileged MFA defaults without forcing customer enrollment.",
       "evidence": [
         {
           "path": "render.yaml",
@@ -1424,7 +1472,7 @@
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
-          "sha256": "ea32f678a5b8330d947e7a401dcc7eaa297af414bf6788f52a94c32dd1531d3e"
+          "sha256": "f3e34c9b509bc78a561f78a118782e395749eea3799afd104deada3d50798932"
         },
         {
           "path": "nova/storage.py",
@@ -1437,6 +1485,18 @@
         {
           "path": "docs/guardrails/PRIVATE_MEDIA_ROLLOUT.md",
           "sha256": "127be3e9cf9503a4c47de98ac9d820e510e394b6a1f40ebb625d79cd4e8f0fef"
+        },
+        {
+          "path": "nova/mfa.py",
+          "sha256": "202ea505c054ddaf679efca54acb36a9661bf97c168787f7efe1b5e04717a6b5"
+        },
+        {
+          "path": "tests/test_mfa.py",
+          "sha256": "527248dc0f832b3c8701c95ae12e06433e163a59ca60a5ca502d00fc691ceb56"
+        },
+        {
+          "path": "docs/guardrails/OPTIONAL_MFA_20261009.md",
+          "sha256": "b50718f60f018b1f48891ccf9bb246ded74022a57b39c2dc91da3cf987bc8a4c"
         }
       ],
       "reviewed_by": null,
@@ -1453,7 +1513,7 @@
       "evidence": [
         {
           "path": "nova/templates/account.html",
-          "sha256": "f2cd5d1ff13722252b65f6b6e10513bf77e4630386c36416909357573370673c"
+          "sha256": "f6493018e0d4ffcd9d77fbb76dced3236c99077e8bc3281ff5d04056f35bb537"
         }
       ],
       "reviewed_by": null,
@@ -1465,7 +1525,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "This assessment applies P0–P3 and blocks all unresolved applicable sections; previously deployed code has not been certified against the model.",
+      "finding": "This assessment applies P0\u00e2\u20ac\u201cP3 and blocks all unresolved applicable sections; previously deployed code has not been certified against the model.",
       "next_action": "Assign accountable owners and verify release policy is required in repository and hosting controls.",
       "evidence": [
         {
@@ -1491,7 +1551,7 @@
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
-          "sha256": "ea32f678a5b8330d947e7a401dcc7eaa297af414bf6788f52a94c32dd1531d3e"
+          "sha256": "f3e34c9b509bc78a561f78a118782e395749eea3799afd104deada3d50798932"
         }
       ],
       "reviewed_by": null,
@@ -1525,7 +1585,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "b1d41c3bf38fd58c6aec9ad054bec27fc000126c26699cfe730ae803537397ab"
+          "sha256": "ec40376c5079b5c92dd3b298ed7343e814fd7eb9bef006c0f0783be00c28223b"
         }
       ],
       "reviewed_by": null,

@@ -11,12 +11,18 @@ with source.connect() as a, restored.connect() as b:
     for table in inspect(source).get_table_names():
         assert table.replace('_','').isalnum()
         assert a.execute(text(f'SELECT COUNT(*) FROM "{table}"')).scalar()==b.execute(text(f'SELECT COUNT(*) FROM "{table}"')).scalar(),table
-    for table,columns in [('nova_users','id,email,password_hash,auth_version,default_brand_name'),('nova_social_connections','id,user_id,brand_id,encrypted_access_token'),('nova_drafts','id,user_id,brand_id,workspace_json,revision'),('nova_media_assets','id,user_id,brand_id,storage_key,analysis_json'),('zova_brands','id,user_id,name'),('zova_brand_voices','id,user_id,brand_id,writing_tone')]:
+    for table,columns in [('nova_users','id,email,password_hash,auth_version,default_brand_name'),('nova_social_connections','id,user_id,brand_id,encrypted_access_token'),('nova_drafts','id,user_id,brand_id,title,workspace_json,revision'),('nova_media_assets','id,user_id,brand_id,storage_key,analysis_json'),('zova_brands','id,user_id,name'),('zova_brand_voices','id,user_id,brand_id,writing_tone')]:
         assert a.execute(text(f'SELECT {columns} FROM {table} ORDER BY id')).all()==b.execute(text(f'SELECT {columns} FROM {table} ORDER BY id')).all(),table
     assert a.execute(text('SELECT key,user_id,kind,period,amount,state FROM zova_usage_entries ORDER BY key')).all()==b.execute(text('SELECT key,user_id,kind,period,amount,state FROM zova_usage_entries ORDER BY key')).all()
     for table,columns,order in [('zova_pending_connections','code_hash,user_id,brand_id,auth_version,platform,encrypted_payload,expires_at,used','code_hash'),('zova_ai_calls','id,user_id,model,status,input_tokens,output_tokens,estimated_gbp,rate_snapshot','id'),('zova_product_events','key,user_id,kind,created_at','key'),('zova_email_verifications','token_hash,user_id,email,expires_at,used','token_hash'),('zova_mail_deliveries','id,status,created_at','id')]:
         assert a.execute(text(f'SELECT {columns} FROM {table} ORDER BY {order}')).all()==b.execute(text(f'SELECT {columns} FROM {table} ORDER BY {order}')).all(),table
+    assert a.execute(text('SELECT id,user_id,brand_id,payload_json,fetched_at FROM zova_performance_snapshots ORDER BY id')).all()==b.execute(text('SELECT id,user_id,brand_id,payload_json,fetched_at FROM zova_performance_snapshots ORDER BY id')).all()
 print('Synthetic PostgreSQL restore: all table counts and identity/credential/workspace records match.')
 with source.connect() as a, restored.connect() as b:
     query = text('SELECT id,creator_id,text,account,authority_digest,status,result_json FROM zova_legacy_publications ORDER BY id')
     assert a.execute(query).all() == b.execute(query).all(), 'legacy publication ledger'
+
+with source.connect() as a, restored.connect() as b:
+    for table, order in [("zova_mfa_settings", "user_id"), ("zova_mfa_challenges", "token_hash")]:
+        query = text(f"SELECT * FROM {table} ORDER BY {order}")
+        assert a.execute(query).all() == b.execute(query).all(), table

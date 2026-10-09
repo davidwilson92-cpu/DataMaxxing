@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 import jwt
-import tweepy
+from oauthlib.oauth1 import Client as OAuth1Client
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import Response, FileResponse, HTMLResponse, JSONResponse, RedirectResponse
@@ -32,7 +32,7 @@ from . import ai, billing, brands, allowances, customer_service, readiness
 from .connections import connection_options, safe_login_next
 from .db import (
     Activity, AuthIdentity, AuthState, Creator, CreatorPreferences, Draft, MediaAsset, OAuth2Connection, OAuthState,
-    PostLog, ScheduledPost, SessionLocal, SocialConnection, User, DeletionRequest, get_db, get_preferences, utcnow,
+    PostLog, Publication, ScheduledPost, SessionLocal, SocialConnection, User, DeletionRequest, get_db, get_preferences, utcnow,
 )
 from .scheduler import loop as scheduler_loop, process_due
 from .security import revoke_session, current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password
@@ -43,6 +43,7 @@ from .social import (
     publish_platform, publishing_context, recent_content_for_user, recent_posts_for_user, resolve_tiktok_post, tiktok_authorize_url, tiktok_exchange, upsert_connection, x_authorize_url, x_exchange,
 )
 from .storage import UPLOAD_DIR, save_bytes
+from .work_summary import draft_title, work_summary
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("nova")
@@ -73,9 +74,9 @@ def template_context(request: Request, user: User | None = None, **kwargs: Any) 
     return {"request": request, "user": user, "brand": brand, "connections": connection_options(), **customer_service.context(), **kwargs}
 
 
-def set_user_cookie(response: RedirectResponse | JSONResponse, user: User) -> None:
+def set_user_cookie(response: RedirectResponse | JSONResponse, user: User, *, expected_auth_version: int | None = None) -> None:
     response.set_cookie(
-        "nova_session", make_user_session(user.id), max_age=30 * 86400, httponly=True,
+        "nova_session", make_user_session(user.id, expected_auth_version=expected_auth_version), max_age=30 * 86400, httponly=True,
         secure=base_url().startswith("https://"), samesite="lax", path="/",
     )
 
@@ -158,8 +159,11 @@ def publish_legacy_creator(text: str, creator: Creator, db: Session) -> dict[str
             if r.status_code >= 400: raise RuntimeError(r.text)
             pid = str(r.json()["data"]["id"])
         else:
-            client = tweepy.Client(consumer_key=decrypt(creator.encrypted_x_api_key), consumer_secret=decrypt(creator.encrypted_x_api_secret), access_token=decrypt(creator.encrypted_x_access_token), access_token_secret=decrypt(creator.encrypted_x_access_token_secret))
-            resp = client.create_tweet(text=text); pid = str(resp.data["id"])
+            signer = OAuth1Client(decrypt(creator.encrypted_x_api_key), client_secret=decrypt(creator.encrypted_x_api_secret), resource_owner_key=decrypt(creator.encrypted_x_access_token), resource_owner_secret=decrypt(creator.encrypted_x_access_token_secret))
+            url, headers, payload = signer.sign('https://api.x.com/2/tweets', http_method='POST', body=json.dumps({'text':text}), headers={'Content-Type':'application/json'})
+            r = httpx.post(url, headers=headers, content=payload, timeout=30.0)
+            if r.status_code >= 400: raise RuntimeError(r.text)
+            pid = str(r.json()['data']['id'])
         row.status="published"; row.x_post_id=pid; db.commit()
         return {"post_id": pid, "url": f"https://x.com/{creator.x_username}/status/{pid}"}
     except Exception as exc:
@@ -246,13 +250,13 @@ def signup_page(request: Request, error: str | None = None):
     return templates.TemplateResponse(request, "auth.html", template_context(request, heading="Create your Zova account", subheading="Use your email to create a workspace. Connect your social accounts afterwards, or skip that step.", action="/signup", button="Create Zova account", saved=saved, countries=sorted(pycountry.countries,key=lambda c:c.name), error=error, apple_ready=apple_configured()))
 
 @app.post("/signup")
-def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str, Form()], country: Annotated[str, Form()], password: Annotated[str, Form()], password_confirmation: Annotated[str, Form()], accept_terms: Annotated[str | None, Form()] = None, marketing_consent: Annotated[str | None, Form()] = None, db: Session=Depends(get_db)):
+def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str, Form()], password: Annotated[str, Form()], password_confirmation: Annotated[str, Form()], country: Annotated[str, Form()] = "", accept_terms: Annotated[str | None, Form()] = None, marketing_consent: Annotated[str | None, Form()] = None, db: Session=Depends(get_db)):
     def retry(location, status=303):
         response=RedirectResponse(location,status)
         response.set_cookie('zova_signup_input',encrypt(json.dumps({'name':name[:160],'email':email[:320],'country':country[:2],'expires':utcnow().timestamp()+600})),max_age=600,httponly=True,secure=base_url().startswith('https://'),samesite='lax',path='/signup')
         return response
     try:
-        email, name, country = normalize_email(email), normalize_name(name), normalize_country(country)
+        email, name, country = normalize_email(email), normalize_name(name), normalize_country(country) if country else ""
     except ValueError as exc:
         return retry(f"/signup?error={quote_plus(str(exc))}", 303)
     if accept_terms != "yes": return retry("/signup?error=Please+accept+the+Terms+and+Privacy+Policy",303)
@@ -292,7 +296,7 @@ def apple_start(intent: str = "login", db: Session = Depends(get_db)):
 
 
 @app.post("/auth/apple/callback")
-def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotated[str | None, Form()] = None, state: Annotated[str | None, Form()] = None, error: Annotated[str | None, Form()] = None, user: Annotated[str | None, Form()] = None, db: Session = Depends(get_db)):
+def apple_callback(request: Request, code: Annotated[str | None, Form()] = None, id_token: Annotated[str | None, Form()] = None, state: Annotated[str | None, Form()] = None, error: Annotated[str | None, Form()] = None, user: Annotated[str | None, Form()] = None, db: Session = Depends(get_db)):
     if error or not code or not id_token or not state: return RedirectResponse("/login?error=Apple+sign-in+was+cancelled", 303)
     row = db.scalar(select(AuthState).where(AuthState.state_hash == hash_api_key(state), AuthState.provider == "apple", AuthState.used.is_(False)))
     if not row or row.created_at.replace(tzinfo=row.created_at.tzinfo or timezone.utc) < utcnow() - timedelta(minutes=10): raise HTTPException(400, "Invalid or expired Apple sign-in state")
@@ -312,7 +316,12 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
         except (json.JSONDecodeError, TypeError, ValueError):
             display_name = ""
     identity = db.scalar(select(AuthIdentity).where(AuthIdentity.provider == "apple", AuthIdentity.subject == subject))
-    user = db.get(User, identity.user_id) if identity else (db.scalar(select(User).where(User.email == email)) if email else None)
+    verified_email=claims.get('email_verified') in {True,'true'}
+    user = db.get(User, identity.user_id) if identity else (db.scalar(select(User).where(User.email == email)) if email and verified_email else None)
+    if not identity and email and not verified_email:
+        return RedirectResponse('/login?error=Apple+did+not+verify+this+email.+Use+your+Zova+login.',303)
+    if user and not user.active:
+        return RedirectResponse('/login?error=This+account+is+not+available.',303)
     created = user is None
     if created:
         now = utcnow()
@@ -326,15 +335,29 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
         db.commit()
     if not identity: db.add(AuthIdentity(user_id=user.id, provider="apple", subject=subject)); db.commit()
     if created:readiness.event(user.id,'signup',user.id)
-    resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303); set_user_cookie(resp, user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
+    from .mfa import begin_login
+    verified_version=user.auth_version
+    mfa_response=begin_login(db,user,verified_version,'/onboarding/socials' if created else '/studio')
+    if mfa_response is not None:return mfa_response
+    resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303)
+    try:set_user_cookie(resp,user,expected_auth_version=verified_version)
+    except ValueError:return RedirectResponse('/login?error=Your+sign-in+changed.+Please+sign+in+again.',303)
+    resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 
 @app.post("/login")
 def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Form()],next:Annotated[str,Form()]="/studio",db:Session=Depends(get_db)):
     user=db.scalar(select(User).where(User.email==email.strip().lower()))
     destination=safe_login_next(next)
     if not user or not user.active or not verify_password(password,user.password_hash): return RedirectResponse("/login?error=Incorrect+email+or+password&next="+quote_plus(destination),303)
+    verified_version=user.auth_version
+    from .mfa import begin_login
+    mfa_response=begin_login(db,user,verified_version,destination)
+    if mfa_response is not None:return mfa_response
     user.last_login_at=utcnow(); db.commit()
-    resp=RedirectResponse(destination,303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
+    resp=RedirectResponse(destination,303)
+    try:set_user_cookie(resp,user,expected_auth_version=verified_version)
+    except ValueError:return RedirectResponse('/login?error=Your+sign-in+changed.+Please+sign+in+again.',303)
+    resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 
 @app.post("/logout")
 def logout(request: Request):
@@ -514,14 +537,20 @@ def studio(request:Request,db:Session=Depends(get_db)):
     connections={}
     for row in db.scalars(select(SocialConnection).where(SocialConnection.user_id==user.id,SocialConnection.active.is_(True))).all():
         connections.setdefault(row.platform,[]).append(row.username or row.account_id or "Connected account")
-    return templates.TemplateResponse(request, "studio.html",template_context(request,user,subscription_blocked=not billing.has_access(user),studio_connections=connections,studio_prefs=get_preferences(db,user.id)))
+    return templates.TemplateResponse(request, "studio.html",template_context(request,user,subscription_blocked=not billing.has_access(user),studio_connections=connections,studio_prefs=get_preferences(db,user.id),work_summary=work_summary(db,user.id)))
 
 @app.get("/drafts",response_class=HTMLResponse)
 def drafts_page(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
     query=request.query_params.get("q","").strip()[:200]
     statement=select(Draft).where(Draft.user_id==user.id)
-    if query:statement=statement.where(or_(Draft.brief.icontains(query,autoescape=True),Draft.variants_json.icontains(query,autoescape=True),Draft.workspace_json.icontains(query,autoescape=True)))
+    selected_status=request.query_params.get('status','all')
+    if selected_status not in {'all','draft','scheduled','published','needs_review','awaiting_results'}:selected_status='all'
+    if selected_status=='awaiting_results':statement=statement.where(Draft.id.in_(select(Publication.draft_id).where(Publication.user_id==user.id,Publication.brand_id==db.info.get('brand_id',0),Publication.status.in_(('unknown','pending','publishing','queued')))))
+    elif selected_status=='needs_review':statement=statement.where(Draft.status.in_(('needs_review','failed','partial')))
+    elif selected_status=='draft':statement=statement.where(Draft.status.in_(('draft','cancelled')))
+    elif selected_status!='all':statement=statement.where(Draft.status==selected_status)
+    if query:statement=statement.where(or_(Draft.title.icontains(query,autoescape=True),Draft.brief.icontains(query,autoescape=True),Draft.variants_json.icontains(query,autoescape=True),Draft.workspace_json.icontains(query,autoescape=True)))
     try:page=max(1,min(10000,int(request.query_params.get('page','1'))))
     except ValueError:page=1
     rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).offset((page-1)*30).limit(31)).all()
@@ -531,8 +560,26 @@ def drafts_page(request:Request,db:Session=Depends(get_db)):
     for row in rows:
         try:platforms=json.loads(row.platforms_json or "[]")
         except (TypeError,json.JSONDecodeError):platforms=[]
-        drafts.append({"id":row.id,"brief":row.brief,"platforms":platforms,"status":row.status,"created_at":row.created_at,"updated_at":row.updated_at})
-    return templates.TemplateResponse(request, "drafts.html",template_context(request,user,drafts=drafts,page=page,has_more=has_more))
+        try:
+            variants=json.loads(row.variants_json or '{}')
+            excerpt=next((str(post)[:240] for value in variants.values() if isinstance(value,dict) for post in value.get('posts',[]) if isinstance(post,str) and post.strip()),'')
+        except (TypeError,ValueError,AttributeError):excerpt=''
+        drafts.append({"id":row.id,"title":draft_title(row),"revision":row.revision,"brief":row.brief,"excerpt":excerpt,"platforms":platforms,"status":row.status,"created_at":row.created_at,"updated_at":row.updated_at})
+    return templates.TemplateResponse(request, "drafts.html",template_context(request,user,drafts=drafts,page=page,has_more=has_more,selected_status=selected_status,work_summary=work_summary(db,user.id)))
+
+@app.post('/drafts/{draft_id}/title')
+def rename_draft(draft_id:int,request:Request,title:str=Form(...),revision:int=Form(...),db:Session=Depends(get_db)):
+    user=current_user(request)
+    row=db.get(Draft,draft_id)
+    if not row or row.user_id!=user.id:raise HTTPException(404,'Draft not found')
+    title=' '.join(title.split())
+    if not title or len(title)>120:raise HTTPException(400,'Use a title between 1 and 120 characters.')
+    changed=db.execute(update(Draft).where(Draft.id==draft_id,Draft.user_id==user.id,Draft.revision==revision).values(title=title,revision=Draft.revision+1,updated_at=utcnow()).execution_options(synchronize_session=False))
+    if changed.rowcount!=1:
+        db.rollback();raise HTTPException(409,'This draft changed in another tab. Your title is still here; reload the latest version before renaming.')
+    db.commit()
+    return {'saved':True,'title':title,'revision':revision+1}
+
 
 @app.get("/analytics",response_class=HTMLResponse)
 def analytics_page(request:Request):
@@ -1026,14 +1073,15 @@ def api_drafts(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
     query=request.query_params.get("q","").strip()[:200]
     statement=select(Draft).where(Draft.user_id==user.id)
-    if query:statement=statement.where(or_(Draft.brief.icontains(query,autoescape=True),Draft.variants_json.icontains(query,autoescape=True),Draft.workspace_json.icontains(query,autoescape=True)))
+    if query:statement=statement.where(or_(Draft.title.icontains(query,autoescape=True),Draft.brief.icontains(query,autoescape=True),Draft.variants_json.icontains(query,autoescape=True),Draft.workspace_json.icontains(query,autoescape=True)))
     rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).limit(100)).all()
     output=[]
     for r in rows:
         acts=db.scalars(select(Activity).where(Activity.user_id==user.id,Activity.draft_id==r.id,Activity.url.is_not(None)).order_by(Activity.id.desc())).all()
-        workspace=json.loads(r.workspace_json or "{}")
-        title=r.brief or next((m.get("content", "") for m in workspace.get("conversation", []) if m.get("role")=="user"), "") or workspace.get("composer", "") or "Untitled conversation"
-        output.append({"id":r.id,"title":title[:100],"brief":r.brief,"platforms":json.loads(r.platforms_json or "[]"),"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
+        title=draft_title(r)
+        try:platforms=json.loads(r.platforms_json or "[]")
+        except (TypeError,ValueError):platforms=[]
+        output.append({"id":r.id,"title":title[:100],"brief":r.brief,"platforms":platforms,"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
     return output
 
 @app.get("/api/drafts/{draft_id}")
@@ -1041,7 +1089,7 @@ def api_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
     user=current_user(request); row=db.get(Draft,draft_id)
     if not row or row.user_id!=user.id:raise HTTPException(404,"Draft not found")
     from .series import planned_context
-    return {"planned":planned_context(db,row.id),"id":row.id,"brief":row.brief,"instruction":row.instruction,"revision":row.revision,"workspace":json.loads(row.workspace_json or "{}"),"platforms":json.loads(row.platforms_json or "[]"),"variants":json.loads(row.variants_json or "{}"),"thread_length":row.thread_length,"status":row.status,"created_at":row.created_at.isoformat(),"updated_at":row.updated_at.isoformat()}
+    return {"title":row.title,"display_title":draft_title(row),"planned":planned_context(db,row.id),"id":row.id,"brief":row.brief,"instruction":row.instruction,"revision":row.revision,"workspace":json.loads(row.workspace_json or "{}"),"platforms":json.loads(row.platforms_json or "[]"),"variants":json.loads(row.variants_json or "{}"),"thread_length":row.thread_length,"status":row.status,"created_at":row.created_at.isoformat(),"updated_at":row.updated_at.isoformat()}
 
 @app.patch("/api/drafts/{draft_id}")
 def api_save_draft(draft_id:int,body:DraftSaveRequest,request:Request,db:Session=Depends(get_db)):
@@ -1092,8 +1140,19 @@ def api_analytics(request:Request,db:Session=Depends(get_db)):
 from .analytics_view import dashboard as _analytics_dashboard
 
 @app.get("/api/analytics/dashboard")
-def api_analytics_dashboard(request:Request,db:Session=Depends(get_db)):
-    user=current_user(request);return _analytics_dashboard(analytics_for_user(db,user.id),recent_posts_for_user(db,user.id,limit=30))
+def api_analytics_dashboard(request:Request,days:int=Query(7),db:Session=Depends(get_db)):
+    from .performance import record
+    user=current_user(request)
+    if days not in (7,30):raise HTTPException(400,'Choose a 7 or 30 day post window')
+    view=_analytics_dashboard(analytics_for_user(db,user.id),recent_posts_for_user(db,user.id,limit=30),window_days=days)
+    from sqlalchemy.exc import SQLAlchemyError
+    try:
+        record(db,user.id,view)
+    except SQLAlchemyError:
+        db.rollback()
+        log.warning('Performance evidence could not be saved for recommendations')
+        view['note']+=' These results could not be saved for Next move; refresh to try again.'
+    return view
 
 @app.post("/api/insights")
 def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db)):
@@ -1199,3 +1258,6 @@ def media_preview(asset_id:int,request:Request,db:Session=Depends(get_db)):
 
 from .connection_review import router as connection_review_router
 app.include_router(connection_review_router)
+
+from .mfa import router as mfa_router
+app.include_router(mfa_router)

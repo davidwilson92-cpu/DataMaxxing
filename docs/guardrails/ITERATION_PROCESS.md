@@ -32,10 +32,10 @@ Do not weaken the baseline, skip a failed test, invent approval, or add a blanke
 
 These are work packages, not completed approvals. Infrastructure configuration, legal/privacy review and an independent penetration test cannot be inferred from local code.
 
-Owner direction, 28 September 2026: MFA implementation is deferred. Do not add a
-second sign-in step or change existing account MFA settings. Continue the other
-increments. Keep authentication/admin/safe-default requirements open wherever
-MFA evidence is required; do not mark this deferral as an exemption.
+Owner direction, 9 October 2026: optional authenticator enrollment is authorised.
+Existing accounts must not be forcibly enrolled. Privileged mandatory MFA and
+verified support recovery remain separate unresolved requirements. See
+`OPTIONAL_MFA_20261009.md` for validation and rollback constraints.
 
 The owner also paused paid staging until the app is approved. Preserve the
 follow-up in `STAGING_PLAN.md`; do not create resources or incur charges.

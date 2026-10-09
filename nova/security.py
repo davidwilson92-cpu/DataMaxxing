@@ -56,12 +56,14 @@ def session_secret() -> str:
     return value
 
 
-def make_user_session(user_id: int) -> str:
+def make_user_session(user_id: int, *, expected_auth_version: int | None = None) -> str:
     expires = int((utcnow() + timedelta(days=30)).timestamp())
     with SessionLocal() as db:
         user = db.get(User, user_id)
         if not user or not user.active:
             raise ValueError('Active user required')
+        if expected_auth_version is not None and user.auth_version != expected_auth_version:
+            raise ValueError('Account security changed')
         payload = f'v2.{user_id}.{user.auth_version}.{expires}.{secrets.token_hex(16)}'
     signature = hmac.new(session_secret().encode(), payload.encode(), hashlib.sha256).hexdigest()
     return f'{payload}.{signature}'

@@ -68,7 +68,7 @@ def run_migrations(engine: Engine, migrations: Iterable[tuple[str, tuple[str, ..
                 {"version": version},
             )
 
-    additions = {'nova_drafts': ("workspace_json TEXT NOT NULL DEFAULT '{}'", "revision INTEGER NOT NULL DEFAULT 0")}
+    additions = {'nova_drafts': ("workspace_json TEXT NOT NULL DEFAULT '{}'", "revision INTEGER NOT NULL DEFAULT 0", "title VARCHAR(120) NOT NULL DEFAULT ''")}
     additions['nova_media_assets'] = ("analysis_json TEXT NOT NULL DEFAULT '{}'",)
     for table in ('nova_drafts', 'nova_social_connections', 'nova_oauth_states', 'zova_publish_reviews',
                   'zova_publications', 'nova_media_assets', 'nova_scheduled_posts', 'nova_activity'):
@@ -79,3 +79,16 @@ def run_migrations(engine: Engine, migrations: Iterable[tuple[str, tuple[str, ..
             for definition in definitions:
                 if definition.split()[0] not in columns:
                     connection.execute(text(f'ALTER TABLE {table} ADD COLUMN {definition}'))
+
+
+def run_mfa_migration(engine, tables):
+    """Add optional MFA storage without enrolling or rewriting existing users."""
+    version = '20261009_optional_mfa'
+    with engine.begin() as connection:
+        if connection.dialect.name == 'postgresql':
+            connection.execute(text('SELECT pg_advisory_xact_lock(61009001)'))
+        if connection.execute(text('SELECT 1 FROM zova_schema_migrations WHERE version=:version'), {'version': version}).first():
+            return
+        for table in tables:
+            table.create(connection, checkfirst=True)
+        connection.execute(text('INSERT INTO zova_schema_migrations (version, applied_at) VALUES (:version, CURRENT_TIMESTAMP)'), {'version': version})

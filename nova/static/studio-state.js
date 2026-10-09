@@ -6,6 +6,8 @@ let savedSerial = 0;
 let sendingMessage = false;
 let studioLoading = true;
 let saveLabel = 'Ready';
+let workspaceEpoch=0;
+let retryTurn=null;
 const editableDraft = () => ['draft','failed','partial','cancelled'].includes(currentDraftStatus);
 
 function setAutosaveStatus(text){
@@ -25,7 +27,7 @@ function addAssistantMessage(text,extra=''){
 function draftPayload(){
   return {brief:lastBrief,instruction:'',platforms:Object.keys(variants),variants,revision:draftRevision,thread_length:+document.getElementById('threadLength').value,
     workspace:{instagram_format:instagramFormat(),media_asset_ids:uploadedMediaIds,video_duration:uploadedVideoDuration,link_url:document.getElementById('linkUrl').value,
-      conversation,text_history:textHistory,composer:document.getElementById('brief').value,selected_platforms:selectedPlatforms(),active_platform:currentPlatform}};
+      conversation,text_history:textHistory,composer:document.getElementById('brief').value,selected_platforms:selectedPlatforms(),platform_selection_explicit:platformSelectionExplicit,active_platform:currentPlatform}};
 }
 function scheduleAutosave(){
   if(studioLoading || !editableDraft())return;
@@ -72,7 +74,7 @@ function updateDraftPost(platform,index,value){
   const count=document.querySelectorAll('[data-character-count]')[index];if(count)count.textContent=value.length;
   scheduleAutosave();
 }
-function promptComposer(text){studioView('chat');const input=document.getElementById('brief');input.value=text;input.focus();input.setSelectionRange(text.length,text.length);sizeComposer();scheduleAutosave();}
+function promptComposer(text){if(sendingMessage||studioLoading)return;studioView('chat');const input=document.getElementById('brief');input.value=text;input.focus();input.setSelectionRange(text.length,text.length);sizeComposer();scheduleAutosave();}
 function studioBusy(active){
   sendingMessage=active;
   document.getElementById('generateBtn').disabled=active||!editableDraft()||!document.getElementById('brief').value.trim();
@@ -85,14 +87,20 @@ async function sendMessage(){
   const input=document.getElementById('brief'),text=input.value.trim();
   if(!text||sendingMessage||studioLoading||mediaUploading||!editableDraft())return;
   studioBusy(true);invalidateReview();
+  const epoch=workspaceEpoch;let responseApplied=false,turnAdded=false;
   try{
     await saveDraftNow();
-    const plan=await api('/api/conversation/plan',{method:'POST',headers,body:JSON.stringify({message:text,draft_id:currentDraftId,selected_platforms:selectedPlatforms(),active_platform:currentPlatform,recent_messages:conversation.slice(-12),media_asset_ids:uploadedMediaIds})});
-    stickToLatest=true;addUserMessage(text);
+    if(epoch!==workspaceEpoch)return;
+    addThinking();
+    const plan=await api('/api/conversation/plan',{method:'POST',headers,body:JSON.stringify({message:text,draft_id:currentDraftId,selected_platforms:selectedPlatforms(),platform_selection_explicit:platformSelectionExplicit,active_platform:currentPlatform,recent_messages:conversation.slice(-12),media_asset_ids:uploadedMediaIds})});
+    if(epoch!==workspaceEpoch)return;
+    removeThinking();stickToLatest=true;
+    if(!(retryTurn?.draftId===currentDraftId&&retryTurn.text===text))addUserMessage(text);
+    turnAdded=true;retryTurn=null;
     if(plan.media_inspection?.length)showMediaInspection(plan.media_inspection);scrollChat(true);input.value='';sizeComposer();changeSerial++;addThinking();
     if(plan.action==='answer'){removeThinking();addAssistantMessage(plan.reply||'What would you like to create or change?');}
     else if(plan.action==='insight'){
-      const result=await api('/api/insights',{method:'POST',headers,body:JSON.stringify({question:text})});removeThinking();addAssistantMessage(result.answer);
+      const result=await api('/api/insights',{method:'POST',headers,body:JSON.stringify({question:text})});if(epoch!==workspaceEpoch)return;removeThinking();addAssistantMessage(result.answer);
     }else if(plan.action==='publish'||plan.action==='schedule'){
       removeThinking();await saveDraftNow();
       if(!Object.keys(variants).length)addAssistantMessage('Create a draft first, then review it before publishing.');
@@ -102,9 +110,10 @@ async function sendMessage(){
       for(const p of targets){
         if(!variants[p])throw new Error(`Add a ${platformName(p)} version first.`);
         const result=await api('/api/ai/rewrite',{method:'POST',headers,body:JSON.stringify({media_asset_ids:uploadedMediaIds,platform:p,posts:variants[p].posts,action:'',instruction:instagramInstruction(p,plan.brief||text)})});
+        if(epoch!==workspaceEpoch)return;
         changed[p]={posts:result.posts};
       }
-      rememberTextRevision();Object.assign(variants,changed);currentPlatform=targets[0];removeThinking();addAssistantMessage('Updated the requested versions. Here’s the updated version.',draftWorkspace());
+      rememberTextRevision();Object.assign(variants,changed);currentPlatform=targets[0];removeThinking();addAssistantMessage(`Here’s the revised ${targets.map(platformName).join(' and ')} ${targets.length===1?'version':'copy'}.`,draftWorkspace());
     }else{
       const platforms=plan.platforms.length?plan.platforms:selectedPlatforms();
       const creationBrief=plan.brief||[lastBrief,...conversation.filter(m=>m.role==='user').slice(-4).map(m=>m.content)].filter(Boolean).join('\n').slice(-12000);
@@ -115,20 +124,32 @@ async function sendMessage(){
       const targets=plan.action==='add_platforms'?platforms.filter(p=>!variants[p]):platforms;
       if(!targets.length)throw new Error('Those versions already exist. Tell me what to change in them.');
       const result=await api('/api/ai/generate',{method:'POST',headers,body:JSON.stringify({media_asset_ids:uploadedMediaIds,brief:plan.action==='add_platforms'?(lastBrief||text):creationBrief,instruction:instagramInstruction(targets.includes('instagram')?'instagram':'',plan.action==='add_platforms'?text:''),platforms:targets,thread_length:+document.getElementById('threadLength').value,link_url:document.getElementById('linkUrl').value,draft_id:newDraft?null:currentDraftId})});
-      if(newDraft){textHistory=[];publicationStates={};}
+      if(epoch!==workspaceEpoch)return;
+      if(newDraft){textHistory=[];publicationStates={};currentDraftTitle='';}
+      selectStudioPlatforms(plan.action==='add_platforms'?[...new Set([...selectedPlatforms(),...targets])]:targets);
       history.replaceState({},'',window.zovaWorkspaceUrl(`/studio?draft=${result.draft_id}`));
       variants=result.variants;currentDraftId=result.draft_id;draftRevision=result.revision;lastBrief=plan.action==='add_platforms'?lastBrief:creationBrief;currentPlatform=targets[0];currentDraftStatus='draft';
-      removeThinking();addAssistantMessage('Here’s a first draft. Tell me what you’d like to change.',draftWorkspace());
+      currentDraftTitle=result.display_title||result.title||currentDraftTitle;
+      removeThinking();addAssistantMessage(plan.action==='add_platforms'?`I’ve added ${targets.map(platformName).join(' and ')}. Your other versions are still here.`:'Here’s a first draft. What would make it sound more like you?',draftWorkspace());
     }
-    changeSerial++;await saveDraftNow();
-  }catch(error){removeThinking();input.value=text;changeSerial++;addAssistantMessage(error.message||'Something went wrong. Your message is back in the composer.');try{await saveDraftNow();}catch{setAutosaveStatus('Unsaved changes - retry');}}
-  finally{studioBusy(false);sizeComposer();if(window.matchMedia('(min-width: 761px)').matches)input.focus();}
+    if(epoch!==workspaceEpoch)return;
+    responseApplied=true;changeSerial++;await saveDraftNow();
+  }catch(error){
+    if(epoch!==workspaceEpoch)return;
+    removeThinking();
+    if(responseApplied){setAutosaveStatus('Save failed — retry');document.getElementById('undoStatus').textContent='Your response is ready here, but it has not saved. Use Retry save to keep it.';}
+    else{input.value=text;retryTurn=turnAdded?{draftId:currentDraftId,text}:null;changeSerial++;addAssistantMessage(error.message||'I couldn’t finish that yet. Your message is ready to try again.');try{await saveDraftNow();}catch{setAutosaveStatus('Unsaved changes — retry');}}
+  }
+  finally{if(epoch===workspaceEpoch){studioBusy(false);renderReadiness();sizeComposer();if(window.matchMedia('(min-width: 761px)').matches)input.focus();}}
 }
 async function loadRequestedDraft(){
+  const epoch=++workspaceEpoch;
   const id=new URLSearchParams(location.search).get('draft');
   try{
     if(!id)return;
     const row=await api(`/api/drafts/${encodeURIComponent(id)}`),ws=row.workspace||{};
+    if(epoch!==workspaceEpoch)return;
+    currentDraftTitle=row.display_title||row.title||'';platformSelectionExplicit=row.workspace?.platform_selection_explicit===true;retryTurn=null;
     plannedOccurrence=row.planned||null;
     textHistory=ws.text_history||[];variants=row.variants||{};currentDraftId=row.id;draftRevision=row.revision||0;currentDraftStatus=row.status||'draft';lastBrief=row.brief||'';
     currentPlatform=ws.active_platform||row.platforms?.[0]||'x';if(Object.keys(variants).length&&!variants[currentPlatform])currentPlatform=Object.keys(variants)[0];
@@ -136,32 +157,33 @@ async function loadRequestedDraft(){
     document.getElementById('brief').value=ws.composer||'';document.getElementById('linkUrl').value=ws.link_url||'';
     document.getElementById('threadLength').value=String(row.thread_length||1);
     document.getElementById('instagramFormat').value=ws.instagram_format||'post';
-    const selected=ws.selected_platforms||row.platforms||[];document.querySelectorAll('.platform-check input').forEach(node=>node.checked=selected.includes(node.value));
+    const selected=savedPlatformSelection(row);document.querySelectorAll('.platform-check input').forEach(node=>node.checked=selected.includes(node.value));
     conversation=[];document.getElementById('chatFeed').innerHTML='';
     for(const message of ws.conversation||[]){if(message.role==='user')addUserMessage(message.content);else addAssistantMessage(message.content);}
     if(Object.keys(variants).length)renderCanvas(draftWorkspace());
     if(!conversation.length&&!Object.keys(variants).length)addAssistantMessage('Your saved workspace is ready.');
     renderAttachments();setAutosaveStatus(editableDraft()?'Saved':currentDraftStatus);
     if(currentDraftStatus!=='draft')await refreshPublicationResults();
-  }catch(error){addAssistantMessage(error.message);currentDraftStatus='unavailable';document.getElementById('generateBtn').disabled=true;document.getElementById('brief').readOnly=true;return;}
-  finally{studioLoading=false;studioBusy(false);sizeComposer();renderReadiness();renderRecentPosts();}
+  }catch(error){if(epoch!==workspaceEpoch)return;addAssistantMessage(error.message);currentDraftStatus='unavailable';document.getElementById('generateBtn').disabled=true;document.getElementById('brief').readOnly=true;return;}
+  finally{if(epoch===workspaceEpoch){studioLoading=false;studioBusy(false);sizeComposer();renderReadiness();renderRecentPosts();}}
 }
 async function newConversation(){
   if(sendingMessage||studioLoading)return;
   try{await saveDraftNow();}catch(error){addAssistantMessage('Your changes could not be saved. Retry saving before starting a new chat.');return;}
+  workspaceEpoch++;retryTurn=null;currentDraftTitle='';
   clearTimeout(autosaveTimer);invalidateReview();mediaUploadVersion++;mediaUploading=false;
   document.getElementById('instagramFormat').value='post';
   plannedOccurrence=null;variants={};textHistory=[];publicationStates={};document.getElementById('undoStatus').textContent='';currentDraftId=null;draftRevision=0;currentDraftStatus='draft';conversation=[];lastBrief='';pendingSchedule=null;
   uploadedMedia=[];uploadedMediaIds=[];uploadedMediaKind=null;uploadedVideoDuration=0;changeSerial=0;savedSerial=0;
   history.replaceState({},'',window.zovaWorkspaceUrl('/studio'));document.getElementById('chatFeed').innerHTML='';
   document.getElementById('brief').value='';document.getElementById('linkUrl').value='';document.getElementById('mediaInput').value='';document.getElementById('mediaInput').disabled=false;
-  editingDraft=false;renderRecentPosts();document.getElementById('postSettings').close();studioBusy(false);renderAttachments();addAssistantMessage('How can we grow your engagement today? Share your ideas. Zova’s AI helps shape them into a plan and posts in your voice.');setAutosaveStatus('Ready');sizeComposer();document.getElementById('brief').focus();
+  editingDraft=false;renderReadiness();renderRecentPosts();document.getElementById('postSettings').close();studioBusy(false);renderAttachments();addAssistantMessage('How can we grow your engagement today? Share your ideas. Zova’s AI helps shape them into a plan and posts in your voice.');setAutosaveStatus('Ready');sizeComposer();document.getElementById('brief').focus();
 }
 document.getElementById('mediaInput').addEventListener('change',async()=>{await uploadMedia();scheduleAutosave();});
 document.getElementById('brief').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&(event.ctrlKey||event.metaKey||window.matchMedia('(min-width: 761px)').matches)){event.preventDefault();sendMessage();}});
 document.getElementById('brief').addEventListener('input',scheduleAutosave);
 document.getElementById('linkUrl').addEventListener('input',scheduleAutosave);
-document.querySelectorAll('.platform-check input,#threadLength,#instagramFormat').forEach(node=>node.addEventListener('change',scheduleAutosave));
+document.querySelectorAll('.platform-check input,#threadLength,#instagramFormat').forEach(node=>node.addEventListener('change',()=>{if(node.matches('.platform-check input'))platformSelectionExplicit=true;scheduleAutosave();}));
 window.addEventListener('beforeunload',event=>{if(savedSerial!==changeSerial||mediaUploading||sendingMessage){event.preventDefault();event.returnValue='';}});
 window.addEventListener('DOMContentLoaded',()=>{renderReadiness();loadRequestedDraft();});
 

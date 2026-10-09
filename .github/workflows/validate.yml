@@ -20,6 +20,14 @@ jobs:
       - name: Validate guardrail register integrity
         run: python scripts/release_gate.py --check
       - run: python -m pytest -q --junitxml=test-results.xml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check interactive planning behavior
+        run: |
+          node --test tests/strategy_onboarding.test.cjs tests/schedule_agenda.test.cjs
+          node tests/studio_clarity_client.cjs
+          for file in strategy analytics drafts; do node --check "nova/static/$file.js"; done
       - run: python -m pip_audit --format json -o dependency-audit.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()

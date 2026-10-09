@@ -4,9 +4,9 @@ Read `docs/PRODUCTION_GUARDRAILS.md`, `docs/guardrails/assessment.json` and
 `docs/guardrails/ITERATION_PROCESS.md` before changing this application.
 The 79-section production baseline is required, not optional guidance.
 
-Owner direction (28 September 2026): defer MFA implementation and sign-in
-challenges. Continue other guardrail work. MFA-related requirements remain open;
-this deferral is not evidence of compliance or a release waiver.
+Owner direction (9 October 2026): optional authenticator setup and sign-in
+challenges are authorised. Do not require enrollment for existing users.
+Mandatory privileged MFA and operational recovery assurance remain open.
 
 Owner direction (28 September 2026): pause the paid Render staging app/database
 until the app is approved. Keep this follow-up in docs/guardrails/STAGING_PLAN.md;
