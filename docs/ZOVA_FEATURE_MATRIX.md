@@ -12,6 +12,7 @@
 | Protected content transactions | Frozen authority across transactions; default/second-brand draft save/reload and reference cleanup | 434 PostgreSQL tests passed; opt-in, auth/account/worker routing incomplete; not deployed |
 | Separated web service identities | Normal draft/session/rate-limit flows use restricted identity, content and issuer pools; unmapped routes fail closed | CI 439 PostgreSQL tests passed; staged mode, not production-enabled |
 | Restricted authentication pool | Password sign-in, optional MFA and logout through a fourth role with limited User column updates | CI 442 PostgreSQL tests passed, including concurrent recovery; account RLS/lifecycle and production rollout open |
+| Restricted password recovery | Version-safe password changes; explicit recovery/mail pool, single-use reset and truthful failed-attempt records | CI 446 PostgreSQL tests passed with mocked SMTP; account RLS, real delivery and production rollout remain open |
 | Database read isolation rollout | Web/auth/worker context integration, final grants and account/legacy mapping unfinished | Release blocker; no production activation |
 
 Earlier entries below are historical, not evidence of current deployment.

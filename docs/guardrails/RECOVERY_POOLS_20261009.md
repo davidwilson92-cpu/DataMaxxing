@@ -1,6 +1,9 @@
 # Password change and recovery integration
 
-Candidate only; PostgreSQL validation pending, no production activation.
+Candidate only; no production activation. Validated at 212794e: CI SQLite
+415 passed / 32 expected skips; PostgreSQL 446 passed / one expected skip. Runs
+37998910309 / 37998904763 also passed migrated RLS restore, image build/smoke
+and dependency audit. Evidence: `evidence/recovery-pools-20261009.json`.
 
 Password change now preserves the security version from the validated session
 and updates only if the active account, old hash and version still match. Two

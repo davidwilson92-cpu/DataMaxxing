@@ -209,7 +209,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete. A staged fourth authentication service now maps password sign-in, optional MFA and logout with limited user-column grants; Validated at a9dd94b with restricted-role sign-in/MFA/concurrent recovery/logout tests; account-level RLS and remaining lifecycle routes are open. Production remains unchanged. Password changes now use version/hash-conditional updates and version-bound session issuance; a separate optional recovery pool routes password and reset-mail flows. PostgreSQL validation pending; account-level isolation and production rollout remain open.",
+      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete. A staged fourth authentication service now maps password sign-in, optional MFA and logout with limited user-column grants; Validated at a9dd94b with restricted-role sign-in/MFA/concurrent recovery/logout tests; account-level RLS and remaining lifecycle routes are open. Production remains unchanged. Password changes now use version/hash-conditional updates and version-bound session issuance; a separate optional recovery pool routes password and reset-mail flows. Validated at 212794e with password/MFA race, restricted recovery and mocked delivery-failure checks; account-level isolation and production rollout remain open.",
       "next_action": "Validate PostgreSQL/restore and browser journeys, obtain security review, establish verified recovery operations and privileged MFA rollout; add maintained compromised-password screening.",
       "evidence": [
         {
@@ -258,7 +258,11 @@
         },
         {
           "path": "docs/guardrails/RECOVERY_POOLS_20261009.md",
-          "sha256": "4b83b23606025e301fc98b84c85bef5b88cc3dbd2f4e56217d15aafa4aac875c"
+          "sha256": "ea9cd65ec7ae083f6fdbadf21ba44d87639251cecf380d08fbc2bcbafdfd0e28"
+        },
+        {
+          "path": "docs/guardrails/evidence/recovery-pools-20261009.json",
+          "sha256": "e1c4594c6609219dc519098ba373bc5f830d7d096cee4624d68cdc3b21cb5226"
         }
       ],
       "reviewed_by": null,

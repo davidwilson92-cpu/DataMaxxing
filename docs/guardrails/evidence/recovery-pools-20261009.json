@@ -1,0 +1,37 @@
+{
+  "tested_commit": "212794e8cfd35e3df34fd6ea3e794658f42785fe",
+  "ci_runs": [
+    37998910309,
+    37998904763
+  ],
+  "sqlite": {
+    "passed": 415,
+    "skipped": 32
+  },
+  "postgresql": {
+    "passed": 446,
+    "skipped": 1
+  },
+  "verified": [
+    "Concurrent password changes yield one replacement and one security conflict",
+    "Password change refuses intervening MFA enrollment without issuing a session",
+    "Replacement session issuance preserves the expected security version",
+    "Existing sign-in to restricted password change and draft access",
+    "Recovery email status and hashed token records through an explicit background factory",
+    "Known and unknown recovery addresses receive the same outward response",
+    "Concurrent reset submissions consume the token once and revoke prior sessions",
+    "Sign-in succeeds with the recovered password",
+    "Mock SMTP failure records failure and invalidates that token",
+    "Recovery role cannot alter MFA/billing/email or read social connection records",
+    "Default and separated engines hide bound SQL parameters",
+    "Migrated RLS restore, hosting image build/smoke and Python dependency audit"
+  ],
+  "limits": [
+    "Optional fifth recovery pool only; no production activation",
+    "Trusted identity/authentication/recovery services still have cross-account authority; account-level RLS open",
+    "Signup/profile/lifecycle/Apple/social/billing/telemetry/worker mapping incomplete",
+    "SMTP delivery and durable mail recovery not validated against a real provider"
+  ],
+  "provider_validation": "Synthetic local/CI data and mocked SMTP/social providers",
+  "deployment": "No production roles, data, credentials, provider state or deployment changed"
+}

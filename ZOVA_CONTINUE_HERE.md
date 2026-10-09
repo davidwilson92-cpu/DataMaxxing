@@ -1,3 +1,13 @@
+# Current increment: password races and restricted recovery service
+
+Validated 212794e: CI SQLite 415 passed / 32 expected skips; PostgreSQL 446 passed / one expected skip. Runs 37998910309 / 37998904763 passed concurrent password/MFA races, real restricted recovery lifecycle with mocked SMTP, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/recovery-pools-20261009.json. Production unchanged; full gate still blocked and publication goal active.
+
+Read docs/guardrails/RECOVERY_POOLS_20261009.md. Password change captures the validated session version, conditionally updates active User with that version and old hash, and issues a cookie only at the expected next version. Concurrent changes cannot reuse one security version or bypass intervening MFA enrollment. Default engines now hide SQL bound parameters. create_services accepts recovery_engine only alongside authentication_engine; the fifth role has User SELECT and UPDATE only password_hash/auth_version/updated_at, plus recovery-token and mail-status SELECT/INSERT/UPDATE. It cannot touch MFA, billing, email, membership or social credentials. Forgot/reset and their background mail/status callbacks carry explicit factories; rate limits use the identity pool. Existing mode remains compatible when services are absent. No production activation switch exists.
+
+NEXT: map signup and profile/account lifecycle, Apple/social/billing callback brokers, telemetry and worker/legacy paths. Signup must atomically provision User/workspace/membership without broad authority-table grants or silently restoring revoked memberships. Authentication/recovery pools are trusted cross-account services; account-level RLS and immutable account references remain open. Complete exact policy/function verification, staged Studio/public-page routing, final grants and operational assurance before deployment configuration. Preserve all users/data/keys, explicit publishing confirmation and unknown outcomes; no paid staging, forced MFA or release-gate bypass.
+
+---
+
 # Current increment: restricted password sign-in, optional MFA and logout
 
 Validated a9dd94b: CI SQLite 412 passed / 31 expected skips; PostgreSQL 442 passed / one expected skip. CI runs 37997449697 / 37997443303 passed password sign-in, opt-in MFA, concurrent one-use recovery, logout and column-grant attacks with shared factories poisoned, plus migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/authentication-pools-20261009.json. Production unchanged; full gate remains blocked and publication goal active.
