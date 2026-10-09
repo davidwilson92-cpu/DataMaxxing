@@ -28,7 +28,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime SQLite/PostgreSQL regression and synthetic restore passed at dc55d2b; PostgreSQL RLS and complete service authority remain open. PostgreSQL runtime startup now defaults to read-only schema verification and refuses administrative/owner/destructive database permissions. Offline schema preparation has separate explicit credentials. Restricted-login CI validation is pending; RLS, final service grants and deployed credential separation remain open.",
+      "finding": "Canonical owner workspaces/memberships, live owner capability checks, session revocation, all 16 brand-owned reference mappings and scoped ORM reads are implemented and regression-tested. Database ownership write guards survive synthetic restore. Runtime PostgreSQL startup verifies schema without DDL and rejects administrative/destructive credentials; a real restricted test login serves authenticated drafts. This is not complete database read isolation: RLS, shared-team routing, final service grants, account-level/legacy authority mapping and production rollout remain open.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
@@ -145,7 +145,11 @@
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
-          "sha256": "3a40ee95033f161d0fb4dd5485583144eceda0bf7f90a409d825d27a0d22a5b8"
+          "sha256": "8b4645025496de4f158c043034f9cc2f2fbc1fe992d37add4265e4835ecce9af"
+        },
+        {
+          "path": "docs/guardrails/evidence/restricted-startup-20261009.json",
+          "sha256": "ced5f14a4931716386bc0a6f737acceeeeca1d52f1b49facf1b9c3033bce2310"
         }
       ],
       "reviewed_by": null,
@@ -368,7 +372,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "SQLAlchemy relational entities and PostgreSQL support exist, but workspace identity and important state remain spread across legacy and JSON fields. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime SQLite/PostgreSQL regression and synthetic restore passed at dc55d2b; PostgreSQL RLS and complete service authority remain open. PostgreSQL runtime startup now defaults to read-only schema verification and refuses administrative/owner/destructive database permissions. Offline schema preparation has separate explicit credentials. Restricted-login CI validation is pending; RLS, final service grants and deployed credential separation remain open.",
+      "finding": "Versioned registry/reference migrations preserve legacy ownership and representative credentials/content; immutable write guards and canonical ORM mappings are exercised on SQLite/PostgreSQL. Migration lock/statement waits are bounded. PostgreSQL runtime now only verifies schema and refuses privileged identities; separate explicit offline preparation is tested. Full restricted service grants/RLS, migration sizing and production restore/rollout evidence remain incomplete.",
       "next_action": "Review canonical relational constraints and migrate ownership with reconciliation and rollback evidence.",
       "evidence": [
         {
@@ -429,7 +433,11 @@
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
-          "sha256": "3a40ee95033f161d0fb4dd5485583144eceda0bf7f90a409d825d27a0d22a5b8"
+          "sha256": "8b4645025496de4f158c043034f9cc2f2fbc1fe992d37add4265e4835ecce9af"
+        },
+        {
+          "path": "docs/guardrails/evidence/restricted-startup-20261009.json",
+          "sha256": "ced5f14a4931716386bc0a6f737acceeeeca1d52f1b49facf1b9c3033bce2310"
         }
       ],
       "reviewed_by": null,
@@ -1013,7 +1021,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Operations and security",
-      "finding": "Operational status exposes overdue/unknown jobs and failures; structured logs, distributed traces and paging evidence are incomplete. Operations status now includes content-free counts of overdue and unknown legacy publishing jobs. Python and CI PostgreSQL image digests are now pinned with verified Docker Hub/ECR manifest equality. OS image scanning and full supply-chain assurance remain open.",
+      "finding": "Operational status exposes overdue/unknown jobs and failures; structured logs, distributed traces and paging evidence are incomplete. Operations status now includes content-free counts of overdue and unknown legacy publishing jobs.",
       "next_action": "Implement safe structured telemetry, metrics, trace propagation and alert-delivery tests.",
       "evidence": [
         {
@@ -1031,10 +1039,6 @@
         {
           "path": "docs/guardrails/LEGACY_QUEUE_ROLLOUT.md",
           "sha256": "ef197339f697d5e44a2ec9b0ec477926acea266a7f04e74ffe56c94aa69490a0"
-        },
-        {
-          "path": "docs/guardrails/evidence/image-pins-20261009.json",
-          "sha256": "e7703544a4e2ee68d09c71eb9dda29c991dd58826d3ff0b94e5e5fe372c734fd"
         }
       ],
       "reviewed_by": null,
@@ -1294,7 +1298,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "CI tests SQLite/PostgreSQL, dependency audit, restore and image build. Lint/type/static security coverage and enforced deployment policy are incomplete. Validation actions are now pinned to verified upstream commits, checkout credentials are not persisted, and jobs/evidence retention are bounded.",
+      "finding": "CI tests SQLite/PostgreSQL, dependency audit, restore and image build. Lint/type/static security coverage and enforced deployment policy are incomplete. Validation actions are now pinned to verified upstream commits, checkout credentials are not persisted, and jobs/evidence retention are bounded. Python and CI PostgreSQL image digests are now pinned with verified Docker Hub/ECR manifest equality. OS image scanning and full supply-chain assurance remain open.",
       "next_action": "Require Production guardrails plus validation checks in branch protection and hosting; add incremental lint/type/security checks.",
       "evidence": [
         {
@@ -1308,6 +1312,10 @@
         {
           "path": ".github/dependabot.yml",
           "sha256": "5160cdf21e5d08e9e3f4d9cd7231c6aa97484a57e9e1788e9a254482ff9123c1"
+        },
+        {
+          "path": "docs/guardrails/evidence/image-pins-20261009.json",
+          "sha256": "e7703544a4e2ee68d09c71eb9dda29c991dd58826d3ff0b94e5e5fe372c734fd"
         }
       ],
       "reviewed_by": null,
@@ -1348,7 +1356,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Operations and security",
-      "finding": "GitHub ruleset 24140009 is verified Active on main: three GitHub Actions checks required, no bypass actors, up-to-date branches and resolved conversations required, force pushes/deletions blocked. PR approval count is zero; all validation actions are pinned to official upstream commits and checkout credential persistence is disabled. Full dependency/image locks and remaining cloud/registry controls still need assurance.",
+      "finding": "GitHub ruleset 24140009 is verified Active on main: three GitHub Actions checks required, no bypass actors, up-to-date branches and resolved conversations required, force pushes/deletions blocked. PR approval count is zero; all validation actions are pinned to official upstream commits and checkout credential persistence is disabled. Full dependency/image locks and remaining cloud/registry controls still need assurance. Python and CI PostgreSQL image digests are now pinned with verified Docker Hub/ECR manifest equality. OS image scanning and full supply-chain assurance remain open.",
       "next_action": "Keep the active required checks; establish independent review, finish dependency/image pinning and verify least-privilege cloud/registry access. Optional MFA is authorised; privileged MFA and independent review remain unresolved.",
       "evidence": [
         {
@@ -1366,6 +1374,10 @@
         {
           "path": ".github/dependabot.yml",
           "sha256": "5160cdf21e5d08e9e3f4d9cd7231c6aa97484a57e9e1788e9a254482ff9123c1"
+        },
+        {
+          "path": "docs/guardrails/evidence/image-pins-20261009.json",
+          "sha256": "e7703544a4e2ee68d09c71eb9dda29c991dd58826d3ff0b94e5e5fe372c734fd"
         }
       ],
       "reviewed_by": null,
@@ -1406,7 +1418,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Cross-owner/brand tests exist and this iteration adds worker and ownership-mutation checks; coverage is not complete across sensitive objects or direct DB access. An additional adversarial worker matrix covers older schedules, including same-owner cross-brand references, wrong-owner/inactive/wrong-platform accounts and malformed media IDs. Provider result reconciliation now binds owner, brand, draft, review and destination before external status access. Legacy job reads/cancellation are creator-scoped. A versioned offline migration now backfills canonical references on all 16 brand-owned tables and installs database write guards for owner/brand/reference immutability. Isolated tests cover direct SQL attacks and existing ORM compatibility; runtime read isolation, RLS, account-level/legacy mapping and deployment remain incomplete. Offline migration lock/statement waits are now bounded and reference previews reject existing incorrect mappings; PostgreSQL contention, cancellation, rollback and retry tests passed at 09c5771; runtime read isolation and deployment remain open. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime SQLite/PostgreSQL regression and synthetic restore passed at dc55d2b; PostgreSQL RLS and complete service authority remain open. PostgreSQL runtime startup now defaults to read-only schema verification and refuses administrative/owner/destructive database permissions. Offline schema preparation has separate explicit credentials. Restricted-login CI validation is pending; RLS, final service grants and deployed credential separation remain open.",
+      "finding": "Synthetic tests cover current owner membership, cross-owner/brand endpoints, worker/reconciliation boundaries, direct SQL ownership attacks, canonical runtime reads and migrated restore. A real restricted PostgreSQL login serves a draft and cannot change schema/guards/migration records. RLS read attacks across every sensitive table, complete shared/legacy service authority and deployed-role validation are still required.",
       "next_action": "Build a complete object/operation attack matrix and run it under restricted PostgreSQL identities with RLS.",
       "evidence": [
         {
@@ -1503,7 +1515,11 @@
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
-          "sha256": "3a40ee95033f161d0fb4dd5485583144eceda0bf7f90a409d825d27a0d22a5b8"
+          "sha256": "8b4645025496de4f158c043034f9cc2f2fbc1fe992d37add4265e4835ecce9af"
+        },
+        {
+          "path": "docs/guardrails/evidence/restricted-startup-20261009.json",
+          "sha256": "ced5f14a4931716386bc0a6f737acceeeeca1d52f1b49facf1b9c3033bce2310"
         }
       ],
       "reviewed_by": null,
@@ -1872,7 +1888,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "API, ORM and provider layers exist; restricted PostgreSQL/RLS, independent worker/queue, private object storage and central telemetry remain incomplete. PostgreSQL runtime startup now defaults to read-only schema verification and refuses administrative/owner/destructive database permissions. Offline schema preparation has separate explicit credentials. Restricted-login CI validation is pending; RLS, final service grants and deployed credential separation remain open.",
+      "finding": "Current candidate includes durable Studio/legacy publishing, private expiring media, optional MFA, canonical workspace mappings and read-only runtime schema verification under a restricted test identity. The target architecture is incomplete: deployed separate service identities/RLS, independently operated worker, full private-storage/telemetry configuration and operational assurance remain open.",
       "next_action": "Migrate incrementally to the target architecture with compatibility, recovery and failure tests at each stage.",
       "evidence": [
         {
@@ -1893,7 +1909,11 @@
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
-          "sha256": "3a40ee95033f161d0fb4dd5485583144eceda0bf7f90a409d825d27a0d22a5b8"
+          "sha256": "8b4645025496de4f158c043034f9cc2f2fbc1fe992d37add4265e4835ecce9af"
+        },
+        {
+          "path": "docs/guardrails/evidence/restricted-startup-20261009.json",
+          "sha256": "ced5f14a4931716386bc0a6f737acceeeeca1d52f1b49facf1b9c3033bce2310"
         }
       ],
       "reviewed_by": null,

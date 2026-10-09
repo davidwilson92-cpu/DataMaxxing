@@ -1,3 +1,15 @@
+# Current increment: restricted runtime startup and verified image pins
+
+Validated 80db06c: CI SQLite 405 passed / 7 expected skips; PostgreSQL 411 passed / one expected skip. Runs 37990057499 / 37990050801 passed application, real restricted-login/DDL attack checks, migrated restore, build/smoke and Python dependency audit. Local SQLite also passed 405 / 7. Evidence: docs/guardrails/evidence/restricted-startup-20261009.json. No production change; goal active, full production gate still blocked.
+
+Read docs/guardrails/RESTRICTED_STARTUP_20261009.md. PostgreSQL now defaults to ZOVA_SCHEMA_MODE=verify, doing read-only schema/version/guard checks and rejecting privileged runtime identities (including original login masking, built-in roles and CREATE/TRUNCATE/ownership). Offline scripts/prepare_database.py requires --apply --writes-paused and explicit ZOVA_MIGRATION_DATABASE_URL; existing users still require registry/reference backfill first. CI fixtures explicitly bootstrap. Candidate blueprint sets verify; the live host has NOT been changed.
+
+Docker Hub quotas blocked earlier CI pulls. Pinned Python/PostgreSQL manifest bodies were independently fetched and matched across Docker Hub and Docker's official ECR mirror. CI uses the mirror; Dockerfile defaults to the identical pinned Docker Hub Python image. See image-pins-20261009.json / CI_SECURITY.md. No paid account or infrastructure was created.
+
+Next: RLS with validated transaction context, final per-operation service grants and separate application/worker/auth/analytics identities; account-level and legacy authority mapping. Current test DML grants are compatibility evidence, not the final production manifest. Do not call this complete read isolation. Preserve explicit publishing approval, both Instagram routes, existing data/keys/auth and unknown sends. No forced MFA or paid staging; no guardrail bypass.
+
+---
+
 # Current increment: canonical workspace runtime integration
 
 Validated dc55d2b: local/CI SQLite 398 passed / 6 expected skips; PostgreSQL 403 passed / one expected skip. Runs 37988211823 / 37988205275 passed application, migrated restore, build/smoke and dependency checks. Evidence: docs/guardrails/evidence/canonical-runtime-20261009.json. Production gate remains blocked; publication goal remains active. No production change.

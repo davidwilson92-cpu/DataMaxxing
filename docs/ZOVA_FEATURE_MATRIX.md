@@ -6,6 +6,8 @@
 | Canonical content references | Offline backfill and immutable write guards across all 16 brand-owned tables | SQLite/PostgreSQL migration, direct SQL attack and restore evidence in tenant-references-20261009.json; not runtime read isolation |
 | Migration contention safety | Bounded PostgreSQL waits and truthful reference preview | SQLite 393 passed / 6 skipped; PostgreSQL 398 passed / 1 skipped at 09c5771; not deployed |
 | Runtime canonical binding | All 16 brand-owned models, scoped content queries, fresh-install guards and populated-database migration checks | SQLite 398 passed / 6 skipped; PostgreSQL 403 passed / 1 skipped at dc55d2b; not deployed |
+| Restricted runtime startup | PostgreSQL verifies schema without DDL and rejects privileged/destructive credentials; explicit offline preparation | Real restricted-login application/attack tests; CI 405 SQLite / 411 PostgreSQL passed; not deployed |
+| Build image consistency | Pinned official Python/PostgreSQL manifests; byte-identical official mirror used in CI | Build/smoke passed after Docker Hub quota failures; OS image scan still outstanding |
 | Database read isolation | Restricted roles/RLS and unscoped service authority still incomplete | Release blocker; no completion claim |
 
 Earlier entries below are historical, not evidence of current deployment.
