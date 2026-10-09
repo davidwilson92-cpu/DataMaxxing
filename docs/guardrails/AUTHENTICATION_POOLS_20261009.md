@@ -1,6 +1,9 @@
 # Restricted authentication service integration
 
-Candidate only, not production-enabled. PostgreSQL validation is pending.
+Candidate only, not production-enabled. Validated at a9dd94b: CI SQLite 412 passed / 31 expected skips; PostgreSQL
+442 passed / one expected skip. Runs 37997449697 / 37997443303 passed migrated
+RLS restore, hosting image build/smoke and dependency audit. Evidence:
+`evidence/authentication-pools-20261009.json`.
 
 The optional fourth engine in `create_services` supplies a distinct authentication
 identity. It can read users and revoked sessions, insert revocations, read/insert/

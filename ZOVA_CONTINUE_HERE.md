@@ -1,3 +1,13 @@
+# Current increment: restricted password sign-in, optional MFA and logout
+
+Validated a9dd94b: CI SQLite 412 passed / 31 expected skips; PostgreSQL 442 passed / one expected skip. CI runs 37997449697 / 37997443303 passed password sign-in, opt-in MFA, concurrent one-use recovery, logout and column-grant attacks with shared factories poisoned, plus migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/authentication-pools-20261009.json. Production unchanged; full gate remains blocked and publication goal active.
+
+Read docs/guardrails/AUTHENTICATION_POOLS_20261009.md. create_services accepts an optional separate authentication_engine. Its role reads User/revoked sessions, inserts revocations, SELECT/INSERT/UPDATE MFA settings, CRUD MFA challenges; User UPDATE is column-limited to last_login_at/auth_version/updated_at. Password/email/active/membership/content and MFA-settings DELETE are denied. verify_pool_grants checks exact table/column manifests. With this fourth pool configured, staged middleware/dependency allow password login, MFA routes and logout. Cookie verification and factor rate limits use the identity pool. Existing application mode is unchanged when services are absent; there is still no production activation switch. Existing password-only accounts are not enrolled. Password and Apple concurrent-MFA-enrollment regression checks pass; Apple routing in staged mode is still blocked.
+
+NEXT: map signup, password reset/change and account lifecycle with validated authority, plus Apple/social/billing callback brokers, telemetry and worker/legacy identities. Authentication service has cross-account authentication-record authority; account-level RLS and immutable account ownership remain open, so do not equate limited column grants with tenant isolation. Verify exact installed policy/function definitions and full service grants, then complete staged Studio/public-page routing and deployment configuration. Preserve users/data/keys/session continuity, explicit publishing confirmation and unknown outcomes. No paid staging, forced customer MFA or gate bypass.
+
+---
+
 # Current increment: real draft requests through separated service identities
 
 Validated 4038fb2: CI SQLite 411 passed / 29 expected skips; PostgreSQL 439 passed / one expected skip. CI runs 37995650285 / 37995645267 passed normal get_db/current_user/rate-limit draft flows with no dependency override or shared-credential fallback, privilege attacks, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/service-pools-20261009.json. Production unchanged; full gate blocked, publication goal active.

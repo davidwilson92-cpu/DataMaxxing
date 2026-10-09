@@ -209,7 +209,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete. A staged fourth authentication service now maps password sign-in, optional MFA and logout with limited user-column grants; PostgreSQL validation pending and production remains unchanged.",
+      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete. A staged fourth authentication service now maps password sign-in, optional MFA and logout with limited user-column grants; Validated at a9dd94b with restricted-role sign-in/MFA/concurrent recovery/logout tests; account-level RLS and remaining lifecycle routes are open. Production remains unchanged.",
       "next_action": "Validate PostgreSQL/restore and browser journeys, obtain security review, establish verified recovery operations and privileged MFA rollout; add maintained compromised-password screening.",
       "evidence": [
         {
@@ -242,7 +242,11 @@
         },
         {
           "path": "docs/guardrails/AUTHENTICATION_POOLS_20261009.md",
-          "sha256": "cea33ef1720f48a35a63dbb1d0f41de5653e305268a4f8ff472b84be288ddfe4"
+          "sha256": "562b8b6c383bf1e3917625e13d2c5e694d02de04e62d629adfd9fe20730e2c7c"
+        },
+        {
+          "path": "docs/guardrails/evidence/authentication-pools-20261009.json",
+          "sha256": "488ad2dc1330d4b92ed257fceb2cfa529bb749b93d1e348bd8e97f9eb2a1146d"
         }
       ],
       "reviewed_by": null,

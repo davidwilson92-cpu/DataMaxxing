@@ -1,0 +1,37 @@
+{
+  "tested_commit": "a9dd94b4cccab3a12513585de1db842f8caa1771",
+  "ci_runs": [
+    37997449697,
+    37997443303
+  ],
+  "sqlite": {
+    "passed": 412,
+    "skipped": 31
+  },
+  "postgresql": {
+    "passed": 442,
+    "skipped": 1
+  },
+  "verified": [
+    "Existing password-only sign-in without automatic MFA enrollment",
+    "Opt-in MFA setup and confirmation under separate authentication credentials",
+    "Security-version revocation of older cookies",
+    "MFA challenge and rejection of invalid or replayed factors",
+    "Two concurrent recovery-code submissions produce exactly one successful sign-in",
+    "Logout revokes the submitted session through the authentication pool",
+    "MFA disable and subsequent password-only sign-in",
+    "Old shared factories fail if reached during configured authentication flows",
+    "Role attacks on password/email/active/membership/content/MFA deletion fail",
+    "An extra password-column grant is rejected by service configuration",
+    "Existing password and Apple concurrent-enrollment regressions preserved",
+    "Migrated RLS restore, hosting image build/smoke and dependency audit"
+  ],
+  "limits": [
+    "Staged optional fourth authentication pool, not production-enabled",
+    "Authentication service still has cross-account authentication-record authority; account-level RLS not established",
+    "Signup/recovery/password change/Apple/account lifecycle/callback/worker/telemetry routing incomplete",
+    "Browser MFA usability and operational support recovery unverified"
+  ],
+  "provider_validation": "Synthetic data and mocked providers only",
+  "deployment": "No production roles, data, grants, posts or deployment changed"
+}
