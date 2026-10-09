@@ -1,5 +1,7 @@
 # Current increment: canonical reference migration and database write guards
 
+Validated commit a3b7610: CI SQLite/PostgreSQL each 387 passed, one expected backend-specific skip; migrated-reference restore, restored-trigger attack, build/smoke and dependency checks passed. Runs 37985711932 / 37985706379. Evidence: docs/guardrails/evidence/tenant-references-20261009.json. No production changes; gate remains blocked.
+
 Read docs/guardrails/TENANT_REFERENCES_20261009.md. Migration machinery now covers all 16 brand-owned tables, preserves old ORM inserts and rejects direct-SQL owner/brand/workspace reassignment. CLI has a separate references phase with read-only planning and controlled apply. Not activated on production or wired into application read isolation yet.
 
 Next: integrate fresh-schema/reference migrations and canonical runtime reads; PostgreSQL restricted roles/RLS; account-level and legacy authority mapping. Do not count these integrity guards as read isolation. Publication goal remains active and the production gate remains intact.

@@ -98,6 +98,10 @@
         {
           "path": "docs/guardrails/TENANT_REFERENCES_20261009.md",
           "sha256": "08b7abdcf68ec540b230561cbedbcd7bf118ad1cb016a18094aa7af191248544"
+        },
+        {
+          "path": "docs/guardrails/evidence/tenant-references-20261009.json",
+          "sha256": "d2ebcce46a3635f757a7badbfc5884f196ea45f39ed07e9425fc0e6c4b5e5f1e"
         }
       ],
       "reviewed_by": null,
@@ -322,6 +326,10 @@
         {
           "path": "docs/guardrails/TENANT_REFERENCES_20261009.md",
           "sha256": "08b7abdcf68ec540b230561cbedbcd7bf118ad1cb016a18094aa7af191248544"
+        },
+        {
+          "path": "docs/guardrails/evidence/tenant-references-20261009.json",
+          "sha256": "d2ebcce46a3635f757a7badbfc5884f196ea45f39ed07e9425fc0e6c4b5e5f1e"
         }
       ],
       "reviewed_by": null,
@@ -356,6 +364,10 @@
         {
           "path": ".github/workflows/validate.yml",
           "sha256": "248b9acef0fd4be26f22f19d9dce5403b2c9d7a2163cc4f44905126c59ddafcb"
+        },
+        {
+          "path": "docs/guardrails/evidence/tenant-references-20261009.json",
+          "sha256": "d2ebcce46a3635f757a7badbfc5884f196ea45f39ed07e9425fc0e6c4b5e5f1e"
         }
       ],
       "reviewed_by": null,
@@ -1340,6 +1352,10 @@
         {
           "path": "docs/guardrails/TENANT_REFERENCES_20261009.md",
           "sha256": "08b7abdcf68ec540b230561cbedbcd7bf118ad1cb016a18094aa7af191248544"
+        },
+        {
+          "path": "docs/guardrails/evidence/tenant-references-20261009.json",
+          "sha256": "d2ebcce46a3635f757a7badbfc5884f196ea45f39ed07e9425fc0e6c4b5e5f1e"
         }
       ],
       "reviewed_by": null,
@@ -1470,6 +1486,10 @@
         {
           "path": "docs/OPERATIONS_AND_ROLLBACK.md",
           "sha256": "08dfc870bb5f673a398505fe557f6041deb1cf39b1bc172ed86745559e921a1b"
+        },
+        {
+          "path": "docs/guardrails/evidence/tenant-references-20261009.json",
+          "sha256": "d2ebcce46a3635f757a7badbfc5884f196ea45f39ed07e9425fc0e6c4b5e5f1e"
         }
       ],
       "reviewed_by": null,
