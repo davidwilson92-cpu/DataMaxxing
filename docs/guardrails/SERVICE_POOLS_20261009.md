@@ -1,7 +1,9 @@
 # Staged service-pool request integration
 
-Candidate only; not configured or enabled in production. PostgreSQL validation
-is pending. This increment connects the real `get_db`, `current_user` and request
+Candidate only; not configured or enabled in production. Validated at 4038fb2: CI SQLite 411 passed / 29 expected skips; PostgreSQL
+439 passed / one expected skip. Runs 37995650285 / 37995645267 also passed
+migrated RLS restore, image build/smoke and dependency audit. Evidence:
+`evidence/service-pools-20261009.json`. This increment connects the real `get_db`, `current_user` and request
 rate-limit paths to the previously tested protected content sessions.
 
 `create_services` verifies three existing PostgreSQL identities using separate

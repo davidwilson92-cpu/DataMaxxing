@@ -1,3 +1,13 @@
+# Current increment: real draft requests through separated service identities
+
+Validated 4038fb2: CI SQLite 411 passed / 29 expected skips; PostgreSQL 439 passed / one expected skip. CI runs 37995650285 / 37995645267 passed normal get_db/current_user/rate-limit draft flows with no dependency override or shared-credential fallback, privilege attacks, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/service-pools-20261009.json. Production unchanged; full gate blocked, publication goal active.
+
+Read docs/guardrails/SERVICE_POOLS_20261009.md. create_services(identity_engine,runtime_engine,issuer_engine) verifies distinct restricted logins in the same database/schema, no cross-role membership, exact identity table/column grant manifest and separated context-function execution/ownership. Identity can SELECT users/revocations/brands/workspaces/memberships and mutate request limits, not content or account authority. Configured services attach through trusted app.state.database_services; get_db/current_user/middleware use them. Middleware rejects every unmapped route, including handlers without get_db. Current allowlist: draft CRUD, health, static only. There is NO production activation switch; do not enable this partial mode for customers. Existing mode stays unchanged when absent. Tests use actual restricted identities and poison the old shared factories; readiness telemetry remains mocked.
+
+NEXT: extend isolated services to sign-in/signup/account mutations, session logout/recovery/MFA and telemetry; signed OAuth/billing callback brokers; worker claim/recovery and legacy identities. Add exact installed policy/function and full service/column grant verification before rollout configuration. Direct SessionLocal/worker paths remain unintegrated, so enabling database policies globally is still unsafe. Keep no paid staging, no forced customer MFA, explicit publishing confirmation and all data/credentials/unknown outcomes. No gate bypass.
+
+---
+
 # Current increment: brand and draft deletion compatibility under RLS
 
 Validated cc70b7d: local/CI SQLite 410 passed / 25 expected skips; PostgreSQL 434 passed / one expected skip. CI runs 37994384382 / 37994380750 passed second-brand draft HTTP create/save/reload, reproduced old policy deletion failure and verified corrected atomic cleanup, migration/RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/draft-policy-20261009.json. Production unchanged; full gate blocked, publication goal active.
