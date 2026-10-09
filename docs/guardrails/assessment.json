@@ -355,7 +355,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "88d826c694bc383856fdd70cd30cd6678496b5ee0070e6c35f58bfb8c042ee6a"
+          "sha256": "248b9acef0fd4be26f22f19d9dce5403b2c9d7a2163cc4f44905126c59ddafcb"
         }
       ],
       "reviewed_by": null,
@@ -1183,7 +1183,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "88d826c694bc383856fdd70cd30cd6678496b5ee0070e6c35f58bfb8c042ee6a"
+          "sha256": "248b9acef0fd4be26f22f19d9dce5403b2c9d7a2163cc4f44905126c59ddafcb"
         },
         {
           "path": "docs/guardrails/CI_SECURITY.md",
@@ -1216,7 +1216,7 @@
         },
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "88d826c694bc383856fdd70cd30cd6678496b5ee0070e6c35f58bfb8c042ee6a"
+          "sha256": "248b9acef0fd4be26f22f19d9dce5403b2c9d7a2163cc4f44905126c59ddafcb"
         },
         {
           "path": ".github/dependabot.yml",
@@ -1237,7 +1237,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "88d826c694bc383856fdd70cd30cd6678496b5ee0070e6c35f58bfb8c042ee6a"
+          "sha256": "248b9acef0fd4be26f22f19d9dce5403b2c9d7a2163cc4f44905126c59ddafcb"
         },
         {
           "path": "docs/guardrails/ITERATION_PROCESS.md",
@@ -1418,7 +1418,7 @@
       "evidence": [
         {
           "path": ".github/workflows/validate.yml",
-          "sha256": "88d826c694bc383856fdd70cd30cd6678496b5ee0070e6c35f58bfb8c042ee6a"
+          "sha256": "248b9acef0fd4be26f22f19d9dce5403b2c9d7a2163cc4f44905126c59ddafcb"
         }
       ],
       "reviewed_by": null,

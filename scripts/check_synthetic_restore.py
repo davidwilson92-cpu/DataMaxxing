@@ -31,3 +31,25 @@ with source.connect() as a, restored.connect() as b:
     for table,order in [('zova_workspaces','id'),('zova_workspace_memberships','workspace_id,user_id')]:
         query = text(f'SELECT * FROM {table} ORDER BY {order}')
         assert a.execute(query).all() == b.execute(query).all(), table
+
+# Verify migrated reference columns and trigger behavior survive pg_dump/pg_restore.
+from sqlalchemy.exc import DBAPIError
+fixture_options={'options':'-csearch_path=zova_reference_restore_fixture'}
+reference_source=create_engine(url,connect_args=fixture_options)
+reference_restored=create_engine(url.set(database='zova_test_restored'),connect_args=fixture_options)
+with reference_source.connect() as a,reference_restored.connect() as b:
+    for table in inspect(reference_source).get_table_names():
+        assert table.replace('_','').isalnum()
+        columns=inspect(reference_source).get_pk_constraint(table)['constrained_columns']
+        order=','.join('"'+name+'"' for name in columns)
+        query=text(f'SELECT * FROM "{table}"'+(' ORDER BY '+order if order else ''))
+        assert a.execute(query).all()==b.execute(query).all(), 'reference fixture '+table
+try:
+    with reference_restored.begin() as c:
+        c.execute(text('UPDATE nova_drafts SET workspace_id=NULL'))
+except DBAPIError:
+    pass
+else:
+    raise AssertionError('Restored ownership guard did not reject reassignment')
+reference_source.dispose();reference_restored.dispose()
+print('Migrated canonical reference records and ownership guards survive restore.')
