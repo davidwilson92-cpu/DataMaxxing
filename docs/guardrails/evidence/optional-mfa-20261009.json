@@ -13,9 +13,16 @@
   "register_integrity": "passed",
   "production_gate_exit": 1,
   "production_status": "blocked; all 79 sections unresolved; no independent attestation",
-  "postgres_restore_image": "pending CI",
+  "postgres_restore_image": "passed: 338 tests, one SQLite-specific skip, synthetic restore including MFA tables, image build and smoke test",
   "provider_validation": "mocked only",
   "deployment": "not deployed",
   "real_account_changes": "none",
-  "rollback": "Keep MFA-aware authentication once any account enrolls"
+  "rollback": "Keep MFA-aware authentication once any account enrolls",
+  "tested_commit": "f3311649d1bf5c104de081bde785c5205abaf08b",
+  "ci_runs": [
+    "https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/37920657711",
+    "https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/37920651549"
+  ],
+  "dependency_audit": "no known vulnerabilities found",
+  "ci_production_guardrail": "failed as expected; unresolved 79-section baseline"
 }

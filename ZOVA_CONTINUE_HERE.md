@@ -2,6 +2,8 @@
 
 Worktree: zova-guardrails; branch codex/guardrails-closure-20261009. Candidate only, not deployed. Combines guardrails PR #16 and UX PR #17 with owner-authorised optional MFA. Read docs/guardrails/OPTIONAL_MFA_20261009.md and assessment.json first. Earlier deployment statements below are historical.
 
+Validation: local SQLite 338 passed / 1 PostgreSQL-only skip. CI SQLite and PostgreSQL each 338 passed / 1 expected backend-specific skip; synthetic restore (including MFA tables), dependency audit, image build, smoke test and Studio behaviour checks passed at f331164. CI runs 37920657711 and 37920651549. Production guardrails remain red. PR #18 is a draft integration candidate, not deployed. See docs/guardrails/evidence/optional-mfa-20261009.json. Browser authenticator UX and real-provider acceptance remain unvalidated.
+
 Preserve all users, credentials, data, explicit publishing confirmation and testing billing settings. No paid staging provisioning authorised. Do not force MFA enrollment. Do not roll back to MFA-unaware authentication once enrolled accounts exist. Production guardrail check remains fail-closed; engineering tests do not certify all 79 requirements.
 
 ---
