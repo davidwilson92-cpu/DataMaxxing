@@ -1,0 +1,27 @@
+{
+  "tested_commit": "e778d0f21cc284af85247afd6da338b23e0abc7b",
+  "ci_runs": [
+    38006235430
+  ],
+  "sqlite": {
+    "passed": 465,
+    "skipped": 62
+  },
+  "postgresql": {
+    "passed": 526,
+    "skipped": 1
+  },
+  "verified": [
+    "Real RS256 verification with generated synthetic key, mocked key retrieval and exchange",
+    "Missing/invalid required claims, signature, audience, issuer, authorized-party, timestamps, nonce and code hash rejected",
+    "Exchanged identity must validate and match front-channel issuer/subject/audience/nonce",
+    "Malformed response, provider rejection, transport/key failures sanitized with no account creation or automatic retry",
+    "Existing browser binding, registration atomicity, MFA and concurrency regressions pass",
+    "Migrated RLS restore, context/policy verification, image build/smoke and Python dependency audit"
+  ],
+  "limits": [
+    "No live Apple acceptance, real browser or operational key-rotation evidence",
+    "Apple service routing, account isolation and independent review remain open"
+  ],
+  "deployment": "No production data, credentials, sessions, social connections, provider actions or deployment changed"
+}

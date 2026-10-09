@@ -285,7 +285,7 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Engineering",
-      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete. A staged fourth authentication service now maps password sign-in, optional MFA and logout with limited user-column grants; Validated at a9dd94b with restricted-role sign-in/MFA/concurrent recovery/logout tests; account-level RLS and remaining lifecycle routes are open. Production remains unchanged. Password changes now use version/hash-conditional updates and version-bound session issuance; a separate optional recovery pool routes password and reset-mail flows. Validated at 212794e with password/MFA race, restricted recovery and mocked delivery-failure checks; account-level isolation and production rollout remain open. Password signup uses precommit security-version session issuance and atomic account setup; Apple identity failure rolls back new account setup. Concurrent signup and intervening MFA tests passed at 0c11d2c. Apple sign-in now binds authorization state to a host-only Secure HttpOnly cross-site return cookie before claiming state or contacting Apple. Missing/foreign/tampered browser callbacks were reproduced and rejected; existing sessions and MFA retained. Validated at c92e496 with mocked providers; actual browser/provider validation remains open.",
+      "finding": "Optional TOTP enrollment, encrypted secrets, one-use recovery codes, expiring version-bound challenges, replay/rate controls and password/Apple enforcement are implemented in the integration candidate. Existing users are not enrolled. New passwords retain the 15-character policy. Maintained compromised-password screening, privileged mandatory MFA and operational recovery assurance remain incomplete. A staged fourth authentication service now maps password sign-in, optional MFA and logout with limited user-column grants; Validated at a9dd94b with restricted-role sign-in/MFA/concurrent recovery/logout tests; account-level RLS and remaining lifecycle routes are open. Production remains unchanged. Password changes now use version/hash-conditional updates and version-bound session issuance; a separate optional recovery pool routes password and reset-mail flows. Validated at 212794e with password/MFA race, restricted recovery and mocked delivery-failure checks; account-level isolation and production rollout remain open. Password signup uses precommit security-version session issuance and atomic account setup; Apple identity failure rolls back new account setup. Concurrent signup and intervening MFA tests passed at 0c11d2c. Apple sign-in now binds authorization state to a host-only Secure HttpOnly cross-site return cookie before claiming state or contacting Apple. Missing/foreign/tampered browser callbacks were reproduced and rejected; existing sessions and MFA retained. Validated at c92e496 with mocked providers; actual browser/provider validation remains open. At e778d0f, actual synthetic RSA tests reproduced and corrected missing expiry and conflicting exchanged Apple identity acceptance. Front-channel required claims/code hash and exchanged-token signature/issuer/audience/nonce/subject consistency now precede account access; provider errors are sanitized and not retried. Live Apple/browser and operational key-rotation assurance remain open.",
       "next_action": "Validate PostgreSQL/restore and browser journeys, obtain security review, establish verified recovery operations and privileged MFA rollout; add maintained compromised-password screening.",
       "evidence": [
         {
@@ -367,6 +367,22 @@
         {
           "path": "docs/guardrails/evidence/apple-browser-binding-20261010.json",
           "sha256": "359a0e8b9ee7869e3c4373e7ffc3f6e18167b20c63254735f2ce6b2540323b9a"
+        },
+        {
+          "path": "nova/apple_identity.py",
+          "sha256": "60bba4f9ce80238f08f7280447b9207f411c9816db57d01929f3ff8bedec2c7c"
+        },
+        {
+          "path": "tests/test_apple_token_validation.py",
+          "sha256": "6e0875b24edef20a0b2ee65737dff14794ee8b8253a407f8291104e3254cd681"
+        },
+        {
+          "path": "docs/guardrails/APPLE_IDENTITY_20261010.md",
+          "sha256": "7c6e528f744a24791b947a6a0141f1cbfa636e2e1d36402b70bce9bce1228586"
+        },
+        {
+          "path": "docs/guardrails/evidence/apple-identity-20261010.json",
+          "sha256": "1a5cd6a53304782a2af89f1ff259c8b9023a8720178f94b0d898c54161ccc063"
         }
       ],
       "reviewed_by": null,

@@ -1,3 +1,13 @@
+# Current increment: Apple hybrid identity validation
+
+Validated e778d0f: local/CI SQLite 465 passed / 62 expected skips; PostgreSQL 526 passed / one expected skip. CI run 38006235430 passed synthetic real-signature claim/code/exchange checks, account/browser/MFA/concurrency regressions, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/apple-identity-20261010.json. Production unchanged; full gate blocked and publication goal active.
+
+Read docs/guardrails/APPLE_IDENTITY_20261010.md and nova/apple_identity.py. Signed-token regressions reproduced acceptance without expiry and with conflicting exchanged identities. Front-channel RS256 identity now requires exact issuer/scalar audience, timestamps, subject/nonce and matching c_hash before exchange. The returned identity must validate and match issuer/subject/audience/nonce before account lookup. Invalid responses and transport/key failures are sanitized; consumed states never automatically retry. Existing tests that mock decoding now supply complete synthetic claims; dedicated tests use actual RSA signatures. Live Apple/browser and key-rotation assurance remain open.
+
+NEXT: restricted registration/account lifecycle authority without broad User/workspace/membership grants, complete Apple/social callback broker routing, profile/billing and worker/legacy authority; account-level references/isolation and operational/independent evidence. Signup/Apple/social remain unmapped in separated-service mode. Do not activate partial mode or bypass the gate. Preserve users/data/keys and explicit publishing approval; no paid staging or forced MFA.
+
+---
+
 # Current increment: Apple sign-in browser binding
 
 Validated c92e496: local/CI SQLite 435 passed / 62 expected skips; PostgreSQL 496 passed / one expected skip. CI run 38005424259 passed callback browser-binding/session preservation, expiry/replay/MFA checks, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/apple-browser-binding-20261010.json. Production unchanged; publication goal active and full gate blocked.

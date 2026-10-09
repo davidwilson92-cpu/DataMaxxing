@@ -1,6 +1,9 @@
 # Apple hybrid-flow identity validation
 
-Candidate only; full local/PostgreSQL validation pending. Production unchanged.
+Validated e778d0f: local/CI SQLite 465 passed / 62 expected skips; PostgreSQL
+526 passed / one expected skip. CI run 38006235430 also passed migrated RLS
+restore, full context/policy verification, image build/smoke and Python dependency
+audit. Full release gate remains blocked. Production unchanged.
 
 Signed synthetic-token regressions reproduced acceptance of a front-channel
 identity token without expiry, and acceptance when the token exchange returned a
