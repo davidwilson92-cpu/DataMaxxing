@@ -2,6 +2,8 @@
 
 Owner asked to iterate until publication. Goal remains active; do not stop merely because the production check is red. Work through compatible changes and verified evidence; never weaken the gate or claim independent review. No production change has been made.
 
+Latest validation at 6a31f1a: local and CI SQLite/PostgreSQL each 355 passed, one expected backend-specific skip; restore/build/smoke/dependency checks passed. CI runs 37982302845 and 37982293248. Production gate remains blocked. Evidence: docs/guardrails/evidence/tenant-registry-20261009.json.
+
 Current increment: canonical workspace registry migration and six-role policy foundation. Read docs/guardrails/TENANT_REGISTRY_20261009.md. It is deliberately not yet used as an authorization boundary. Next: workspace references, transactional identity lifecycle, route/worker capability enforcement, restricted PostgreSQL roles/RLS. No paid staging or mandatory customer MFA authorised.
 
 ---
