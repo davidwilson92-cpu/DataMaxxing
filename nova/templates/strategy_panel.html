@@ -1,42 +1,47 @@
 <dialog id="strategyPanel" aria-labelledby="strategyPanelTitle" class="strategy-panel">
  <header><h2 id="strategyPanelTitle">{% include "next_move_icon.html" %}<span>Next move</span></h2><button class="quiet-button" onclick="this.closest('dialog').close()" aria-label="Close next move">×</button></header>
  <p id="strategyStatus" role="status"></p>
- <p id="strategyStepHint" class="support-note">Start with a goal. Zova will propose a plan for you to review.</p>
+ <p id="strategyStepHint" class="support-note"></p>
  <div id="strategyActions"></div>
- <p id="strategyPerformanceNote" class="support-note" hidden></p>
- <button class="quiet-button" id="recommendButton" onclick="refreshStrategyActions(this)">Refresh next moves</button>
- <details id="recommendationHelp" class="recommendation-help"><summary>How recommendations work</summary><p class="support-note">Refreshing searches the web and public social posts using your content themes. Keep confidential details out of those themes. Suggestions stay drafts until you approve them. Publicly indexed posts are not a measure of platform-wide popularity.</p></details>
- <p id="strategySourceNote" class="support-note">Refresh next moves to check current topics against your confirmed strategy.</p>
- <details id="strategyDetails"><summary>Your strategy</summary>
+ <button class="quiet-button" hidden id="recommendButton" onclick="refreshStrategyActions(this)">Find post ideas</button>
+ <p class="move-approval-note">Draft first. You decide what goes live.</p>
+ <details id="nextMoveSettings"><summary id="nextMoveSettingsLabel">Plan &amp; settings</summary>
+ <details id="recommendationHelp" class="recommendation-help" hidden><summary>Sources &amp; context</summary>
+  <p id="strategySourceNote" class="support-note"></p><p id="strategyPerformanceNote" class="support-note" hidden></p>
+  <p class="support-note">Uses your saved plan and public topic searches. Public posts do not prove a topic is popular.</p>
+ </details>
+ <details id="strategyDetails"><summary>Your plan</summary>
   <p id="strategyConfirmedState" class="support-note"></p>
   <details id="strategyQuickStart" class="strategy-quick-start" open><summary>Start with your goal</summary>
-   <p>A goal is enough to start. Add your audience and available time so the plan fits your business.</p>
+
    <div class="strategy-goal-chips" role="group" aria-label="Goal ideas"><button type="button" data-strategy-goal="Build awareness for my brand">Build awareness</button><button type="button" data-strategy-goal="Get more enquiries from the right customers">Get enquiries</button><button type="button" data-strategy-goal="Build stronger connections with my audience">Grow engagement</button></div>
    <label for="strategyBrief">What would you like to achieve?</label>
    <textarea id="strategyBrief" rows="3" maxlength="20000" placeholder="For example: fill our Saturday pottery classes, or paste your existing strategy."></textarea>
+   <details class="strategy-extra"><summary>Add audience or timing</summary>
    <label for="strategyQuickAudience">Who do you want to reach? (optional)</label>
    <input id="strategyQuickAudience" maxlength="1000" placeholder="For example: local beginners looking for a creative hobby">
    <label for="strategyQuickTime">How much time can you give your socials? (optional)</label>
    <input id="strategyQuickTime" maxlength="500" placeholder="For example: 30 minutes a week, with my own photos">
+   </details>
    <details class="strategy-import"><summary>Already have a strategy?</summary><label for="strategyImport">Import text or Markdown (UTF-8, up to 20 KB)</label><input id="strategyImport" type="file" accept=".txt,.md,text/plain,text/markdown"><p>Or paste it into your goal above. Your text is sent to AI only when you request a proposal.</p></details>
-   <button class="button primary" onclick="proposeStrategy(this)">Help me make a plan</button>
-   <p class="support-note">Zova proposes. You review and confirm. Nothing is published.</p>
+   <button class="button primary" onclick="proposeStrategy(this)">Build my plan</button>
+
   </details>
   <div id="strategyAssumptions"></div>
   <button id="strategyManualEdit" class="quiet-button" type="button" onclick="showStrategyEditor()">Or write my own plan</button>
   <form hidden id="strategyForm" onsubmit="confirmStrategy(event)">
-   <h3 id="strategyReviewHeading" tabindex="-1">Review your plan</h3><p>Check the essentials, then open the details to refine your voice or topics.</p>
-   {% for key,label,limit in [('goal','Goal',1500),('audience','Audience',1500),('resources','Time and resources',1000)] %}
+   <h3 id="strategyReviewHeading" tabindex="-1">Check the essentials</h3>
+   {% for key,label,limit in [('goal','Goal',1500)] %}
    <label for="strategy_{{ key }}">{{ label }}</label><textarea id="strategy_{{ key }}" name="{{ key }}" rows="2" maxlength="{{ limit }}"></textarea>
    {% endfor %}
    <fieldset><legend>Platforms</legend>{% for p,label in [('x','X'),('instagram','Instagram'),('facebook','Facebook'),('tiktok','TikTok')] %}<label class="inline-choice"><input type="checkbox" name="strategy_platform" value="{{ p }}">{{ label }}</label>{% endfor %}</fieldset>
-   <details id="strategyAdvanced"><summary>Voice, topics and other details</summary>
-    {% for key,label,limit in [('offer','Your offer',1500),('voice','Voice',1500),('themes','Public content themes (used for search)',2000),('rhythm','Posting rhythm',1000),('avoid','Topics to avoid',1500)] %}
+   <details id="strategyAdvanced"><summary>Audience, voice &amp; details</summary>
+    {% for key,label,limit in [('audience','Audience',1500),('resources','Time and resources',1000),('offer','Your offer',1500),('voice','Voice',1500),('themes','Public content themes (used for search)',2000),('rhythm','Posting rhythm',1000),('avoid','Topics to avoid',1500)] %}
     <label for="strategy_{{ key }}">{{ label }}</label><textarea id="strategy_{{ key }}" name="{{ key }}" rows="2" maxlength="{{ limit }}"></textarea>
     {% endfor %}
    </details>
-   <p class="strategy-search-disclosure">Confirming searches public topics to suggest next moves. <strong>Search themes:</strong> <span id="strategySearchPreview">None yet</span>. Keep confidential details out of these themes. <button class="quiet-button" type="button" onclick="document.getElementById('strategyAdvanced').open=true;document.getElementById('strategy_themes').focus()">Edit search themes</button></p>
-   <button class="button primary" type="submit">Confirm this strategy</button>
+   <p class="strategy-search-disclosure"><strong>Public search topics:</strong> <span id="strategySearchPreview">None yet</span>. Keep these non-confidential. <button class="quiet-button" type="button" onclick="document.getElementById('strategyAdvanced').open=true;document.getElementById('strategy_themes').focus()">Edit search themes</button></p>
+   <button class="button primary" type="submit">Save plan &amp; find ideas</button>
   </form>
  </details>
  <details id="seriesDetails"><summary>Recurring drafts</summary>
@@ -52,5 +57,6 @@
    <button class="quiet-button" onclick="previewSeries(this)">Preview dates</button><div id="seriesPreview"></div>
   </div>
   <div id="seriesList"></div>
+ </details>
  </details>
 </dialog>

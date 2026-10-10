@@ -6,7 +6,7 @@ const strategyStatus=text=>{document.getElementById('strategyStatus').textConten
 function fillStrategy(data){strategyKeys.forEach(k=>document.getElementById('strategy_'+k).value=data[k]||'');document.querySelectorAll('[name=strategy_platform]').forEach(n=>n.checked=(data.platforms||[]).includes(n.value));updateStrategySearchPreview();}
 function updateStrategySearchPreview(){document.getElementById('strategySearchPreview').textContent=document.getElementById('strategy_themes').value.trim()||'None yet - suggestions will be evergreen';}
 function showStrategyEditor(){document.getElementById('strategyForm').hidden=false;document.getElementById('strategyQuickStart').open=false;document.getElementById('strategyReviewHeading').focus();document.getElementById('strategyStepHint').textContent='Review your goal, audience and platforms. Confirm when the plan reflects your intentions.';}
-function strategyStepHint(state){document.getElementById('strategyStepHint').textContent=state==='proposal'?'Your proposal is ready. Check the assumptions, then confirm the plan you want Zova to use.':state==='confirmed'?'Your confirmed strategy guides these next moves. Choose an action or adjust your plan below.':'Start with a goal. Zova will propose a plan for you to review.';}
+function strategyStepHint(state){document.getElementById('strategyStepHint').textContent=state==='proposal'?'Check your plan, then confirm.':state==='confirmed'?'':'';}
 function chooseStrategyGoal(goal){const field=document.getElementById('strategyBrief');if(!field.value.trim())field.value=goal;else if(!field.value.includes(goal)){const next=field.value.trim()+'\n'+goal;if(next.length>20000){strategyStatus('Your brief is full. Edit it before adding another goal; your text is unchanged.');field.focus();return;}field.value=next;}field.focus();strategyStatus('Goal added to your brief. Add any detail, then ask for a plan.');}
 document.querySelectorAll('[data-strategy-goal]').forEach(button=>button.addEventListener('click',()=>chooseStrategyGoal(button.dataset.strategyGoal)));
 function strategyProposalBrief(){
@@ -26,40 +26,77 @@ async function strategyTask(button,work){
 }
 async function openNextMove(){
  document.getElementById('strategyPanel').showModal();
- if(strategyLoaded){await strategyTask(null,async()=>{await loadNextMoves();strategyStatus('');});return;}
  await strategyTask(null,async()=>{
-  const data=await api('/api/strategy');strategyRevision=data.revision;hasConfirmedStrategy=Boolean(data.confirmed.goal);document.getElementById('strategyForm').hidden=!(data.proposal.strategy||hasConfirmedStrategy);document.getElementById('recommendButton').hidden=!hasConfirmedStrategy;
-  fillStrategy(data.proposal.strategy||data.confirmed.goal&&data.confirmed||data.defaults);strategyStepHint(data.proposal.strategy?'proposal':hasConfirmedStrategy?'confirmed':'new');
-  document.getElementById('strategyConfirmedState').textContent=data.proposal.strategy?(hasConfirmedStrategy?'Your saved strategy stays in use until you confirm this new proposal.':'This proposal is not yet your confirmed strategy. Review it below.'):hasConfirmedStrategy?'Your confirmed strategy is saved. Edits only apply when you confirm.':'A goal is enough to begin. You can refine the plan before confirming.';
+  const data=await api('/api/strategy');strategyRevision=data.revision;hasConfirmedStrategy=Boolean(data.confirmed.goal);
+  document.getElementById('strategyForm').hidden=!(data.proposal.strategy||hasConfirmedStrategy);
+  document.getElementById('recommendButton').hidden=!hasConfirmedStrategy;
+  fillStrategy(data.proposal.strategy||data.confirmed.goal&&data.confirmed||data.defaults);
+  strategyStepHint(data.proposal.strategy?'proposal':hasConfirmedStrategy?'confirmed':'new');
+  document.getElementById('strategyConfirmedState').textContent=data.proposal.strategy?'Review before saving. Your current plan stays in use.':'';
   showStrategyAssumptions(data.proposal.assumptions||[]);
-  document.getElementById('strategyDetails').open=!data.confirmed.goal;
-  document.getElementById('strategyQuickStart').open=!(data.proposal.strategy||hasConfirmedStrategy);document.getElementById('strategyManualEdit').hidden=Boolean(data.proposal.strategy||hasConfirmedStrategy);
-  await loadNextMoves();await loadSeries();strategyLoaded=true;strategyStatus('');
+  document.getElementById('strategyDetails').open=!hasConfirmedStrategy;
+  document.getElementById('nextMoveSettings').open=!hasConfirmedStrategy;document.getElementById('nextMoveSettingsLabel').hidden=!hasConfirmedStrategy;
+  document.getElementById('strategyQuickStart').open=!(data.proposal.strategy||hasConfirmedStrategy);
+  document.getElementById('strategyManualEdit').hidden=Boolean(data.proposal.strategy||hasConfirmedStrategy);
+  strategyLoaded=true;
+  const items=await loadNextMoves();
+  if(hasConfirmedStrategy&&(!items.length||items.every(a=>a.stale&&!a.draft_id))){
+   strategyStatus('Finding your next post…');
+   await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});
+   await loadNextMoves();
+  }
+  strategyStatus('');
  });
 }
+document.getElementById('seriesDetails').addEventListener('toggle',event=>{
+ if(event.target.open)strategyTask(null,loadSeries);
+});
 function showStrategyAssumptions(items){document.getElementById('strategyAssumptions').innerHTML=items.length?'<p><b>Proposed assumptions — check before confirming</b></p><ul>'+items.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'';}
 async function proposeStrategy(button){await strategyTask(button,async()=>{
  const r=await api('/api/strategy/propose',{method:'POST',headers,body:JSON.stringify({brief:strategyProposalBrief(),revision:strategyRevision})});
- strategyRevision=r.revision;document.getElementById('strategyForm').hidden=false;fillStrategy(r.proposal.strategy);showStrategyAssumptions(r.proposal.assumptions);showStrategyEditor();strategyStepHint('proposal');document.getElementById('strategyManualEdit').hidden=true;strategyStatus('Proposal ready. Check the details and confirm to use it.');
+ strategyRevision=r.revision;document.getElementById('strategyForm').hidden=false;fillStrategy(r.proposal.strategy);showStrategyAssumptions(r.proposal.assumptions);showStrategyEditor();strategyStepHint('proposal');document.getElementById('strategyManualEdit').hidden=true;strategyStatus('');
 });}
 async function confirmStrategy(event){event.preventDefault();await strategyTask(event.submitter,async()=>{
  const strategy=Object.fromEntries(strategyKeys.map(k=>[k,document.getElementById('strategy_'+k).value]));strategy.platforms=Array.from(document.querySelectorAll('[name=strategy_platform]:checked'),n=>n.value);
  const r=await api('/api/strategy/confirm',{method:'POST',headers,body:JSON.stringify({strategy,revision:strategyRevision})});strategyRevision=r.revision;hasConfirmedStrategy=true;strategyStepHint('confirmed');document.getElementById('recommendButton').hidden=false;showStrategyAssumptions([]);
- document.getElementById('strategyConfirmedState').textContent='Confirmed strategy saved.';document.getElementById('strategyDetails').open=false;strategyStatus('Strategy saved. Preparing your next moves…');try{await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();strategyStatus('Strategy saved. Choose your next move.');}catch(e){await loadNextMoves();strategyStatus('Strategy saved. Suggestions are unavailable right now; use Refresh next moves to retry.');}
+ document.getElementById('strategyConfirmedState').textContent='';document.getElementById('nextMoveSettings').open=false;document.getElementById('nextMoveSettingsLabel').hidden=false;document.getElementById('strategyDetails').open=false;strategyStatus('Strategy saved. Preparing your next moves…');try{await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();strategyStatus('');}catch(e){await loadNextMoves();strategyStatus('Plan saved. Couldn’t load ideas. Try Find post ideas.');}
 });}
 function nextMoveSource(a){
  if(!a.source)return '<p class="source-kind">Evergreen · based on your strategy</p>';
  const s=a.source;
  return `<details class="source-evidence"><summary class="source-kind">${a.stale?'Refresh needed':s.kind==='public_social'?'Recent social discussion':'Recent web coverage'} · Source</summary><p><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a></p><small>Reported publication: ${esc(s.published_at)} · Checked ${esc(new Date(s.checked_at).toLocaleString())}</small>${a.stale?'<p>This source needs a fresh check before creating a draft.</p>':''}</details>`;
 }
-async function loadNextMoves(){document.getElementById('recommendationHelp').hidden=!hasConfirmedStrategy;document.getElementById('strategySourceNote').hidden=!hasConfirmedStrategy;const data=await api('/api/strategy/actions');document.getElementById('strategySourceNote').textContent=data.source_note;const performanceNote=document.getElementById('strategyPerformanceNote');performanceNote.hidden=!hasConfirmedStrategy||!data.performance_note;performanceNote.innerHTML=data.performance_note?esc(data.performance_note)+' <a href="/analytics">Review account performance</a>':'';document.getElementById('strategyActions').innerHTML=data.items.length?data.items.map(a=>`<article class="next-move"><h3>${esc(a.title)}</h3><p>${esc(a.reason)}</p>${nextMoveSource(a)}${a.stale?'<p class="support-note">Evidence needs a fresh check. Review Performance if needed, then refresh next moves.</p>':''}<small>${esc(platformName(a.platform))}${a.platform==='instagram'?' '+esc(a.format):''} · ${esc(a.effort)}</small>${a.needs?`<p>Needed: ${esc(a.needs)}</p>`:''}${a.kind==='review'?`<p class="next-move-checklist">${esc(a.brief)}</p>`:''}<div>${a.kind==='review'?`<button class="button primary" onclick="actionFeedback(${a.id},'complete',this)">Mark reviewed</button>`:`<button class="button primary" ${a.stale&&!a.draft_id?'disabled':''} onclick="draftNextMove(${a.id},this)">${a.draft_id?'Open draft':'Draft this'}</button>`}<details><summary>More options</summary><button class="quiet-button" onclick="actionFeedback(${a.id},'complete',this)">Done</button><button class="quiet-button" onclick="actionFeedback(${a.id},'snoozed',this)">Tomorrow</button><button class="quiet-button" onclick="actionFeedback(${a.id},'dismissed',this)">Dismiss</button><label>Optional feedback<select id="actionReason${a.id}"><option value="">Choose a reason</option>${['Not relevant','Too much effort','Bad timing','Already done'].map(s=>`<option>${s}</option>`).join('')}</select></label></details></div></article>`).join(''):(hasConfirmedStrategy?'<p>No next moves ready. Ask for suggestions or review your strategy.</p>':'');}
-async function refreshStrategyActions(button){await strategyTask(button,async()=>{strategyStatus('Checking recent web coverage and public social discussions against your strategy…');await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();strategyStatus('Choose an idea to draft, or adjust your strategy.');});}
+function nextMoveCard(a,featured=false){
+ const review=a.kind==='review',stale=a.stale&&!a.draft_id;
+ const label=a.draft_id?'Open draft':stale?'Refresh idea':review?'Mark reviewed':'Draft post';
+ const action=stale?'refreshStrategyActions(this)':review?`actionFeedback(${a.id},'complete',this)`:`draftNextMove(${a.id},this)`;
+ return `<article class="next-move ${featured?'next-move-featured':''}">
+ <div class="move-meta"><span>${featured?'Your next post':review?'Quick check':'Another idea'}</span><span>${esc(platformName(a.platform))}${a.platform==='instagram'?' · '+esc(a.format==='story'?'Story':'Post'):''}</span></div>
+ <h3>${esc(a.title)}</h3>
+ ${review?`<p class="next-move-checklist">${esc(a.brief)}</p>`:''}
+ ${stale?'<p>Let’s check this idea is still current.</p>':''}
+ <button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true"> →</span></button>
+ <details class="move-context"><summary>Why this idea</summary><p>${esc(a.reason)}</p>${a.needs?`<p><b>You’ll need:</b> ${esc(a.needs)}</p>`:''}<p>${esc(a.effort||'')}</p>${nextMoveSource(a)}<div class="move-options"><button class="quiet-button" onclick="actionFeedback(${a.id},'snoozed',this)">Remind me tomorrow</button><button class="quiet-button" onclick="actionFeedback(${a.id},'dismissed',this)">Skip idea</button><button class="quiet-button" onclick="actionFeedback(${a.id},'complete',this)">Already done</button><label>Reason (optional)<select id="actionReason${a.id}"><option value="">Choose</option>${['Not relevant','Too much effort','Bad timing','Already done'].map(v=>`<option>${v}</option>`).join('')}</select></label></div></details>
+ </article>`;
+}
+async function loadNextMoves(){
+ document.getElementById('recommendationHelp').hidden=!hasConfirmedStrategy;
+ const data=await api('/api/strategy/actions');
+ document.getElementById('strategySourceNote').textContent=data.source_note||'';
+ const note=document.getElementById('strategyPerformanceNote');note.hidden=!data.performance_note;
+ note.innerHTML=data.performance_note?esc(data.performance_note)+' <a href="/analytics">View performance</a>':'';
+ const items=[...data.items].sort((a,b)=>(a.kind==='review')-(b.kind==='review'));
+ document.getElementById('strategyActions').innerHTML=items.length?nextMoveCard(items[0],items[0].kind!=='review')+(items.length>1?`<details class="move-alternatives"><summary>${items.length-1} more ${items.length===2?'idea':'ideas'}</summary>${items.slice(1).map(a=>nextMoveCard(a)).join('')}</details>`:''):(hasConfirmedStrategy?'<div class="move-empty"><h3>Let’s find your next post.</h3><p>Based on your saved plan.</p></div>':'');
+ document.getElementById('recommendButton').textContent=items.length?'Find fresh ideas':'Find post ideas';
+ return items;
+}
+async function refreshStrategyActions(button){await strategyTask(button,async()=>{strategyStatus('Checking recent web coverage and public social discussions against your strategy…');await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();strategyStatus('');});}
 async function actionFeedback(id,status,button){await strategyTask(button,async()=>{await api(`/api/strategy/actions/${id}/feedback`,{method:'POST',headers,body:JSON.stringify({status,reason:document.getElementById('actionReason'+id).value})});await loadNextMoves();strategyStatus(status==='snoozed'?'Snoozed for 24 hours.':'Feedback saved.');});}
 async function openLinkedDraft(url,button){
  if(sendingMessage||mediaUploading||studioLoading){strategyStatus('Finish the current upload or response first.');return;}
  await strategyTask(button,async()=>{
-  await saveDraftNow();studioBusy(true);
-  try{const r=await api(url,{method:'POST',headers,body:'{}'});studioBusy(false);location.assign(window.zovaWorkspaceUrl('/studio?draft='+r.draft_id));}finally{studioBusy(false);}
+  const epoch=workspaceEpoch;await saveDraftNow();if(epoch!==workspaceEpoch)return;studioBusy(true);strategyStatus('Writing your post…');
+  try{const r=await api(url,{method:'POST',headers,body:'{}'});if(epoch!==workspaceEpoch){strategyStatus('Post saved in Drafts. Your current chat is unchanged.');return;}studioBusy(false);strategyStatus('Opening your draft…');location.assign(window.zovaWorkspaceUrl('/studio?draft='+r.draft_id));}finally{if(epoch===workspaceEpoch)studioBusy(false);}
  });
 }
 const draftNextMove=(id,button)=>openLinkedDraft(`/api/strategy/actions/${id}/draft`,button);
