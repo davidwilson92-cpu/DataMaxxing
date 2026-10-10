@@ -1,3 +1,9 @@
+# Current owner direction: focused beta, broader remediation deferred
+
+10 October 2026: publish focused UX PR 17 as a limited beta for owner testing. Save and revisit all known defects/security gaps on the next update request. Full register copied into ../zova-ux-release/docs/beta/deferred-register.json, with prioritised follow-up in KNOWN_GAPS.md and mandatory AGENTS.md instructions. This broader PR 18 is not the beta candidate; preserve it for later compatible security integration. No commercial-ready certification. Follow the beta branch handoff for actual deployment status; this note does not claim deployment.
+
+---
+
 # Current increment: explicit usage and billing ownership
 
 Validated 0f8ada52e156950ca338a86b1f8aa4f200b53a0e: local/CI SQLite 524 passed / 87 expected skips; PostgreSQL 609 passed / two expected skips. CI 38048348613 passed restore, image build/smoke and dependency audit. Browser static synthetic billing support page reviewed at 1280x720 and 390x844 with visible keyboard focus. Evidence: docs/guardrails/evidence/usage-ownership-20261010.json. Production unchanged; full gate remains blocked; publication goal active.

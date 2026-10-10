@@ -1,3 +1,7 @@
+# Owner beta direction — 10 October 2026
+
+The owner explicitly authorised the focused PR 17 as a limited beta and deferred the broader commercial-readiness work until a future update request. Read ../zova-ux-release/docs/beta/KNOWN_GAPS.md and its complete deferred-register.json before future work. The owner requires known defects/security issues to be addressed next time updates are requested. Do not deploy this unfinished broad migration wholesale. The original full commercial baseline and its unresolved statuses remain intact; beta authorisation is not evidence of closure.
+
 # Zova engineering guardrails
 
 Read `docs/PRODUCTION_GUARDRAILS.md`, `docs/guardrails/assessment.json` and
