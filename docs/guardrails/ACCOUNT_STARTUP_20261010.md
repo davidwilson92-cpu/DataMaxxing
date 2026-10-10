@@ -1,6 +1,9 @@
 # Account protection verification and startup enforcement
 
-Candidate only; full local/PostgreSQL validation pending. Production unchanged.
+Validated 2d83509: local/CI SQLite 490 passed / 69 expected skips; PostgreSQL
+557 passed / two expected skips. CI run 38008122298 also passed migrated
+account/workspace restore, full context/policy verification, image build/smoke and
+Python dependency audit. Full release gate remains blocked. Production unchanged.
 
 Regressions reproduced startup acceptance with a missing account guard and SQLite
 verification accepting a same-name trigger whose body did nothing. Account guards

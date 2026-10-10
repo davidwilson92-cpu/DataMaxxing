@@ -1,0 +1,28 @@
+{
+  "tested_commit": "2d835095080a39759a857241eb64d847dd927afb",
+  "ci_runs": [
+    38008122298
+  ],
+  "sqlite": {
+    "passed": 490,
+    "skipped": 69
+  },
+  "postgresql": {
+    "passed": 557,
+    "skipped": 2
+  },
+  "verified": [
+    "Startup rejects missing account guards; SQLite rejects same-name weakened trigger definitions",
+    "PostgreSQL rejects cascading/additional cascading, deferred and unvalidated foreign keys, disabled enforcement, altered function security and narrowed triggers",
+    "Catalog-only verification used by runtime schema and restricted service configuration without expanded customer-data grants",
+    "Fresh bootstrap and explicit offline preparation supported; populated ordinary startup refuses missing protections",
+    "Offline populated upgrade preserves email, password hash, auth version and existing canonical draft data",
+    "Migrated account/workspace restore, context/policy verification, image build/smoke and dependency audit"
+  ],
+  "limits": [
+    "Account RLS and per-operation read/delete/insert authority remain incomplete",
+    "Secondary identity fields and registration/callback/worker integration remain open",
+    "Runtime post-startup drift detection and production/independent review remain unverified"
+  ],
+  "deployment": "No production migration, offline-preparation flag, grants, roles, user data or deployment changed"
+}

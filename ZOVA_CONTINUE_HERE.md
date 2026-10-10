@@ -1,3 +1,13 @@
+# Current increment: account guard startup enforcement
+
+Validated 2d83509: local/CI SQLite 490 passed / 69 expected skips; PostgreSQL 557 passed / two expected skips. CI run 38008122298 passed guard/constraint drift attacks, populated offline-upgrade preservation, restricted-service verification, account/workspace restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/account-startup-20261010.json. Production unchanged; full release gate blocked and publication goal active.
+
+Read docs/guardrails/ACCOUNT_STARTUP_20261010.md. verify_account_guards is catalog-only and used by verify_runtime_schema and create_services. SQLite compares complete shared trigger definitions; PostgreSQL checks function language/body/security/search path, trigger shape and validated immediate non-cascading FKs with enabled enforcement. All matching FKs must satisfy policy. Runtime requires the account migration version. Populated bootstrap refuses missing guards before schema changes. Fresh bootstrap installs guards; explicit prepare_database sets its internal offline account marker only after requiring migration credentials/--apply/--writes-paused. Never set ZOVA_OFFLINE_ACCOUNT_PREPARATION in deployed services; default PostgreSQL verify mode ignores it. Workspace registry/reference migrations remain populated-database prerequisites.
+
+NEXT: account RLS and operation-specific read/delete/insert authority, immutable secondary identity fields, restricted registration/callback/profile/billing/worker integration and legacy isolation. Runtime post-startup drift monitoring and operational/independent evidence remain open. Do not activate partial service mode or bypass the gate. Preserve users/data/keys and explicit publishing approval; no paid staging or forced MFA.
+
+---
+
 # Current increment: immutable account ownership
 
 Validated 31253ac: local/CI SQLite 487 passed / 62 expected skips; PostgreSQL 548 passed / one expected skip. CI run 38007101051 passed direct SQL ownership attacks, migration rollback/repeat/record preservation, full application tests with guards, restricted-service compatibility, account/workspace restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/account-references-20261010.json. Production unchanged; full gate blocked and publication goal active.
