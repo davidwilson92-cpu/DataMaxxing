@@ -98,6 +98,10 @@ def test_billing_disabled_mode_remains_available(monkeypatch):
     response=client.get('/subscribe')
     assert response.status_code==200
     assert 'Free beta access' in response.text
+    with SessionLocal() as db:
+        with pytest.raises(RuntimeError,match='not available'):
+            billing._locked(db,uid)
+        assert db.get(BillingAccount,f'{uid}:off') is None
 
 
 def test_disabled_limits_do_not_depend_on_billing_lookup(monkeypatch):

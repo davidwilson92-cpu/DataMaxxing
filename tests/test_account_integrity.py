@@ -111,6 +111,7 @@ def test_profile_persists_and_guidance_can_be_cleared():
 
 def test_billing_return_cannot_grant_access_from_payment_status(monkeypatch):
     import nova.app as module
+    monkeypatch.setenv('STRIPE_MODE','test')
     client, uid, _, _ = account()
     monkeypatch.setattr(module.billing,'fetch_checkout_session',lambda _: {'client_reference_id':str(uid),'customer':'cus_unlinked','subscription':'sub_unlinked','payment_status':'paid','livemode':False})
     assert client.get('/billing/success?session_id=cs_synthetic',follow_redirects=False).status_code == 403

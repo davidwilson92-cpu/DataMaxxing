@@ -109,6 +109,7 @@ def account_for(db,user_id,scope):
 
 def _locked(db,user_id):
     scope=mode()
+    if scope=='off':raise RuntimeError('Billing is not available yet.')
     key=f'{user_id}:{scope}'
     if not account_for(db,user_id,scope):
         user=db.get(User,user_id)
