@@ -87,10 +87,12 @@ def test_account_read_cannot_write_and_foreign_insert_is_rejected(account_rls_db
     with runtime.begin() as c:
         bound(c,issuer,roles[0],uids[0])
         assert c.execute(text("UPDATE nova_creator_preferences SET writing_tone='blocked' WHERE user_id=:uid"),{'uid':uids[0]}).rowcount==0
-    with pytest.raises(DBAPIError):
+    with pytest.raises(DBAPIError) as failure:
         with runtime.begin() as c:
             bound(c,issuer,roles[0],uids[0],'account.edit')
             c.execute(text("INSERT INTO zova_brands(user_id,name,created_at) VALUES(:uid,'Foreign',CURRENT_TIMESTAMP)"),{'uid':uids[1]})
+    assert failure.value.orig.sqlstate=='42501'
+    assert 'row-level security' in str(failure.value.orig)
 
 
 @pytest.mark.parametrize('case',['wrong_capability','secondary_brand','replay','revoked'])
@@ -150,6 +152,9 @@ def test_context_functions_work_with_non_superuser_migration_owner(account_rls_d
         c.execute(text(f'GRANT USAGE,CREATE ON SCHEMA {schema} TO {owner}'))
         c.execute(text(f'GRANT SELECT ON nova_users,zova_workspaces TO {owner}'))
         c.execute(text(f'GRANT SELECT,INSERT,DELETE ON zova_db_contexts TO {owner}'))
+        # SELECT FOR UPDATE in expired-context cleanup requires UPDATE authority.
+        # This is the trusted function owner, never an application runtime role.
+        c.execute(text(f'GRANT UPDATE(token_hash) ON zova_db_contexts TO {owner}'))
         c.execute(text(f'GRANT SELECT,INSERT ON zova_schema_migrations TO {owner}'))
         for name in ACCOUNT_TABLES:c.execute(text(f'ALTER TABLE {name} OWNER TO {owner}'))
         for signature in functions:c.execute(text(f'ALTER FUNCTION {signature} OWNER TO {owner}'))
