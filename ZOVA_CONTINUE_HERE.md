@@ -1,3 +1,11 @@
+# Beta is live — 10 October 2026
+
+Verified Render deployment dep-db52dg3rjlhs73abnrr0, commit 4c0b0419beb6944bd8e0db3189432d259e9efded, live at 11:52:45 UTC. PR 17 merged after all three required checks passed. CI 38049756412: SQLite 265 passed / one skip; PostgreSQL 265 passed / one skip; restore/image/dependency and exact-scope beta gate passed. Health/login/signup returned 200; live Studio asset matched candidate and browser retained existing session/draft21. Transient 502 during startup recovered. No real post/charge/provider grant or secret change was used for validation.
+
+Known gaps and next-update requirements: docs/beta/KNOWN_GAPS.md and docs/beta/deferred-register.json. Commercial readiness remains unapproved. Broader PR18 security migration is deferred and must not be deployed wholesale. When the owner next requests updates, address/reconcile the saved defects and security gaps first. Local screenshot contains the owner's draft: do not commit or share it publicly. Sanitised release evidence: docs/validation/beta-live-20261010.json.
+
+---
+
 # Limited beta authorisation — 10 October 2026
 
 Owner requested publication as a beta for personal testing and deferral of the remaining commercial work. This supersedes the all-sections-complete requirement for this focused beta only. Read docs/beta/KNOWN_GAPS.md and docs/beta/deferred-register.json on every future update and address the recorded issues before unrelated expansion.
