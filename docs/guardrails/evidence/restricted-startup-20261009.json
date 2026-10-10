@@ -1,0 +1,33 @@
+{
+  "tested_commit": "80db06c6a1aee20c25393ca4edcd1e3f17e32b86",
+  "ci_runs": [
+    37990057499,
+    37990050801
+  ],
+  "sqlite": {
+    "passed": 405,
+    "skipped": 7
+  },
+  "postgresql": {
+    "passed": 411,
+    "skipped": 1
+  },
+  "verified": [
+    "Read-only schema inspection and missing-table/column/version/guard refusal",
+    "Explicit offline preparation without runtime credential fallback",
+    "Actual PostgreSQL non-owner login imports app, creates synthetic user/draft and serves authenticated draft read",
+    "Restricted login cannot alter/drop/truncate tables, disable ownership triggers, create application tables or alter migration records",
+    "Privileged original login masked by SET ROLE is rejected",
+    "Built-in broad read role and excess database/schema CREATE privileges are rejected",
+    "Migrated reference backup/restore and post-restore ownership guard",
+    "Hosting image build/smoke and Python dependency audit"
+  ],
+  "image_availability": "Earlier runs hit Docker Hub anonymous pull quotas. CI now uses pinned Docker Official Images in ECR; both registry manifest bodies were verified equal. No paid infrastructure or credentials were provisioned.",
+  "deployment": "Not deployed; no production role/schema/hosting change",
+  "remaining": [
+    "Restricted per-operation service grants and role provisioning",
+    "RLS and transaction context for application/workers",
+    "Account-level and legacy authority mapping",
+    "Operational and independent release evidence"
+  ]
+}

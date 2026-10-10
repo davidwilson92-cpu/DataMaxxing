@@ -12,7 +12,7 @@ if os.environ.get('ZOVA_TEST_POSTGRES'):
     parsed=urlsplit(test_database)
     if parsed.hostname not in {'localhost','127.0.0.1'} or not parsed.path.startswith('/zova_test_'):
         raise RuntimeError('PostgreSQL tests require an explicitly isolated loopback zova_test_ database')
-os.environ.update(DATABASE_URL=test_database,
+os.environ.update(DATABASE_URL=test_database, ZOVA_SCHEMA_MODE="bootstrap",
                   UPLOAD_DIR=str(TEST_ROOT / "uploads"), REQUIRE_SUBSCRIPTION="false",
                   PUBLIC_BASE_URL="http://testserver", SESSION_SECRET="test-session-secret",
                   CREDENTIAL_ENCRYPTION_KEY="eV7ZGbkgONCU5t6fVtxgBMvCKx6-4UlAHWVHN2LoflE=")
@@ -21,6 +21,14 @@ for key in ("OPENAI_API_KEY", "SMTP_HOST", "STRIPE_SECRET_KEY", "BOOTSTRAP_CREAT
 
 import pytest
 import httpx
+
+
+@pytest.fixture(scope='session',autouse=True)
+def migrate_account_ownership():
+    # Explicit isolated migration; production startup never installs these guards.
+    from nova.db import engine
+    from nova.account_references import apply_accounts
+    apply_accounts(engine,writes_paused=True)
 
 @pytest.fixture(autouse=True)
 def block_external_http(monkeypatch):

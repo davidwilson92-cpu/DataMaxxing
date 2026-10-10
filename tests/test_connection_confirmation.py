@@ -61,10 +61,11 @@ def test_switch_cancel_and_expiry_preserve_existing_connections(signed_in,monkey
         assert response.status_code==200
         assert client.post(url,data={'choice':0}).status_code==410
     url=staged(client,monkeypatch)
-    with SessionLocal() as db:
-        pending=db.scalar(select(PendingConnection).where(PendingConnection.user_id==uid,PendingConnection.used.is_(False)))
-        pending.expires_at=utcnow()-timedelta(seconds=1);db.commit()
-    assert client.post(url,data={'choice':0}).status_code==410
+    from nova import connection_review
+    with monkeypatch.context() as clock:
+        future=utcnow()+timedelta(minutes=11)
+        clock.setattr(connection_review,'utcnow',lambda:future)
+        assert client.post(url,data={'choice':0}).status_code==410
     with SessionLocal() as db:
         rows=db.scalars(select(SocialConnection).where(SocialConnection.user_id==uid)).all()
         assert len(rows)==1 and decrypt(rows[0].encrypted_access_token)=='keep-me'
@@ -134,11 +135,13 @@ def test_revoked_session_cannot_complete_pending_connection(signed_in,monkeypatc
 
 
 def test_worker_scrubs_expired_pending_grants(signed_in,monkeypatch):
-    from nova.scheduler import process_due
-    client,uid=signed_in;staged(client,monkeypatch)
-    with SessionLocal() as db:
-        row=db.scalar(select(PendingConnection).where(PendingConnection.user_id==uid));row.expires_at=utcnow()-timedelta(minutes=1);db.commit()
-    process_due()
+    from nova import scheduler,connection_review
+    client,uid=signed_in
+    with monkeypatch.context() as clock:
+        past=utcnow()-timedelta(minutes=11)
+        clock.setattr(connection_review,'utcnow',lambda:past)
+        staged(client,monkeypatch)
+    scheduler.process_due()
     with SessionLocal() as db:assert db.scalar(select(PendingConnection).where(PendingConnection.user_id==uid)) is None
 
 @pytest.mark.parametrize('platform',['instagram','tiktok','x'])

@@ -1,0 +1,31 @@
+{
+  "tested_commit": "18d1fa75341d8908aed9f26838654a7ae453ccaf",
+  "ci_runs": [
+    37999971907
+  ],
+  "sqlite": {
+    "passed": 415,
+    "skipped": 41
+  },
+  "postgresql": {
+    "passed": 455,
+    "skipped": 1
+  },
+  "verified": [
+    "Same-source offline installation and read-only installed context-function verification",
+    "Removed membership checks and backend replay binding rejected",
+    "Changed execution mode, search path, volatility, leakproof/null behavior and defaults rejected",
+    "Expanded issuer audience and missing issuer function rejected",
+    "Existing grant-only startup checks reproduce acceptance of altered definitions",
+    "Verification does not repair drift; explicit fixture-admin repair restores acceptance",
+    "Migrated RLS restore, hosting image build/smoke and Python dependency audit"
+  ],
+  "limits": [
+    "Only the two context function definitions; exact table-policy expressions and final service grants remain open",
+    "Trusted authentication/recovery services still have cross-account authority",
+    "Signup/account/callback/worker routing and operational assurance incomplete",
+    "Startup check does not detect a privileged change after startup"
+  ],
+  "provider_validation": "Synthetic CI records and mocked providers; no real social posts or grants",
+  "deployment": "No production changes; staged mode remains disabled"
+}

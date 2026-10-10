@@ -1,9 +1,9 @@
 """Brand boundaries for web sessions; legacy data belongs to workspace zero."""
 from fastapi import HTTPException
-from sqlalchemy import event, select
+from sqlalchemy import event, select, inspect, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, with_loader_criteria
-from .db import (Brand, BrandVoice, BrandScoped, SessionLocal, CreatorPreferences)
+from .db import (Brand, BrandVoice, BrandScoped, CanonicalWorkspace, SessionLocal, CreatorPreferences, LegacyPublication, TenantWorkspace, WorkspaceMembership, User)
 
 
 def bind_request(db, request):
@@ -14,6 +14,15 @@ def bind_request(db, request):
     user = user_from_session(request.cookies.get('nova_session'))
     if not user:
         return
+    brand_id = request_brand(db, request, user)
+    db.info.update(brand_id=brand_id, brand_user_id=user.id)
+    request.state.brand_id = brand_id
+    from .tenant_access import authorize_request
+    authorize_request(db,request,user.id,brand_id)
+
+
+def request_brand(db, request, user):
+    """Shared brand selection: explicit foreign IDs fail; stale cookies reset."""
     raw = request.headers.get('X-Zova-Brand', request.query_params.get('workspace', request.cookies.get('zova_brand', '0')))
     try:
         brand_id = int(raw)
@@ -25,8 +34,7 @@ def bind_request(db, request):
             if 'X-Zova-Brand' in request.headers or 'workspace' in request.query_params:
                 raise HTTPException(404, 'Brand workspace not found')
             brand_id=0  # A cookie from another signed-in account is not authority.
-    db.info.update(brand_id=brand_id, brand_user_id=user.id)
-    request.state.brand_id = brand_id
+    return brand_id
 
 
 @event.listens_for(Session, 'do_orm_execute')
@@ -35,12 +43,37 @@ def scope_queries(state):
         return
     brand_id = state.session.info['brand_id']
     user_id = state.session.info['brand_user_id']
+    from .tenant_migration import workspace_key
+    wid = workspace_key(user_id, brand_id)
     state.statement = state.statement.options(with_loader_criteria(
-        BrandScoped, lambda cls: (cls.brand_id == brand_id) & (cls.user_id == user_id), include_aliases=True))
+        BrandScoped, lambda cls: (cls.workspace_id == wid) & (cls.brand_id == brand_id) & (cls.user_id == user_id), include_aliases=True))
 
 
 @event.listens_for(Session, 'before_flush')
 def scope_writes(db, context, instances):
+    for row in db.dirty:
+        if isinstance(row, CanonicalWorkspace):
+            state = inspect(row)
+            if any(state.attrs[field].history.has_changes() for field in ('workspace_id','user_id','brand_id')):
+                raise HTTPException(409, 'Workspace ownership cannot be changed.')
+        if isinstance(row, (TenantWorkspace, WorkspaceMembership)):
+            state = inspect(row)
+            fields = ('id','owner_user_id','legacy_brand_id') if isinstance(row,TenantWorkspace) else ('workspace_id','user_id')
+            if any(state.attrs[field].history.has_changes() for field in fields):
+                raise HTTPException(409,'Workspace membership identity cannot be changed.')
+            if isinstance(row,WorkspaceMembership) and any(state.attrs[field].history.has_changes() for field in ('role','active')):
+                row.revision = (row.revision or 1) + 1
+                db.execute(update(User).where(User.id==row.user_id).values(auth_version=User.auth_version+1).execution_options(synchronize_session=False))
+        if isinstance(row, LegacyPublication):
+            state = inspect(row)
+            if any(state.attrs[field].history.has_changes() for field in
+                   ('id', 'creator_id', 'text', 'account', 'authority_digest')):
+                raise HTTPException(409, 'Approved publication identity and content cannot be changed.')
+        if isinstance(row, (BrandScoped, Brand)):
+            state = inspect(row)
+            fields = ('user_id', 'brand_id') if isinstance(row, BrandScoped) else ('user_id',)
+            if any(state.attrs[field].history.has_changes() for field in fields):
+                raise HTTPException(409, 'Workspace ownership cannot be changed.')
     if 'brand_id' not in db.info:
         return
     for row in db.new.union(db.dirty).union(db.deleted):

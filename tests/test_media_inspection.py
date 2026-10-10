@@ -1,3 +1,4 @@
+from test_reviewed_publication import publish_and_run
 import io
 import json
 from types import SimpleNamespace
@@ -104,8 +105,8 @@ def test_publication_checkpoint_survives_exception(monkeypatch, phase, expected)
     def publish(*args, **kwargs):
         checkpoint(phase, container_id='container-synthetic', **({'post_id': 'post-synthetic'} if phase == 'published' else {}))
         raise httpx.ReadTimeout('secret provider diagnostic')
-    monkeypatch.setattr(module, 'publish_platform', publish)
-    result = client.post('/api/publish', json={**body, 'review_token': reviewed['review_token']}).json()['results']['instagram']
+    monkeypatch.setattr('nova.scheduler.publish_platform', publish)
+    result = publish_and_run(client, json={**body, 'review_token': reviewed['review_token']}).json()['results']['instagram']
     assert result['status'] == expected and result['container_id'] == 'container-synthetic'
     assert 'secret provider diagnostic' not in json.dumps(result)
 
@@ -120,8 +121,8 @@ def test_uncertain_instagram_reconciles_only_authoritative_published(monkeypatch
     def publish(*args, **kwargs):
         checkpoint('publish_requested', container_id='container-synthetic')
         raise httpx.ReadTimeout('uncertain')
-    monkeypatch.setattr(module, 'publish_platform', publish)
-    client.post('/api/publish', json={**body, 'review_token': reviewed['review_token']})
+    monkeypatch.setattr('nova.scheduler.publish_platform', publish)
+    publish_and_run(client, json={**body, 'review_token': reviewed['review_token']})
     monkeypatch.setattr(social, 'access_token', lambda *a: 'synthetic')
     monkeypatch.setattr(social.httpx, 'get', lambda *a, **kw: SimpleNamespace(status_code=200, json=lambda: {'status_code': 'PUBLISHED'}))
     monkeypatch.setattr('nova.request_security.allowed_request', lambda *a: True)
@@ -193,7 +194,8 @@ def test_testing_offer_does_not_imply_subscription_or_management():
     client, _, _, _ = account()
     page = client.get('/subscribe')
     assert page.status_code == 200
-    assert 'Testing access' in page.text and 'View future GBP plans' in page.text
+    assert 'Free beta access' in page.text and 'View future GBP plans' in page.text
+    assert 'does not start a subscription or an automatic charge' in page.text
     assert 'No subscription has been verified' not in page.text
     assert 'Cancel through Manage billing' not in page.text
 

@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% block title %}Two-step sign-in | Zova{% endblock %}
+{% block body %}<main class="legal-wrap mfa-page"><h1>Two-step sign-in</h1>
+{% if error %}<p role="alert">{{ error }}</p>{% endif %}
+{% if challenge %}
+<p>Enter the six-digit code from your authenticator, or one of your saved recovery codes.</p>
+<form method="post" action="/mfa/challenge"><label for="mfaCode">Security code</label><input id="mfaCode" name="code" autocomplete="one-time-code" maxlength="40" required autofocus><button class="button primary">Finish signing in</button></form>
+<p><a href="/login">Start sign-in again</a></p>
+{% elif recovery_codes %}
+<p role="status">Two-step sign-in is enabled. Other sessions have been signed out.</p>
+<h2>Save your recovery codes</h2><p>These are shown only once. Save them somewhere private outside Zova. Each code replaces your authenticator code once; you still need your normal sign-in.</p>
+<ul>{% for code in recovery_codes %}<li><code>{{ code }}</code></li>{% endfor %}</ul>
+<p><a class="button primary" href="/account">I have saved my codes</a></p>
+{% elif setup_secret %}
+<p>Add a new account manually in your authenticator app. Use the name <strong>Zova</strong>, a time-based code and this setup key:</p>
+<p><code>{{ setup_secret }}</code></p><p>Keep this key private. Setup expires in ten minutes. Two-step sign-in stays off until you confirm a working code.</p>
+<form method="post" action="/mfa/enable"><label for="setupCode">Six-digit authenticator code</label><input id="setupCode" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required><button class="button primary">Enable two-step sign-in</button></form>
+<p><a href="/mfa/setup">Cancel setup</a></p>
+{% elif enabled %}
+<p>Two-step sign-in is on. New sign-ins need your authenticator or a saved recovery code.</p>
+<details><summary>Turn off two-step sign-in</summary><p>This removes the extra sign-in protection and signs out other sessions.</p><form method="post" action="/mfa/disable"><label for="disablePassword">Current Zova password</label><input id="disablePassword" type="password" name="password" autocomplete="current-password" maxlength="256" required><label for="disableCode">Authenticator or recovery code</label><input id="disableCode" name="code" autocomplete="one-time-code" maxlength="40" required><button class="button">Turn off two-step sign-in</button></form></details>
+{% else %}
+<p>Add an extra check when signing in. You will need an authenticator app and a safe place for recovery codes. This is optional and does not change your social connections.</p>
+<p>If you normally use Apple, first set a Zova password through <a href="/forgot-password">password recovery</a> using your account email.</p>
+<form method="post" action="/mfa/setup"><label for="setupPassword">Current Zova password</label><input id="setupPassword" type="password" name="password" autocomplete="current-password" maxlength="256" required><button class="button primary">Set up authenticator</button></form>
+{% endif %}
+{% if not challenge %}<p><a href="/account">Back to Account</a></p>{% endif %}
+<p>Lost both your authenticator and recovery codes? Contact support for identity-verified recovery. A password reset alone does not remove two-step sign-in.</p>{% include "support_link.html" %}</main>{% endblock %}

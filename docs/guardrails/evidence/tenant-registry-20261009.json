@@ -1,0 +1,24 @@
+{
+  "tested_commit": "6a31f1a432dd6f7341ef841367367f6bee29298e",
+  "local": {
+    "passed": 355,
+    "skipped": 1,
+    "skip": "PostgreSQL-only migration"
+  },
+  "ci_runs": [
+    37982302845,
+    37982293248
+  ],
+  "ci": {
+    "sqlite": "355 passed, 1 expected skip",
+    "postgresql": "355 passed, 1 expected SQLite-specific skip",
+    "registry_tests": "17; isolated schemas on PostgreSQL, isolated in-memory SQLite",
+    "synthetic_restore": "passed; current application tables, registry schema exercised separately in isolated tests",
+    "build_smoke": "passed",
+    "dependency_audit": "no known vulnerabilities found",
+    "production_guardrails": "failed; baseline remains unresolved"
+  },
+  "deployment": "not deployed",
+  "activation": "registry foundation only; routes and workers not yet using canonical workspaces",
+  "next": "canonical references and lifecycle, capability enforcement, restricted roles and RLS"
+}

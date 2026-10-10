@@ -1,0 +1,34 @@
+{
+  "tested_commit": "4038fb2780c7d24271f0d42276cf2a1b2a9c5ea6",
+  "ci_runs": [
+    37995650285,
+    37995645267
+  ],
+  "sqlite": {
+    "passed": 411,
+    "skipped": 29
+  },
+  "postgresql": {
+    "passed": 439,
+    "skipped": 1
+  },
+  "verified": [
+    "Normal get_db/current_user/middleware draft flows use three restricted service identities without dependency overrides",
+    "Old shared SessionLocal factories deliberately fail if reached by configured requests",
+    "Default and second-brand create/save/reload/delete with authenticated cookies",
+    "Explicit foreign/invalid brand rejection and stale foreign brand cookie reset",
+    "Auth-version revocation and rate-limit persistence through restricted identity pool",
+    "Identity role cannot read content, edit users/memberships or enumerate database contexts",
+    "Unexpected content column grants and context-issuer function grants rejected",
+    "Unmapped routes including handlers without get_db rejected in staged mode",
+    "Migrated RLS restore, image build/smoke and dependency audit"
+  ],
+  "limits": [
+    "Trusted app-state installation only; no production activation switch",
+    "Draft routes/health/static only; sign-in/signup/account/OAuth/publishing paths not mapped",
+    "Account telemetry mocked; workers and direct SessionLocal entry points unintegrated",
+    "Exact installed RLS definitions and complete content/worker column grants remain unverified"
+  ],
+  "provider_validation": "Synthetic data and mocked providers only",
+  "deployment": "No production roles/grants/data or deployment changes; full gate blocked"
+}

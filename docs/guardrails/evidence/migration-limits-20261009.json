@@ -1,0 +1,27 @@
+{
+  "tested_commit": "09c5771921a65404b3941fb013808e193d5a7a29",
+  "ci_runs": [
+    37986816507,
+    37986810059
+  ],
+  "sqlite": {
+    "passed": 393,
+    "skipped": 6
+  },
+  "postgresql": {
+    "passed": 398,
+    "skipped": 1
+  },
+  "verified": [
+    "Advisory lock contention aborts both migration phases with SQLSTATE 55P03",
+    "Table lock contention aborts both phases without partial schema changes",
+    "Clean retry succeeds after contention clears",
+    "Statement cancellation restores transaction-local settings and connection usability",
+    "Read-only reference preview refuses incorrect existing canonical mapping",
+    "Synthetic migrated database restore preserves references and write guards",
+    "Build, smoke and dependency audit passed"
+  ],
+  "limits": "Five seconds per PostgreSQL lock; two minutes per statement; not a whole-migration deadline",
+  "deployment": "Not deployed; no production migrations",
+  "remaining": "Runtime canonical reads, restricted roles/RLS, other baseline and independent operational evidence"
+}

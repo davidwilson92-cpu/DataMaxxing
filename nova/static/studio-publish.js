@@ -1,7 +1,7 @@
 /* Review stores a server-owned snapshot; final confirmation never re-reads editable text. */
 let pendingReview=null;
 let reviewPlatforms=[];
-function mediaPreview(asset){return asset.url?(asset.kind==='video'?`<video controls preload="metadata" src="${esc(asset.url)}" aria-label="${esc(asset.filename)}"></video>`:`<img src="${esc(asset.url)}" alt="${esc(asset.filename)}">`):`<p>${esc(asset.filename)} — preview unavailable</p>`;}
+function mediaPreview(asset){return asset.url?(asset.kind==='video'?`<video controls preload="metadata" src="${esc(mediaPreviewUrl(asset.url))}" aria-label="${esc(asset.filename)}"></video>`:`<img src="${esc(mediaPreviewUrl(asset.url))}" alt="${esc(asset.filename)}">`):`<p>${esc(asset.filename)} — preview unavailable</p>`;}
 async function requestPublishConfirmation(mode,scheduledLocal=null,targets=null){
   if(mediaUploading||!editableDraft())return addAssistantMessage('Finish the upload or check this draft’s current results first.');
   reviewPlatforms=targets||selectedPlatforms().filter(p=>variants[p]);
@@ -26,7 +26,7 @@ async function requestPublishConfirmation(mode,scheduledLocal=null,targets=null)
     }
     if(mode==='schedule')controls+=`<label>Posting time (${esc(plannedOccurrence?.timezone||'your Zova account timezone')})<input id="reviewTime" type="datetime-local" value="${esc(scheduledLocal||'')}" required></label><p>The final review will show the timezone and exact time.</p><button type="button" onclick="loadTimeSuggestions(this)">Suggest starting times</button><div id="timeSuggestions"></div>`;
     reviewHost().insertAdjacentHTML('beforeend',`<section class="chat-confirmation"><h3>Review destinations and settings</h3>${controls}<button class="button primary" onclick="buildPublicationReview()">Review final post</button></section>`);openReview();
-  }catch(error){addAssistantMessage(error.message);}
+  }catch(error){if(epoch===reviewEpoch)addAssistantMessage(error.message);}
 }
 async function buildPublicationReview(){
   const epoch=reviewEpoch,id=currentDraftId;
@@ -46,7 +46,7 @@ async function buildPublicationReview(){
     pendingReview=result;document.querySelectorAll('.chat-confirmation').forEach(node=>node.remove());
     const s=result.snapshot;
     reviewHost().insertAdjacentHTML('beforeend',`<section class="chat-confirmation"><h3>${s.scheduled_utc?'Confirm schedule':'Confirm publish'}</h3>${s.platforms.map(p=>`<article><h4>${platformName(p)}${p==='instagram'?' · '+esc(s.targets[p].format_label):''} · ${esc(s.targets[p].display_name)} ${s.targets[p].username?'@'+esc(s.targets[p].username):''}</h4><small>Account ${esc(s.targets[p].account_id)}</small>${s.targets[p].link?`<p>Attached link: ${esc(s.targets[p].link)}</p>`:''}${s.targets[p].format==='story'?'<p>Only the visual below will publish to your Story for 24 hours. Planning text and the source link are not included. No text overlays, stickers or music are added.</p>':''}${s.targets[p].posts.map(text=>`<p class="review-copy">${esc(text)}</p>`).join('')}${p==='tiktok'&&s.publish_options[p]?`<p>Privacy: ${esc(s.publish_options[p].privacy_level)} · Comments: ${s.publish_options[p].allow_comment?'on':'off'} · Duet: ${s.publish_options[p].allow_duet?'on':'off'} · Stitch: ${s.publish_options[p].allow_stitch?'on':'off'} · Own brand: ${s.publish_options[p].your_brand?'yes':'no'} · Partnership: ${s.publish_options[p].brand_content?'yes':'no'}</p>`:''}</article>`).join('')}<div class="review-media">${s.media.map(mediaPreview).join('')}</div>${s.link_url?`<p>Source link: ${esc(s.link_url)}</p>`:''}<p>${s.scheduled_utc?'Scheduled for '+esc(new Date(s.scheduled_utc).toLocaleString(undefined,{timeZone:s.timezone}))+' ('+esc(s.timezone)+')':'Publish these reviewed versions now?'}</p><button class="button ghost" onclick="invalidateReview();canvasView('edit')">Make a change</button><button class="button primary" onclick="confirmChatPublish(this)">${s.scheduled_utc?'Confirm schedule':'Confirm publish'}</button></section>`);openReview();
-  }catch(error){addAssistantMessage(error.message);}
+  }catch(error){if(epoch===reviewEpoch)addAssistantMessage(error.message);}
 }
 function showPublicationResults(result){
   publicationStates=Object.fromEntries(Object.entries(result.results||{}).map(([p,r])=>[p,r.status]));refreshDraft();
@@ -55,11 +55,11 @@ function showPublicationResults(result){
   const remaining=Object.keys(variants).filter(p=>!Object.hasOwn(result.results||{},p));
   reviewHost().insertAdjacentHTML('beforeend',`<section data-publication-results class="chat-confirmation"><h3>Publication results</h3>${entries.map(([p,r])=>`<p><b>${platformName(p)}${r.format==='story'?' Story':''}: ${esc(publicationStatus(r.status))}</b> ${r.requires_tiktok_completion?'Complete this video in TikTok; it is not published yet.':r.status==='pending'?'The platform is still processing this post.':''}${r.error?`<br>${esc(r.error)}`:''}${r.support_reference?`<br><small>Support reference: ${esc(r.support_reference)}</small>`:''}${r.url&&/^https?:\/\//.test(r.url)?` <a target="_blank" rel="noopener" href="${esc(r.url)}">View post</a>`:''}${r.status==='failed'?` <button onclick="requestPublishConfirmation('publish',null,['${p}'])">Review and retry ${platformName(p)}</button>`:''}</p>`).join('')}${remaining.length?`<p>${remaining.map(platformName).join(', ')} were not submitted. Keep working on them in a separate idea.</p><button onclick="continueUnsubmitted(this,${esc(JSON.stringify(remaining))})">Continue unsubmitted versions</button>`:''}<button onclick="refreshPublicationResults()">Refresh results</button><a href="/drafts">Open drafts and schedules</a></section>`);openReview();
 }
-async function refreshPublicationResults(){const id=currentDraftId;try{const result=await api(`/api/publications/${id}`);if(id!==currentDraftId)return;currentDraftStatus=result.draft_status;refreshDraft();showPublicationResults(result);rememberSavedPost();}catch(error){addAssistantMessage(error.message);}}
+async function refreshPublicationResults(){const id=currentDraftId,epoch=workspaceEpoch;try{const result=await api(`/api/publications/${id}`);if(id!==currentDraftId||epoch!==workspaceEpoch)return;currentDraftStatus=result.draft_status;refreshDraft();showPublicationResults(result);rememberSavedPost();}catch(error){if(id===currentDraftId&&epoch===workspaceEpoch)addAssistantMessage(error.message);}}
 async function confirmChatPublish(button){
   if(!pendingReview||mediaUploading||sendingMessage)return;
   const review=JSON.parse(JSON.stringify(pendingReview)),s=review.snapshot;
-  studioBusy(true);busy(button,true,s.scheduled_utc?'Scheduling…':'Publishing…');
+  studioBusy(true);busy(button,true,s.scheduled_utc?'Scheduling…':'Queueing…');
   const body={review_token:review.review_token,draft_id:s.draft_id,platforms:s.platforms,variants:s.variants,media_asset_ids:s.media_asset_ids,link_url:s.link_url,publish_options:s.publish_options};
   if(s.scheduled_utc)body.scheduled_local=s.scheduled_utc;
   try{
@@ -89,7 +89,7 @@ async function continueUnsubmitted(button,platforms){
     payload.workspace.selected_platforms=platforms;payload.workspace.active_platform=platforms[0];payload.workspace.text_history=[];
     const row=await api('/api/drafts',{method:'POST',headers,body:'{}'});payload.revision=row.revision;
     await api(`/api/drafts/${row.id}`,{method:'PATCH',headers,body:JSON.stringify(payload)});
-    studioBusy(false);location.href=`/studio?draft=${row.id}`;
+    studioBusy(false);location.href=window.zovaWorkspaceUrl(`/studio?draft=${row.id}`);
   }catch(error){addAssistantMessage('Could not copy the unsubmitted versions. They are still retained here. '+error.message);button.disabled=false;}
   finally{studioBusy(false);}
 }

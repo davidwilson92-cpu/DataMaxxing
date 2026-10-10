@@ -1,0 +1,26 @@
+{
+  "date": "2026-09-28",
+  "baseline_commit": "38f1c265d5eeaa6f8ba6cf09445570cc7943d961",
+  "tests": {
+    "tests": "252",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "85.638"
+  },
+  "dependency_check": "pip check passed",
+  "vulnerability_audit": "No known vulnerabilities found in tested installed environment; see dependency-audit.json",
+  "browser_checks": [
+    "Synthetic login succeeded",
+    "Queued post displayed in Studio and result panel",
+    "390px viewport: document width 390px; no horizontal overflow",
+    "Signup guidance requires at least 15 characters"
+  ],
+  "limitations": [
+    "No live provider writes",
+    "No production deployment or migration",
+    "PostgreSQL and hosting-image results require CI",
+    "No complete accessibility, load, independent penetration or operational recovery certification"
+  ],
+  "production_decision": "BLOCKED: unresolved applicable sections in assessment.json"
+}

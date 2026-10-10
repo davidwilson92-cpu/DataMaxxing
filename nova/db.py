@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 from fastapi import Request
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, select
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, CheckConstraint, event, inspect, func, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///./nova.db')
@@ -12,7 +12,13 @@ if DATABASE_URL.startswith('postgres://'):
 elif DATABASE_URL.startswith('postgresql://'):
     DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg://', 1)
 connect_args = {'check_same_thread': False} if DATABASE_URL.startswith('sqlite') else {}
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args)
+pool_options = {} if DATABASE_URL.startswith('sqlite') else {
+    'pool_size': max(1, min(20, int(os.environ.get('DB_POOL_SIZE', '5')))),
+    'max_overflow': 0,
+    'pool_timeout': 10,
+    'pool_recycle': 1800,
+}
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, hide_parameters=True, connect_args=connect_args, **pool_options)
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 
@@ -24,7 +30,13 @@ class Base(DeclarativeBase):
     pass
 
 
-class BrandScoped:
+class CanonicalWorkspace:
+    # SQLite's compatible legacy inserts are filled by an AFTER INSERT guard.
+    # PostgreSQL enforces NOT NULL during the offline reference migration.
+    workspace_id: Mapped[str] = mapped_column(ForeignKey('zova_workspaces.id'), nullable=True)
+
+
+class BrandScoped(CanonicalWorkspace):
     brand_id: Mapped[int] = mapped_column(Integer, default=0, server_default='0', index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
 
@@ -34,6 +46,24 @@ class Brand(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
     name: Mapped[str] = mapped_column(String(100))
+
+
+class TenantWorkspace(Base):
+    __tablename__ = 'zova_workspaces'
+    __table_args__ = (UniqueConstraint('owner_user_id','legacy_brand_id'), CheckConstraint('legacy_brand_id >= 0',name='workspace_nonnegative_brand'))
+    id: Mapped[str] = mapped_column(String(36),primary_key=True)
+    owner_user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'))
+    legacy_brand_id: Mapped[int] = mapped_column(Integer)
+
+
+class WorkspaceMembership(Base):
+    __tablename__ = 'zova_workspace_memberships'
+    __table_args__ = (CheckConstraint("role IN ('owner','admin','publisher','creator','analyst','viewer')",name='membership_known_role'), CheckConstraint('revision >= 1',name='membership_positive_revision'))
+    workspace_id: Mapped[str] = mapped_column(ForeignKey('zova_workspaces.id'),primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'),primary_key=True)
+    role: Mapped[str] = mapped_column(String(20),default='viewer')
+    active: Mapped[bool] = mapped_column(Boolean,default=False)
+    revision: Mapped[int] = mapped_column(Integer,default=1)
 
 
 class BrandVoice(BrandScoped, Base):
@@ -85,6 +115,19 @@ class OAuth2Connection(Base):
     encrypted_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     scope: Mapped[str] = mapped_column(Text, default='tweet.read tweet.write users.read offline.access')
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class LegacyPublication(Base):
+    __tablename__ = 'zova_legacy_publications'
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    creator_id: Mapped[int] = mapped_column(ForeignKey('creators.id'), index=True)
+    text: Mapped[str] = mapped_column(Text)
+    account: Mapped[str] = mapped_column(String(50))
+    authority_digest: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(30), default='queued', index=True)
+    result_json: Mapped[str] = mapped_column(Text, default='{}')
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
@@ -210,7 +253,7 @@ class SocialConnection(BrandScoped, Base):
     user: Mapped[User] = relationship(back_populates='social_connections')
 
 
-class OAuthState(Base):
+class OAuthState(CanonicalWorkspace, Base):
     __tablename__ = 'nova_oauth_states'
     brand_id: Mapped[int] = mapped_column(Integer, default=0, server_default='0')
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -227,6 +270,7 @@ class Draft(BrandScoped, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
     brief: Mapped[str] = mapped_column(Text, default='')
+    title: Mapped[str] = mapped_column(String(120), default='', server_default='')
     instruction: Mapped[str] = mapped_column(Text, default='')
     platforms_json: Mapped[str] = mapped_column(Text, default='[]')
     variants_json: Mapped[str] = mapped_column(Text, default='{}')
@@ -386,7 +430,7 @@ class EmailVerification(Base):
     used: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class PendingConnection(Base):
+class PendingConnection(CanonicalWorkspace, Base):
     __tablename__ = 'zova_pending_connections'
     code_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
@@ -396,6 +440,14 @@ class PendingConnection(Base):
     encrypted_payload: Mapped[str] = mapped_column(Text)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class PerformanceSnapshot(BrandScoped, Base):
+    __tablename__ = 'zova_performance_snapshots'
+    __table_args__ = (UniqueConstraint('user_id', 'brand_id', name='uq_performance_snapshot_brand'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    payload_json: Mapped[str] = mapped_column(Text, default='{}')
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class Strategy(BrandScoped, Base):
@@ -452,12 +504,88 @@ class SeriesApproval(BrandScoped, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-Base.metadata.create_all(bind=engine)
-from .migrations import run_migrations
-run_migrations(engine)
+class MfaSettings(Base):
+    __tablename__ = 'zova_mfa_settings'
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), primary_key=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    encrypted_secret: Mapped[str] = mapped_column(Text, default='')
+    setup_auth_version: Mapped[int] = mapped_column(Integer, default=0)
+    setup_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_counter: Mapped[int] = mapped_column(Integer, default=-1)
+    recovery_hashes_json: Mapped[str] = mapped_column(Text, default='[]')
+
+
+class MfaChallenge(Base):
+    __tablename__ = 'zova_mfa_challenges'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    auth_version: Mapped[int] = mapped_column(Integer)
+    destination: Mapped[str] = mapped_column(String(500), default='/studio')
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+from .schema_startup import schema_mode, verify_runtime_schema, verify_runtime_role
+if schema_mode(engine) == 'verify':
+    with engine.connect() as schema_connection:
+        verify_runtime_role(schema_connection)
+        verify_runtime_schema(schema_connection, Base.metadata)
+else:
+    # Existing databases require the reviewed offline registry backfill before startup.
+    # Never silently assign privileges while serving requests.
+    existing_users = 0
+    with engine.connect() as registry_connection:
+        if inspect(registry_connection).has_table('nova_users'):
+            existing_users = registry_connection.scalar(select(func.count()).select_from(User.__table__))
+            if existing_users and not all(inspect(registry_connection).has_table(name) for name in ('zova_workspaces','zova_workspace_memberships')):
+                raise RuntimeError('Workspace registry migration required before application startup')
+            if existing_users:
+                from .tenant_references import verify_references, VERSION as reference_version
+                from sqlalchemy import text
+                verify_references(registry_connection)
+                if not inspect(registry_connection).has_table('zova_schema_migrations') or not registry_connection.scalar(
+                        text('SELECT COUNT(*) FROM zova_schema_migrations WHERE version=:version'), {'version':reference_version}):
+                    raise RuntimeError('Workspace reference migration required before application startup')
+                if os.environ.get('ZOVA_OFFLINE_ACCOUNT_PREPARATION')!='1':
+                    from .account_references import verify_account_guards,VERSION as account_version
+                    verify_account_guards(registry_connection)
+                    if not registry_connection.scalar(text('SELECT COUNT(*) FROM zova_schema_migrations WHERE version=:version'),{'version':account_version}):
+                        raise RuntimeError('Account ownership migration required before application startup')
+                    from .identity_guards import verify_identities,VERSION as identity_version
+                    verify_identities(registry_connection)
+                    if not registry_connection.scalar(text('SELECT COUNT(*) FROM zova_schema_migrations WHERE version=:version'),{'version':identity_version}):
+                        raise RuntimeError('Identity authority migration required before application startup')
+
+    Base.metadata.create_all(bind=engine, tables=[table for table in Base.metadata.sorted_tables
+                                                 if table not in (LegacyPublication.__table__, MfaSettings.__table__, MfaChallenge.__table__)])
+    from .migrations import run_migrations
+    run_migrations(engine)
+    from .migrations import run_legacy_queue_migration
+    run_legacy_queue_migration(engine, LegacyPublication.__table__)
+    from .migrations import run_mfa_migration
+    run_mfa_migration(engine, (MfaSettings.__table__, MfaChallenge.__table__))
+    if not existing_users:
+        from .tenant_references import apply_references
+        apply_references(engine, writes_paused=True)
+        from .account_references import apply_accounts
+        apply_accounts(engine,writes_paused=True)
+    elif os.environ.get('ZOVA_OFFLINE_ACCOUNT_PREPARATION')=='1':
+        # Set only by the explicit offline preparation command after validating
+        # migration credentials and --apply --writes-paused. Verify mode ignores it.
+        from .account_references import apply_accounts
+        apply_accounts(engine,writes_paused=True)
+
+
+    if not existing_users or os.environ.get('ZOVA_OFFLINE_ACCOUNT_PREPARATION')=='1':
+        from .identity_guards import apply_identities
+        apply_identities(engine,writes_paused=True)
 
 
 def get_db(request: Request):
+    services = getattr(request.app.state, 'database_services', None)
+    if services is not None:
+        yield from services.request_session(request)
+        return
     db = SessionLocal()
     try:
         from .brands import bind_request
@@ -479,3 +607,38 @@ def get_preferences(db: Session, user_id: int) -> CreatorPreferences:
         db.commit()
         db.refresh(pref)
     return pref
+
+
+def _create_workspace(connection, uid, bid, active):
+    from .tenant_migration import workspace_key
+    wid = workspace_key(uid,bid)
+    connection.execute(TenantWorkspace.__table__.insert().values(id=wid,owner_user_id=uid,legacy_brand_id=bid))
+    connection.execute(WorkspaceMembership.__table__.insert().values(workspace_id=wid,user_id=uid,role='owner',active=active,revision=1))
+
+
+@event.listens_for(User,'after_insert')
+def _new_user_workspace(mapper,connection,user):
+    _create_workspace(connection,user.id,0,user.active)
+
+
+@event.listens_for(Brand,'after_insert')
+def _new_brand_workspace(mapper,connection,brand):
+    active = connection.scalar(select(User.active).where(User.id==brand.user_id))
+    if active is None:
+        raise ValueError('Brand owner is unavailable')
+    _create_workspace(connection,brand.user_id,brand.id,active)
+
+
+@event.listens_for(Base, 'before_insert', propagate=True)
+def _canonical_record_workspace(mapper, connection, row):
+    if not isinstance(row, CanonicalWorkspace):
+        return
+    from .tenant_migration import workspace_key
+    bid = row.brand_id if row.brand_id is not None else 0
+    expected = workspace_key(row.user_id, bid)
+    found = connection.scalar(select(TenantWorkspace.id).where(
+        TenantWorkspace.id == expected, TenantWorkspace.owner_user_id == row.user_id,
+        TenantWorkspace.legacy_brand_id == bid))
+    if found is None or row.workspace_id not in (None, expected):
+        raise ValueError('Invalid canonical workspace ownership')
+    row.workspace_id = expected

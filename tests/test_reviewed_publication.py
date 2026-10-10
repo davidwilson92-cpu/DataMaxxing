@@ -8,6 +8,17 @@ from nova.security import encrypt
 from test_account_integrity import account
 
 
+
+def publish_and_run(client, **kwargs):
+    """Exercise HTTP enqueue and then the real worker in a separate call."""
+    response = client.post('/api/publish', **kwargs)
+    if response.status_code != 200:
+        return response
+    from nova.scheduler import process_due
+    process_due()
+    return client.get('/api/publications/'+str(kwargs['json']['draft_id']))
+
+
 def prepared(platforms=('x',)):
     client,uid,token,_=account()
     with SessionLocal() as db:
@@ -37,8 +48,8 @@ def test_link_is_finalised_before_review_and_sent_without_mutation(monkeypatch):
     assert response.status_code==200
     snapshot=response.json()['snapshot']
     assert snapshot['targets']['x']['posts'][0].endswith(body['link_url'])
-    monkeypatch.setattr(module,'publish_platform',lambda *a,**k:calls.append(k) or {'post_id':'mock'})
-    assert client.post('/api/publish',json={**body,'review_token':response.json()['review_token']}).status_code==200
+    monkeypatch.setattr('nova.scheduler.publish_platform',lambda *a,**k:calls.append(k) or {'post_id':'mock'})
+    assert publish_and_run(client,json={**body,'review_token':response.json()['review_token']}).status_code==200
     assert calls[0]['posts']==snapshot['targets']['x']['posts'] and calls[0]['link_url']==''
 
 
@@ -82,13 +93,13 @@ def test_interrupted_worker_becomes_unknown_without_resend(monkeypatch):
 def test_confirmation_is_immutable_and_retry_is_idempotent(monkeypatch):
     import nova.app as module
     client,uid,_,body=prepared();calls=[]
-    monkeypatch.setattr(module,'publish_platform',lambda *a,**k:calls.append(k) or {'post_id':'synthetic','url':'https://example.test/post'})
+    monkeypatch.setattr('nova.scheduler.publish_platform',lambda *a,**k:calls.append(k) or {'post_id':'synthetic','url':'https://example.test/post'})
     approved=review(client,body)
     changed={**approved,'variants':{'x':{'posts':['Different text']}}}
-    assert client.post('/api/publish',json=changed).status_code==409
+    assert publish_and_run(client,json=changed).status_code==409
     assert not calls
-    assert client.post('/api/publish',json=approved).json()['results']['x']['status']=='published'
-    assert client.post('/api/publish',json=approved).status_code==200
+    assert publish_and_run(client,json=approved).json()['results']['x']['status']=='published'
+    assert publish_and_run(client,json=approved).status_code==200
     assert len(calls)==1 and calls[0]['posts']==body['variants']['x']['posts']
 
 
@@ -99,8 +110,8 @@ def test_partial_unknown_never_resends_successful_targets(monkeypatch):
         calls.append(k['platform'])
         if k['platform']=='facebook':raise TimeoutError('synthetic')
         return {'post_id':'synthetic'}
-    monkeypatch.setattr(module,'publish_platform',publish)
-    result=client.post('/api/publish',json=review(client,body)).json()
+    monkeypatch.setattr('nova.scheduler.publish_platform',publish)
+    result=publish_and_run(client,json=review(client,body)).json()
     assert result['results']['facebook']['status']=='unknown'
     assert result['draft_status']=='needs_review'
     assert client.post('/api/publish-review',json=body).status_code==409
@@ -113,22 +124,26 @@ def test_review_binds_original_account_and_rejects_other_owner(monkeypatch):
     with SessionLocal() as db:
         original=db.query(SocialConnection).filter_by(user_id=uid).first().id
         db.add(SocialConnection(user_id=uid,platform='x',account_id='newer',scope='tweet.write',encrypted_access_token=encrypt('synthetic')));db.commit()
-    monkeypatch.setattr(module,'publish_platform',lambda *a,**k:calls.append(k['connection_id']) or {'post_id':'synthetic'})
+    monkeypatch.setattr('nova.scheduler.publish_platform',lambda *a,**k:calls.append(k['connection_id']) or {'post_id':'synthetic'})
     assert other.post('/api/publish',json=approved).status_code==400
-    assert client.post('/api/publish',json=approved).status_code==200
+    assert publish_and_run(client,json=approved).status_code==200
     assert calls==[original]
 
 
 def test_concurrent_confirmation_calls_provider_once(monkeypatch):
     import nova.app as module
     client,_,token,body=prepared();approved=review(client,body);calls=[];barrier=threading.Barrier(2)
-    monkeypatch.setattr(module,'publish_platform',lambda *a,**k:calls.append(True) or {'post_id':'synthetic'})
+    monkeypatch.setattr('nova.scheduler.publish_platform',lambda *a,**k:calls.append(True) or {'post_id':'synthetic'})
     def submit():
         concurrent=TestClient(module.app);concurrent.cookies.set('nova_session',token);barrier.wait()
         return concurrent.post('/api/publish',json=approved).status_code
     with ThreadPoolExecutor(max_workers=2) as pool:
         results=list(pool.map(lambda _:submit(),range(2)))
     assert all(r in {200,409} for r in results)
+    assert calls==[]
+    from nova.scheduler import process_due
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        list(pool.map(lambda _:process_due(),range(2)))
     assert len(calls)==1
 
 
@@ -153,13 +168,13 @@ def test_definite_preflight_failure_can_retry_failed_destination_only(monkeypatc
     client,uid,_,body=prepared(('x','facebook'));approved=review(client,body);calls=[]
     with SessionLocal() as db:
         conn=db.query(SocialConnection).filter_by(user_id=uid,platform='facebook').one();conn.active=False;db.commit()
-    monkeypatch.setattr(module,'publish_platform',lambda *a,**k:calls.append(k['platform']) or {'post_id':'synthetic'})
-    result=client.post('/api/publish',json=approved).json()
+    monkeypatch.setattr('nova.scheduler.publish_platform',lambda *a,**k:calls.append(k['platform']) or {'post_id':'synthetic'})
+    result=publish_and_run(client,json=approved).json()
     assert result['results']['facebook']['status']=='failed'
     assert result['draft_status']=='partial'
     assert client.post('/api/publish-review',json=body).status_code==409
     with SessionLocal() as db:
         conn=db.query(SocialConnection).filter_by(user_id=uid,platform='facebook').one();conn.active=True;db.commit()
     retry={**body,'platforms':['facebook'],'variants':{'facebook':body['variants']['facebook']}}
-    assert client.post('/api/publish',json=review(client,retry)).status_code==200
+    assert publish_and_run(client,json=review(client,retry)).status_code==200
     assert calls==['x','facebook']

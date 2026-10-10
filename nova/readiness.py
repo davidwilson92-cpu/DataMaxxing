@@ -4,6 +4,7 @@ import logging
 import os
 import uuid
 from contextvars import ContextVar
+from contextlib import contextmanager
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -14,8 +15,33 @@ from .security import current_user
 
 log = logging.getLogger(__name__)
 ai_user = ContextVar('ai_user', default=None)
+_measurement_sessions = ContextVar('measurement_sessions', default=None)
 router = APIRouter()
 EVENTS = {'signup', 'visit', 'generated', 'revised', 'connected', 'reviewed', 'published', 'draft_useful'}
+
+
+def unavailable_telemetry():
+    raise RuntimeError('Isolated telemetry service is unavailable')
+
+
+@contextmanager
+def telemetry_scope(session_factory):
+    """Task-local factory; async children/background work inherit their own copy.
+
+    None preserves legacy mode. Configured services must supply their restricted
+    factory or unavailable_telemetry, never None as an implicit shared fallback.
+    Workers must explicitly establish the same scope when they are integrated.
+    """
+    token = _measurement_sessions.set(session_factory)
+    try:
+        yield
+    finally:
+        _measurement_sessions.reset(token)
+
+
+def _sessions():
+    factory = _measurement_sessions.get()
+    return (SessionLocal if factory is None else factory)()
 
 
 def event(uid, kind, identity):
@@ -25,7 +51,7 @@ def event(uid, kind, identity):
         raise ValueError('Unknown product event')
     # Callers use internal row IDs or UTC dates, never content/customer input.
     try:
-        with SessionLocal() as db:
+        with _sessions() as db:
             db.add(ProductEvent(key=f'{uid}:{kind}:{identity}', user_id=uid, kind=kind))
             db.commit()
     except IntegrityError:
@@ -62,7 +88,7 @@ def record_ai(model, status, payload=None):
         estimate_gbp, date = estimate(model, usage)
         rates=json.loads(os.environ.get('AI_GBP_RATES_JSON','{}')).get(model,{}) if date else {}
         snapshot={k:rates.get(k) for k in ['input','cached_input','output','as_of','source']}
-        with SessionLocal() as db:
+        with _sessions() as db:
             db.add(AICall(id=uuid.uuid4().hex, user_id=ai_user.get(), model=model[:120], status=status,
                 input_tokens=tokens(usage.get('input_tokens')), output_tokens=tokens(usage.get('output_tokens')),
                 cached_tokens=tokens((usage.get('input_tokens_details') or {}).get('cached_tokens')),

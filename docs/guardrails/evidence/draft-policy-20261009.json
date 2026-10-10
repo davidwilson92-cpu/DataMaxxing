@@ -1,0 +1,31 @@
+{
+  "tested_commit": "cc70b7d5df6e0bd0155387ab5a6b1b95951754b4",
+  "ci_runs": [
+    37994384382,
+    37994380750
+  ],
+  "sqlite": {
+    "passed": 410,
+    "skipped": 25
+  },
+  "postgresql": {
+    "passed": 434,
+    "skipped": 1
+  },
+  "verified": [
+    "Actual create/save/read/list HTTP endpoints preserve nonzero brand and canonical workspace",
+    "Factory-only entry points explicitly install brand ownership hooks",
+    "Original missing review-delete permission reproduced as foreign-key failure with rollback",
+    "Unsubmitted draft deletion removes review, dismisses strategy action and cancels linked occurrence atomically",
+    "Other workspace references and submitted publication history preserved",
+    "Delete context cannot modify review content, insert reviews or delete strategy/occurrence records",
+    "Migrated RLS restore, deployment image build/smoke and Python dependency audit"
+  ],
+  "limits": [
+    "RLS remains isolated and opt-in; no production policy migration",
+    "Added permissions are operation-specific, not final column-level service grants",
+    "Account/OAuth/worker routing and production operational assurance remain incomplete"
+  ],
+  "provider_validation": "Mocked providers and synthetic data only",
+  "deployment": "Not deployed; full production gate remains blocked"
+}

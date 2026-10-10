@@ -31,6 +31,60 @@ def test_password_persists_and_revokes_old_session():
     assert client.post('/login', data={"email":email,"password":"replacement-password-123"}, follow_redirects=False).headers['location'] == '/studio'
 
 
+def test_concurrent_password_changes_cannot_share_a_security_version(monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+    from nova import app as module
+    from nova.security import verify_password
+    _,uid,token,_=account()
+    clients=[TestClient(app),TestClient(app)]
+    for client in clients:client.cookies.set('nova_session',token)
+    barrier=Barrier(2)
+    def check_together(raw,hashed):
+        result=verify_password(raw,hashed)
+        barrier.wait(timeout=10)
+        return result
+    monkeypatch.setattr(module,'verify_password',check_together)
+    passwords=['Concurrent-password-one!','Concurrent-password-two!']
+    def change(index):
+        return clients[index].post('/account/password',data={'current_password':'old-password-123',
+            'new_password':passwords[index],'new_password_confirmation':passwords[index]},follow_redirects=False)
+    with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(change,[0,1]))
+    assert sorted(response.status_code for response in results)==[303,409]
+    winner=next(index for index,response in enumerate(results) if response.status_code==303)
+    assert user_from_session(token) is None
+    assert user_from_session(results[winner].cookies.get('nova_session')).id==uid
+    assert not results[1-winner].cookies.get('nova_session')
+    with SessionLocal() as db:
+        user=db.get(User,uid)
+        assert user.auth_version==1
+        assert verify_password(passwords[winner],user.password_hash)
+        assert not verify_password(passwords[1-winner],user.password_hash)
+
+
+def test_password_change_cannot_bypass_concurrent_mfa_enrollment(monkeypatch):
+    from nova import app as module
+    from nova.db import MfaSettings
+    from nova.security import encrypt, verify_password
+    client,uid,token,_=account()
+    def enroll_before_update(password):
+        with SessionLocal() as db:
+            db.get(User,uid).auth_version+=1
+            db.add(MfaSettings(user_id=uid,enabled=True,encrypted_secret=encrypt('synthetic')))
+            db.commit()
+        return hash_password(password)
+    monkeypatch.setattr(module,'hash_password',enroll_before_update)
+    response=client.post('/account/password',data={'current_password':'old-password-123',
+        'new_password':'Replacement-password-2026!','new_password_confirmation':'Replacement-password-2026!'},follow_redirects=False)
+    assert response.status_code==409
+    assert not response.cookies.get('nova_session')
+    assert user_from_session(token) is None
+    with SessionLocal() as db:
+        assert db.get(User,uid).auth_version==1
+        assert verify_password('old-password-123',db.get(User,uid).password_hash)
+        assert db.get(MfaSettings,uid).enabled
+
+
 def test_logout_revokes_only_presented_session_and_accepts_legacy():
     client, uid, token, _ = account()
     other = make_user_session(uid)
@@ -57,6 +111,7 @@ def test_profile_persists_and_guidance_can_be_cleared():
 
 def test_billing_return_cannot_grant_access_from_payment_status(monkeypatch):
     import nova.app as module
+    monkeypatch.setenv('STRIPE_MODE','test')
     client, uid, _, _ = account()
     monkeypatch.setattr(module.billing,'fetch_checkout_session',lambda _: {'client_reference_id':str(uid),'customer':'cus_unlinked','subscription':'sub_unlinked','payment_status':'paid','livemode':False})
     assert client.get('/billing/success?session_id=cs_synthetic',follow_redirects=False).status_code == 403

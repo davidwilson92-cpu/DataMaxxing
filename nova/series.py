@@ -139,7 +139,7 @@ def revoke_jobs(db, uid, ids):
         if claim.rowcount!=1:db.rollback();raise HTTPException(409,'An occurrence is sending or unresolved. Check its results before changing this series.')
         from . import allowances
         for publication in db.scalars(select(Publication).where(Publication.draft_id==job.draft_id,Publication.platform==job.platform,Publication.status=='scheduled')):
-            allowances.finish(db,f'publication:{publication.id}',False)
+            allowances.finish(db,uid,'publications',f'publication:{publication.id}',False)
         db.execute(update(Publication).where(Publication.draft_id==job.draft_id,Publication.platform==job.platform,Publication.status=='scheduled').values(status='cancelled'))
         db.execute(update(Draft).where(Draft.id==job.draft_id,Draft.status=='scheduled').values(status='cancelled'))
     db.execute(update(PublishReview).where(PublishReview.draft_id.in_(ids),PublishReview.status=='review').values(status='invalidated'))

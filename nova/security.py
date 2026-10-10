@@ -56,18 +56,20 @@ def session_secret() -> str:
     return value
 
 
-def make_user_session(user_id: int) -> str:
+def make_user_session(user_id: int, *, expected_auth_version: int | None = None, session_factory=None) -> str:
     expires = int((utcnow() + timedelta(days=30)).timestamp())
-    with SessionLocal() as db:
+    with (session_factory or SessionLocal)() as db:
         user = db.get(User, user_id)
         if not user or not user.active:
             raise ValueError('Active user required')
+        if expected_auth_version is not None and user.auth_version != expected_auth_version:
+            raise ValueError('Account security changed')
         payload = f'v2.{user_id}.{user.auth_version}.{expires}.{secrets.token_hex(16)}'
     signature = hmac.new(session_secret().encode(), payload.encode(), hashlib.sha256).hexdigest()
     return f'{payload}.{signature}'
 
 
-def user_from_session(token: str | None) -> User | None:
+def user_from_session(token: str | None, *, session_factory=None) -> User | None:
     if not token:
         return None
     try:
@@ -84,7 +86,7 @@ def user_from_session(token: str | None) -> User | None:
         expected = hmac.new(session_secret().encode(), payload.encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(signature, expected) or int(expires) < int(utcnow().timestamp()):
             return None
-        with SessionLocal() as db:
+        with (session_factory or SessionLocal)() as db:
             if db.get(RevokedSession, hash_api_key(token)):
                 return None
             user = db.get(User, int(user_id))
@@ -97,19 +99,20 @@ def user_from_session(token: str | None) -> User | None:
 
 
 def current_user(request: Request) -> User:
-    user = user_from_session(request.cookies.get('nova_session'))
+    from .database_services import identity_factory
+    user = user_from_session(request.cookies.get('nova_session'), session_factory=identity_factory(request))
     if not user:
         raise HTTPException(status_code=401, detail='Sign in required')
     return user
 
 
-def revoke_session(token: str | None) -> None:
-    if not token or not user_from_session(token):
+def revoke_session(token: str | None, *, session_factory=None, verification_factory=None) -> None:
+    if not token or not user_from_session(token, session_factory=verification_factory or session_factory):
         return
     parts = token.split('.')
     expires = int(parts[1] if len(parts) == 3 else parts[3])
     from sqlalchemy.exc import IntegrityError
-    with SessionLocal() as db:
+    with (session_factory or SessionLocal)() as db:
         db.add(RevokedSession(token_hash=hash_api_key(token), expires_at=datetime.fromtimestamp(expires, timezone.utc)))
         try:
             db.commit()

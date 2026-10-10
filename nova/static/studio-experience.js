@@ -39,6 +39,9 @@ function renderCanvasPreview(){
 }
 function renderReadiness(){
   const platforms=selectedPlatforms();
+  const scope=document.getElementById('editingScope');
+  if(scope){scope.hidden=!variants[currentPlatform];scope.textContent=variants[currentPlatform]?`${editableDraft()?'Working on':'Viewing'} ${platformName(currentPlatform)}${!editableDraft()?'. This post is read-only.':Object.keys(variants).length>1?'. Name another platform or say “all versions” to change the scope.':'.'}`:'';}
+
   document.getElementById('destinationReadiness').innerHTML=platforms.map(p=>{
     const accounts=connectionData[p]||[];
     const missing=['instagram','tiktok'].includes(p)&&!uploadedMedia.length;
@@ -52,18 +55,18 @@ function renderReadiness(){
   document.getElementById('threadLength').disabled=!platforms.includes('x')||sendingMessage||!editableDraft();
 }
 function openReview(){document.getElementById('postSettings').close();const host=reviewHost();document.getElementById('chatFeed').append(host);host.scrollIntoView({block:'start',behavior:'smooth'});const heading=host.querySelector('.chat-confirmation:last-child h3');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}}
-function publicationStatus(status){return {unknown:'Outcome unconfirmed — check the destination; do not resend until resolved',pending:'Waiting for platform processing',publishing:'Sending — awaiting a result',scheduled:'Scheduled',published:'Published',failed:'Failed — review before retrying',cancelled:'Cancelled'}[status]||status;}
+function publicationStatus(status){return {queued:'Queued — saved securely; publishing continues if you close this page',unknown:'Outcome unconfirmed — check the destination; do not resend until resolved',pending:'Waiting for platform processing',publishing:'Sending — awaiting a result',scheduled:'Scheduled',published:'Published',failed:'Failed — review before retrying',cancelled:'Cancelled'}[status]||status;}
 function downloadWorkspace(){
   const blob=new Blob([JSON.stringify(draftPayload(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='zova-unsaved-workspace.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 async function compareSaved(){
   if(!currentDraftId)return;
-  const id=currentDraftId;
-  try{const row=await api(`/api/drafts/${id}`);if(id!==currentDraftId)return;
-    threadHost('saveComparison').innerHTML=`<h3>Saved version compared with this tab</h3><p>Your current work remains in the editor. Download it before choosing to reload.</p><div class="version-previews">${[['This tab',draftPayload()],['Saved on Zova',row]].map(([label,data])=>`<article class="version-preview"><h4>${label}</h4><p>${esc(data.workspace?.composer||'')}</p>${Object.entries(data.variants||{}).map(([p,v])=>`<h4>${platformName(p)}</h4>${v.posts.map(t=>`<p class="review-copy">${esc(t)}</p>`).join('')}`).join('')}</article>`).join('')}</div><button type="button" onclick="downloadWorkspace()">Download this tab’s work</button><a href="/studio?draft=${id}">Reload saved version (discards this tab’s changes)</a>`;
+  const id=currentDraftId,epoch=workspaceEpoch;
+  try{const row=await api(`/api/drafts/${id}`);if(id!==currentDraftId||epoch!==workspaceEpoch)return;
+    threadHost('saveComparison').innerHTML=`<h3>Saved version compared with this tab</h3><p>Your current work remains in the editor. Download it before choosing to reload.</p><div class="version-previews">${[['This tab',draftPayload()],['Saved on Zova',row]].map(([label,data])=>`<article class="version-preview"><h4>${label}</h4><p>${esc(data.workspace?.composer||'')}</p>${Object.entries(data.variants||{}).map(([p,v])=>`<h4>${platformName(p)}</h4>${v.posts.map(t=>`<p class="review-copy">${esc(t)}</p>`).join('')}`).join('')}</article>`).join('')}</div><button type="button" onclick="downloadWorkspace()">Download this tab’s work</button><a href="${esc(window.zovaWorkspaceUrl(`/studio?draft=${id}`))}">Reload saved version (discards this tab’s changes)</a>`;
     threadHost('saveComparison').scrollIntoView({block:'start'});
-  }catch(error){threadHost('saveComparison').textContent=error.message;}
+  }catch(error){if(id===currentDraftId&&epoch===workspaceEpoch)threadHost('saveComparison').textContent=error.message;}
 }
 document.querySelectorAll('.platform-check input').forEach(node=>node.addEventListener('change',()=>{renderReadiness();if(node.checked&&!connectionData[node.value]?.length){connectionPlatform=node.value;document.getElementById('connectionTitle').textContent='Connect '+platformName(node.value);document.getElementById('connectionDescription').textContent='Select your '+platformName(node.value)+' account to publish there. You can also keep writing a draft without connecting yet.';document.getElementById('connectionPrompt').showModal();}}));
 
@@ -96,14 +99,14 @@ let connectionPlatform=null;
 async function connectSelectedPlatform(button){
   if(!connectionPlatform)return;
   button.disabled=true;
-  try{await saveDraftNow();location.href='/connect/'+encodeURIComponent(connectionPlatform);}
+  try{await saveDraftNow();location.href=window.zovaWorkspaceUrl('/connect/'+encodeURIComponent(connectionPlatform));}
   catch(error){document.getElementById('connectionDescription').textContent='Your work could not be saved. Close this prompt and retry saving before connecting.';button.disabled=false;}
 }
 let recentPosts=[];
 let historyRequest=0;
 function renderRecentPosts(){
   const rows=recentPosts.slice(0,20);
-  document.querySelectorAll('.recent-posts').forEach(nav=>{nav.innerHTML=rows.length?rows.map(row=>`<a href="/studio?draft=${row.id}" ${Number(currentDraftId)===row.id?'aria-current="page"':''} onclick="openSavedPost(event,${row.id})"><span>${esc(row.title||row.brief||'Untitled conversation')}</span><small>${esc(row.status==='draft'?'Draft':publicationStatus(row.status))}</small></a>`).join(''):'<p>Your conversations and drafts will appear here as you write.</p>';});
+  document.querySelectorAll('.recent-posts').forEach(nav=>{nav.innerHTML=rows.length?rows.map(row=>`<a href="${esc(window.zovaWorkspaceUrl(`/studio?draft=${row.id}`))}" ${Number(currentDraftId)===row.id?'aria-current="page"':''} onclick="openSavedPost(event,${row.id})"><span>${esc(row.title||row.brief||'Untitled conversation')}</span><small>${esc(row.status==='draft'?'Draft':publicationStatus(row.status))}</small></a>`).join(''):'<p>Your conversations and drafts will appear here as you write.</p>';});
 }
 async function loadRecentPosts(){
   const request=++historyRequest;
@@ -113,13 +116,13 @@ async function loadRecentPosts(){
 function rememberSavedPost(){
   if(!currentDraftId)return;
   historyRequest++;
-  const title=lastBrief||conversation.find(m=>m.role==='user')?.content||document.getElementById('brief').value||'Untitled conversation';
+  const title=currentDraftTitle||lastBrief||conversation.find(m=>m.role==='user')?.content||document.getElementById('brief').value||'Untitled conversation';
   recentPosts=[{id:Number(currentDraftId),title:title.slice(0,100),status:currentDraftStatus},...recentPosts.filter(r=>r.id!==Number(currentDraftId))];renderRecentPosts();
 }
 async function openSavedPost(event,id){
   if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
   event.preventDefault();if(sendingMessage||mediaUploading||studioLoading)return;
-  try{await saveDraftNow();location.href='/studio?draft='+id;}
+  try{await saveDraftNow();location.href=window.zovaWorkspaceUrl('/studio?draft='+id);}
   catch{document.getElementById('navigationDialog').close();document.getElementById('undoStatus').textContent='Save this conversation before opening another. Retry save or download your work.';}
 }
 window.addEventListener('DOMContentLoaded',loadRecentPosts);

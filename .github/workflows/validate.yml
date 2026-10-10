@@ -5,29 +5,44 @@ permissions:
 jobs:
   synthetic-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -r requirements.txt pytest pip-audit
       - run: python -m pip check
+      - name: Validate guardrail register integrity
+        run: python scripts/release_gate.py --check
       - run: python -m pytest -q --junitxml=test-results.xml
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Check interactive planning behavior
+        run: |
+          node --test tests/strategy_onboarding.test.cjs tests/schedule_agenda.test.cjs
+          node tests/studio_clarity_client.cjs
+          for file in strategy analytics drafts; do node --check "nova/static/$file.js"; done
       - run: python -m pip_audit --format json -o dependency-audit.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
+          retention-days: 30
           name: validation-evidence
           path: |
             test-results.xml
             dependency-audit.json
   postgres-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
-        image: postgres:18
+        image: public.ecr.aws/docker/library/postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: synthetic-ci-only
@@ -39,12 +54,16 @@ jobs:
     env:
       ZOVA_TEST_POSTGRES: postgresql+psycopg://postgres:synthetic-ci-only@127.0.0.1:5432/zova_test_ci
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
       - run: python -m pip install -r requirements.txt pytest
       - run: python -m pytest -q --junitxml=postgres-tests.xml
+      - name: Seed canonical reference migration restore fixture
+        run: python scripts/seed_reference_restore.py
       - name: Restore synthetic PostgreSQL backup
         env:
           PG_CONTAINER: ${{ job.services.postgres.id }}
@@ -54,7 +73,7 @@ jobs:
           docker exec "$PG_CONTAINER" pg_restore -U postgres -d zova_test_restored /tmp/synthetic.dump
           python scripts/check_synthetic_restore.py
       - name: Build hosting image
-        run: docker build -t zova-release .
+        run: docker build --build-arg PYTHON_BASE=public.ecr.aws/docker/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 -t zova-release .
       - name: Smoke-test isolated hosting image
         run: |
           docker run -d --name zova-smoke -p 8772:10000 -e DATABASE_URL=sqlite:////tmp/synthetic.db -e PUBLIC_BASE_URL=http://localhost:8772 -e SESSION_SECRET=synthetic-ci-only -e CREDENTIAL_ENCRYPTION_KEY=eV7ZGbkgONCU5t6fVtxgBMvCKx6-4UlAHWVHN2LoflE= -e REQUIRE_SUBSCRIPTION=false zova-release
@@ -62,8 +81,30 @@ jobs:
           curl --fail http://localhost:8772/health
           curl --fail http://localhost:8772/ | grep 'One idea.'
           for file in studio studio-state studio-publish studio-experience brand-context readiness; do node --check "nova/static/$file.js"; done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
+          retention-days: 30
           name: postgres-release-evidence
           path: postgres-tests.xml
+  production-guardrails:
+    name: Production guardrails
+    if: always()
+    needs: [synthetic-tests, postgres-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Require successful application and PostgreSQL checks
+        env:
+          SYNTHETIC_RESULT: ${{ needs.synthetic-tests.result }}
+          POSTGRES_RESULT: ${{ needs.postgres-release.result }}
+        run: test "$SYNTHETIC_RESULT" = success && test "$POSTGRES_RESULT" = success
+      - name: Enforce all applicable production guardrails
+        if: always()
+        run: python scripts/release_gate.py

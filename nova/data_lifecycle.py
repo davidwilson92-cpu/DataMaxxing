@@ -6,13 +6,16 @@ publication outcomes deliberately require operator reconciliation first.
 """
 import hashlib
 from pathlib import Path
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from . import db as models
 from .security import hash_password
 from .storage import UPLOAD_DIR
 import secrets
 
 EXPORT = {
+    models.WorkspaceMembership: ['workspace_id','role','active'],
+    models.MfaSettings: ['enabled'],
+    models.PerformanceSnapshot: ['brand_id','payload_json','fetched_at'],
     models.SeriesApproval: ['brand_id','series_id','revision','payload_json','expires_at'],
     models.Strategy: ['brand_id','confirmed_json','proposal_json','revision'],
     models.StrategyAction: ['brand_id','payload_json','status','feedback','draft_id'],
@@ -22,7 +25,7 @@ EXPORT = {
     models.Brand: ['id','name'],
     models.CreatorPreferences: ['writing_tone','audience','topics','things_to_avoid','example_posts','timezone'],
     models.BrandVoice: ['brand_id','writing_tone','audience','topics','things_to_avoid','example_posts','timezone'],
-    models.Draft: ['id','brand_id','brief','instruction','variants_json','workspace_json','status'],
+    models.Draft: ['id','brand_id','title','brief','instruction','variants_json','workspace_json','status'],
     models.MediaAsset: ['id','brand_id','filename','mime_type','analysis_json'],
     models.SocialConnection: ['brand_id','platform','account_id','username','active'],
     models.Publication: ['id','brand_id','draft_id','platform','status','result_json'],
@@ -75,6 +78,7 @@ def erase_local_account(db, uid, verified_case, *, writes_paused=False):
     if plan['blockers']:db.rollback();raise ValueError('; '.join(plan['blockers']))
     user=db.get(models.User,uid)
     user.active=False;user.auth_version+=1
+    db.execute(update(models.WorkspaceMembership).where(models.WorkspaceMembership.user_id==uid).values(active=False,revision=models.WorkspaceMembership.revision+1))
     user.password_hash=hash_password(secrets.token_urlsafe(32))
     case=hashlib.sha256(f'{uid}:{verified_case}'.encode()).hexdigest()
     request=db.get(models.DeletionRequest,case)
@@ -88,11 +92,13 @@ def erase_local_account(db, uid, verified_case, *, writes_paused=False):
             if not path.is_relative_to(UPLOAD_DIR.resolve()):raise ValueError('Upload path escaped the configured storage root')
             path.unlink(missing_ok=True)
         asset.storage_key='';asset.public_url=None;asset.filename='erased'
+        # Derived observations and fingerprints are customer content, even without a file.
+        asset.analysis_json='{}'
     fields={
         models.CreatorPreferences:['writing_tone','audience','topics','things_to_avoid','example_posts'],
         models.BrandVoice:['writing_tone','audience','topics','things_to_avoid','example_posts'],
         models.Brand:['name'],
-        models.Draft:['brief','instruction','variants_json','workspace_json'],
+        models.Draft:['title','brief','instruction','variants_json','workspace_json'],
         models.PublishReview:['payload_json'],
         models.Activity:['text','error','url','platform_post_id','metrics_json'],
         models.Publication:['result_json'],
@@ -104,7 +110,7 @@ def erase_local_account(db, uid, verified_case, *, writes_paused=False):
             for name in names:setattr(row,name,'{}' if name.endswith('_json') else '')
             if cls is models.SocialConnection:row.active=False
             if cls is models.PublishReview:row.status='erased'
-    for cls in [models.SeriesApproval,models.SeriesOccurrence,models.ContentSeries,models.StrategyAction,models.Strategy,models.AuthIdentity,models.RecoveryToken,models.EmailVerification,models.OAuthState,models.PendingConnection,models.ProductEvent]:
+    for cls in [models.SeriesApproval,models.SeriesOccurrence,models.ContentSeries,models.StrategyAction,models.Strategy,models.PerformanceSnapshot,models.AuthIdentity,models.MfaChallenge,models.MfaSettings,models.RecoveryToken,models.EmailVerification,models.OAuthState,models.PendingConnection,models.ProductEvent]:
         db.execute(delete(cls).where(cls.user_id==uid))
     user.email=f'erased-{uid}@deleted.invalid';user.display_name='Deleted account';user.default_brand_name='Deleted brand';user.country_code='';user.email_verified_at=None;user.marketing_consent=False
     request.status='active_store_erased';db.commit()

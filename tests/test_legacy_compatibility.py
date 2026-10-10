@@ -15,5 +15,10 @@ def test_existing_custom_gpt_route_keeps_auth_and_explicit_approval(monkeypatch)
     assert client.post('/x/post',headers=headers,json={'text':'hello','approved':False}).status_code==400
     calls=[]
     monkeypatch.setattr(module,'publish_legacy_creator',lambda *args: calls.append(args) or {'post_id':'mock','url':'https://example.test/mock'})
-    assert client.post('/x/post',headers=headers,json={'text':'hello','approved':True}).status_code==200
+    result=client.post('/x/post',headers=headers,json={'text':'hello','approved':True,'idempotency_key':'synthetic-approval-0001'})
+    assert result.status_code==202
+    assert calls==[]
+    from nova.legacy_queue import process_legacy
+    process_legacy()
+    assert client.get(result.json()['status_url'],headers=headers).json()['status']=='published'
     assert len(calls)==1

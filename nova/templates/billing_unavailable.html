@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Billing needs a check | Zova{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/membership.css?v=1">{% endblock %}
+{% block body %}
+<main class="billing-shell">
+  <header><div class="eyebrow">ZOVA MEMBERSHIP</div><h1>Your billing details need a check.</h1></header>
+  <p>We couldn’t verify the billing record for this account. Contact support before starting another checkout.</p>
+  <p>Your saved work is safe. Any existing subscription keeps its current renewal terms.</p>
+  {% include 'support_link.html' %}
+  <a class="button primary" href="/studio">Back to Studio</a>
+</main>
+{% endblock %}

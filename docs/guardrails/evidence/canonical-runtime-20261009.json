@@ -1,0 +1,37 @@
+{
+  "tested_commit": "dc55d2bedea9fe29d40fc61e5c998e01bd10047e",
+  "ci_runs": [
+    37988211823,
+    37988205275
+  ],
+  "local_sqlite": {
+    "passed": 398,
+    "skipped": 6
+  },
+  "ci_sqlite": {
+    "passed": 398,
+    "skipped": 6
+  },
+  "ci_postgresql": {
+    "passed": 403,
+    "skipped": 1
+  },
+  "verified": [
+    "Canonical model coverage on all 16 brand-owned tables",
+    "Canonical filtered and aliased ORM reads and cross-owner/brand lookup refusal",
+    "Forged insert and ORM/raw-SQL identity reassignment rejection",
+    "Fresh startup installs guards and existing restart verifies references",
+    "Populated unmigrated database refuses startup",
+    "Offline reference upgrade preserves representative credential/session/content values",
+    "Existing account, OAuth confirmation, publishing, worker and privacy regression suites",
+    "Synthetic PostgreSQL restore and migrated ownership guard",
+    "Hosting build/smoke and dependency audit"
+  ],
+  "provider_validation": "Mocked providers only; no live posts or grants changed",
+  "deployment": "Not deployed; production data has not been migrated",
+  "limitations": [
+    "Unscoped/raw SQL read isolation needs restricted PostgreSQL roles/RLS",
+    "Shared-team routing and complete account/legacy authority mapping remain open",
+    "Operational, migration-window and independent review evidence remain required"
+  ]
+}

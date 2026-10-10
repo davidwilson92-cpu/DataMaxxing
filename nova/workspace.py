@@ -43,9 +43,10 @@ def clean_workspace(value, db, user_id):
         raise HTTPException(400,'Invalid attachment selection')
     assets=[]
     for aid in dict.fromkeys(ids):
-        row=db.get(MediaAsset,aid)
+        row=db.execute(select(MediaAsset.id,MediaAsset.user_id,MediaAsset.filename,MediaAsset.mime_type)
+                       .where(MediaAsset.id==aid)).first()
         if not row or row.user_id!=user_id: raise HTTPException(404,'Attachment not found')
-        assets.append({'id':row.id,'filename':row.filename,'url':row.public_url or f'/media/preview/{row.id}','kind':'video' if row.mime_type.startswith('video/') else 'image'})
+        assets.append({'id':row.id,'filename':row.filename,'url':f'/media/preview/{row.id}','kind':'video' if row.mime_type.startswith('video/') else 'image'})
     messages=value.get('conversation',[])
     if not isinstance(messages,list) or len(messages)>200: raise HTTPException(400,'Conversation is too long; start a new chat.')
     messages=[{'role':m['role'],'content':str(m.get('content',''))[:12000]} for m in messages if isinstance(m,dict) and m.get('role') in {'assistant','user'}]
@@ -53,12 +54,15 @@ def clean_workspace(value, db, user_id):
     if link and not link.startswith(('https://','http://')): raise HTTPException(400,'Use an http or https source link.')
     selected=value.get('selected_platforms',[])
     if not isinstance(selected,list) or any(not isinstance(p,str) for p in selected): raise HTTPException(400,'Invalid platforms')
+    explicit=value.get('platform_selection_explicit',False)
+    if type(explicit) is not bool: raise HTTPException(400,'Invalid platform selection state')
     try: duration=float(value.get('video_duration') or 0)
     except (TypeError,ValueError): raise HTTPException(400,'Invalid video duration')
     if not math.isfinite(duration): raise HTTPException(400,'Invalid video duration')
     return {'media_asset_ids':[a['id'] for a in assets],'media':assets,'media_kind':('video' if any(a['kind']=='video' for a in assets) else 'image') if assets else None,
             'instagram_format':instagram_format, 'video_duration':max(0,min(duration,36000)), 'link_url':link,'conversation':messages,
             'text_history':clean_text_history(value.get('text_history',[])), 'composer':str(value.get('composer',''))[:12000], 'selected_platforms':[p for p in selected if p in PLATFORMS][:4],
+            'platform_selection_explicit':explicit,
             'active_platform':value.get('active_platform') if value.get('active_platform') in PLATFORMS else 'x'}
 
 

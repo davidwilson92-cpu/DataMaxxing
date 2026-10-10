@@ -1,5 +1,6 @@
 import json
-from fastapi import APIRouter,Request,HTTPException
+from datetime import datetime, timedelta
+from fastapi import APIRouter,Request,HTTPException,Response,Query
 from pydantic import BaseModel
 from sqlalchemy import select,update
 from .db import ScheduledPost,SessionLocal,Publication,Draft,get_preferences,utcnow
@@ -15,11 +16,28 @@ class Reschedule(BaseModel):
 
 
 @router.get('/api/schedules')
-def schedules(request:Request):
+def schedules(request:Request, response:Response,
+              window_from:str|None=Query(default=None,alias='from',max_length=40),
+              window_to:str|None=Query(default=None,alias='to',max_length=40)):
     uid=current_user(request).id
+    start=end=None
+    if window_from is not None or window_to is not None:
+        try:
+            if not window_from or not window_to:raise ValueError()
+            start=datetime.fromisoformat(window_from.replace('Z','+00:00'))
+            end=datetime.fromisoformat(window_to.replace('Z','+00:00'))
+            if start.utcoffset()!=timedelta(0) or end.utcoffset()!=timedelta(0):raise ValueError()
+            if not timedelta(0)<end-start<=timedelta(days=32):raise ValueError()
+        except (ValueError,TypeError):
+            raise HTTPException(400,'Use both from and to as UTC timestamps, with a window of up to 32 days.')
     with SessionLocal() as db:
         bind_request(db,request)
-        return [{'id':r.id,'draft_id':r.draft_id,'platform':r.platform,'scheduled_at':r.scheduled_at.isoformat()+('Z' if r.scheduled_at.tzinfo is None else ''),'status':r.status,'error':r.error} for r in db.scalars(select(ScheduledPost).where(ScheduledPost.user_id==uid).order_by(ScheduledPost.scheduled_at.desc()).limit(100))]
+        query=select(ScheduledPost).where(ScheduledPost.user_id==uid)
+        if start is not None:
+            query=query.where(ScheduledPost.scheduled_at>=start,ScheduledPost.scheduled_at<end)
+        rows=db.scalars(query.order_by(ScheduledPost.scheduled_at.desc(),ScheduledPost.id.desc()).limit(101)).all()
+        response.headers['X-Zova-Has-More']='true' if len(rows)>100 else 'false'
+        return [{'id':r.id,'draft_id':r.draft_id,'platform':r.platform,'scheduled_at':r.scheduled_at.isoformat()+('Z' if r.scheduled_at.tzinfo is None else ''),'status':r.status,'error':r.error} for r in rows[:100]]
 
 
 @router.post('/api/schedules/{schedule_id}/cancel')
@@ -31,9 +49,9 @@ def cancel(schedule_id:int,request:Request):
         if not row or row.user_id!=uid:raise HTTPException(404,'Schedule not found')
         claimed=db.execute(update(ScheduledPost).where(ScheduledPost.id==row.id,ScheduledPost.status=='scheduled').values(status='cancelled',updated_at=utcnow()).execution_options(synchronize_session=False))
         if claimed.rowcount!=1:db.rollback();raise HTTPException(409,'This job has started or finished. It cannot be cancelled.')
-        db.execute(update(Publication).where(Publication.draft_id==row.draft_id,Publication.platform==row.platform,Publication.status=='scheduled').values(status='cancelled'))
+        db.execute(update(Publication).where(Publication.draft_id==row.draft_id,Publication.platform==row.platform,Publication.status.in_(['scheduled','queued'])).values(status='cancelled'))
         publication=db.scalar(select(Publication).where(Publication.draft_id==row.draft_id,Publication.platform==row.platform))
-        if publication:allowances.finish(db,f'publication:{publication.id}',False)
+        if publication:allowances.finish(db,uid,'publications',f'publication:{publication.id}',False)
         db.commit()
         if db.scalar(select(Publication.id).where(Publication.draft_id==row.draft_id)):update_draft_status(db,row.draft_id)
         elif not db.scalar(select(ScheduledPost.id).where(ScheduledPost.draft_id==row.draft_id,ScheduledPost.status!='cancelled')):

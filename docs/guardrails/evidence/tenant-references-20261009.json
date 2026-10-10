@@ -1,0 +1,29 @@
+{
+  "tested_commit": "a3b7610476180586e6d30eef8d6a3625e22970b2",
+  "ci_runs": [
+    37985711932,
+    37985706379
+  ],
+  "sqlite": {
+    "passed": 387,
+    "skipped": 1
+  },
+  "postgresql": {
+    "passed": 387,
+    "skipped": 1
+  },
+  "expected_skips": "Each backend skips one test specific to the other backend",
+  "migration_scope": "All 16 current brand-owned tables; isolated full application schema and legacy ORM insert compatibility",
+  "restore": "Full PostgreSQL dump/restore includes an independently seeded migrated schema. All fixture records match; direct brand reassignment is rejected after restore with SQLSTATE 23514.",
+  "build_smoke": "passed",
+  "dependency_audit": "no known vulnerabilities found",
+  "production_guardrail": "blocked by remaining baseline gaps",
+  "deployment": "not deployed; no production migration",
+  "remaining": [
+    "Canonical runtime read binding and RLS",
+    "Restricted database roles",
+    "Account-level and legacy creator mapping",
+    "Shared-team lifecycle and authorization",
+    "Operational and independent-review evidence"
+  ]
+}

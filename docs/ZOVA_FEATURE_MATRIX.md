@@ -1,3 +1,51 @@
+# 9 October workspace protection candidate
+
+| Capability | Implementation | Validation / deployment |
+|---|---|---|
+| Workspace membership | Atomic account/brand provisioning, current owner capability checks and revocation | SQLite/PostgreSQL regression evidence in tenant-access-20261009.json; not deployed |
+| Canonical content references | Offline backfill and immutable write guards across all 16 brand-owned tables | SQLite/PostgreSQL migration, direct SQL attack and restore evidence in tenant-references-20261009.json; not runtime read isolation |
+| Migration contention safety | Bounded PostgreSQL waits and truthful reference preview | SQLite 393 passed / 6 skipped; PostgreSQL 398 passed / 1 skipped at 09c5771; not deployed |
+| Runtime canonical binding | All 16 brand-owned models, scoped content queries, fresh-install guards and populated-database migration checks | SQLite 398 passed / 6 skipped; PostgreSQL 403 passed / 1 skipped at dc55d2b; not deployed |
+| Restricted runtime startup | PostgreSQL verifies schema without DDL and rejects privileged/destructive credentials; explicit offline preparation | Real restricted-login application/attack tests; CI 405 SQLite / 411 PostgreSQL passed; not deployed |
+| Build image consistency | Pinned official Python/PostgreSQL manifests; byte-identical official mirror used in CI | Build/smoke passed after Docker Hub quota failures; OS image scan still outstanding |
+| Database workspace policies | Forced/restrictive RLS and expiring transaction-bound server contexts for all 16 brand-owned tables | Direct SQL, revocation, replay and restored-policy tests passed; isolated migration only |
+| Protected content transactions | Frozen authority across transactions; default/second-brand draft save/reload and reference cleanup | 434 PostgreSQL tests passed; opt-in, auth/account/worker routing incomplete; not deployed |
+| Separated web service identities | Normal draft/session/rate-limit flows use restricted identity, content and issuer pools; unmapped routes fail closed | CI 439 PostgreSQL tests passed; staged mode, not production-enabled |
+| Restricted authentication pool | Password sign-in, optional MFA and logout through a fourth role with limited User column updates | CI 442 PostgreSQL tests passed, including concurrent recovery; account RLS/lifecycle and production rollout open |
+| Restricted password recovery | Version-safe password changes; explicit recovery/mail pool, single-use reset and truthful failed-attempt records | CI 446 PostgreSQL tests passed with mocked SMTP; account RLS, real delivery and production rollout remain open |
+| Database context integrity | Read-only startup verifies actual function bodies, security properties, defaults and runtime audience against installation source | CI 455 PostgreSQL tests passed including altered-definition attacks; table-policy verification and production activation remain open |
+| Database policy integrity | All 16 forced policy sets, exact roles/operations/capabilities and full expressions verified at startup and after restore | CI 464 PostgreSQL tests passed; service routing/final grants and production activation remain open |
+| Draft service least privilege | Exact table/column grants; no social credentials, approval text, media locations or delivery mutations; issuer has no direct table grants; sequence rights checked | CI 472 PostgreSQL tests passed including attachment/Story/planning cleanup; request telemetry now integrated below; other services remain open |
+| Isolated telemetry writes | Separate append-only metadata role, task-local request/background factory and no shared fallback; measurement failures preserve saved/generated content | CI 478 PostgreSQL tests passed with real event records and mocked AI; worker/reporting/retention and operational rollout remain open |
+| Atomic registration and callback claims | Password and Apple account setup commits atomically; friendly duplicate signup; version-bound initial cookie; single-use concurrent callback state for all five social routes | CI 489 PostgreSQL tests passed with mocked providers; restricted lifecycle routing and historical reconciliation remain open; not deployed |
+| Apple browser-bound sign-in | Secure host-only state cookie checked before provider exchange; failed binding preserves existing session; expiry/replay and MFA retained | CI 496 PostgreSQL tests passed with mocked Apple; actual cross-site browser/provider verification and rollout remain open |
+| Apple identity validation | Required signed claims, exact client/issuer, nonce and code binding; exchanged identity validated and compared; sanitized provider failures | CI 526 PostgreSQL tests passed with real synthetic RSA signatures; live Apple/browser and key-rotation assurance remain open |
+| Immutable account ownership | Explicit offline migration for 13 account model tables; direct owner reassignment rejected; valid references and anonymous telemetry preserved | CI 548 PostgreSQL tests passed with migrated full application/service fixtures and restored guards; account read isolation remains open; startup enforced below |
+| Account protection startup | Catalog-only runtime/service verification rejects missing/altered guards and weakened FKs; explicit populated offline-upgrade path | CI 557 PostgreSQL tests passed, including drift attacks and restore; account RLS, live rollout and independent assurance remain open |
+| Account row isolation foundation | Offline forced/restrictive policies on 13 account tables; bound owner reads and limited profile edits; verified policy manifest | CI 569 PostgreSQL tests passed, including restored isolation; dedicated service integration remains open; not deployed |
+| Account authority verification | Rechecks role bypass/creation/inheritance/destructive privileges and helper grant delegation; owner CRUD and sensitive mutation tests | CI 576 PostgreSQL tests passed; point-in-time offline verification, not live drift monitoring; not deployed |
+| Linked identity and issued-token integrity | Five-table immutable authority guards and one-way token consumption; explicit migration and startup/service verification | CI 587 PostgreSQL tests passed including preserved records, recovery/MFA flows and restored identity rejection; not deployed |
+| Pending authorization integrity | Apple/social/pending claims immutable; consumption cannot reverse; pending credentials erase-only; eight-table superseding migration | CI 595 PostgreSQL tests passed including confirmation/callback races and restored authorization checks; no live provider validation or deployment |
+| Database read isolation rollout | Web/auth/worker context integration, final grants and account/legacy mapping unfinished | Release blocker; no production activation |
+
+Earlier entries below are historical, not evidence of current deployment.
+
+---
+
+## 9 October candidate update
+
+| Capability | Implementation | Validation / deployment |
+|---|---|---|
+| Optional authenticator MFA | Setup, confirmation, recovery codes, password/Apple challenges and session revocation | Synthetic regression suite; candidate only |
+| MFA account lifecycle | Secret-free export, assisted erasure, readiness and restore checks | No real users enrolled; operational recovery review outstanding |
+| Production assurance | Full 79-section register retained | Unresolved; no production deployment |
+
+# Focused UX release — 8 October 2026
+
+See [release scope and evidence](UX_RELEASE_20261008.md). Implemented: Studio scope/state/recovery UX; editable titles and status summary; goal-first strategy; bounded Performance context; weekly scheduling and reschedule race fix; compact signup and truthful beta offer. Local focused and frontend checks passed; remote CI/provider/deployment status remains separate. Earlier unreleased security/recovery/newsletter work is excluded.
+
+---
+
 # Current local increment — 27 September 2026
 
 The previous strategy release is live at 021aad7. The top-right Next move/source-discovery increment is NOT deployed. See [current evidence and release gates](NEXT_MOVE_SOURCES_20260927.md).
@@ -75,3 +123,6 @@ Current production baseline: main `78d9924` (21 September Instagram reauthentica
 | Privacy | Measurement disclosure and assisted workflow documented | Legal bases, exact retention/transfer/provider facts and operator approval remain external; no compliance certification |
 
 See `COMMERCIAL_OPERATIONS_20260920.md`, `CUSTOMER_VALIDATION_20260920.md` and `COMMERCIAL_READINESS_EVIDENCE_20260920.md`. Provider approval is never inferred from code, old credentials, a connected status or a mock.
+
+
+Usage/billing ownership increment (10 October 2026): explicit owner/kind accounting and canonical billing-key checks validated at 0f8ada5. SQLite 524/87 expected skips; PostgreSQL 609/2 expected skips; restored guards and image checks pass. Synthetic billing support screen reviewed at desktop/mobile widths and keyboard focus checked. Database billing/usage identity invariants, dedicated service integration and production release remain open. See guardrails/USAGE_OWNERSHIP_20261010.md.

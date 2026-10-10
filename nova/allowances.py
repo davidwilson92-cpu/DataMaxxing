@@ -17,10 +17,10 @@ def enabled():
 
 
 def tier(db, uid):
-    from .billing import plan_for_price, mode
+    from .billing import plan_for_price, mode,account_for
     # Test billing cannot affect live access. Testing enforcement requires explicit test scope.
     scope = 'test' if mode() == 'test' and os.environ.get('PLAN_LIMITS_MODE') == 'test' else 'live'
-    row = db.get(BillingAccount, f'{uid}:{scope}')
+    row = account_for(db,uid,scope)
     if not row or row.status not in {'active','trialing'}:
         return None
     key = plan_for_price(row.price_id) or ''
@@ -38,9 +38,9 @@ def count(db, uid, kind, period=None):
 
 
 def limit(db, uid, kind, current, added=1):
-    selected = tier(db, uid)
     if not enabled():
         return
+    selected = tier(db, uid)
     if not selected:
         raise HTTPException(402, 'Your plan needs verification. Open Billing; your saved work is safe.')
     if current + added > PLANS[selected][kind]:
@@ -49,9 +49,16 @@ def limit(db, uid, kind, current, added=1):
 
 
 def reserve(db, uid, kind, key, amount=1):
+    validate_usage(uid,kind,key)
+    if type(amount) is not int or not 1<=amount<=2147483647:
+        raise ValueError('Usage amount must be a positive database integer')
     lock(db, uid)
-    prior = db.get(UsageEntry, key)
+    prior = db.get(UsageEntry, key, populate_existing=True)
+    if prior and (prior.user_id!=uid or prior.kind!=kind):
+        raise HTTPException(409,'Usage reservation does not match this operation.')
     if prior and prior.state != 'released':
+        if prior.state not in {'reserved','used'} or prior.amount!=amount:
+            raise HTTPException(409,'Usage reservation changed. Review this operation before retrying.')
         return prior
     period = utcnow().strftime('%Y-%m')
     limit(db, uid, kind, count(db, uid, kind, period), amount)
@@ -63,9 +70,21 @@ def reserve(db, uid, kind, key, amount=1):
     return row
 
 
-def finish(db, key, success=True):
-    row=db.get(UsageEntry, key)
+def validate_usage(uid,kind,key):
+    if type(uid) is not int or uid<=0 or not isinstance(kind,str) or kind not in {'ai','publications'} or not isinstance(key,str) or not 1<=len(key)<=180:
+        raise ValueError('A valid account, usage kind and operation key are required')
+
+
+def finish(db, uid, kind, key, success=True):
+    validate_usage(uid,kind,key)
+    if type(success) is not bool:raise ValueError('Usage result must be explicit')
+    lock(db,uid)
+    row=db.get(UsageEntry, key, populate_existing=True)
     if row:
+        if row.user_id!=uid or row.kind!=kind:
+            raise HTTPException(409,'Usage reservation does not match this operation.')
+        if row.state not in {'reserved','used','released'}:
+            raise HTTPException(409,'Usage reservation requires review.')
         row.state='used' if success else 'released'
 
 
@@ -78,10 +97,10 @@ def ai_action(db, uid):
     try:
         yield
     except Exception:
-        db.rollback(); finish(db,key,False); db.commit()
+        db.rollback(); finish(db,uid,'ai',key,False); db.commit()
         raise
     else:
-        finish(db,key); db.commit()
+        finish(db,uid,'ai',key); db.commit()
     finally:
         ai_user.reset(context_token)
 

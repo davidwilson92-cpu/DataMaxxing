@@ -12,10 +12,10 @@ from .db import SessionLocal, RequestLimit, utcnow
 from .security import user_from_session
 
 
-def allowed_request(key, maximum, seconds):
+def allowed_request(key, maximum, seconds, *, session_factory=None):
     digest = hashlib.sha256(key.encode()).hexdigest()
     now = utcnow()
-    with SessionLocal() as db:
+    with (session_factory or SessionLocal)() as db:
         db.execute(delete(RequestLimit).where(RequestLimit.reset_at <= now))
         claimed = db.execute(update(RequestLimit).where(RequestLimit.key == digest, RequestLimit.count < maximum).values(count=RequestLimit.count + 1))
         if claimed.rowcount:
@@ -40,6 +40,11 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         external_callback = path in {'/billing/webhook','/data-deletion/callback','/auth/apple/callback'}
         unsafe = request.method not in {'GET','HEAD','OPTIONS'}
         response = None
+        services = getattr(request.app.state, 'database_services', None)
+        if services is not None and not services.supports_request(request.method, path):
+            # During staged service routing, no unconverted route (including
+            # routes without get_db) may silently reach the old shared pool.
+            response = JSONResponse({'detail':'This service is not available during database migration.'},503)
         if unsafe and not external_callback:
             origin = request.headers.get('origin')
             configured = urlsplit(os.environ.get('PUBLIC_BASE_URL',''))
@@ -53,17 +58,23 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 response = JSONResponse({'detail':'Request too large.'},413)
         if unsafe and not external_callback and response is None:
             from starlette.concurrency import run_in_threadpool
-            user = await run_in_threadpool(user_from_session, request.cookies.get('nova_session'))
+            from .database_services import identity_factory
+            sessions = identity_factory(request)
+            options = {'session_factory': sessions} if sessions is not None else {}
+            user = await run_in_threadpool(user_from_session, request.cookies.get('nova_session'), **options)
             identity = f'user:{user.id}' if user else f'ip:{request.client.host if request.client else "unknown"}'
             maximum, seconds = (30,300) if path in {'/login','/signup','/forgot-password','/reset-password'} else (120,60)
             if path.startswith('/billing/'):maximum,seconds=10,60
             ai_request=path.startswith('/api/ai/') or path.startswith('/api/voice/') or path=='/api/conversation/plan' or path.startswith('/api/strategy/') or (path.startswith('/api/series/occurrences/') and path.endswith('/draft'))
             if ai_request:maximum,seconds=20,60
             maximum *= max(1,int(os.environ.get('RATE_LIMIT_SCALE','1')))
-            if not await run_in_threadpool(allowed_request, f'{identity}:{"auth" if path in {"/login","/signup","/forgot-password","/reset-password"} else "ai" if ai_request else "mutations"}', maximum, seconds):
+            if not await run_in_threadpool(allowed_request, f'{identity}:{"auth" if path in {"/login","/signup","/forgot-password","/reset-password"} else "ai" if ai_request else "mutations"}', maximum, seconds, **options):
                 response = JSONResponse({'detail':'Too many requests. Please wait before trying again.'},429,headers={'Retry-After':str(seconds)})
         if response is None:
-            response = await call_next(request)
+            from .readiness import telemetry_scope, unavailable_telemetry
+            factory = (services.telemetry_sessions or unavailable_telemetry) if services is not None else None
+            with telemetry_scope(factory):
+                response = await call_next(request)
         if response.status_code==303 and hasattr(request.state,'brand_id') and path not in {'/brands','/brands/switch','/logout','/login','/signup'} and not path.startswith('/billing/'):
             from urllib.parse import urlunsplit, parse_qsl, urlencode
             location=response.headers.get('location','')

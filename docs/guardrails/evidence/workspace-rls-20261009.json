@@ -1,0 +1,40 @@
+{
+  "tested_commit": "b6e147588e2bec2d7240b9ba32928cfb9411fa5d",
+  "ci_runs": [
+    37992138379,
+    37992133548
+  ],
+  "sqlite": {
+    "passed": 408,
+    "skipped": 20
+  },
+  "postgresql": {
+    "passed": 427,
+    "skipped": 1
+  },
+  "scope": "Isolated RLS migration on all 16 current brand-owned tables; not enabled by normal application startup",
+  "verified": [
+    "Two-owner direct SQL read isolation on all protected tables",
+    "Separate brands belonging to one owner remain isolated",
+    "Forged tokens and client-selected workspace IDs do not grant access",
+    "Restrictive boundary survives an unrelated permissive allow-all policy",
+    "Read contexts cannot mutate records; permitted writes stay within workspace",
+    "Live membership role/active/revision and user auth-version revocation",
+    "Expiry, cross-connection, commit and rollback token replay denial",
+    "Runtime cannot mint/enumerate/edit contexts or mutate authority tables",
+    "Issuer cannot directly read content tables",
+    "Reapplication and rejection of destructive table grants that bypass RLS",
+    "Binding error traceback does not expose the server-only bearer",
+    "PostgreSQL dump/restore preserves RLS behavior under restricted login",
+    "Hosting image build/smoke and Python dependency audit passed"
+  ],
+  "provider_validation": "Mocked providers; no live posts or grant changes",
+  "deployment": "No production migration, role provisioning or deployment",
+  "remaining": [
+    "Web/account/auth pool and transaction integration",
+    "Worker claims, recovery and service authority integration",
+    "Final role/column grants and isolated issuer credential provisioning",
+    "Account-level and legacy creator data mapping",
+    "Operational and independent review evidence"
+  ]
+}

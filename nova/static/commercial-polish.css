@@ -1,0 +1,65 @@
+/* Shared finishing touches; Studio rail geometry and hover behavior stay in studio-experience.css. */
+.app-menu>a{min-height:44px;box-sizing:border-box}
+.app-menu>a:focus-visible,.app-legal>a:focus-visible,.nav-settings:focus-visible,.studio-nav-rail a:focus-visible,.studio-nav-rail button:focus-visible{outline:2px solid #c4b5fd;outline-offset:2px}
+.analytics-kpis>.analytics-empty,.analytics-kpis>.analytics-error,.analytics-kpis>.analytics-loading{grid-column:1/-1}
+.analytics-kpis>.analytics-empty{padding:clamp(24px,4vw,40px);border:1px solid #e4daef;border-radius:20px;background:#fff;color:#51465d;font-size:16px;line-height:1.6}
+.analytics-kpis>.analytics-empty h2{font-size:clamp(23px,3vw,30px);line-height:1.25;color:#241a31;margin:0 0 12px}
+.analytics-kpis>.analytics-empty p{max-width:650px;margin:0 0 20px}
+.analytics-kpis>.analytics-empty a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin:4px 12px 4px 0}
+.analytics-kpis>.analytics-empty a.button.primary{color:#fff}
+.analytics-dashboard .analytics-error,.analytics-dashboard .analytics-loading{font-size:15px;line-height:1.6;color:#62556f}
+.analytics-panel .analytics-empty{font-size:14px;line-height:1.6;color:#62556f;grid-column:1/-1}
+.recommendation-panel .analytics-empty{color:#ddd3e9}
+.draft-filters{flex-wrap:wrap;border-radius:16px;gap:4px}
+.draft-filters a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;padding:9px 13px;border-radius:12px;text-decoration:none;font-size:14px;font-weight:600;color:#62556f;line-height:1.3}
+.draft-filters a:hover{background:#eee7f6;color:#382449}
+.draft-filters a.active,.draft-filters a[aria-current=page]{background:#241a31;color:#fff}
+/* Overrides an earlier fixed 320px !important rule in workspace-ui.css. */
+.draft-library .draft-search{max-width:720px!important;width:100%;margin:0 0 10px}
+.draft-search label{display:block;font-size:14px;font-weight:600;color:#51465d;margin:0 0 8px}
+.draft-search>div{display:flex;align-items:stretch;gap:8px;min-width:0}
+.draft-search input[type=search]{min-width:0;flex:1;width:auto;margin:0;min-height:44px;border:1px solid #d9cfe4;border-radius:10px;background:#fff;color:#241a31;font:inherit;font-size:16px;padding:10px 12px;box-sizing:border-box}
+.draft-search button{flex:none;min-height:44px;margin:0;white-space:nowrap}
+.draft-card .draft-excerpt{font-size:15px;line-height:1.65;color:#62556f;margin:0 0 16px;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.draft-card .draft-card-meta{flex-wrap:wrap}
+.draft-card .draft-card-meta time{font-size:12px;line-height:1.4;color:#716478}
+.draft-card .draft-state,.draft-card .draft-platform-list span{font-size:11px;line-height:1.4}
+.draft-card .draft-open{font-size:14px;line-height:1.5;padding-right:70px}
+.draft-card>form button{min-height:44px;min-width:44px;font-size:13px;color:#74607a}
+.draft-card>form{right:12px;bottom:8px}
+.draft-filters a:focus-visible,.draft-search input:focus-visible,.draft-search button:focus-visible,.draft-card-main:focus-visible,.draft-card>form button:focus-visible,.analytics-dashboard a:focus-visible,.analytics-dashboard button:focus-visible{outline:2px solid #7c3aed;outline-offset:3px}
+.draft-card-main:focus-visible{outline-offset:-4px}
+@media(max-width:760px){.draft-filters{width:100%;box-sizing:border-box}.draft-filters a{flex:1 0 auto}.draft-search>div{gap:6px}.draft-search button{padding-left:13px;padding-right:13px}.analytics-kpis>.analytics-empty{padding:24px 20px}.draft-card .draft-excerpt{-webkit-line-clamp:4}}
+@media(prefers-reduced-motion:reduce){.draft-card,.app-menu>a{transition:none}.draft-card:hover{transform:none}}
+
+.schedule-agenda{border:1px solid #e4daef;border-radius:18px;padding:20px;background:#fff;margin:14px 0}
+.agenda-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.agenda-toolbar h3{margin:0;font-size:18px;line-height:1.4}.agenda-toolbar nav,.agenda-tools{display:flex;gap:8px;flex-wrap:wrap}
+.schedule-agenda button{min-height:44px;min-width:44px;padding:9px 13px;border:1px solid #ded2ec;border-radius:10px;background:#faf7ff;color:#5b21b6;font:inherit;font-size:14px;cursor:pointer}.schedule-agenda button:disabled{opacity:.5;cursor:wait}.schedule-agenda button:focus-visible,.schedule-agenda summary:focus-visible,.schedule-agenda input:focus-visible{outline:2px solid #7c3aed;outline-offset:3px}
+.agenda-context,.agenda-empty{font-size:14px;line-height:1.6;color:#62556f}.agenda-day h4{margin:22px 0 4px;font-size:15px;color:#51465d}.schedule-agenda .schedule-row{border-top:1px solid #eee7f3;padding:14px 0}.schedule-row-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.schedule-row-heading>a{color:#5b21b6;font-size:15px;font-weight:600}.schedule-state{font-size:12px;border-radius:8px;background:#f2edf8;color:#554363;padding:6px 8px}.schedule-agenda .schedule-row p{font-size:14px;line-height:1.6;margin:8px 0}.schedule-agenda .schedule-caution{color:#74531c}.schedule-edit summary{min-height:44px;align-content:center;color:#5b21b6;cursor:pointer;font-size:14px}.schedule-edit label{display:block;font-size:14px;margin:8px 0}.schedule-edit input{min-height:44px;max-width:100%;box-sizing:border-box;padding:8px;border:1px solid #d9cfe4;border-radius:8px;font:inherit}.schedule-edit>div{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+@media(max-width:600px){.schedule-agenda{padding:16px}.agenda-toolbar{align-items:flex-start}.agenda-toolbar nav{width:100%}.agenda-toolbar nav button:nth-child(2){flex:1}.schedule-row-heading{align-items:flex-start}.schedule-edit input{width:100%}}
+/* Period controls are a separate, usable row when screen space is tight. */
+.analytics-topbar{flex-wrap:wrap;gap:18px}
+.analytics-topbar>div:first-child{min-width:0}
+.analytics-topbar .analytics-period-control{max-width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px}
+.analytics-period-control label{margin:0;white-space:nowrap;font-size:14px;color:#62556f}
+.analytics-period-control select{flex:0 0 150px;width:150px;min-width:150px;max-width:100%;min-height:44px;box-sizing:border-box;margin:0;padding:9px 30px 9px 12px;border:1px solid #d9cfe4;border-radius:10px;background-color:#fff;color:#241a31;font:inherit;font-size:16px}
+.analytics-period-control .button{min-height:44px;box-sizing:border-box;white-space:nowrap;margin:0;box-shadow:none}
+@media(max-width:760px){.analytics-topbar{flex-direction:column;align-items:stretch;gap:16px;padding:20px 16px;position:static}.analytics-topbar .analytics-period-control{width:100%;max-width:100%;justify-content:flex-start}.analytics-period-control label{flex:1 0 100%}.analytics-period-control select{flex:1 0 150px}.analytics-period-control .button{flex:1 0 auto}}
+
+.mfa-page{max-width:760px;font-size:16px;line-height:1.6}.mfa-page input{min-height:44px;font-size:16px}.mfa-page button,.mfa-page a.button{min-height:44px}.mfa-page code{overflow-wrap:anywhere;user-select:all}.mfa-page form{max-width:520px}.mfa-page label{display:block;font-size:15px;margin-bottom:8px}.mfa-page button{margin-top:12px}.mfa-page input:focus-visible,.mfa-page button:focus-visible{outline:2px solid #7c3aed;outline-offset:3px}
+
+/* Compact returning-user context, never a competing dashboard. */
+.work-summary{margin:8px 24px 12px;border:1px solid #e5ddee;border-radius:12px;background:#fcfaff;color:#332740;font-size:14px;position:relative;z-index:2;flex-shrink:0}
+.work-summary summary{cursor:pointer;min-height:44px;padding:12px 16px;box-sizing:border-box;font-weight:600}
+.work-summary summary span{font-weight:400;color:#62536e;margin-left:12px}
+.work-summary>div{padding:0 16px 12px;max-height:240px;overflow:auto}.work-summary p{margin:8px 0;line-height:1.5}.work-summary a{display:inline-block;margin:4px 16px 4px 0;min-height:32px;line-height:32px;color:#6330ac}
+.draft-library>.work-summary{margin:0 0 20px}.draft-rename{padding:0 20px 12px}.draft-rename summary{cursor:pointer;color:#6330ac;min-height:44px;line-height:44px}.draft-rename input{width:100%;box-sizing:border-box;font-size:16px;min-height:44px}.draft-rename label{display:block}.draft-rename [role=status]{font-size:14px;line-height:1.5}.signup-location{margin:14px 0}.signup-location summary{cursor:pointer;min-height:44px;line-height:44px}
+@media(max-width:600px){.work-summary{margin:0 12px 8px}.work-summary summary span{display:block;margin-left:0;font-size:13px}.work-summary>div{max-height:180px}.work-summary summary{padding:8px 12px}}
+.auth-flow{grid-template-columns:minmax(280px,.8fr) minmax(440px,1.2fr)}
+.auth-story{padding:120px 5vw 80px;justify-content:center}.auth-story h2{font-size:clamp(40px,4.2vw,64px)}
+.auth-form-zone{padding:54px clamp(28px,5vw,72px);justify-content:flex-start}.auth-form-zone h1{font-size:36px;line-height:1.15}
+.auth-form-zone>p,.auth-form-zone .fine{color:#c7c0d1}.auth-form-zone .offer-summary{font-size:15px;line-height:1.5;margin-bottom:18px}.auth-form-zone .offer-summary summary{min-height:36px;line-height:36px;cursor:pointer}
+.auth-form-zone input:not([type=checkbox]),.auth-form-zone select{min-height:44px;font-size:16px}.auth-form-zone input[type=checkbox]{width:18px;height:18px;vertical-align:middle}.auth-form-zone form>label{line-height:1.5}
+@media(max-width:900px){.auth-flow{display:block;min-height:100vh}.auth-story{display:none}.auth-brand{top:22px;left:24px}.auth-form-zone{padding:90px 24px 32px;min-height:100vh;border:0}.auth-form-zone h1{font-size:32px}.auth-form-zone .eyebrow{margin-bottom:12px}}
+
+.auth-form-zone .quiet-button{background:transparent;color:#ded4ed;border:1px solid #746484;border-radius:8px;min-height:40px;padding:8px 12px;margin:6px 0 14px;font:inherit;font-size:14px;cursor:pointer}
