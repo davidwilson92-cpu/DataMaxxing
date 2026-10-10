@@ -28,8 +28,8 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical owner workspaces/memberships, live capability checks, version-based session revocation and immutable references on all 16 brand-owned tables are implemented. Offline migrations, PostgreSQL forced/restrictive RLS and expiring transaction/backend-bound contexts are tested with real restricted identities. Staged draft, sign-in, optional MFA and recovery routes use separated pools without shared-credential fallback. Startup now verifies actual context-function definitions and all table policy flags, role identifiers, operations and full canonical predicates; drift attacks and restored-definition checks passed at e3376ef. Production is unchanged and staged mode remains disabled. Account-level and legacy references/isolation, shared-member routing, remaining callback/worker/account services, final grants and rollout remain incomplete. Exact table/column/sequence grants for the mapped draft database operations and a table-inaccessible issuer passed restricted-role tests at e2d9534. A separate append-only telemetry identity and task-local request/background routing passed at 7f6c0e3 without mocking draft-save events or shared-credential fallback; worker/reporting authority remains open. Password and Apple signup now commit account/workspace/membership/preferences/identity atomically; duplicate signup preserves revoked membership and existing connections. Validated at 0c11d2c; restricted registration service and historical reconciliation remain open.",
-      "next_action": "Integrate restricted registration and account lifecycle; finish callback/worker/legacy services, account-level isolation, historical account reconciliation and verified rollout.",
+      "finding": "Canonical owner workspaces/memberships, live capability checks, version-based session revocation and immutable references on all 16 brand-owned tables are implemented. Offline migrations, PostgreSQL forced/restrictive RLS and expiring transaction/backend-bound contexts are tested with real restricted identities. Staged draft, sign-in, optional MFA and recovery routes use separated pools without shared-credential fallback. Startup now verifies actual context-function definitions and all table policy flags, role identifiers, operations and full canonical predicates; drift attacks and restored-definition checks passed at e3376ef. Production is unchanged and staged mode remains disabled. Account-level and legacy references/isolation, shared-member routing, remaining callback/worker/account services, final grants and rollout remain incomplete. Exact table/column/sequence grants for the mapped draft database operations and a table-inaccessible issuer passed restricted-role tests at e2d9534. A separate append-only telemetry identity and task-local request/background routing passed at 7f6c0e3 without mocking draft-save events or shared-credential fallback; worker/reporting authority remains open. Password and Apple signup now commit account/workspace/membership/preferences/identity atomically; duplicate signup preserves revoked membership and existing connections. Validated at 0c11d2c; restricted registration service and historical reconciliation remain open. Offline account ownership migration at 31253ac now protects user references on 13 account model tables, rejects reassignment/invalid owners, preserves anonymous telemetry and passes full application/restricted-service tests plus restored-guard attacks. Production startup enforcement, secondary identity immutability and account-level read/delete/insert isolation remain open.",
+      "next_action": "Complete account guard/constraint attestation and startup enforcement; implement account-level RLS, restricted registration/callback/worker/legacy services and verified rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
@@ -274,6 +274,22 @@
         {
           "path": "docs/guardrails/evidence/registration-atomicity-20261010.json",
           "sha256": "4dd5c90c34750324742d503560903d6ff1cb928e0173e1499e3027af26b517bb"
+        },
+        {
+          "path": "nova/account_references.py",
+          "sha256": "290133e50c6c8c9bcf3b50d3d6b0e73bb62f41401500ca99461cd573d4e2aa95"
+        },
+        {
+          "path": "tests/test_account_references.py",
+          "sha256": "db8a6c0580df92b220ceb2e330ac5760ddd4720c5f18a2f97b306e88814527eb"
+        },
+        {
+          "path": "docs/guardrails/ACCOUNT_REFERENCES_20261010.md",
+          "sha256": "51c958479f95662645e57cea5893da264ed4c1241fcf695a011c73e696738e85"
+        },
+        {
+          "path": "docs/guardrails/evidence/account-references-20261010.json",
+          "sha256": "b68b675ab28bbf2d288a7190f9f130c1f627351bace8010ace4bbeb3e94f0a60"
         }
       ],
       "reviewed_by": null,

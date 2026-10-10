@@ -20,6 +20,7 @@
 | Atomic registration and callback claims | Password and Apple account setup commits atomically; friendly duplicate signup; version-bound initial cookie; single-use concurrent callback state for all five social routes | CI 489 PostgreSQL tests passed with mocked providers; restricted lifecycle routing and historical reconciliation remain open; not deployed |
 | Apple browser-bound sign-in | Secure host-only state cookie checked before provider exchange; failed binding preserves existing session; expiry/replay and MFA retained | CI 496 PostgreSQL tests passed with mocked Apple; actual cross-site browser/provider verification and rollout remain open |
 | Apple identity validation | Required signed claims, exact client/issuer, nonce and code binding; exchanged identity validated and compared; sanitized provider failures | CI 526 PostgreSQL tests passed with real synthetic RSA signatures; live Apple/browser and key-rotation assurance remain open |
+| Immutable account ownership | Explicit offline migration for 13 account model tables; direct owner reassignment rejected; valid references and anonymous telemetry preserved | CI 548 PostgreSQL tests passed with migrated full application/service fixtures and restored guards; account read isolation/startup enforcement remain open |
 | Database read isolation rollout | Web/auth/worker context integration, final grants and account/legacy mapping unfinished | Release blocker; no production activation |
 
 Earlier entries below are historical, not evidence of current deployment.

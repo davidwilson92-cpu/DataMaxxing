@@ -1,0 +1,28 @@
+{
+  "tested_commit": "31253acdc739e679dc4b609b032bc2b74d7cf09b",
+  "ci_runs": [
+    38007101051
+  ],
+  "sqlite": {
+    "passed": 487,
+    "skipped": 62
+  },
+  "postgresql": {
+    "passed": 548,
+    "skipped": 1
+  },
+  "verified": [
+    "Direct SQL account owner reassignment reproduced before migration and rejected after migration across 13 account model tables",
+    "Read-only plan, repeated migration, preserved row values, normal updates and anonymous AI metadata",
+    "Invalid/null owners, parent deletion, unknown tables, interruption rollback and missing-guard rejection",
+    "Full application suite explicitly migrates disposable database; restricted service fixtures include guards",
+    "Migrated account references/guards survive backup restore and reject reassignment",
+    "Workspace/context/policy restore, image build/smoke and Python dependency audit"
+  ],
+  "limits": [
+    "Ownership immutability is not account read/delete/insert authorization or RLS",
+    "Secondary identity fields and legacy-creator isolation remain open",
+    "Production startup enforcement, full constraint/SQLite definition attestation, restricted lifecycle services and operational/independent review remain open"
+  ],
+  "deployment": "Offline candidate migration only; no production roles, schema, credentials, customer data or deployment changed"
+}

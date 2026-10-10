@@ -1,3 +1,13 @@
+# Current increment: immutable account ownership
+
+Validated 31253ac: local/CI SQLite 487 passed / 62 expected skips; PostgreSQL 548 passed / one expected skip. CI run 38007101051 passed direct SQL ownership attacks, migration rollback/repeat/record preservation, full application tests with guards, restricted-service compatibility, account/workspace restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/account-references-20261010.json. Production unchanged; full gate blocked and publication goal active.
+
+Read docs/guardrails/ACCOUNT_REFERENCES_20261010.md and nova/account_references.py. Explicit offline `accounts` phase in scripts/migrate_workspaces.py covers 13 user-owned account tables; unknown user tables stop migration, 16 brand tables keep workspace guards, server capability contexts remain separately controlled. PostgreSQL installs immutable-user triggers and required FK/non-null references under bounded locks; SQLite has equivalent write/parent-delete guards. Anonymous AI calls stay nullable but cannot be reassigned. No row values are rewritten. Plan is read-only; apply needs explicit migration credentials and paused writes. PostgreSQL verifier compares function body/security/search path and trigger shape; SQLite currently checks presence only. Tests explicitly apply guards, but production startup does not yet require them.
+
+NEXT: complete guard/constraint attestation and production startup enforcement before account RLS/restricted registration/callback/profile/billing/worker integration. Immutable secondary identity fields, account read/delete/insert authorization, legacy isolation and operational/independent evidence remain open. Do not activate partial service mode or bypass the gate. Preserve users/data/keys and explicit publishing approval; no paid staging or forced MFA.
+
+---
+
 # Current increment: Apple hybrid identity validation
 
 Validated e778d0f: local/CI SQLite 465 passed / 62 expected skips; PostgreSQL 526 passed / one expected skip. CI run 38006235430 passed synthetic real-signature claim/code/exchange checks, account/browser/MFA/concurrency regressions, migrated RLS restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/apple-identity-20261010.json. Production unchanged; full gate blocked and publication goal active.

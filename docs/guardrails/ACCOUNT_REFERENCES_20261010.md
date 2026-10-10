@@ -1,7 +1,10 @@
 # Immutable account ownership migration
 
-Candidate only; full SQLite/PostgreSQL and restore validation pending. No production
-schema, grants, data, roles or deployment changed.
+Validated 31253ac: local/CI SQLite 487 passed / 62 expected skips; PostgreSQL
+548 passed / one expected skip. CI run 38007101051 passed migrated account/workspace
+restore, restored context/policy verification, image build/smoke and Python
+dependency audit. Full release gate remains blocked. No production schema, grants,
+data, roles or deployment changed.
 
 The existing account foreign keys prevent nonexistent owners in PostgreSQL but
 do not prevent reassignment to another valid user. Synthetic regressions reproduce
