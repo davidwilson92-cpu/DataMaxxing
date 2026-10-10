@@ -90,7 +90,7 @@ def test_account_read_cannot_write_and_foreign_insert_is_rejected(account_rls_db
     with pytest.raises(DBAPIError) as failure:
         with runtime.begin() as c:
             bound(c,issuer,roles[0],uids[0],'account.edit')
-            c.execute(text("INSERT INTO zova_brands(user_id,name,created_at) VALUES(:uid,'Foreign',CURRENT_TIMESTAMP)"),{'uid':uids[1]})
+            c.execute(text("INSERT INTO zova_brands(user_id,name) VALUES(:uid,'Foreign')"),{'uid':uids[1]})
     assert failure.value.orig.sqlstate=='42501'
     assert 'row-level security' in str(failure.value.orig)
 
