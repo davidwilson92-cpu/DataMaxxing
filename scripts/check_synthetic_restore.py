@@ -63,8 +63,17 @@ from nova.rls import issue_context,bind_context,verify_context_functions,verify_
 from nova.account_references import verify_accounts
 from nova.account_rls import verify_account_policies
 from nova.tenant_migration import workspace_key
+from nova.identity_guards import verify_identities
 with reference_restored.connect() as c:
     assert len(verify_accounts(c)['table_counts'])==13
+    assert verify_identities(c)['protected_tables']==5
+try:
+    with reference_restored.begin() as c:
+        c.execute(text("UPDATE zova_auth_identities SET subject='forbidden-reassignment'"))
+except DBAPIError as exc:
+    assert getattr(exc.orig,'sqlstate',None)=='23514'
+else:raise AssertionError('Restored identity guard allowed reassignment')
+print('Restored identity authority guards reject provider-subject reassignment.')
 try:
     with reference_restored.begin() as c:
         c.execute(text('UPDATE zova_brands SET user_id=(SELECT MAX(id) FROM nova_users)'))

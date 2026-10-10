@@ -138,6 +138,10 @@ def test_existing_database_offline_reference_upgrade_preserves_runtime_content(t
                  "from nova.account_references import apply_accounts; "
                  "apply_accounts(create_engine(os.environ['DATABASE_URL']),writes_paused=True)")
     assert accounts.returncode==0,accounts.stderr
+    identities=run("from sqlalchemy import create_engine; import os; "
+                   "from nova.identity_guards import apply_identities; "
+                   "apply_identities(create_engine(os.environ['DATABASE_URL']),writes_paused=True)")
+    assert identities.returncode==0,identities.stderr
     accepted = run("from nova.db import SessionLocal,User,Draft; from sqlalchemy import select; "
                    "from nova.tenant_migration import workspace_key; db=SessionLocal(); "
                    "u=db.scalar(select(User)); d=db.scalar(select(Draft)); "

@@ -22,6 +22,8 @@ def initialize(engine, initial):
     apply_references(engine, writes_paused=True)
     from nova.account_references import apply_accounts
     apply_accounts(engine,writes_paused=True)
+    from nova.identity_guards import apply_identities
+    apply_identities(engine,writes_paused=True)
 
 
 def test_postgres_defaults_to_verification_and_unknown_mode_refuses(monkeypatch):

@@ -161,6 +161,8 @@ def create_services(identity_engine, runtime_engine, issuer_engine, *, authentic
     with identity_engine.connect() as c:
         from .account_references import verify_account_guards
         verify_account_guards(c)
+        from .identity_guards import verify_identities
+        verify_identities(c)
         verify_context_functions(c, runtime_roles=[roles[1]])
         verify_workspace_policies(c, runtime_roles=[roles[1]])
         for left in roles:

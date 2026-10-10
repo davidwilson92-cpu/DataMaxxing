@@ -551,6 +551,10 @@ else:
                     verify_account_guards(registry_connection)
                     if not registry_connection.scalar(text('SELECT COUNT(*) FROM zova_schema_migrations WHERE version=:version'),{'version':account_version}):
                         raise RuntimeError('Account ownership migration required before application startup')
+                    from .identity_guards import verify_identities,VERSION as identity_version
+                    verify_identities(registry_connection)
+                    if not registry_connection.scalar(text('SELECT COUNT(*) FROM zova_schema_migrations WHERE version=:version'),{'version':identity_version}):
+                        raise RuntimeError('Identity authority migration required before application startup')
 
     Base.metadata.create_all(bind=engine, tables=[table for table in Base.metadata.sorted_tables
                                                  if table not in (LegacyPublication.__table__, MfaSettings.__table__, MfaChallenge.__table__)])
@@ -570,6 +574,11 @@ else:
         # migration credentials and --apply --writes-paused. Verify mode ignores it.
         from .account_references import apply_accounts
         apply_accounts(engine,writes_paused=True)
+
+
+    if not existing_users or os.environ.get('ZOVA_OFFLINE_ACCOUNT_PREPARATION')=='1':
+        from .identity_guards import apply_identities
+        apply_identities(engine,writes_paused=True)
 
 
 def get_db(request: Request):

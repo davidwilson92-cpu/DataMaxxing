@@ -4,6 +4,7 @@ from sqlalchemy import inspect, text
 from .migrations import MIGRATIONS
 from .tenant_references import BRAND_TABLES, VERSION as REFERENCE_VERSION
 from .account_references import VERSION as ACCOUNT_VERSION,verify_account_guards
+from .identity_guards import VERSION as IDENTITY_VERSION,verify_identities
 from .tenant_migration import MappingError
 
 
@@ -53,12 +54,15 @@ def verify_runtime_schema(c, metadata):
             raise RuntimeError(f'{name}: runtime columns are incomplete; apply the offline migration')
     versions = set(c.scalars(text('SELECT version FROM zova_schema_migrations')))
     required = {version for version, _ in MIGRATIONS} | {
-        REFERENCE_VERSION, ACCOUNT_VERSION, '20261009_optional_mfa', '20260929_legacy_publication_queue'}
+        REFERENCE_VERSION, ACCOUNT_VERSION, IDENTITY_VERSION, '20261009_optional_mfa', '20260929_legacy_publication_queue'}
     if not required <= versions:
         raise RuntimeError('Runtime schema migration versions are incomplete')
     try:verify_account_guards(c)
     except MappingError as exc:
         raise RuntimeError('Runtime account guards are missing or differ from the migration') from exc
+    try:verify_identities(c)
+    except MappingError as exc:
+        raise RuntimeError('Runtime identity guards are missing or differ from the migration') from exc
     if c.dialect.name == 'postgresql':
         guards = set(c.execute(text('''SELECT t.relname,g.tgname,p.proname
             FROM pg_trigger g JOIN pg_class t ON t.oid=g.tgrelid

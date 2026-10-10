@@ -74,17 +74,17 @@ def test_optional_setup_recovery_codes_and_login_replay():
     assert 'invalid or already used' in third.post('/mfa/challenge', data={'code':codes[0]}).text
 
 
-def test_challenge_is_expiring_bound_to_auth_version_and_cookie():
+def test_challenge_is_expiring_bound_to_auth_version_and_cookie(monkeypatch):
     _, uid, email, _, codes = enrolled()
     login = pending_login(email)
     forged = TestClient(app)
     forged.cookies.set(mfa.COOKIE, 'forged')
     assert forged.post('/mfa/challenge', data={'code':codes[0]}).status_code == 400
     token = security.decrypt(login.cookies.get(mfa.COOKIE))
-    with SessionLocal() as db:
-        db.get(MfaChallenge, security.hash_api_key(token)).expires_at = utcnow()-timedelta(seconds=1)
-        db.commit()
-    assert login.post('/mfa/challenge', data={'code':codes[0]}).status_code == 400
+    with monkeypatch.context() as clock:
+        future=utcnow()+timedelta(minutes=6)
+        clock.setattr(mfa,'utcnow',lambda:future)
+        assert login.post('/mfa/challenge', data={'code':codes[0]}).status_code == 400
     login = pending_login(email)
     with SessionLocal() as db:
         db.get(User, uid).auth_version += 1; db.commit()

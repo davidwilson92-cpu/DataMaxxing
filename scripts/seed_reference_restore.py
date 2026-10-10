@@ -9,7 +9,7 @@ url=make_url(os.environ['ZOVA_TEST_POSTGRES'])
 assert url.host in {'localhost','127.0.0.1'} and url.database=='zova_test_ci'
 os.environ['DATABASE_URL']=url.render_as_string(hide_password=False)
 os.environ['ZOVA_SCHEMA_MODE']='bootstrap'  # Isolated CI migration identity only.
-from nova.db import Base,User,Brand,Draft,SocialConnection,CreatorPreferences
+from nova.db import Base,User,Brand,Draft,SocialConnection,CreatorPreferences,AuthIdentity
 from nova.migrations import run_migrations
 from nova.tenant_references import apply_references
 from sqlalchemy.orm import Session
@@ -29,11 +29,14 @@ with Session(engine) as db:
     db.add(Draft(user_id=other.id,brief='Other tenant restore fixture'))
     db.add_all([CreatorPreferences(user_id=user.id,writing_tone='Original account'),
                 CreatorPreferences(user_id=other.id,writing_tone='Other account')])
+    db.add(AuthIdentity(user_id=user.id,provider='apple',subject='synthetic-restored-identity'))
     db.commit()
 report=apply_references(engine,writes_paused=True)
 assert len(report['mapped_table_counts'])==16
 from nova.account_references import apply_accounts
 assert len(apply_accounts(engine,writes_paused=True)['table_counts'])==13
+from nova.identity_guards import apply_identities
+apply_identities(engine,writes_paused=True)
 from nova.rls import apply_rls
 from nova.tenant_references import BRAND_TABLES
 with engine.begin() as c:
