@@ -1,3 +1,9 @@
+# Next move live-model follow-up — 10 October 2026
+
+PR19 is live as ebb6f48. The compact UI and synthetic journey passed, but live recommendations failed strict validation. Current follow-up supplies the exact schema/platform constraints and one bounded repair; awaiting full CI and live verification. Read docs/NEXT_MOVE_SIMPLE_20261010.md. Broader beta gaps remain open.
+
+---
+
 # Next move simplification candidate — 10 October 2026
 
 Read docs/NEXT_MOVE_SIMPLE_20261010.md. Current update responds to the owner-reported empty/cluttered Next move journey. Implements automatic missing/stale recommendations, one featured post, compact disclosures, explicit draft platform/title, save failure and late-navigation protection. Local synthetic browser end-to-end setup/draft/reload and two design review passes completed. Broader security gaps remain required follow-up in docs/beta/KNOWN_GAPS.md. Await CI and live verification before calling this update published.
