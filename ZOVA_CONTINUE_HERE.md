@@ -1,3 +1,23 @@
+# Current increment: immutable identity and issued-token authority
+
+Validated eb26764: local/CI SQLite 502 passed / 87 expected skips; PostgreSQL 587 passed / two expected skips. CI run 38011548983 passed before/after linked identity/token attacks, one-way consumption, migration preservation/repeat/rollback, runtime guard validation, existing MFA/recovery/service flows, restored identity/account/workspace protection, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/identity-guards-20261010.json. Production unchanged; full gate blocked and publication goal active.
+
+Read docs/guardrails/IDENTITY_GUARDS_20261010.md and nova/identity_guards.py. Five-table FIELDS manifest protects AuthIdentity id/user/provider/subject, UserCreatorLink id/user/creator, RecoveryToken hash/user/version/expiry, EmailVerification hash/user/email/expiry and MfaChallenge hash/user/version/destination/expiry. Used flags on the three token tables cannot revert after consumption. Deletion and normal conditional consumption remain available. Explicit identities CLI phase has read-only plan/verify and paused-write apply. Fresh bootstrap and prepare_database install it; populated startup verifies before DDL and runtime/service checks verify full definitions. Migration version is required. No values rewritten. PostgreSQL trigger uses JSON record comparison to avoid nonexistent fields across table shapes. SQLite uses per-table definitions.
+
+NEXT: complete anonymous Apple authorization state/social pending-state and billing/usage authority invariants, then dedicated account lifecycle routing and exact grants before account RLS runtime activation. Inspect remaining state mutations and preserve normal claim/cleanup behavior. Account RLS remains incompatible with the current partial separated service configuration and is not enabled. Continue toward profile/registration/auth/recovery/billing/telemetry/callback/worker integration, legacy isolation and operational/independent evidence. Preserve users/data/keys, explicit publishing approvals and unknown outcomes; no paid staging, forced MFA or release-gate bypass.
+
+---
+
+# Current increment: account authority drift and operation coverage
+
+Validated d388dd6: local/CI SQLite 491 passed / 87 expected skips; PostgreSQL 576 passed / two expected skips. CI run 38010717743 passed account role-drift attacks, exact row-policy insert errors, owner CRUD/sensitive deletion boundaries, account/workspace restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/account-authority-20261010.json. Production unchanged; publication goal active and full gate remains blocked.
+
+Read docs/guardrails/ACCOUNT_AUTHORITY_20261010.md. verify_account_policies now rechecks runtime attributes, privileged-role/owner inheritance, schema/database creation and destructive table rights using shared verify_runtime_authority. Function grants reject runtime delegation. BYPASSRLS regression confirms unchanged policies can expose both owners and requires verification rejection. Verification does not repair grants and is not continuous monitoring. Own preference replacement/brand create-delete succeeds, while read-only inserts/deletes and sensitive/foreign deletion are rejected. Brand SQL test is not application canonical workspace provisioning.
+
+NEXT: immutable secondary identities/issued-token authority, then dedicated account lifecycle/service integration and exact grants. Inspection found AuthIdentity.provider/subject, UserCreatorLink.creator_id and issued recovery/MFA/email token fields lack the existing immutable user_id guard's protection. Existing recovery/MFA handlers consume only used flags; preserve that behavior and expiration/cleanup/deletion. Inspect all mutation paths and migration compatibility before adding invariants. Keep account RLS offline until identity/profile/registration/auth/recovery/billing/telemetry/callback/worker paths work with it. Preserve users/data/keys, explicit publishing approvals and unknown outcomes; no paid staging, forced MFA or release-gate bypass. Operational/independent evidence remains open.
+
+---
+
 # Current increment: offline account row isolation
 
 Validated 62dafb0: CI run 38010083098 passed SQLite 491 / 80 expected skips and PostgreSQL 569 / two expected skips, all 13 account-table isolation checks, restored account policies/private preferences, image build/smoke and Python dependency audit. Two test defects were corrected and recorded. Evidence: docs/guardrails/evidence/account-rls-20261010.json. Production unchanged; full gate has 80 unresolved entries and publication goal remains active.

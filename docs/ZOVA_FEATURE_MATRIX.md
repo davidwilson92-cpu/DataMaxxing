@@ -24,6 +24,7 @@
 | Account protection startup | Catalog-only runtime/service verification rejects missing/altered guards and weakened FKs; explicit populated offline-upgrade path | CI 557 PostgreSQL tests passed, including drift attacks and restore; account RLS, live rollout and independent assurance remain open |
 | Account row isolation foundation | Offline forced/restrictive policies on 13 account tables; bound owner reads and limited profile edits; verified policy manifest | CI 569 PostgreSQL tests passed, including restored isolation; dedicated service integration remains open; not deployed |
 | Account authority verification | Rechecks role bypass/creation/inheritance/destructive privileges and helper grant delegation; owner CRUD and sensitive mutation tests | CI 576 PostgreSQL tests passed; point-in-time offline verification, not live drift monitoring; not deployed |
+| Linked identity and issued-token integrity | Five-table immutable authority guards and one-way token consumption; explicit migration and startup/service verification | CI 587 PostgreSQL tests passed including preserved records, recovery/MFA flows and restored identity rejection; not deployed |
 | Database read isolation rollout | Web/auth/worker context integration, final grants and account/legacy mapping unfinished | Release blocker; no production activation |
 
 Earlier entries below are historical, not evidence of current deployment.

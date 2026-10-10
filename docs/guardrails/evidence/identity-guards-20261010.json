@@ -1,0 +1,30 @@
+{
+  "tested_commit": "eb267643e59431b2eda5b7006329f19a85cefff1",
+  "ci_runs": [
+    38011548983
+  ],
+  "sqlite": {
+    "passed": 502,
+    "skipped": 87
+  },
+  "postgresql": {
+    "passed": 587,
+    "skipped": 2
+  },
+  "verified": [
+    "Before/after raw SQL identity changes reproduced and rejected for provider/subject, creator linkage and issued recovery/email/MFA authority",
+    "Consumed tokens cannot be reactivated; conditional consumption and deletion remain available",
+    "Repeated migration preserves identity records, password hash and security version",
+    "Interrupted migration rolls back guards and version; altered guard source/security rejected",
+    "Fresh bootstrap, explicit offline preparation and runtime/service verification integrated",
+    "Existing MFA expiry test advances clock instead of modifying issued authority",
+    "Restored provider subject reassignment rejected with PostgreSQL constraint error",
+    "Full application/restricted-service regression, account/workspace restore, hosting image build/smoke and Python dependency audit"
+  ],
+  "limits": [
+    "Anonymous Apple state, social pending state and billing/usage identity invariants remain separate work",
+    "Does not authorize creation/deletion or substitute provider identity validation",
+    "Restricted account lifecycle integration, exact grants, continuous drift monitoring and operational/independent evidence remain open"
+  ],
+  "deployment": "No production migration, credentials, account data, social connections, role grants or deployment changed"
+}
