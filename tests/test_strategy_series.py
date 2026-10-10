@@ -235,3 +235,39 @@ def test_series_cancel_preserves_published_history():
     with SessionLocal() as db:db.get(Draft,did).status='published';db.commit()
     assert c.post(f'/api/series/{sid}/state',json={'action':'cancel','revision':0}).status_code==200
     assert c.get('/api/series').json()[0]['occurrences'][0]['status']=='published'
+
+
+@pytest.mark.parametrize('defect', ['needs_list','format_reel','unknown_source','wrong_platform','missing_action'])
+def test_recommendation_repairs_invalid_model_shape_once(monkeypatch, defect):
+    c,uid,items=setup_strategy(monkeypatch)
+    valid={'actions':[{'kind':'draft','title':'Useful tip '+str(i),'reason':'Help beginners','brief':'Explain clay preparation '+str(i),'effort':'5 minutes','needs':'Photo of clay','platform':'instagram','format':'post','source_id':''} for i in range(3)]}
+    broken=json.loads(json.dumps(valid))
+    if defect=='needs_list': broken['actions'][0]['needs']=['Photo of clay']
+    if defect=='format_reel': broken['actions'][0]['format']='reel'
+    if defect=='unknown_source': broken['actions'][0]['source_id']='invented'
+    if defect=='wrong_platform': broken['actions'][0]['platform']='x'
+    if defect=='missing_action': broken['actions'].pop()
+    calls=[]
+    def reply(uid,instruction,data):
+        calls.append(data)
+        return broken if len(calls)==1 else valid
+    monkeypatch.setattr(strategy,'model_json',reply)
+    r=c.post('/api/strategy/recommend',json={})
+    assert r.status_code==200,r.text
+    assert len(calls)==2 and calls[0]['action_schema'] and calls[1]['schema']
+    assert calls[1]['allowed_platforms']==['instagram']
+    assert len(r.json()['items'])==3
+    assert all(a['platform']=='instagram' and a['format']=='post' and a['source'] is None for a in r.json()['items'])
+
+
+def test_failed_recommendation_repair_preserves_existing_ideas(monkeypatch):
+    c,uid,items=setup_strategy(monkeypatch)
+    calls=[]
+    def reply(*args,**kwargs):
+        calls.append(1)
+        return {'actions':[{'platform':'untrusted'}]}
+    monkeypatch.setattr(strategy,'model_json',reply)
+    r=c.post('/api/strategy/recommend',json={})
+    assert r.status_code==502
+    assert len(calls)==2
+    assert [a['id'] for a in c.get('/api/strategy/actions').json()['items']]==[a['id'] for a in items]
