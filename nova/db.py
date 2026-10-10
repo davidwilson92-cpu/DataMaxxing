@@ -227,6 +227,7 @@ class Draft(BrandScoped, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
     brief: Mapped[str] = mapped_column(Text, default='')
+    title: Mapped[str] = mapped_column(String(120), default='', server_default='')
     instruction: Mapped[str] = mapped_column(Text, default='')
     platforms_json: Mapped[str] = mapped_column(Text, default='[]')
     variants_json: Mapped[str] = mapped_column(Text, default='{}')
@@ -396,6 +397,14 @@ class PendingConnection(Base):
     encrypted_payload: Mapped[str] = mapped_column(Text)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class PerformanceSnapshot(BrandScoped, Base):
+    __tablename__ = 'zova_performance_snapshots'
+    __table_args__ = (UniqueConstraint('user_id', 'brand_id', name='uq_performance_snapshot_brand'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    payload_json: Mapped[str] = mapped_column(Text, default='{}')
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class Strategy(BrandScoped, Base):

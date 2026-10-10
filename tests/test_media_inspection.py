@@ -193,7 +193,8 @@ def test_testing_offer_does_not_imply_subscription_or_management():
     client, _, _, _ = account()
     page = client.get('/subscribe')
     assert page.status_code == 200
-    assert 'Testing access' in page.text and 'View future GBP plans' in page.text
+    assert 'Free beta access' in page.text and 'View future GBP plans' in page.text
+    assert 'does not start a subscription or an automatic charge' in page.text
     assert 'No subscription has been verified' not in page.text
     assert 'Cancel through Manage billing' not in page.text
 

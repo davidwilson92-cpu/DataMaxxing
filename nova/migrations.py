@@ -56,7 +56,7 @@ def run_migrations(engine: Engine, migrations: Iterable[tuple[str, tuple[str, ..
                 {"version": version},
             )
 
-    additions = {'nova_drafts': ("workspace_json TEXT NOT NULL DEFAULT '{}'", "revision INTEGER NOT NULL DEFAULT 0")}
+    additions = {'nova_drafts': ("workspace_json TEXT NOT NULL DEFAULT '{}'", "revision INTEGER NOT NULL DEFAULT 0", "title VARCHAR(120) NOT NULL DEFAULT ''")}
     additions['nova_media_assets'] = ("analysis_json TEXT NOT NULL DEFAULT '{}'",)
     for table in ('nova_drafts', 'nova_social_connections', 'nova_oauth_states', 'zova_publish_reviews',
                   'zova_publications', 'nova_media_assets', 'nova_scheduled_posts', 'nova_activity'):

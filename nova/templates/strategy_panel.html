@@ -1,24 +1,41 @@
 <dialog id="strategyPanel" aria-labelledby="strategyPanelTitle" class="strategy-panel">
  <header><h2 id="strategyPanelTitle">{% include "next_move_icon.html" %}<span>Next move</span></h2><button class="quiet-button" onclick="this.closest('dialog').close()" aria-label="Close next move">×</button></header>
  <p id="strategyStatus" role="status"></p>
+ <p id="strategyStepHint" class="support-note">Start with a goal. Zova will propose a plan for you to review.</p>
  <div id="strategyActions"></div>
+ <p id="strategyPerformanceNote" class="support-note" hidden></p>
  <button class="quiet-button" id="recommendButton" onclick="refreshStrategyActions(this)">Refresh next moves</button>
- <details class="recommendation-help"><summary>How recommendations work</summary><p class="support-note">Refreshing searches the web and public social posts using your content themes. Keep confidential details out of those themes. Suggestions stay drafts until you approve them. Publicly indexed posts are not a measure of platform-wide popularity.</p></details>
+ <details id="recommendationHelp" class="recommendation-help"><summary>How recommendations work</summary><p class="support-note">Refreshing searches the web and public social posts using your content themes. Keep confidential details out of those themes. Suggestions stay drafts until you approve them. Publicly indexed posts are not a measure of platform-wide popularity.</p></details>
  <p id="strategySourceNote" class="support-note">Refresh next moves to check current topics against your confirmed strategy.</p>
  <details id="strategyDetails"><summary>Your strategy</summary>
   <p id="strategyConfirmedState" class="support-note"></p>
-  <label for="strategyBrief">What do you want to achieve?</label>
-  <textarea id="strategyBrief" rows="3" maxlength="20000" placeholder="Tell Zova your goal, or paste your existing strategy."></textarea>
-  <label for="strategyImport">Import text or Markdown (UTF-8, up to 20 KB)</label><input id="strategyImport" type="file" accept=".txt,.md,text/plain,text/markdown">
-  <button class="quiet-button" onclick="proposeStrategy(this)">Propose a strategy</button>
-  <p class="support-note">Imported text and your brief are sent to AI when you request a proposal. You can also edit the fields directly.</p>
+  <details id="strategyQuickStart" class="strategy-quick-start" open><summary>Start with your goal</summary>
+   <p>A goal is enough to start. Add your audience and available time so the plan fits your business.</p>
+   <div class="strategy-goal-chips" role="group" aria-label="Goal ideas"><button type="button" data-strategy-goal="Build awareness for my brand">Build awareness</button><button type="button" data-strategy-goal="Get more enquiries from the right customers">Get enquiries</button><button type="button" data-strategy-goal="Build stronger connections with my audience">Grow engagement</button></div>
+   <label for="strategyBrief">What would you like to achieve?</label>
+   <textarea id="strategyBrief" rows="3" maxlength="20000" placeholder="For example: fill our Saturday pottery classes, or paste your existing strategy."></textarea>
+   <label for="strategyQuickAudience">Who do you want to reach? (optional)</label>
+   <input id="strategyQuickAudience" maxlength="1000" placeholder="For example: local beginners looking for a creative hobby">
+   <label for="strategyQuickTime">How much time can you give your socials? (optional)</label>
+   <input id="strategyQuickTime" maxlength="500" placeholder="For example: 30 minutes a week, with my own photos">
+   <details class="strategy-import"><summary>Already have a strategy?</summary><label for="strategyImport">Import text or Markdown (UTF-8, up to 20 KB)</label><input id="strategyImport" type="file" accept=".txt,.md,text/plain,text/markdown"><p>Or paste it into your goal above. Your text is sent to AI only when you request a proposal.</p></details>
+   <button class="button primary" onclick="proposeStrategy(this)">Help me make a plan</button>
+   <p class="support-note">Zova proposes. You review and confirm. Nothing is published.</p>
+  </details>
   <div id="strategyAssumptions"></div>
-  <button class="quiet-button" type="button" onclick="document.getElementById('strategyForm').hidden=false">Edit strategy details yourself</button>
+  <button id="strategyManualEdit" class="quiet-button" type="button" onclick="showStrategyEditor()">Or write my own plan</button>
   <form hidden id="strategyForm" onsubmit="confirmStrategy(event)">
-   {% for key,label in [('goal','Goal'),('audience','Audience'),('offer','Your offer'),('voice','Voice'),('themes','Public content themes (used for search)'),('rhythm','Posting rhythm'),('resources','Time and resources'),('avoid','Topics to avoid')] %}
-   <label for="strategy_{{ key }}">{{ label }}</label><textarea id="strategy_{{ key }}" name="{{ key }}" rows="2" maxlength="1000"></textarea>
+   <h3 id="strategyReviewHeading" tabindex="-1">Review your plan</h3><p>Check the essentials, then open the details to refine your voice or topics.</p>
+   {% for key,label,limit in [('goal','Goal',1500),('audience','Audience',1500),('resources','Time and resources',1000)] %}
+   <label for="strategy_{{ key }}">{{ label }}</label><textarea id="strategy_{{ key }}" name="{{ key }}" rows="2" maxlength="{{ limit }}"></textarea>
    {% endfor %}
    <fieldset><legend>Platforms</legend>{% for p,label in [('x','X'),('instagram','Instagram'),('facebook','Facebook'),('tiktok','TikTok')] %}<label class="inline-choice"><input type="checkbox" name="strategy_platform" value="{{ p }}">{{ label }}</label>{% endfor %}</fieldset>
+   <details id="strategyAdvanced"><summary>Voice, topics and other details</summary>
+    {% for key,label,limit in [('offer','Your offer',1500),('voice','Voice',1500),('themes','Public content themes (used for search)',2000),('rhythm','Posting rhythm',1000),('avoid','Topics to avoid',1500)] %}
+    <label for="strategy_{{ key }}">{{ label }}</label><textarea id="strategy_{{ key }}" name="{{ key }}" rows="2" maxlength="{{ limit }}"></textarea>
+    {% endfor %}
+   </details>
+   <p class="strategy-search-disclosure">Confirming searches public topics to suggest next moves. <strong>Search themes:</strong> <span id="strategySearchPreview">None yet</span>. Keep confidential details out of these themes. <button class="quiet-button" type="button" onclick="document.getElementById('strategyAdvanced').open=true;document.getElementById('strategy_themes').focus()">Edit search themes</button></p>
    <button class="button primary" type="submit">Confirm this strategy</button>
   </form>
  </details>

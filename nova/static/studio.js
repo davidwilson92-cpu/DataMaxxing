@@ -3,6 +3,20 @@ let variants = {};
 let currentPlatform = "x";
 
 let currentDraftId = null;
+let currentDraftTitle = "";
+let platformSelectionExplicit = false;
+const studioPlatforms = ["x","instagram","facebook","tiktok"];
+function savedPlatformSelection(row){
+ const ws=row.workspace||{};
+ const saved=Array.isArray(ws.selected_platforms)?ws.selected_platforms.filter(p=>studioPlatforms.includes(p)):[];
+ if(ws.platform_selection_explicit===true || saved.length)return saved;
+ return [...new Set([...(row.platforms||[]),...Object.keys(row.variants||{})])].filter(p=>studioPlatforms.includes(p));
+}
+function selectStudioPlatforms(platforms){
+ document.querySelectorAll(".platform-check input").forEach(node=>node.checked=platforms.includes(node.value));
+ platformSelectionExplicit=true;
+ renderReadiness();
+}
 
 let uploadedMediaIds = [];
 
@@ -37,6 +51,8 @@ const headers = {"Content-Type":"application/json","X-Zova-Request":"1"};
 
 
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+
+const mediaPreviewUrl = url => /^\/media\/preview\/\d+(?:[?#]|$)/.test(url||'') ? window.zovaWorkspaceUrl(url) : url;
 
 const selectedPlatforms = () => [...document.querySelectorAll(".platform-check input:checked")].map(input => input.value);
 
@@ -75,7 +91,7 @@ function platformMention(text){const lower=text.toLowerCase();if(/\b(insta|insta
 
 function draftWorkspace(){
  const platforms=Object.keys(variants),locked=!editableDraft(),missing=['x','instagram','facebook','tiktok'].filter(p=>!variants[p]);
- return `<section class="inline-draft" data-current-draft>${platforms.length>1?`<div class="draft-tabs" role="tablist" aria-label="Platform versions">${platforms.map(p=>`<button class="draft-tab ${p===currentPlatform?'active':''}" role="tab" aria-selected="${p===currentPlatform}" onclick="switchPlatform('${p}')">${platformName(p)}</button>`).join('')}</div>`:`<p class="response-note">${platformName(currentPlatform)}</p>`}${currentPlatform==='instagram'?`<p class="response-note">Instagram ${instagramLabel()}${instagramFormat()==='story'?' · Planning notes — not published':''}</p>`:''}<div id="variantEditor">${editorMarkup()}</div><div class="response-actions">${!locked?`<button onclick="${editingDraft?'finishEditing()':"canvasView('edit')"}">${editingDraft?'Done editing':'Edit'}</button>`:''}<button onclick="copyDraft(this)">Copy</button>${!locked?`<button class="review-button" onclick="requestPublishConfirmation('publish')">Review & publish</button>`:''}<details class="draft-options"><summary>More</summary><div><button onclick="canvasView('preview')">Preview</button>${platforms.length>1?`<button onclick="canvasView('compare')">Compare versions</button>`:''}${!locked?`<button onclick="undoTextEdit()">Undo text edit</button><button onclick="requestPublishConfirmation('schedule')">Schedule</button>${missing.map(p=>`<button onclick="promptComposer('Add a ${platformName(p)} version of this post')">Add ${platformName(p)}</button>`).join('')}`:''}</div></details></div>${locked?`<p class="response-note">${esc(publicationStates[currentPlatform]?publicationStatus(publicationStates[currentPlatform]):'Not submitted')}</p>`:''}</section>`;
+ return `<section class="inline-draft" data-current-draft>${currentDraftTitle?`<h2 class="draft-working-title">${esc(currentDraftTitle)}</h2>`:""}<p class="draft-scope">${editingDraft?"Editing ":""}${platformName(currentPlatform)}${currentPlatform==='instagram'?' · '+(instagramFormat()==='story'?'Story planning notes':'Post'):""}${editingDraft&&platforms.length>1?" only":""}</p>${platforms.length>1?`<div class="draft-tabs" role="group" aria-label="Platform versions">${platforms.map(p=>`<button class="draft-tab ${p===currentPlatform?'active':''}" type="button" aria-pressed="${p===currentPlatform}" onclick="switchPlatform('${p}')">${platformName(p)}</button>`).join('')}</div>`:''}<div id="variantEditor">${editorMarkup()}</div><div class="response-actions">${!locked?`<button onclick="${editingDraft?'finishEditing()':"canvasView('edit')"}">${editingDraft?'Done editing':'Edit'}</button>`:''}<button onclick="copyDraft(this)">Copy</button>${!locked?`<button class="review-button" onclick="requestPublishConfirmation('publish')">Review & publish</button>`:''}<details class="draft-options"><summary>More</summary><div><button onclick="canvasView('preview')">Preview</button>${platforms.length>1?`<button onclick="canvasView('compare')">Compare versions</button>`:''}${!locked?`<button onclick="undoTextEdit()">Undo text edit</button><button onclick="requestPublishConfirmation('schedule')">Schedule</button>${missing.map(p=>`<button onclick="promptComposer('Add a ${platformName(p)} version of this post')">Add ${platformName(p)}</button>`).join('')}`:''}</div></details></div>${locked?`<p class="response-note">${esc(publicationStates[currentPlatform]?publicationStatus(publicationStates[currentPlatform]):'Not submitted')}</p>`:''}</section>`;
 }
 
 function editorMarkup(){if(!editingDraft||!editableDraft())return `<div class="draft-text">${(variants[currentPlatform]?.posts||[]).map((post,index)=>`${(variants[currentPlatform]?.posts.length||0)>1?`<small>Post ${index+1}</small>`:''}<p>${esc(post)}</p>`).join('')}</div>`;const posts=(variants[currentPlatform]||{}).posts||[],locked=!editableDraft(),rule=currentPlatform==="x"?"280 characters max per post":(["instagram","tiktok"].includes(currentPlatform)?"Media required to publish":"Review before publishing");return `<div class="draft-platform-head"><b>${platformIcon(currentPlatform)} ${platformName(currentPlatform)}</b><span>${rule}</span></div>${posts.map((post,index)=>`<label class="post-copy"><span>${posts.length>1?`Post ${index+1}`:"Draft"}</span><textarea rows="${posts.length>1?4:6}" ${locked?"readonly":""} onfocus="rememberTextRevision()" oninput="updateDraftPost('${currentPlatform}',${index},this.value)">${esc(post)}</textarea><small>${currentPlatform==="x"?`<b data-character-count>${post.length}</b> / 280`:saveLabel}</small></label>`).join("")}`;}
@@ -91,7 +107,7 @@ function renderAttachments(){
 
   tray.classList.toggle("hidden",!uploadedMedia.length);
 
-  tray.innerHTML=uploadedMedia.map((asset,index)=>`<div class="attachment-card">${!asset.url?'<div class="attachment-placeholder">Preview unavailable</div>':asset.kind==="video"?`<video src="${esc(asset.url)}" controls preload="metadata" aria-label="Preview of ${esc(asset.filename)}"></video>`:`<img src="${esc(asset.url)}" alt="Preview of ${esc(asset.filename)}">`}<div class="attachment-details"><span title="${esc(asset.filename)}">${esc(asset.filename)}</span><button type="button" onclick="removeAttachment(${index})" ${mediaUploading?"disabled":""} aria-label="Remove ${esc(asset.filename)}">Remove</button></div></div>`).join("");
+  tray.innerHTML=uploadedMedia.map((asset,index)=>`<div class="attachment-card">${!asset.url?'<div class="attachment-placeholder">Preview unavailable</div>':asset.kind==="video"?`<video src="${esc(mediaPreviewUrl(asset.url))}" controls preload="metadata" aria-label="Preview of ${esc(asset.filename)}"></video>`:`<img src="${esc(mediaPreviewUrl(asset.url))}" alt="Preview of ${esc(asset.filename)}">`}<div class="attachment-details"><span title="${esc(asset.filename)}">${esc(asset.filename)}</span><button type="button" onclick="removeAttachment(${index})" ${mediaUploading?"disabled":""} aria-label="Remove ${esc(asset.filename)}">Remove</button></div></div>`).join("");
 
   document.getElementById("mediaStatus").textContent="";
 
