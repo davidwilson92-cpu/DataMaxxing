@@ -9,7 +9,7 @@ url=make_url(os.environ['ZOVA_TEST_POSTGRES'])
 assert url.host in {'localhost','127.0.0.1'} and url.database=='zova_test_ci'
 os.environ['DATABASE_URL']=url.render_as_string(hide_password=False)
 os.environ['ZOVA_SCHEMA_MODE']='bootstrap'  # Isolated CI migration identity only.
-from nova.db import Base,User,Brand,Draft,SocialConnection,CreatorPreferences,AuthIdentity
+from nova.db import Base,User,Brand,Draft,SocialConnection,CreatorPreferences,AuthIdentity,AuthState,OAuthState,PendingConnection,utcnow
 from nova.migrations import run_migrations
 from nova.tenant_references import apply_references
 from sqlalchemy.orm import Session
@@ -30,6 +30,9 @@ with Session(engine) as db:
     db.add_all([CreatorPreferences(user_id=user.id,writing_tone='Original account'),
                 CreatorPreferences(user_id=other.id,writing_tone='Other account')])
     db.add(AuthIdentity(user_id=user.id,provider='apple',subject='synthetic-restored-identity'))
+    db.add(AuthState(provider='apple',state_hash='synthetic-restored-apple-state',nonce_hash='synthetic-nonce'))
+    db.add(OAuthState(user_id=user.id,platform='instagram',state_hash='synthetic-restored-social-state'))
+    db.add(PendingConnection(user_id=user.id,code_hash='synthetic-review',auth_version=8,platform='instagram',encrypted_payload='opaque-restored-pending',expires_at=utcnow()))
     db.commit()
 report=apply_references(engine,writes_paused=True)
 assert len(report['mapped_table_counts'])==16

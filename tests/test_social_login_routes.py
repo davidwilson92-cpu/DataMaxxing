@@ -100,12 +100,11 @@ def test_instagram_success_replay_and_owner_binding(signed_in, monkeypatch):
     assert client.get("/oauth/instagram/callback",params={"code":"synthetic","state":raw}).status_code == 400
 
 
-def test_expired_state_rejected(signed_in):
+def test_expired_state_rejected(signed_in,monkeypatch):
     client, _ = signed_in
     raw=state_from(client.get("/oauth/instagram/start",follow_redirects=False))
-    with SessionLocal() as db:
-        row=db.scalar(select(OAuthState).where(OAuthState.state_hash == hash_api_key(raw)))
-        row.created_at=utcnow()-timedelta(minutes=21);db.commit()
+    future=utcnow()+timedelta(minutes=21)
+    monkeypatch.setattr(module,'utcnow',lambda:future)
     assert client.get("/oauth/instagram/callback",params={"code":"synthetic","state":raw}).status_code == 400
 
 

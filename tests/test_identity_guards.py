@@ -30,6 +30,9 @@ def identity_db(registry_db):
             models.RecoveryToken(token_hash='original-token',user_id=user.id,auth_version=4,expires_at=expiry),
             models.EmailVerification(token_hash='original-token',user_id=user.id,email=user.email,expires_at=expiry),
             models.MfaChallenge(token_hash='original-token',user_id=user.id,auth_version=4,destination='/studio',expires_at=expiry),
+            models.AuthState(id=1,provider='apple',state_hash='original-state',nonce_hash='original-nonce',intent='login'),
+            models.OAuthState(id=1,user_id=user.id,platform='x',state_hash='original-state',encrypted_code_verifier='synthetic-verifier'),
+            models.PendingConnection(code_hash='original-code',user_id=user.id,auth_version=4,platform='instagram',encrypted_payload='synthetic-pending-credentials',expires_at=expiry),
         ]);db.commit()
     # Reproduce the pre-migration state only in this disposable schema.
     with engine.begin() as c:
@@ -44,8 +47,10 @@ def identity_db(registry_db):
 def test_existing_identity_authority_cannot_be_rewritten(identity_db,table):
     values={'id':50,'provider':'different','subject':'other-subject','creator_id':2,
             'token_hash':'other-token','auth_version':99,'expires_at':models.utcnow()+timedelta(days=2),
-            'email':'other@example.test','destination':'/different'}
-    fields=set(FIELDS[table])-{'user_id'}  # User ownership already has separate guards.
+            'email':'other@example.test','destination':'/different','platform':'tiktok',
+            'state_hash':'other-state','nonce_hash':'other-nonce','intent':'signup',
+            'created_at':models.utcnow()+timedelta(days=1),'encrypted_code_verifier':'other-verifier','code_hash':'other-code'}
+    fields=set(FIELDS[table])-{'user_id','brand_id','workspace_id'}  # Separate ownership guards already apply.
     with identity_db.connect() as c:
         before=c.execute(text(f'SELECT * FROM {table}')).all()
         for field in fields:
@@ -107,3 +112,24 @@ def test_identity_verifier_rejects_same_name_weakened_guard(identity_db):
             c.execute(text('CREATE TRIGGER zova_auth_identities_identity_guard BEFORE UPDATE ON zova_auth_identities BEGIN SELECT 1; END'))
     with identity_db.connect() as c,pytest.raises(MappingError):verify_identities(c)
     with identity_db.connect() as c,pytest.raises(RuntimeError,match='identity'):verify_runtime_schema(c,models.Base.metadata)
+
+
+def test_pending_credentials_can_only_be_preserved_or_erased(identity_db):
+    with identity_db.begin() as c:
+        c.execute(text("UPDATE zova_pending_connections SET encrypted_payload='replacement'"))
+        c.execute(text("UPDATE zova_pending_connections SET encrypted_payload='synthetic-pending-credentials'"))
+    apply_identities(identity_db,writes_paused=True)
+    with pytest.raises(DBAPIError):
+        with identity_db.begin() as c:c.execute(text("UPDATE zova_pending_connections SET encrypted_payload='replacement'"))
+    with identity_db.begin() as c:c.execute(text("UPDATE zova_pending_connections SET encrypted_payload=''"))
+    with pytest.raises(DBAPIError):
+        with identity_db.begin() as c:c.execute(text("UPDATE zova_pending_connections SET encrypted_payload='synthetic-pending-credentials'"))
+    with identity_db.connect() as c:assert c.scalar(text('SELECT encrypted_payload FROM zova_pending_connections'))==''
+
+
+def test_nullable_pkce_verifier_cannot_be_added_after_state_creation(identity_db):
+    with identity_db.begin() as c:c.execute(text('UPDATE nova_oauth_states SET encrypted_code_verifier=NULL'))
+    apply_identities(identity_db,writes_paused=True)
+    with pytest.raises(DBAPIError):
+        with identity_db.begin() as c:c.execute(text("UPDATE nova_oauth_states SET encrypted_code_verifier='late-verifier'"))
+    with identity_db.begin() as c:assert c.execute(text('UPDATE nova_oauth_states SET used=true')).rowcount==1

@@ -91,9 +91,8 @@ def test_expired_state_is_rejected_even_with_original_browser_cookie(monkeypatch
     from nova.db import utcnow
     client, _, state, nonce = start(monkeypatch)
     _, exchanges = provider(monkeypatch, nonce)
-    with SessionLocal() as db:
-        db.scalar(select(AuthState).where(AuthState.state_hash == hash_api_key(state))).created_at = utcnow()-timedelta(minutes=11)
-        db.commit()
+    future=utcnow()+timedelta(minutes=11)
+    monkeypatch.setattr(module,'utcnow',lambda:future)
     assert finish(client, state).status_code == 400
     assert exchanges == []
 

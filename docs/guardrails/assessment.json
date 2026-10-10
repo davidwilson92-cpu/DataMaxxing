@@ -329,11 +329,11 @@
         },
         {
           "path": "nova/identity_guards.py",
-          "sha256": "c4d62833177981d64a6eabc61332fd7f5074786df0c274242b57901e72c0b736"
+          "sha256": "138a71d2c1735e2d4effae791789e36c55498930188ba987a839f895d5ddcae1"
         },
         {
           "path": "tests/test_identity_guards.py",
-          "sha256": "becbc91a17b7e1fcd723c97f841edb116fd9cac3d95ba43ff386564edd7f64e6"
+          "sha256": "3bfff1c779aa8d8517070f6cc2d41f971021ead2275e4ff9a727a5a16c31d35a"
         },
         {
           "path": "docs/guardrails/IDENTITY_GUARDS_20261010.md",
@@ -426,7 +426,7 @@
         },
         {
           "path": "tests/test_apple_browser_binding.py",
-          "sha256": "ede4b10d5969319c4b46bcfedfe5a310c7502956fa0698fa36c55f6df717c10f"
+          "sha256": "bb9265169e2d0f59551d0130322826d9d06570f0098972d5621ee99a20e25020"
         },
         {
           "path": "docs/guardrails/APPLE_BROWSER_BINDING_20261010.md",
@@ -454,11 +454,11 @@
         },
         {
           "path": "nova/identity_guards.py",
-          "sha256": "c4d62833177981d64a6eabc61332fd7f5074786df0c274242b57901e72c0b736"
+          "sha256": "138a71d2c1735e2d4effae791789e36c55498930188ba987a839f895d5ddcae1"
         },
         {
           "path": "tests/test_identity_guards.py",
-          "sha256": "becbc91a17b7e1fcd723c97f841edb116fd9cac3d95ba43ff386564edd7f64e6"
+          "sha256": "3bfff1c779aa8d8517070f6cc2d41f971021ead2275e4ff9a727a5a16c31d35a"
         },
         {
           "path": "docs/guardrails/IDENTITY_GUARDS_20261010.md",
@@ -563,11 +563,11 @@
         },
         {
           "path": "nova/identity_guards.py",
-          "sha256": "c4d62833177981d64a6eabc61332fd7f5074786df0c274242b57901e72c0b736"
+          "sha256": "138a71d2c1735e2d4effae791789e36c55498930188ba987a839f895d5ddcae1"
         },
         {
           "path": "tests/test_identity_guards.py",
-          "sha256": "becbc91a17b7e1fcd723c97f841edb116fd9cac3d95ba43ff386564edd7f64e6"
+          "sha256": "3bfff1c779aa8d8517070f6cc2d41f971021ead2275e4ff9a727a5a16c31d35a"
         },
         {
           "path": "docs/guardrails/IDENTITY_GUARDS_20261010.md",
@@ -902,11 +902,11 @@
         },
         {
           "path": "nova/identity_guards.py",
-          "sha256": "c4d62833177981d64a6eabc61332fd7f5074786df0c274242b57901e72c0b736"
+          "sha256": "138a71d2c1735e2d4effae791789e36c55498930188ba987a839f895d5ddcae1"
         },
         {
           "path": "tests/test_identity_guards.py",
-          "sha256": "becbc91a17b7e1fcd723c97f841edb116fd9cac3d95ba43ff386564edd7f64e6"
+          "sha256": "3bfff1c779aa8d8517070f6cc2d41f971021ead2275e4ff9a727a5a16c31d35a"
         },
         {
           "path": "docs/guardrails/IDENTITY_GUARDS_20261010.md",
@@ -2023,11 +2023,11 @@
         },
         {
           "path": "nova/identity_guards.py",
-          "sha256": "c4d62833177981d64a6eabc61332fd7f5074786df0c274242b57901e72c0b736"
+          "sha256": "138a71d2c1735e2d4effae791789e36c55498930188ba987a839f895d5ddcae1"
         },
         {
           "path": "tests/test_identity_guards.py",
-          "sha256": "becbc91a17b7e1fcd723c97f841edb116fd9cac3d95ba43ff386564edd7f64e6"
+          "sha256": "3bfff1c779aa8d8517070f6cc2d41f971021ead2275e4ff9a727a5a16c31d35a"
         },
         {
           "path": "docs/guardrails/IDENTITY_GUARDS_20261010.md",

@@ -3,15 +3,23 @@ from sqlalchemy import inspect,text
 from .migration_limits import bound_migration
 from .tenant_migration import MappingError
 
-VERSION='20261010_identity_guards'
+VERSION='20261010_authorization_state_guards'
 FIELDS={
     'zova_auth_identities':('id','user_id','provider','subject'),
     'nova_user_creator_links':('id','user_id','creator_id'),
     'zova_recovery_tokens':('token_hash','user_id','auth_version','expires_at'),
     'zova_email_verifications':('token_hash','user_id','email','expires_at'),
     'zova_mfa_challenges':('token_hash','user_id','auth_version','destination','expires_at'),
+    'zova_auth_states':('id','provider','state_hash','nonce_hash','intent','created_at'),
+    'nova_oauth_states':('id','user_id','brand_id','workspace_id','platform','state_hash','encrypted_code_verifier','created_at'),
+    'zova_pending_connections':('code_hash','user_id','brand_id','workspace_id','auth_version','platform','expires_at'),
 }
-CONSUMABLE=frozenset({'zova_recovery_tokens','zova_email_verifications','zova_mfa_challenges'})
+CONSUMABLE=frozenset({'zova_recovery_tokens','zova_email_verifications','zova_mfa_challenges',
+                     'zova_auth_states','nova_oauth_states','zova_pending_connections'})
+NULLABLE=frozenset({('nova_oauth_states','encrypted_code_verifier')})
+# Pending credentials may be erased on confirmation/cancellation/expiry, never
+# replaced with a different account or restored after erasure.
+ERASABLE={'zova_pending_connections':('encrypted_payload',)}
 
 
 def body():
@@ -19,6 +27,8 @@ def body():
     for name,columns in sorted(FIELDS.items()):
         mismatch=' OR '.join(f"to_jsonb(NEW)->'{col}' IS DISTINCT FROM to_jsonb(OLD)->'{col}'" for col in columns)
         if name in CONSUMABLE:mismatch+=" OR (to_jsonb(OLD)->'used'='true'::jsonb AND to_jsonb(NEW)->'used' IS DISTINCT FROM 'true'::jsonb)"
+        for col in ERASABLE.get(name,()):
+            mismatch+=f" OR (to_jsonb(NEW)->'{col}' IS DISTINCT FROM to_jsonb(OLD)->'{col}' AND to_jsonb(NEW)->>'{col}' IS DISTINCT FROM '')"
         clauses.append(f"IF TG_TABLE_NAME='{name}' AND ({mismatch}) THEN RAISE EXCEPTION 'Issued identity authority is immutable' USING ERRCODE='23514'; END IF;")
     return 'BEGIN\n'+'\n'.join(clauses)+'\nRETURN NEW;\nEND'
 
@@ -27,6 +37,8 @@ def sqlite_definition(c,name):
     q=c.dialect.identifier_preparer.quote
     mismatch=' OR '.join(f'NEW.{q(col)} IS NOT OLD.{q(col)}' for col in FIELDS[name])
     if name in CONSUMABLE:mismatch+=' OR (OLD.used=1 AND NEW.used IS NOT 1)'
+    for col in ERASABLE.get(name,()):
+        mismatch+=f" OR (NEW.{q(col)} IS NOT OLD.{q(col)} AND NEW.{q(col)} IS NOT '')"
     return f"CREATE TRIGGER {q(name+'_identity_guard')} BEFORE UPDATE ON {q(name)} WHEN {mismatch} BEGIN SELECT RAISE(ABORT,'Issued identity authority is immutable'); END"
 
 
@@ -34,10 +46,13 @@ def verify_columns(c):
     schema=inspect(c)
     if not set(FIELDS)<=set(schema.get_table_names()):raise MappingError('Identity authority tables missing')
     for name,fields in FIELDS.items():
-        required=set(fields)|({'used'} if name in CONSUMABLE else set())
+        required=set(fields)|({'used'} if name in CONSUMABLE else set())|set(ERASABLE.get(name,()))
         columns={v['name']:v for v in schema.get_columns(name)}
-        if not required<=columns.keys() or any(columns[col]['nullable'] for col in required):
-            raise MappingError('Identity authority columns missing or nullable')
+        # SQLite's canonical workspace migration uses insert/update guards for
+        # non-null enforcement; PostgreSQL also alters physical nullability.
+        nullable=lambda col:(name,col) in NULLABLE or (c.dialect.name=='sqlite' and col=='workspace_id')
+        if not required<=columns.keys() or any(columns[col]['nullable']!=nullable(col) for col in required):
+            raise MappingError('Identity authority columns missing or nullability differs')
 
 
 def verify_identities(c):

@@ -66,7 +66,7 @@ from nova.tenant_migration import workspace_key
 from nova.identity_guards import verify_identities
 with reference_restored.connect() as c:
     assert len(verify_accounts(c)['table_counts'])==13
-    assert verify_identities(c)['protected_tables']==5
+    assert verify_identities(c)['protected_tables']==8
 try:
     with reference_restored.begin() as c:
         c.execute(text("UPDATE zova_auth_identities SET subject='forbidden-reassignment'"))
@@ -74,6 +74,14 @@ except DBAPIError as exc:
     assert getattr(exc.orig,'sqlstate',None)=='23514'
 else:raise AssertionError('Restored identity guard allowed reassignment')
 print('Restored identity authority guards reject provider-subject reassignment.')
+for statement in ("UPDATE zova_auth_states SET nonce_hash='replaced'",
+                  "UPDATE nova_oauth_states SET platform='tiktok'",
+                  "UPDATE zova_pending_connections SET encrypted_payload='replaced'"):
+    try:
+        with reference_restored.begin() as c:c.execute(text(statement))
+    except DBAPIError as exc:assert getattr(exc.orig,'sqlstate',None)=='23514'
+    else:raise AssertionError('Restored authorization state allowed reassignment')
+print('Restored Apple/social/pending state guards reject altered authorization.')
 try:
     with reference_restored.begin() as c:
         c.execute(text('UPDATE zova_brands SET user_id=(SELECT MAX(id) FROM nova_users)'))
