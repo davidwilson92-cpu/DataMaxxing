@@ -25,6 +25,7 @@
 | Account row isolation foundation | Offline forced/restrictive policies on 13 account tables; bound owner reads and limited profile edits; verified policy manifest | CI 569 PostgreSQL tests passed, including restored isolation; dedicated service integration remains open; not deployed |
 | Account authority verification | Rechecks role bypass/creation/inheritance/destructive privileges and helper grant delegation; owner CRUD and sensitive mutation tests | CI 576 PostgreSQL tests passed; point-in-time offline verification, not live drift monitoring; not deployed |
 | Linked identity and issued-token integrity | Five-table immutable authority guards and one-way token consumption; explicit migration and startup/service verification | CI 587 PostgreSQL tests passed including preserved records, recovery/MFA flows and restored identity rejection; not deployed |
+| Pending authorization integrity | Apple/social/pending claims immutable; consumption cannot reverse; pending credentials erase-only; eight-table superseding migration | CI 595 PostgreSQL tests passed including confirmation/callback races and restored authorization checks; no live provider validation or deployment |
 | Database read isolation rollout | Web/auth/worker context integration, final grants and account/legacy mapping unfinished | Release blocker; no production activation |
 
 Earlier entries below are historical, not evidence of current deployment.

@@ -1,0 +1,34 @@
+{
+  "tested_commit": "5623847e457f20fb90e57272acc8d469fc0d90a7",
+  "ci_runs": [
+    38012343321
+  ],
+  "sqlite": {
+    "passed": 510,
+    "skipped": 87
+  },
+  "postgresql": {
+    "passed": 595,
+    "skipped": 2
+  },
+  "verified": [
+    "Eight-table identity manifest includes Apple authorization state, social OAuth state and pending connection authority",
+    "Before/after raw SQL state/provider/nonce/intent/issue-time/platform/code-verifier and pending-code/version/expiry attacks rejected",
+    "Used records cannot be reactivated; normal claims and deletion remain available",
+    "Pending encrypted payload can be erased but not replaced or restored; originally absent PKCE cannot be added later",
+    "Existing confirmation, switching, cancellation, expiry cleanup, owner/brand boundaries and concurrent callback tests pass with mocked providers",
+    "Expiry tests use controlled clocks; worker cleanup test does not advance unrelated scheduled work",
+    "Restored Apple nonce, social platform and pending payload changes rejected",
+    "Full application/restricted-service tests, backup restore, image build/smoke and Python dependency audit"
+  ],
+  "corrected_local_failures": [
+    "Matched SQLite canonical workspace declaration to its existing trigger-based required-reference enforcement",
+    "Converted remaining pending-expiry test from rewriting an issued timestamp to a controlled clock"
+  ],
+  "limits": [
+    "Provider/browser live validation remains separate from mocked CI",
+    "Billing/usage ownership and dedicated account service integration remain incomplete",
+    "No continuous drift monitoring or independent/operational certification"
+  ],
+  "deployment": "No production data, roles, grants, provider requests, configuration or deployment changes"
+}
