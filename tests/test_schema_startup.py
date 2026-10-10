@@ -20,6 +20,8 @@ def initialize(engine, initial):
     run_legacy_queue_migration(engine, LegacyPublication.__table__)
     run_mfa_migration(engine, (MfaSettings.__table__, MfaChallenge.__table__))
     apply_references(engine, writes_paused=True)
+    from nova.account_references import apply_accounts
+    apply_accounts(engine,writes_paused=True)
 
 
 def test_postgres_defaults_to_verification_and_unknown_mode_refuses(monkeypatch):

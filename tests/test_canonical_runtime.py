@@ -132,6 +132,12 @@ def test_existing_database_offline_reference_upgrade_preserves_runtime_content(t
                    "from nova.tenant_references import apply_references; "
                    "apply_references(create_engine(os.environ['DATABASE_URL']),writes_paused=True)")
     assert migrated.returncode == 0, migrated.stderr
+    account_blocked=run('import nova.db')
+    assert account_blocked.returncode!=0 and 'Account ownership guards missing' in account_blocked.stderr
+    accounts=run("from sqlalchemy import create_engine; import os; "
+                 "from nova.account_references import apply_accounts; "
+                 "apply_accounts(create_engine(os.environ['DATABASE_URL']),writes_paused=True)")
+    assert accounts.returncode==0,accounts.stderr
     accepted = run("from nova.db import SessionLocal,User,Draft; from sqlalchemy import select; "
                    "from nova.tenant_migration import workspace_key; db=SessionLocal(); "
                    "u=db.scalar(select(User)); d=db.scalar(select(Draft)); "

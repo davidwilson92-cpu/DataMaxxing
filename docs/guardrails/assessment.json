@@ -117,11 +117,11 @@
         },
         {
           "path": "nova/db.py",
-          "sha256": "97352bbfd6b2cf464badeb4e0645a4f490ee23fe53383ca539be2115abe25376"
+          "sha256": "67196c70dcc321dac91845ef06ed6e654788e70270fc090b4c5176d1279f95a9"
         },
         {
           "path": "tests/test_canonical_runtime.py",
-          "sha256": "d82bde6e040c8d3b8b84bf6583591c9946eca0f23bd171cbd1f5127d4c02e25e"
+          "sha256": "bcbd9dd680ff2d46f615cc186da04f4b74e5deebcfe76bb0c0550bba6fa191fe"
         },
         {
           "path": "docs/guardrails/CANONICAL_RUNTIME_20261009.md",
@@ -133,15 +133,15 @@
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "4316afe8418f99c39995fca0a534296d33cce7be0996f226b34f0f94a416d21e"
+          "sha256": "19a774469060035a8c9e160b3da93da1e80dbac2db443ebd9ad8b17a11276caa"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "c43e95a81c34b9f5e64e7bdb60d0a0a98919aa37b954ee52cfceb101e91dd1f3"
+          "sha256": "d486b9f1c4af8e80198cda4df30141f057cdbb825862a05a27ed896e99b78639"
         },
         {
           "path": "scripts/prepare_database.py",
-          "sha256": "137e188dd98b1f3dfbb531f79cfa5ce22ed81dcdee9c9a6603757a23155ba571"
+          "sha256": "2a9ced0cfd7256bfc573dfa460d6a3d1910b08c63601fc8828b793bfed31acc4"
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
@@ -157,7 +157,7 @@
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "507a592a9a2d0ff585892be857b2769b7cce245619d438ce6e44454f9744b312"
+          "sha256": "39937cb18a7f4de1afce4bd3501598ce9e79a6a741b19bd9185910d075e15cbe"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
@@ -185,7 +185,7 @@
         },
         {
           "path": "nova/database_services.py",
-          "sha256": "b6ae6300af37853fec24a399d755add756eb81cf092ea3baf422b51223ad0083"
+          "sha256": "cb85491e7e6dfb4efc5d14841e81e4762d29d44a2bdda9e09a02f0b956dc48c9"
         },
         {
           "path": "tests/test_database_services.py",
@@ -277,7 +277,7 @@
         },
         {
           "path": "nova/account_references.py",
-          "sha256": "290133e50c6c8c9bcf3b50d3d6b0e73bb62f41401500ca99461cd573d4e2aa95"
+          "sha256": "c2e2050d85910327d8bcf6836959458d9ef09f2445d620755643b54535ea3e6e"
         },
         {
           "path": "tests/test_account_references.py",
@@ -326,7 +326,7 @@
         },
         {
           "path": "nova/database_services.py",
-          "sha256": "b6ae6300af37853fec24a399d755add756eb81cf092ea3baf422b51223ad0083"
+          "sha256": "cb85491e7e6dfb4efc5d14841e81e4762d29d44a2bdda9e09a02f0b956dc48c9"
         },
         {
           "path": "tests/test_authentication_pool.py",
@@ -455,11 +455,11 @@
         },
         {
           "path": "nova/db.py",
-          "sha256": "97352bbfd6b2cf464badeb4e0645a4f490ee23fe53383ca539be2115abe25376"
+          "sha256": "67196c70dcc321dac91845ef06ed6e654788e70270fc090b4c5176d1279f95a9"
         },
         {
           "path": "tests/test_canonical_runtime.py",
-          "sha256": "d82bde6e040c8d3b8b84bf6583591c9946eca0f23bd171cbd1f5127d4c02e25e"
+          "sha256": "bcbd9dd680ff2d46f615cc186da04f4b74e5deebcfe76bb0c0550bba6fa191fe"
         },
         {
           "path": "docs/guardrails/CANONICAL_RUNTIME_20261009.md",
@@ -621,7 +621,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "97352bbfd6b2cf464badeb4e0645a4f490ee23fe53383ca539be2115abe25376"
+          "sha256": "67196c70dcc321dac91845ef06ed6e654788e70270fc090b4c5176d1279f95a9"
         },
         {
           "path": "nova/tenant_references.py",
@@ -653,7 +653,7 @@
         },
         {
           "path": "tests/test_canonical_runtime.py",
-          "sha256": "d82bde6e040c8d3b8b84bf6583591c9946eca0f23bd171cbd1f5127d4c02e25e"
+          "sha256": "bcbd9dd680ff2d46f615cc186da04f4b74e5deebcfe76bb0c0550bba6fa191fe"
         },
         {
           "path": "docs/guardrails/CANONICAL_RUNTIME_20261009.md",
@@ -665,15 +665,15 @@
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "4316afe8418f99c39995fca0a534296d33cce7be0996f226b34f0f94a416d21e"
+          "sha256": "19a774469060035a8c9e160b3da93da1e80dbac2db443ebd9ad8b17a11276caa"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "c43e95a81c34b9f5e64e7bdb60d0a0a98919aa37b954ee52cfceb101e91dd1f3"
+          "sha256": "d486b9f1c4af8e80198cda4df30141f057cdbb825862a05a27ed896e99b78639"
         },
         {
           "path": "scripts/prepare_database.py",
-          "sha256": "137e188dd98b1f3dfbb531f79cfa5ce22ed81dcdee9c9a6603757a23155ba571"
+          "sha256": "2a9ced0cfd7256bfc573dfa460d6a3d1910b08c63601fc8828b793bfed31acc4"
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
@@ -689,7 +689,7 @@
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "507a592a9a2d0ff585892be857b2769b7cce245619d438ce6e44454f9744b312"
+          "sha256": "39937cb18a7f4de1afce4bd3501598ce9e79a6a741b19bd9185910d075e15cbe"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
@@ -714,15 +714,15 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "97352bbfd6b2cf464badeb4e0645a4f490ee23fe53383ca539be2115abe25376"
+          "sha256": "67196c70dcc321dac91845ef06ed6e654788e70270fc090b4c5176d1279f95a9"
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "4316afe8418f99c39995fca0a534296d33cce7be0996f226b34f0f94a416d21e"
+          "sha256": "19a774469060035a8c9e160b3da93da1e80dbac2db443ebd9ad8b17a11276caa"
         },
         {
           "path": "nova/database_services.py",
-          "sha256": "b6ae6300af37853fec24a399d755add756eb81cf092ea3baf422b51223ad0083"
+          "sha256": "cb85491e7e6dfb4efc5d14841e81e4762d29d44a2bdda9e09a02f0b956dc48c9"
         },
         {
           "path": "nova/rls.py",
@@ -821,7 +821,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "97352bbfd6b2cf464badeb4e0645a4f490ee23fe53383ca539be2115abe25376"
+          "sha256": "67196c70dcc321dac91845ef06ed6e654788e70270fc090b4c5176d1279f95a9"
         }
       ],
       "reviewed_by": null,
@@ -1304,7 +1304,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "97352bbfd6b2cf464badeb4e0645a4f490ee23fe53383ca539be2115abe25376"
+          "sha256": "67196c70dcc321dac91845ef06ed6e654788e70270fc090b4c5176d1279f95a9"
         }
       ],
       "reviewed_by": null,
@@ -1435,7 +1435,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "97352bbfd6b2cf464badeb4e0645a4f490ee23fe53383ca539be2115abe25376"
+          "sha256": "67196c70dcc321dac91845ef06ed6e654788e70270fc090b4c5176d1279f95a9"
         },
         {
           "path": "nova/legacy_queue.py",
@@ -1493,7 +1493,7 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "97352bbfd6b2cf464badeb4e0645a4f490ee23fe53383ca539be2115abe25376"
+          "sha256": "67196c70dcc321dac91845ef06ed6e654788e70270fc090b4c5176d1279f95a9"
         }
       ],
       "reviewed_by": null,
@@ -1799,11 +1799,11 @@
         },
         {
           "path": "nova/db.py",
-          "sha256": "97352bbfd6b2cf464badeb4e0645a4f490ee23fe53383ca539be2115abe25376"
+          "sha256": "67196c70dcc321dac91845ef06ed6e654788e70270fc090b4c5176d1279f95a9"
         },
         {
           "path": "tests/test_canonical_runtime.py",
-          "sha256": "d82bde6e040c8d3b8b84bf6583591c9946eca0f23bd171cbd1f5127d4c02e25e"
+          "sha256": "bcbd9dd680ff2d46f615cc186da04f4b74e5deebcfe76bb0c0550bba6fa191fe"
         },
         {
           "path": "docs/guardrails/CANONICAL_RUNTIME_20261009.md",
@@ -1815,15 +1815,15 @@
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "4316afe8418f99c39995fca0a534296d33cce7be0996f226b34f0f94a416d21e"
+          "sha256": "19a774469060035a8c9e160b3da93da1e80dbac2db443ebd9ad8b17a11276caa"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "c43e95a81c34b9f5e64e7bdb60d0a0a98919aa37b954ee52cfceb101e91dd1f3"
+          "sha256": "d486b9f1c4af8e80198cda4df30141f057cdbb825862a05a27ed896e99b78639"
         },
         {
           "path": "scripts/prepare_database.py",
-          "sha256": "137e188dd98b1f3dfbb531f79cfa5ce22ed81dcdee9c9a6603757a23155ba571"
+          "sha256": "2a9ced0cfd7256bfc573dfa460d6a3d1910b08c63601fc8828b793bfed31acc4"
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",
@@ -1839,7 +1839,7 @@
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "507a592a9a2d0ff585892be857b2769b7cce245619d438ce6e44454f9744b312"
+          "sha256": "39937cb18a7f4de1afce4bd3501598ce9e79a6a741b19bd9185910d075e15cbe"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
@@ -2023,7 +2023,7 @@
         },
         {
           "path": "nova/database_services.py",
-          "sha256": "b6ae6300af37853fec24a399d755add756eb81cf092ea3baf422b51223ad0083"
+          "sha256": "cb85491e7e6dfb4efc5d14841e81e4762d29d44a2bdda9e09a02f0b956dc48c9"
         },
         {
           "path": "nova/service_permissions.py",
@@ -2245,19 +2245,19 @@
       "evidence": [
         {
           "path": "nova/db.py",
-          "sha256": "97352bbfd6b2cf464badeb4e0645a4f490ee23fe53383ca539be2115abe25376"
+          "sha256": "67196c70dcc321dac91845ef06ed6e654788e70270fc090b4c5176d1279f95a9"
         },
         {
           "path": "nova/schema_startup.py",
-          "sha256": "4316afe8418f99c39995fca0a534296d33cce7be0996f226b34f0f94a416d21e"
+          "sha256": "19a774469060035a8c9e160b3da93da1e80dbac2db443ebd9ad8b17a11276caa"
         },
         {
           "path": "tests/test_schema_startup.py",
-          "sha256": "c43e95a81c34b9f5e64e7bdb60d0a0a98919aa37b954ee52cfceb101e91dd1f3"
+          "sha256": "d486b9f1c4af8e80198cda4df30141f057cdbb825862a05a27ed896e99b78639"
         },
         {
           "path": "scripts/prepare_database.py",
-          "sha256": "137e188dd98b1f3dfbb531f79cfa5ce22ed81dcdee9c9a6603757a23155ba571"
+          "sha256": "2a9ced0cfd7256bfc573dfa460d6a3d1910b08c63601fc8828b793bfed31acc4"
         },
         {
           "path": "docs/guardrails/RESTRICTED_STARTUP_20261009.md",

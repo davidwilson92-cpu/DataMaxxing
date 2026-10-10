@@ -17,6 +17,7 @@ def main():
         parser.error('Set ZOVA_MIGRATION_DATABASE_URL explicitly; runtime credentials are not used')
     os.environ['DATABASE_URL']=url
     os.environ['ZOVA_SCHEMA_MODE']='bootstrap'
+    os.environ['ZOVA_OFFLINE_ACCOUNT_PREPARATION']='1'
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
     try:
         # db imports models and applies the versioned additive migrations.

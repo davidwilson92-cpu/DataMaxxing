@@ -159,6 +159,8 @@ def create_services(identity_engine, runtime_engine, issuer_engine, *, authentic
     if len(set(roles)) != len(engines) or len({tuple(row[1:]) for row in details}) != 1:
         raise ValueError('Service identities must be distinct and use the same database and schema')
     with identity_engine.connect() as c:
+        from .account_references import verify_account_guards
+        verify_account_guards(c)
         verify_context_functions(c, runtime_roles=[roles[1]])
         verify_workspace_policies(c, runtime_roles=[roles[1]])
         for left in roles:
