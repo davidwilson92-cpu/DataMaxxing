@@ -77,7 +77,7 @@ def test_publication_retry_and_release_are_idempotent():
         allowances.reserve(db,uid,'publications',f'thread:{uid}',3);db.commit()
         allowances.reserve(db,uid,'publications',f'thread:{uid}',3);db.commit()
         assert allowances.count(db,uid,'publications')==3
-        allowances.finish(db,f'thread:{uid}',False);db.commit()
+        allowances.finish(db,uid,'publications',f'thread:{uid}',False);db.commit()
         assert allowances.count(db,uid,'publications')==0
 
 
@@ -125,7 +125,7 @@ def test_publication_quota_rolls_back_review_and_cancel_releases(monkeypatch):
     with SessionLocal() as db:
         assert db.get(PublishReview,approved['review_token']).status=='review'
         assert db.get(Draft,body['draft_id']).status=='draft'
-        allowances.finish(db,f'prior:{uid}',False);db.commit()
+        allowances.finish(db,uid,'publications',f'prior:{uid}',False);db.commit()
     assert client.post('/api/schedule',json=approved).status_code==200
     with SessionLocal() as db:
         assert allowances.count(db,uid,'publications')==1

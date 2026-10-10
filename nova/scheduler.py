@@ -96,7 +96,7 @@ def process_due(limit: int = 25) -> dict[str, int]:
                 elif remote=='FAILED':
                     from .allowances import finish
                     item.status='failed';stored['error']='TikTok reported this publication failed. Review before retrying.'
-                    finish(db,f'publication:{item.id}',False)
+                    finish(db,item.user_id,'publications',f'publication:{item.id}',False)
                 item.result_json=json.dumps(stored);db.commit()
                 db.execute(update(Activity).where(Activity.user_id==item.user_id,Activity.brand_id==item.brand_id,Activity.draft_id==item.draft_id,Activity.platform==item.platform,Activity.platform_post_id==stored.get('post_id'),Activity.status=='pending').values(status=item.status));db.commit()
                 db.execute(update(ScheduledPost).where(ScheduledPost.user_id==item.user_id,ScheduledPost.brand_id==item.brand_id,ScheduledPost.connection_id==item.connection_id,ScheduledPost.draft_id==item.draft_id,ScheduledPost.platform==item.platform,ScheduledPost.status=='pending').values(status=item.status));db.commit()

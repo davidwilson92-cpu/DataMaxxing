@@ -228,6 +228,15 @@ async def authentication_error(request: Request, exc: HTTPException):
     return await http_exception_handler(request, exc)
 
 
+@app.exception_handler(billing.BillingOwnershipError)
+def billing_ownership_error(request:Request,exc:billing.BillingOwnershipError):
+    if request.method=='GET' and request.url.path=='/subscribe':
+        try:user=current_user(request)
+        except HTTPException:return RedirectResponse('/login',303)
+        return templates.TemplateResponse(request,'billing_unavailable.html',template_context(request,user),status_code=503)
+    return JSONResponse({'detail':'Your billing details need a support review. Your saved work is safe.'},status_code=503)
+
+
 def bootstrap_legacy_account() -> None:
     needed = ["BOOTSTRAP_CREATOR_API_KEY","X_API_KEY","X_API_SECRET","X_ACCESS_TOKEN","X_ACCESS_TOKEN_SECRET","X_USERNAME"]
     if not all(os.environ.get(x) for x in needed): return

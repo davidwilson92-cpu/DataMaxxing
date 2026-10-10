@@ -19,6 +19,10 @@ STRIPE_API = 'https://api.stripe.com/v1'
 BLOCKING = {'active','trialing','past_due','unpaid','incomplete','paused'}
 
 
+class BillingOwnershipError(RuntimeError):
+    """A stored billing record does not match the requested account and mode."""
+
+
 def mode():
     value=os.environ.get('STRIPE_MODE','off').lower()
     return value if value in {'test','live'} else 'off'
@@ -94,20 +98,31 @@ def _url(value,host):
     return value
 
 
+def account_for(db,user_id,scope):
+    if type(user_id) is not int or user_id<=0 or scope not in {'test','live'}:
+        raise ValueError('A valid account and billing mode are required')
+    row=db.get(BillingAccount,f'{user_id}:{scope}',populate_existing=True)
+    if row and (row.user_id!=user_id or row.mode!=scope):
+        raise BillingOwnershipError('Billing account ownership is inconsistent. Contact support.')
+    return row
+
+
 def _locked(db,user_id):
-    key=f'{user_id}:{mode()}'
-    if not db.get(BillingAccount,key):
+    scope=mode()
+    key=f'{user_id}:{scope}'
+    if not account_for(db,user_id,scope):
         user=db.get(User,user_id)
-        legacy=mode()=='live'
+        legacy=scope=='live'
         with db.begin_nested():
             try:
-                db.add(BillingAccount(key=key,user_id=user_id,mode=mode(),customer_id=user.stripe_customer_id if legacy else None,subscription_id=user.stripe_subscription_id if legacy else None,status=user.subscription_status if legacy else 'none'))
+                db.add(BillingAccount(key=key,user_id=user_id,mode=scope,customer_id=user.stripe_customer_id if legacy else None,subscription_id=user.stripe_subscription_id if legacy else None,status=user.subscription_status if legacy else 'none'))
                 db.flush()
             except IntegrityError:
                 raise RuntimeError('Billing is busy. Please retry.')
     # A write lock serializes SQLite too; PostgreSQL holds the row lock until commit.
-    db.execute(update(BillingAccount).where(BillingAccount.key==key).values(revision=BillingAccount.revision+1))
-    row=db.scalar(select(BillingAccount).where(BillingAccount.key==key).execution_options(populate_existing=True))
+    changed=db.execute(update(BillingAccount).where(BillingAccount.key==key,BillingAccount.user_id==user_id,BillingAccount.mode==scope).values(revision=BillingAccount.revision+1))
+    if changed.rowcount!=1:raise RuntimeError('Billing account changed. Refresh before trying again.')
+    row=account_for(db,user_id,scope)
     return row
 
 
@@ -214,7 +229,8 @@ def refresh(db,user):
 
 
 def summary(db,user):
-    row=db.get(BillingAccount,f'{user.id}:{mode()}')
+    scope=mode()
+    row=account_for(db,user.id,scope) if scope in {'test','live'} else None
     end=datetime.fromtimestamp(row.period_end,timezone.utc).strftime('%d %b %Y, %H:%M UTC') if row and row.period_end else None
     return {'mode':mode(),'ready':configured(),'checkout_enabled':checkout_enabled(),'plans':{key:plan_label(key) for key in plans()},
         'period_end_label':end,

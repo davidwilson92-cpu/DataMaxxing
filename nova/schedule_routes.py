@@ -51,7 +51,7 @@ def cancel(schedule_id:int,request:Request):
         if claimed.rowcount!=1:db.rollback();raise HTTPException(409,'This job has started or finished. It cannot be cancelled.')
         db.execute(update(Publication).where(Publication.draft_id==row.draft_id,Publication.platform==row.platform,Publication.status.in_(['scheduled','queued'])).values(status='cancelled'))
         publication=db.scalar(select(Publication).where(Publication.draft_id==row.draft_id,Publication.platform==row.platform))
-        if publication:allowances.finish(db,f'publication:{publication.id}',False)
+        if publication:allowances.finish(db,uid,'publications',f'publication:{publication.id}',False)
         db.commit()
         if db.scalar(select(Publication.id).where(Publication.draft_id==row.draft_id)):update_draft_status(db,row.draft_id)
         elif not db.scalar(select(ScheduledPost.id).where(ScheduledPost.draft_id==row.draft_id,ScheduledPost.status!='cancelled')):

@@ -218,7 +218,7 @@ def dispatch(db,publication,payload,publisher=publish_platform):
         if any(not a or (a.user_id,a.brand_id)!=(publication.user_id,publication.brand_id) for a in media):raise RuntimeError('Media unavailable')
         if capability_error(conn,media):raise RuntimeError('Permission changed')
     except RuntimeError:
-        publication.status='failed';publication.result_json=json.dumps({'error':'The reviewed account, media or permissions are unavailable. Reconnect/review before retrying.'});allowances.finish(db,f'publication:{publication.id}',False);db.commit();return
+        publication.status='failed';publication.result_json=json.dumps({'error':'The reviewed account, media or permissions are unavailable. Reconnect/review before retrying.'});allowances.finish(db,publication.user_id,'publications',f'publication:{publication.id}',False);db.commit();return
     from .publication_evidence import recorder
     def record(evidence):
         previous=json.loads(publication.result_json or '{}')
@@ -246,7 +246,7 @@ def dispatch(db,publication,payload,publisher=publish_platform):
     finally:
         recorder.reset(evidence_token)
     result=json.loads(publication.result_json)
-    allowances.finish(db,f'publication:{publication.id}')
+    allowances.finish(db,publication.user_id,'publications',f'publication:{publication.id}')
     db.add(Activity(user_id=publication.user_id,brand_id=publication.brand_id,draft_id=publication.draft_id,platform=publication.platform,action='publish',status=publication.status,text='\n\n'.join(target['posts']),platform_post_id=result.get('post_id'),url=result.get('url'),error=result.get('error')))
     db.commit()
 
