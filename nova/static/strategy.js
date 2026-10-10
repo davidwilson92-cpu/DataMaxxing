@@ -27,10 +27,10 @@ async function strategyTask(button,work){
 async function openNextMove(){
  document.getElementById('strategyPanel').showModal();
  await strategyTask(null,async()=>{
-  const data=await api('/api/strategy');strategyRevision=data.revision;hasConfirmedStrategy=Boolean(data.confirmed.goal);
+  const data=await api('/api/strategy');const reloadPlan=!strategyLoaded||data.revision!==strategyRevision;strategyRevision=data.revision;hasConfirmedStrategy=Boolean(data.confirmed.goal);
   document.getElementById('strategyForm').hidden=!(data.proposal.strategy||hasConfirmedStrategy);
   document.getElementById('recommendButton').hidden=!hasConfirmedStrategy;
-  fillStrategy(data.proposal.strategy||data.confirmed.goal&&data.confirmed||data.defaults);
+  if(reloadPlan)fillStrategy(data.proposal.strategy||data.confirmed.goal&&data.confirmed||data.defaults);
   strategyStepHint(data.proposal.strategy?'proposal':hasConfirmedStrategy?'confirmed':'new');
   document.getElementById('strategyConfirmedState').textContent=data.proposal.strategy?'Review before saving. Your current plan stays in use.':'';
   showStrategyAssumptions(data.proposal.assumptions||[]);
