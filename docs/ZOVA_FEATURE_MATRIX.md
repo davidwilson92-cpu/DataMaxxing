@@ -22,6 +22,7 @@
 | Apple identity validation | Required signed claims, exact client/issuer, nonce and code binding; exchanged identity validated and compared; sanitized provider failures | CI 526 PostgreSQL tests passed with real synthetic RSA signatures; live Apple/browser and key-rotation assurance remain open |
 | Immutable account ownership | Explicit offline migration for 13 account model tables; direct owner reassignment rejected; valid references and anonymous telemetry preserved | CI 548 PostgreSQL tests passed with migrated full application/service fixtures and restored guards; account read isolation remains open; startup enforced below |
 | Account protection startup | Catalog-only runtime/service verification rejects missing/altered guards and weakened FKs; explicit populated offline-upgrade path | CI 557 PostgreSQL tests passed, including drift attacks and restore; account RLS, live rollout and independent assurance remain open |
+| Account row isolation foundation | Offline forced/restrictive policies on 13 account tables; bound owner reads and limited profile edits; verified policy manifest | CI 569 PostgreSQL tests passed, including restored isolation; dedicated service integration remains open; not deployed |
 | Database read isolation rollout | Web/auth/worker context integration, final grants and account/legacy mapping unfinished | Release blocker; no production activation |
 
 Earlier entries below are historical, not evidence of current deployment.

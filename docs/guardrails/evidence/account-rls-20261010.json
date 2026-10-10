@@ -1,0 +1,42 @@
+{
+  "tested_commit": "62dafb0d1207b913448df19201a397cfd2b38e76",
+  "ci_runs": [
+    38010083098
+  ],
+  "sqlite": {
+    "passed": 491,
+    "skipped": 80
+  },
+  "postgresql": {
+    "passed": 569,
+    "skipped": 2
+  },
+  "verified": [
+    "Reproduced unrestricted cross-account preferences before offline policy installation",
+    "All 13 account tables deny unbound reads and isolate authenticated owners",
+    "Explicit preference/brand editing; security/billing/membership writes denied through account role",
+    "Wrong capability, secondary brand, replay and revoked contexts fail closed",
+    "Additional permissive policy and forged helper actor cannot bypass restrictive table checks",
+    "Exact policy/function drift verification and non-superuser trusted-owner context operation",
+    "Foreign insert must fail with explicit PostgreSQL row-security rejection",
+    "Account policies and private preferences survive synthetic backup restore",
+    "Full application tests, image build/smoke and Python dependency audit"
+  ],
+  "corrected_test_failures": [
+    {
+      "run": 38009344422,
+      "reason": "Trusted maintenance fixture needed UPDATE authority for expired-context SELECT FOR UPDATE"
+    },
+    {
+      "run": 38009736679,
+      "reason": "Strengthened rejection assertion exposed nonexistent column in foreign INSERT test; corrected query"
+    }
+  ],
+  "limits": [
+    "Offline foundation only; no runtime service activation",
+    "Authentication, recovery, registration, billing, telemetry, callbacks and workers need dedicated account operation integration",
+    "Exact column grants, secondary identity immutability and legacy isolation unfinished",
+    "Production rehearsal, provider/browser checks, operational assurance and independent review remain open"
+  ],
+  "deployment": "No production role/schema/data/configuration or deployment changes"
+}

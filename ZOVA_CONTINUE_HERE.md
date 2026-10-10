@@ -1,3 +1,13 @@
+# Current increment: offline account row isolation
+
+Validated 62dafb0: CI run 38010083098 passed SQLite 491 / 80 expected skips and PostgreSQL 569 / two expected skips, all 13 account-table isolation checks, restored account policies/private preferences, image build/smoke and Python dependency audit. Two test defects were corrected and recorded. Evidence: docs/guardrails/evidence/account-rls-20261010.json. Production unchanged; full gate has 80 unresolved entries and publication goal remains active.
+
+Read docs/guardrails/ACCOUNT_RLS_20261010.md and nova/account_rls.py. Explicit offline apply_account_rls requires paused writes and restricted runtime roles. Forced/restrictive policies require account.read/account.edit on the authenticated owner's default workspace. Only preferences and brands are editable; security/billing/membership/measurement writes remain denied. Trusted migration-owner exception permits context functions to read membership without recursive RLS; policy supplies CURRENT_USER and cannot be overridden by calling the helper. Source/ACL/policy manifests verified. This is not integrated into deployed service configuration; do not activate it for customers.
+
+NEXT: complete operation tests (including successful own inserts/deletes and denied security mutations), transaction/role drift cases and immutable secondary identity fields. Integrate dedicated account operation authority and exact grants for identity/profile/registration/auth/recovery/billing/telemetry/callback/worker services before requiring account RLS at runtime. Current separated service setup is incompatible with these policies and remains disabled. Preserve existing users/data/keys, explicit publishing approval and unknown outcomes; no paid staging, forced MFA or gate bypass. Operational/independent evidence remains required.
+
+---
+
 # Current increment: account guard startup enforcement
 
 Validated 2d83509: local/CI SQLite 490 passed / 69 expected skips; PostgreSQL 557 passed / two expected skips. CI run 38008122298 passed guard/constraint drift attacks, populated offline-upgrade preservation, restricted-service verification, account/workspace restore, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/account-startup-20261010.json. Production unchanged; full release gate blocked and publication goal active.
