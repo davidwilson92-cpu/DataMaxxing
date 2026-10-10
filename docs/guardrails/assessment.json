@@ -28,8 +28,8 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical owner workspaces/memberships, live capability checks, version-based session revocation and immutable references on all 16 brand-owned tables are implemented. Offline migrations, PostgreSQL forced/restrictive RLS and expiring transaction/backend-bound contexts are tested with real restricted identities. Staged draft, sign-in, optional MFA and recovery routes use separated pools without shared-credential fallback. Startup now verifies actual context-function definitions and all table policy flags, role identifiers, operations and full canonical predicates; drift attacks and restored-definition checks passed at e3376ef. Production is unchanged and staged mode remains disabled. Account-level and legacy references/isolation, shared-member routing, remaining callback/worker/account services, final grants and rollout remain incomplete. Exact table/column/sequence grants for the mapped draft database operations and a table-inaccessible issuer passed restricted-role tests at e2d9534. A separate append-only telemetry identity and task-local request/background routing passed at 7f6c0e3 without mocking draft-save events or shared-credential fallback; worker/reporting authority remains open. Password and Apple signup now commit account/workspace/membership/preferences/identity atomically; duplicate signup preserves revoked membership and existing connections. Validated at 0c11d2c; restricted registration service and historical reconciliation remain open. Offline account ownership migration at 31253ac now protects user references on 13 account model tables, rejects reassignment/invalid owners, preserves anonymous telemetry and passes full application/restricted-service tests plus restored-guard attacks. Production startup enforcement, secondary identity immutability and account-level read/delete/insert isolation remain open. At 2d83509, catalog-only verification and required account migration now enforce ownership guards at runtime and service setup. Full SQLite trigger definitions and PostgreSQL function/trigger/FK validation catch deliberate drift; populated offline upgrade preserves existing identity/content. Account-level operation authorization/RLS and post-startup drift detection remain open. At 62dafb0, offline forced/restrictive account policies for 13 tables passed bound-owner/unbound/foreign/replay/revocation/drift tests, non-superuser migration-owner operation and restored-policy isolation (CI 38010083098). The test suite explicitly rejects foreign inserts through row security. Dedicated service routing and exact account grants remain unfinished; production is unchanged.",
-      "next_action": "Complete account operation tests, secondary identity immutability, dedicated service authority and exact grants before runtime RLS enforcement; finish worker/legacy routing, independent/operational evidence and verified rollout.",
+      "finding": "Canonical owner workspaces/memberships, live capability checks, version-based session revocation and immutable references on all 16 brand-owned tables are implemented. Offline migrations, PostgreSQL forced/restrictive RLS and expiring transaction/backend-bound contexts are tested with real restricted identities. Staged draft, sign-in, optional MFA and recovery routes use separated pools without shared-credential fallback. Startup now verifies actual context-function definitions and all table policy flags, role identifiers, operations and full canonical predicates; drift attacks and restored-definition checks passed at e3376ef. Production is unchanged and staged mode remains disabled. Account-level and legacy references/isolation, shared-member routing, remaining callback/worker/account services, final grants and rollout remain incomplete. Exact table/column/sequence grants for the mapped draft database operations and a table-inaccessible issuer passed restricted-role tests at e2d9534. A separate append-only telemetry identity and task-local request/background routing passed at 7f6c0e3 without mocking draft-save events or shared-credential fallback; worker/reporting authority remains open. Password and Apple signup now commit account/workspace/membership/preferences/identity atomically; duplicate signup preserves revoked membership and existing connections. Validated at 0c11d2c; restricted registration service and historical reconciliation remain open. Offline account ownership migration at 31253ac now protects user references on 13 account model tables, rejects reassignment/invalid owners, preserves anonymous telemetry and passes full application/restricted-service tests plus restored-guard attacks. Production startup enforcement, secondary identity immutability and account-level read/delete/insert isolation remain open. At 2d83509, catalog-only verification and required account migration now enforce ownership guards at runtime and service setup. Full SQLite trigger definitions and PostgreSQL function/trigger/FK validation catch deliberate drift; populated offline upgrade preserves existing identity/content. Account-level operation authorization/RLS and post-startup drift detection remain open. At 62dafb0, offline forced/restrictive account policies for 13 tables passed bound-owner/unbound/foreign/replay/revocation/drift tests, non-superuser migration-owner operation and restored-policy isolation (CI 38010083098). The test suite explicitly rejects foreign inserts through row security. Dedicated service routing and exact account grants remain unfinished; production is unchanged. At d388dd6, account policy verification also rejects changed runtime attributes, privileged inheritance, creation/destructive rights and helper delegation; a real BYPASSRLS drift regression reproduces cross-owner exposure then requires refusal. Owner CRUD and forbidden insert/delete boundaries passed at CI 38010717743, alongside restored policy checks. This remains point-in-time offline assurance, not continuous monitoring or completed service integration.",
+      "next_action": "Protect secondary identity/issued-token authority, integrate dedicated account services and exact grants before runtime RLS enforcement; finish worker/legacy routing, independent/operational evidence and verified rollout.",
       "evidence": [
         {
           "path": "nova/brands.py",
@@ -318,6 +318,14 @@
         {
           "path": "docs/guardrails/evidence/account-rls-20261010.json",
           "sha256": "e7ca3e66950934ed7e5042feead21fe4b66e94be305658290c5e63418f6772d8"
+        },
+        {
+          "path": "docs/guardrails/ACCOUNT_AUTHORITY_20261010.md",
+          "sha256": "760604585badda85fbe4f93ed568c19dd161ce436e4feea38683f8ff51a36b13"
+        },
+        {
+          "path": "docs/guardrails/evidence/account-authority-20261010.json",
+          "sha256": "aa29351d87945b456c7b98bdfb2ddc68a8bcd83a17280e1ab3fa61c7897a220d"
         }
       ],
       "reviewed_by": null,
@@ -438,7 +446,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime SQLite/PostgreSQL regression and synthetic restore passed at dc55d2b; PostgreSQL RLS and complete service authority remain open. At 62dafb0, offline forced/restrictive account policies for 13 tables passed bound-owner/unbound/foreign/replay/revocation/drift tests, non-superuser migration-owner operation and restored-policy isolation (CI 38010083098). The test suite explicitly rejects foreign inserts through row security. Dedicated service routing and exact account grants remain unfinished; production is unchanged.",
+      "finding": "Canonical workspace/owner membership backfill and atomic account/brand provisioning are implemented. Current owner-scoped routes enforce live capability checks; permission changes revoke sessions and queued Studio/older scheduled jobs recheck publishing authority. Shared-team routing, canonical workspace references on every object, legacy authority consolidation and database RLS remain incomplete. Canonical references now map into all brand-owned ORM records and scoped content reads. Fresh schema setup installs guards; existing populated databases require offline reference migration before startup. Runtime SQLite/PostgreSQL regression and synthetic restore passed at dc55d2b; PostgreSQL RLS and complete service authority remain open. At 62dafb0, offline forced/restrictive account policies for 13 tables passed bound-owner/unbound/foreign/replay/revocation/drift tests, non-superuser migration-owner operation and restored-policy isolation (CI 38010083098). The test suite explicitly rejects foreign inserts through row security. Dedicated service routing and exact account grants remain unfinished; production is unchanged. At d388dd6, account policy verification also rejects changed runtime attributes, privileged inheritance, creation/destructive rights and helper delegation; a real BYPASSRLS drift regression reproduces cross-owner exposure then requires refusal. Owner CRUD and forbidden insert/delete boundaries passed at CI 38010717743, alongside restored policy checks. This remains point-in-time offline assurance, not continuous monitoring or completed service integration.",
       "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout.",
       "evidence": [
         {
@@ -512,6 +520,14 @@
         {
           "path": "docs/guardrails/evidence/account-rls-20261010.json",
           "sha256": "e7ca3e66950934ed7e5042feead21fe4b66e94be305658290c5e63418f6772d8"
+        },
+        {
+          "path": "docs/guardrails/ACCOUNT_AUTHORITY_20261010.md",
+          "sha256": "760604585badda85fbe4f93ed568c19dd161ce436e4feea38683f8ff51a36b13"
+        },
+        {
+          "path": "docs/guardrails/evidence/account-authority-20261010.json",
+          "sha256": "aa29351d87945b456c7b98bdfb2ddc68a8bcd83a17280e1ab3fa61c7897a220d"
         }
       ],
       "reviewed_by": null,
@@ -753,7 +769,7 @@
       "status": "unverified",
       "severity": "P1",
       "owner": "Operations and security",
-      "finding": "Candidate PostgreSQL startup is read-only, rejects privileged identities and verifies schema; offline migration and separated restricted service pools are implemented but not production-enabled. Context-function and table-policy drift checks and synthetic restore are tested. Production private networking, TLS enforcement, encrypted storage/backups, credential rotation and complete application/worker/administration identity separation remain unverified. At 62dafb0, offline forced/restrictive account policies for 13 tables passed bound-owner/unbound/foreign/replay/revocation/drift tests, non-superuser migration-owner operation and restored-policy isolation (CI 38010083098). The test suite explicitly rejects foreign inserts through row security. Dedicated service routing and exact account grants remain unfinished; production is unchanged.",
+      "finding": "Candidate PostgreSQL startup is read-only, rejects privileged identities and verifies schema; offline migration and separated restricted service pools are implemented but not production-enabled. Context-function and table-policy drift checks and synthetic restore are tested. Production private networking, TLS enforcement, encrypted storage/backups, credential rotation and complete application/worker/administration identity separation remain unverified. At 62dafb0, offline forced/restrictive account policies for 13 tables passed bound-owner/unbound/foreign/replay/revocation/drift tests, non-superuser migration-owner operation and restored-policy isolation (CI 38010083098). The test suite explicitly rejects foreign inserts through row security. Dedicated service routing and exact account grants remain unfinished; production is unchanged. At d388dd6, account policy verification also rejects changed runtime attributes, privileged inheritance, creation/destructive rights and helper delegation; a real BYPASSRLS drift regression reproduces cross-owner exposure then requires refusal. Owner CRUD and forbidden insert/delete boundaries passed at CI 38010717743, alongside restored policy checks. This remains point-in-time offline assurance, not continuous monitoring or completed service integration.",
       "next_action": "Supply deployment configuration evidence and separate migration/application/worker identities with least privilege.",
       "evidence": [
         {
@@ -827,6 +843,14 @@
         {
           "path": "docs/guardrails/evidence/account-rls-20261010.json",
           "sha256": "e7ca3e66950934ed7e5042feead21fe4b66e94be305658290c5e63418f6772d8"
+        },
+        {
+          "path": "docs/guardrails/ACCOUNT_AUTHORITY_20261010.md",
+          "sha256": "760604585badda85fbe4f93ed568c19dd161ce436e4feea38683f8ff51a36b13"
+        },
+        {
+          "path": "docs/guardrails/evidence/account-authority-20261010.json",
+          "sha256": "aa29351d87945b456c7b98bdfb2ddc68a8bcd83a17280e1ab3fa61c7897a220d"
         }
       ],
       "reviewed_by": null,
@@ -1790,7 +1814,7 @@
       "status": "partial",
       "severity": "P0",
       "owner": "Engineering",
-      "finding": "Synthetic tests cover current owner membership, cross-owner/brand endpoints, worker/reconciliation boundaries, direct SQL ownership attacks, canonical runtime reads and migrated restore. A real restricted PostgreSQL login serves a draft and cannot change schema/guards/migration records. RLS read attacks across every sensitive table, complete shared/legacy service authority and deployed-role validation are still required. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation passed at b6e1475. It is not activated in normal web/worker flows or production. At 62dafb0, offline forced/restrictive account policies for 13 tables passed bound-owner/unbound/foreign/replay/revocation/drift tests, non-superuser migration-owner operation and restored-policy isolation (CI 38010083098). The test suite explicitly rejects foreign inserts through row security. Dedicated service routing and exact account grants remain unfinished; production is unchanged.",
+      "finding": "Synthetic tests cover current owner membership, cross-owner/brand endpoints, worker/reconciliation boundaries, direct SQL ownership attacks, canonical runtime reads and migrated restore. A real restricted PostgreSQL login serves a draft and cannot change schema/guards/migration records. RLS read attacks across every sensitive table, complete shared/legacy service authority and deployed-role validation are still required. A separate offline RLS/context foundation is implemented for the 16 brand-owned tables; real PostgreSQL attack and restored-policy validation passed at b6e1475. It is not activated in normal web/worker flows or production. At 62dafb0, offline forced/restrictive account policies for 13 tables passed bound-owner/unbound/foreign/replay/revocation/drift tests, non-superuser migration-owner operation and restored-policy isolation (CI 38010083098). The test suite explicitly rejects foreign inserts through row security. Dedicated service routing and exact account grants remain unfinished; production is unchanged. At d388dd6, account policy verification also rejects changed runtime attributes, privileged inheritance, creation/destructive rights and helper delegation; a real BYPASSRLS drift regression reproduces cross-owner exposure then requires refusal. Owner CRUD and forbidden insert/delete boundaries passed at CI 38010717743, alongside restored policy checks. This remains point-in-time offline assurance, not continuous monitoring or completed service integration.",
       "next_action": "Build a complete object/operation attack matrix and run it under restricted PostgreSQL identities with RLS.",
       "evidence": [
         {
@@ -1924,6 +1948,14 @@
         {
           "path": "docs/guardrails/evidence/account-rls-20261010.json",
           "sha256": "e7ca3e66950934ed7e5042feead21fe4b66e94be305658290c5e63418f6772d8"
+        },
+        {
+          "path": "docs/guardrails/ACCOUNT_AUTHORITY_20261010.md",
+          "sha256": "760604585badda85fbe4f93ed568c19dd161ce436e4feea38683f8ff51a36b13"
+        },
+        {
+          "path": "docs/guardrails/evidence/account-authority-20261010.json",
+          "sha256": "aa29351d87945b456c7b98bdfb2ddc68a8bcd83a17280e1ab3fa61c7897a220d"
         }
       ],
       "reviewed_by": null,

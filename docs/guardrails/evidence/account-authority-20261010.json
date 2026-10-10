@@ -1,0 +1,30 @@
+{
+  "tested_commit": "d388dd660f4630edb1df7af703e4abf936f78c91",
+  "ci_runs": [
+    38010717743
+  ],
+  "sqlite": {
+    "passed": 491,
+    "skipped": 87
+  },
+  "postgresql": {
+    "passed": 576,
+    "skipped": 2
+  },
+  "verified": [
+    "Role BYPASSRLS exposes both synthetic owners despite unchanged policies; verifier rejects changed authority",
+    "Role creation, schema creation, TRUNCATE, inherited predefined privilege and function grant-option drift rejected",
+    "Verifier is read-only; does not silently alter role configuration",
+    "All 13 account tables reject read-context inserts with explicit row-security errors and return zero deleted records",
+    "Editing context cannot delete sensitive or foreign records; own preferences replacement and temporary brand create/delete succeed",
+    "Both owners records preserved after operation tests",
+    "Full account/workspace backup restore, deployable image build/smoke and Python dependency audit"
+  ],
+  "limits": [
+    "Not continuous monitoring or prevention of later administrative changes",
+    "Offline account foundation remains incompatible with current partial service configuration until dedicated account authorities are integrated",
+    "Direct SQL brand test does not implement atomic application workspace provisioning",
+    "Immutable secondary identities, exact account grants, remaining services and independent/operational validation open"
+  ],
+  "deployment": "Production unchanged; no live data, grants, roles, provider writes or deployment"
+}
