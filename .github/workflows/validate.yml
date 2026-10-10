@@ -20,7 +20,7 @@ jobs:
           node-version: '22'
       - name: Check interactive planning behavior
         run: |
-          node --test tests/strategy_onboarding.test.cjs tests/schedule_agenda.test.cjs
+          node --test tests/strategy_onboarding.test.cjs tests/schedule_agenda.test.cjs tests/next_move_journey.test.cjs
           node tests/studio_clarity_client.cjs
           for file in strategy analytics drafts; do node --check "nova/static/$file.js"; done
       - run: python -m pip_audit --format json -o dependency-audit.json

@@ -51,6 +51,9 @@ def test_next_move_is_idempotent_and_generated(monkeypatch):
     saved=c.get('/api/drafts/'+str(one.json()['draft_id'])).json()
     assert saved['variants']['instagram']['posts'] and saved['status']=='draft'
     assert saved['workspace']['instagram_format']=='post'
+    assert saved['workspace']['platform_selection_explicit'] is True
+    assert saved['workspace']['active_platform']=='instagram'
+    assert saved['title']==items[0]['title']
 
 
 def test_generation_failure_keeps_recommendation(monkeypatch):

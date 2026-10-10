@@ -81,3 +81,5 @@ Current production baseline: main `78d9924` (21 September Instagram reauthentica
 | Privacy | Measurement disclosure and assisted workflow documented | Legal bases, exact retention/transfer/provider facts and operator approval remain external; no compliance certification |
 
 See `COMMERCIAL_OPERATIONS_20260920.md`, `CUSTOMER_VALIDATION_20260920.md` and `COMMERCIAL_READINESS_EVIDENCE_20260920.md`. Provider approval is never inferred from code, old credentials, a connected status or a mock.
+
+Next move simplification: automatically fills empty/stale recommendations; post-first card with one draft action; compact alternatives/context/settings; linked draft title and explicit platform saved. Browser synthetic goal-to-draft/reload and failure/late-navigation harnesses validated. Live model relevance remains a separate check. See NEXT_MOVE_SIMPLE_20261010.md.

@@ -1,0 +1,26 @@
+{
+  "deployed_commit": "4c0b0419beb6944bd8e0db3189432d259e9efded",
+  "render_deploy": "dep-db52dg3rjlhs73abnrr0",
+  "live_at_utc": "2026-10-10T11:52:45Z",
+  "ci_run": 38049756412,
+  "sqlite_passed": 265,
+  "postgresql_passed": 265,
+  "skipped_each": 1,
+  "live_checks": {
+    "/health": {
+      "status": 200
+    },
+    "/login": {
+      "status": 200
+    },
+    "/signup": {
+      "status": 200
+    },
+    "/static/studio-experience.js": {
+      "status": 200,
+      "matches_candidate": true
+    }
+  },
+  "startup": "Transient 502 during deployment; recovered after startup",
+  "scope": "Focused UX beta only; broader security migration remains deferred"
+}

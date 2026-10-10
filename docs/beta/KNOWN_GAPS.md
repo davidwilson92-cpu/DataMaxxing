@@ -26,3 +26,9 @@ The saved register retains all 79 sections from the broader candidate at f1dcc0f
 ## Rollback
 
 Redeploy live baseline 38f1c265 while retaining data, uploads, credentials, session keys, publication ledgers and additive title/performance schema. Do not restore stale customer data or replay uncertain publications. Stop dispatch and investigate if a publication outcome is unclear. See docs/UX_RELEASE_20261008.md.
+
+## Next move follow-up, 10 October 2026
+
+Reproduced on the deployed beta: a confirmed strategy with no action records opened an empty, verbose panel and required a misleading Refresh action. The focused update fetches missing/stale ideas on opening, prioritises post drafts, collapses alternative ideas/context/settings and retains manual review actions. Generated drafts preserve explicit platform selection and a useful title. Existing save-failure, ownership, expired evidence and publishing approvals remain enforced; late navigation cannot replace a different chat. A busy-state navigation regression in the first pass was found by browser testing and corrected before release.
+
+Local browser validation used synthetic accounts and mocked model/search providers, including setup, confirm, recommendations, keyboard draft creation, reopened linked drafts and reload on a phone-sized viewport. Real-model relevance and every provider outcome are not established by these mocks. All broader security/operational findings above remain open; this update does not mark a commercial section complete.

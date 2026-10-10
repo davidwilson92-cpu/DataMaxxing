@@ -32,3 +32,32 @@
 .strategy-panel .strategy-quick-start .strategy-import{margin:8px 0;padding-top:0}
 
 .strategy-goal-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.strategy-goal-chips button{border:1px solid #d9c9ed;border-radius:999px;background:white;color:#5b21b6;font:inherit;font-size:13px;min-height:44px;padding:7px 10px;cursor:pointer}.strategy-goal-chips button:hover{background:#eee5fb}.strategy-panel #strategyStepHint{margin:8px 0;line-height:1.45}
+
+/* One recommendation, one primary action; supporting detail stays optional. */
+.simple-chat .strategy-panel{width:min(540px,calc(100% - 24px));max-height:calc(100dvh - 32px);border:1px solid #e8dff1;border-radius:24px;padding:22px;overflow-y:auto}
+.strategy-panel #strategyStepHint:empty{display:none}
+.strategy-panel .next-move-featured{margin-top:16px;padding:22px;border:1px solid #e5d5fa;border-radius:20px;background:linear-gradient(145deg,#faf6ff,#fff)}
+.strategy-panel .move-meta{display:flex;justify-content:space-between;gap:12px;font-size:12px;font-weight:600;color:#7136b5;margin:0 0 14px}
+.strategy-panel .next-move h3{font-size:23px;line-height:1.25;letter-spacing:-.5px;margin:0 0 20px;overflow-wrap:anywhere}
+.strategy-panel .move-draft{width:100%;display:flex;justify-content:space-between;align-items:center;min-height:48px;border-radius:12px;background:#7c3aed;color:#fff;font-weight:600;padding:12px 16px}
+.strategy-panel .move-context>summary,.strategy-panel .move-options>summary{font-size:13px;font-weight:400;color:#665770;display:list-item;align-content:center;line-height:22px}
+.strategy-panel .move-context{margin-top:8px}
+.strategy-panel .move-options{border-top:1px solid #eee6f4}
+.strategy-panel .move-alternatives{margin:8px 0;border-bottom:1px solid #eee6f4}
+.strategy-panel .move-alternatives>summary{color:#66349f;font-size:14px}
+.strategy-panel .move-alternatives .next-move{padding:16px 4px}
+.strategy-panel #recommendButton{margin:8px 0 0;width:100%;border:0;background:transparent;font-size:14px}
+.strategy-panel .move-approval-note{text-align:center;color:#74687d;font-size:12px;margin:6px 0 16px}
+.strategy-panel>details{margin-top:0;padding-top:0}
+.strategy-panel>details>summary{font-size:14px}
+.strategy-panel .move-empty{padding:18px 0;text-align:center}
+.strategy-panel .move-empty h3{font-size:21px;margin:0 0 6px}
+.strategy-panel #strategyConfirmedState:empty{display:none}
+@media(max-width:480px){.simple-chat .strategy-panel{padding:16px;border-radius:20px}.strategy-panel .next-move-featured{padding:16px}.strategy-panel .next-move h3{font-size:21px}.strategy-panel .move-meta{flex-wrap:wrap;gap:4px 12px}}
+
+.strategy-panel .move-options{padding-top:8px}.strategy-panel .move-options .quiet-button{display:block;width:100%;text-align:left}
+.strategy-panel .strategy-quick-start[open]>summary{display:none}
+.strategy-panel #nextMoveSettings>details{border-top:1px solid #eee6f4}
+.strategy-panel .next-move-featured{padding:18px}
+.strategy-panel .move-approval-note{margin:4px 0 8px}
+.strategy-panel #strategyActions .move-meta{margin:0 0 12px}
