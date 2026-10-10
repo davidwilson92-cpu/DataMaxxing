@@ -130,6 +130,61 @@ def test_offline_only_requires_pause():
     with pytest.raises(ValueError,match='Pause'):apply_account_rls(None,runtime_roles=['runtime'])
 
 
+def test_account_owner_crud_and_forbidden_security_operations(account_rls_db):
+    admin,runtime,issuer,roles,uids=account_rls_db
+    with runtime.begin() as c:
+        bound(c,issuer,roles[0],uids[0],'account.read')
+        for name in ACCOUNT_TABLES:
+            assert c.execute(text(f'DELETE FROM {name} WHERE user_id=:uid'),{'uid':uids[0]}).rowcount==0,name
+            # Existing rows provide a complete valid shape. RLS must reject the
+            # attempted copy before uniqueness checks; verify the actual reason.
+            with pytest.raises(DBAPIError) as failure:
+                with c.begin_nested():
+                    c.execute(text(f'INSERT INTO {name} SELECT * FROM {name} WHERE user_id=:uid'),{'uid':uids[0]})
+            assert failure.value.orig.sqlstate=='42501',name
+            assert 'row-level security' in str(failure.value.orig),name
+    with runtime.begin() as c:
+        bound(c,issuer,roles[0],uids[0],'account.edit')
+        for name in ACCOUNT_TABLES-{'nova_creator_preferences','zova_brands'}:
+            assert c.execute(text(f'DELETE FROM {name} WHERE user_id=:uid'),{'uid':uids[0]}).rowcount==0,name
+        assert c.execute(text('DELETE FROM nova_creator_preferences WHERE user_id=:uid'),{'uid':uids[1]}).rowcount==0
+        assert c.execute(text('DELETE FROM nova_creator_preferences WHERE user_id=:uid'),{'uid':uids[0]}).rowcount==1
+        c.execute(models.CreatorPreferences.__table__.insert().values(user_id=uids[0],writing_tone='Recreated'))
+        bid=c.scalar(models.Brand.__table__.insert().values(user_id=uids[0],name='Temporary').returning(models.Brand.id))
+        assert c.execute(text('DELETE FROM zova_brands WHERE id=:bid'),{'bid':bid}).rowcount==1
+    with admin.connect() as c:
+        assert c.scalar(text('SELECT writing_tone FROM nova_creator_preferences WHERE user_id=:uid'),{'uid':uids[0]})=='Recreated'
+        assert c.scalar(text('SELECT writing_tone FROM nova_creator_preferences WHERE user_id=:uid'),{'uid':uids[1]})==f'private-{uids[1]}'
+        for name in ACCOUNT_TABLES:
+            assert set(c.scalars(text(f'SELECT user_id FROM {name}')))==set(uids),name
+
+
+@pytest.mark.parametrize('change',['bypass','create_role','schema_create','truncate','inherited','grant_option'])
+def test_account_verifier_rejects_changed_runtime_authority(account_rls_db,change):
+    admin,runtime,_,roles,uids=account_rls_db
+    role=roles[0]
+    with admin.begin() as c:
+        schema=c.scalar(text('SELECT current_schema()'))
+        statement={
+            'bypass':f'ALTER ROLE {role} BYPASSRLS',
+            'create_role':f'ALTER ROLE {role} CREATEROLE',
+            'schema_create':f'GRANT CREATE ON SCHEMA {schema} TO {role}',
+            'truncate':f'GRANT TRUNCATE ON nova_creator_preferences TO {role}',
+            'inherited':f'GRANT pg_read_all_data TO {role}',
+            'grant_option':f'GRANT EXECUTE ON FUNCTION zova_account_allowed(integer,name,text[]) TO {role} WITH GRANT OPTION',
+        }[change]
+        c.execute(text(statement))
+    with runtime.connect() as c:
+        if change=='bypass':
+            # Confirm that this role change defeats table policies even though
+            # their complete definitions and forced-RLS flags are unchanged.
+            assert set(c.scalars(text('SELECT user_id FROM nova_creator_preferences')))==set(uids)
+        with pytest.raises(ValueError):verify_account_policies(c,runtime_roles=[role])
+    # Verification reports drift; it does not silently revoke or repair grants.
+    with admin.connect() as c:
+        if change=='bypass':assert c.scalar(text('SELECT rolbypassrls FROM pg_roles WHERE rolname=:role'),{'role':role})
+
+
 @pytest.mark.parametrize('change',['disabled','function'])
 def test_account_policy_drift_refuses_verification(account_rls_db,change):
     admin,_,_,roles,_=account_rls_db

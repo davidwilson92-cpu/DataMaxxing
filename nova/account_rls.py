@@ -29,6 +29,24 @@ def definition(c):
         $$'''
 
 
+def verify_runtime_authority(c,*,runtime_roles,owner):
+    """Recheck effective role authority after installation, without changing it."""
+    q=c.dialect.identifier_preparer.quote
+    schema=q(c.scalar(text('SELECT current_schema()')))
+    for role in set(runtime_roles):
+        attributes=c.execute(text('SELECT rolsuper,rolcreatedb,rolcreaterole,rolreplication,rolbypassrls FROM pg_roles WHERE rolname=:role'),{'role':role}).first()
+        if not attributes or any(attributes):raise ValueError('Restricted account runtime roles required')
+        dangerous=c.scalar(text('''SELECT EXISTS(SELECT 1 FROM pg_roles r WHERE pg_has_role(:role,r.oid,'MEMBER')
+            AND (r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication OR r.rolbypassrls OR r.rolname LIKE 'pg_%'))
+            OR pg_has_role(:role,:owner,'MEMBER')
+            OR has_schema_privilege(:role,current_schema(),'CREATE')
+            OR has_database_privilege(:role,current_database(),'CREATE')'''),{'role':role,'owner':owner})
+        if dangerous:raise ValueError('Account runtime inherits privileged authority')
+        for name in ACCOUNT_TABLES:
+            if c.scalar(text("SELECT has_table_privilege(:role,:table,'TRUNCATE,TRIGGER,REFERENCES')"),{'role':role,'table':f'{schema}.{q(name)}'}):
+                raise ValueError('Account runtime has destructive privileges')
+
+
 def verify_account_policies(c,*,runtime_roles):
     if c.dialect.name!='postgresql' or not runtime_roles:raise ValueError('Account policies require PostgreSQL runtime roles')
     q=c.dialect.identifier_preparer.quote
@@ -48,11 +66,15 @@ def verify_account_policies(c,*,runtime_roles):
         raise ValueError('Account policy function differs from source')
     ids=dict(c.execute(text('SELECT rolname,oid::bigint FROM pg_roles')).all())
     if not set(runtime_roles)<=ids.keys():raise ValueError('Account runtime roles missing')
+    owner=next(name for name,oid in ids.items() if oid==row['owner'])
+    verify_runtime_authority(c,runtime_roles=runtime_roles,owner=owner)
     expected_roles=sorted({ids[r] for r in runtime_roles}|{row['owner']})
-    grants=set(c.scalars(text('''SELECT a.grantee::bigint FROM pg_proc p
+    grants=set(c.execute(text('''SELECT a.grantee::bigint,a.is_grantable FROM pg_proc p
         CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl,acldefault('f',p.proowner))) a
         WHERE p.oid=to_regprocedure(:signature) AND a.privilege_type='EXECUTE' '''),{'signature':signature}))
-    if grants!=set(expected_roles):raise ValueError('Account policy function execution grants differ')
+    if ({oid for oid,_ in grants}!=set(expected_roles)
+        or any(grantable and oid!=row['owner'] for oid,grantable in grants)):
+        raise ValueError('Account policy function execution grants differ')
     literal=String().literal_processor(c.dialect)
     for name in sorted(ACCOUNT_TABLES):
         table=f'{schema}.{q(name)}'
@@ -89,18 +111,7 @@ def apply_account_rls(engine,*,runtime_roles,writes_paused=False):
         for signature in ('zova_issue_context(text,integer,text,integer,integer,text,text,integer,text,integer)','zova_rls_workspace(text[])'):
             if c.scalar(text('SELECT pg_get_userbyid(proowner) FROM pg_proc WHERE oid=to_regprocedure(:signature)'),{'signature':f'{schema}.{signature}'})!=owner:
                 raise ValueError('Account and workspace policy functions must share the trusted migration owner')
-        for role in set(runtime_roles):
-            attributes=c.execute(text('SELECT rolsuper,rolcreatedb,rolcreaterole,rolreplication,rolbypassrls FROM pg_roles WHERE rolname=:role'),{'role':role}).first()
-            if not attributes or any(attributes):raise ValueError('Restricted account runtime roles required')
-            dangerous=c.scalar(text('''SELECT EXISTS(SELECT 1 FROM pg_roles r WHERE pg_has_role(:role,r.oid,'MEMBER')
-                AND (r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication OR r.rolbypassrls OR r.rolname LIKE 'pg_%'))
-                OR pg_has_role(:role,:owner,'MEMBER')
-                OR has_schema_privilege(:role,current_schema(),'CREATE')
-                OR has_database_privilege(:role,current_database(),'CREATE')'''),{'role':role,'owner':owner})
-            if dangerous:raise ValueError('Account runtime inherits privileged authority')
-            for name in ACCOUNT_TABLES:
-                if c.scalar(text("SELECT has_table_privilege(:role,:table,'TRUNCATE,TRIGGER,REFERENCES')"),{'role':role,'table':f'{schema}.{q(name)}'}):
-                    raise ValueError('Account runtime has destructive privileges')
+        verify_runtime_authority(c,runtime_roles=runtime_roles,owner=owner)
         for name in sorted(ACCOUNT_TABLES):
             table=f'{schema}.{q(name)}'
             if c.scalar(text('SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid=CAST(:table AS regclass)'),{'table':table})!=owner:
