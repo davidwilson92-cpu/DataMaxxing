@@ -1,3 +1,13 @@
+# Current increment: explicit usage and billing ownership
+
+Validated 0f8ada52e156950ca338a86b1f8aa4f200b53a0e: local/CI SQLite 524 passed / 87 expected skips; PostgreSQL 609 passed / two expected skips. CI 38048348613 passed restore, image build/smoke and dependency audit. Browser static synthetic billing support page reviewed at 1280x720 and 390x844 with visible keyboard focus. Evidence: docs/guardrails/evidence/usage-ownership-20261010.json. Production unchanged; full gate remains blocked; publication goal active.
+
+Read docs/guardrails/USAGE_OWNERSHIP_20261010.md. allowances.finish now requires (db,uid,kind,key,success=True); all known callers updated. reserve and finish freshly resolve rows under existing account lock and reject owner/kind mismatch. Released records can legitimately move month/amount. billing.account_for verifies canonical key against owner/mode; _locked refuses off-mode creation. summary retains disabled/free-beta access; disabled reservation limits skip tier lookup. Mismatch page preserves signed-in navigation without foreign details/checkout. Initial full-suite failure corrected by making mocked checkout fixture explicitly test mode and adding separate disabled-mode regression. No real providers used.
+
+NEXT: database billing/usage authority invariants. Inspect BillingAccount key/user/mode and customer assignment (None to assigned once); preserve legitimate subscription/status changes and legacy customer migration. Usage key/user/kind immutable, while released retry period/amount legitimately change. Then dedicated account lifecycle routing/exact grants and account RLS runtime integration; do not activate partial configuration. Preserve users/data/keys, explicit publishing approvals, uncertain outcomes and testing billing settings. No paid staging, forced MFA or gate bypass. Operational and independent evidence remains required.
+
+---
+
 # Current increment: pending authorization state integrity
 
 Validated 5623847: local/CI SQLite 510 passed / 87 expected skips; PostgreSQL 595 passed / two expected skips. CI run 38012343321 passed immutable Apple/social/pending claims, erase-only pending credentials, late-PKCE rejection, confirmation/switch/cancel/expiry/concurrent callback regressions, restored authorization/identity/account/workspace protection, image build/smoke and dependency audit. Evidence: docs/guardrails/evidence/authorization-state-20261010.json. Production unchanged; full gate blocked and publication goal active.

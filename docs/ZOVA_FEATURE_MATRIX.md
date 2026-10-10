@@ -124,3 +124,5 @@ Current production baseline: main `78d9924` (21 September Instagram reauthentica
 
 See `COMMERCIAL_OPERATIONS_20260920.md`, `CUSTOMER_VALIDATION_20260920.md` and `COMMERCIAL_READINESS_EVIDENCE_20260920.md`. Provider approval is never inferred from code, old credentials, a connected status or a mock.
 
+
+Usage/billing ownership increment (10 October 2026): explicit owner/kind accounting and canonical billing-key checks validated at 0f8ada5. SQLite 524/87 expected skips; PostgreSQL 609/2 expected skips; restored guards and image checks pass. Synthetic billing support screen reviewed at desktop/mobile widths and keyboard focus checked. Database billing/usage identity invariants, dedicated service integration and production release remain open. See guardrails/USAGE_OWNERSHIP_20261010.md.

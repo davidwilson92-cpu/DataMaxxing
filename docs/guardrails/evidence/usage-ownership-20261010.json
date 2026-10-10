@@ -1,0 +1,34 @@
+{
+  "tested_commit": "0f8ada52e156950ca338a86b1f8aa4f200b53a0e",
+  "ci_runs": [
+    38048348613
+  ],
+  "sqlite": {
+    "passed": 524,
+    "skipped": 87
+  },
+  "postgresql": {
+    "passed": 609,
+    "skipped": 2
+  },
+  "verified": [
+    "Usage reservation and completion reject mismatched owner or kind without modifying records",
+    "Released reservations can be reused in a new month with a different amount; concurrent matching retries count once",
+    "Every publication/schedule/series/AI finish call supplies explicit owner and kind",
+    "Billing canonical key lookup rejects stored owner/mode mismatch before display or lock",
+    "Disabled billing does not create off-mode records; disabled limits do not query billing for reservation",
+    "Billing support page retains signed-in navigation and hides foreign billing details and checkout",
+    "Static synthetic browser preview checked at 1280x720 and 390x844; keyboard focus on Back to Studio visible",
+    "Full suite, PostgreSQL synthetic restore, hosting image build/smoke and Python dependency audit passed"
+  ],
+  "corrected_local_failures": [
+    "Initial full suite: billing ownership test used disabled mode; corrected fixture to explicit test mode and separately verified disabled behavior"
+  ],
+  "limits": [
+    "Application checks do not replace database identity invariants for billing/usage",
+    "Live provider and operational assurance remain open",
+    "Dedicated account service routing and exact grants remain incomplete; account RLS is offline",
+    "Browser preview was static rendered HTML, not a live end-to-end billing flow"
+  ],
+  "deployment": "No production data, grants, configuration, provider requests or deployment changes"
+}
