@@ -61,6 +61,8 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from nova.rls import issue_context,bind_context,verify_context_functions,verify_workspace_policies
 from nova.account_references import verify_accounts
+from nova.account_rls import verify_account_policies
+from nova.tenant_migration import workspace_key
 with reference_restored.connect() as c:
     assert len(verify_accounts(c)['table_counts'])==13
 try:
@@ -78,6 +80,7 @@ with reference_restored.connect() as a:
 with runtime.connect() as c:
     verify_context_functions(c,runtime_roles=['zova_restore_runtime'])
     verify_workspace_policies(c,runtime_roles=['zova_restore_runtime'])
+    verify_account_policies(c,runtime_roles=['zova_restore_runtime'])
     for table in BRAND_TABLES:assert c.scalar(text(f'SELECT count(*) FROM {table}'))==0
     token=issue_context(issuer,c,user_id=uid,workspace_id=wid,auth_version=8,membership_revision=1,capability='posts.read',runtime_role='zova_restore_runtime')
     bind_context(c,token)
@@ -85,6 +88,13 @@ with runtime.connect() as c:
     assert c.execute(text("UPDATE nova_drafts SET brief='forbidden'")).rowcount==0
     c.commit()
     assert c.scalar(text('SELECT count(*) FROM nova_drafts'))==0
+    assert c.scalar(text('SELECT count(*) FROM nova_creator_preferences'))==0
+    token=issue_context(issuer,c,user_id=uid,workspace_id=workspace_key(uid,0),auth_version=8,membership_revision=1,capability='account.read',runtime_role='zova_restore_runtime')
+    bind_context(c,token)
+    assert c.execute(text('SELECT user_id,writing_tone FROM nova_creator_preferences')).all()==[(uid,'Original account')]
+    c.commit()
+    assert c.scalar(text('SELECT count(*) FROM nova_creator_preferences'))==0
 runtime.dispose();issuer.dispose();reference_restored.dispose()
 print('Restored RLS denies unbound reads, isolates tenants and blocks read-context writes.')
 print('Restored context definitions and complete workspace policy manifest verified.')
+print('Restored account policy manifest and private account isolation verified.')

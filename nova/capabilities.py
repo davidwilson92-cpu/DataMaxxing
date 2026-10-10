@@ -9,7 +9,7 @@ ROLE_CAPABILITIES = {
     'creator': READ | WRITE,
     'publisher': READ | WRITE | PUBLISH,
     'admin': READ | WRITE | PUBLISH | MANAGE,
-    'owner': READ | WRITE | PUBLISH | MANAGE | frozenset({'billing.read', 'billing.manage', 'workspace.delete', 'workspace.transfer'}),
+    'owner': READ | WRITE | PUBLISH | MANAGE | frozenset({'billing.read', 'billing.manage', 'workspace.delete', 'workspace.transfer', 'account.read', 'account.edit'}),
 }
 
 

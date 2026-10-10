@@ -57,7 +57,7 @@
         },
         {
           "path": "nova/capabilities.py",
-          "sha256": "fdff8368448b11e048b10d665e85f3e99790a89c398cb20b2cd40e2ad3159f78"
+          "sha256": "8d0e190ab633a3f032e03671d3afe9c04191260f9b5c201a6a12c9c785946c3e"
         },
         {
           "path": "tests/test_tenant_registry.py",
@@ -435,7 +435,7 @@
         },
         {
           "path": "nova/capabilities.py",
-          "sha256": "fdff8368448b11e048b10d665e85f3e99790a89c398cb20b2cd40e2ad3159f78"
+          "sha256": "8d0e190ab633a3f032e03671d3afe9c04191260f9b5c201a6a12c9c785946c3e"
         },
         {
           "path": "tests/test_tenant_registry.py",
