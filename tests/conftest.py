@@ -22,6 +22,14 @@ for key in ("OPENAI_API_KEY", "SMTP_HOST", "STRIPE_SECRET_KEY", "BOOTSTRAP_CREAT
 import pytest
 import httpx
 
+
+@pytest.fixture(scope='session',autouse=True)
+def migrate_account_ownership():
+    # Explicit isolated migration; production startup never installs these guards.
+    from nova.db import engine
+    from nova.account_references import apply_accounts
+    apply_accounts(engine,writes_paused=True)
+
 @pytest.fixture(autouse=True)
 def block_external_http(monkeypatch):
     """A missing provider mock must fail locally, never make a live request."""

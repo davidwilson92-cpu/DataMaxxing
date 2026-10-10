@@ -39,6 +39,8 @@ def rls_db(registry_db):
     admin, initial=registry_db
     if admin.dialect.name!='postgresql':pytest.skip('Requires real PostgreSQL row-level policies')
     initialize(admin,initial)
+    from nova.account_references import apply_accounts
+    apply_accounts(admin,writes_paused=True)
     with Session(admin) as db:
         users=[models.User(email=f'rls-{i}@example.test',password_hash='synthetic') for i in range(2)]
         db.add_all(users);db.flush();uids=[u.id for u in users]

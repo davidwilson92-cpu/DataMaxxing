@@ -14,13 +14,16 @@ def main():
     parser.add_argument('--apply', action='store_true')
     parser.add_argument('--writes-paused', action='store_true')
     parser.add_argument('--verify', action='store_true')
-    parser.add_argument('--phase', choices=('registry','references'), default='registry')
+    parser.add_argument('--phase', choices=('registry','references','accounts'), default='registry')
     args = parser.parse_args()
     url = os.environ.get('ZOVA_MIGRATION_DATABASE_URL')
     if not url:
         parser.error('Set ZOVA_MIGRATION_DATABASE_URL explicitly; no application credential fallback is used')
     engine = create_engine(url)
-    if args.phase == 'references':
+    if args.phase == 'accounts':
+        from nova.account_references import apply_accounts,verify_accounts,plan_accounts
+        apply_step,verify_step,plan_step = apply_accounts,verify_accounts,plan_accounts
+    elif args.phase == 'references':
         from nova.tenant_references import apply_references, verify_references, plan_references
         apply_step,verify_step,plan_step = apply_references,verify_references,plan_references
     else:

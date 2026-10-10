@@ -60,6 +60,16 @@ import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from nova.rls import issue_context,bind_context,verify_context_functions,verify_workspace_policies
+from nova.account_references import verify_accounts
+with reference_restored.connect() as c:
+    assert len(verify_accounts(c)['table_counts'])==13
+try:
+    with reference_restored.begin() as c:
+        c.execute(text('UPDATE zova_brands SET user_id=(SELECT MAX(id) FROM nova_users)'))
+except DBAPIError as exc:
+    assert getattr(exc.orig,'sqlstate',None)=='23514'
+else:raise AssertionError('Restored account ownership guard allowed reassignment')
+print('Restored account ownership guards and references verified.')
 from nova.tenant_references import BRAND_TABLES
 runtime=create_engine(url.set(database='zova_test_restored',username='zova_restore_runtime',password='synthetic-restore-only'),connect_args=fixture_options)
 issuer=create_engine(url.set(database='zova_test_restored',username='zova_restore_issuer',password='synthetic-restore-only'),connect_args=fixture_options)

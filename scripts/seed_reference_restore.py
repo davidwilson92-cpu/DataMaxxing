@@ -30,6 +30,8 @@ with Session(engine) as db:
     db.commit()
 report=apply_references(engine,writes_paused=True)
 assert len(report['mapped_table_counts'])==16
+from nova.account_references import apply_accounts
+assert len(apply_accounts(engine,writes_paused=True)['table_counts'])==13
 from nova.rls import apply_rls
 from nova.tenant_references import BRAND_TABLES
 with engine.begin() as c:

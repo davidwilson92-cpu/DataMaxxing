@@ -157,7 +157,7 @@
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "39937cb18a7f4de1afce4bd3501598ce9e79a6a741b19bd9185910d075e15cbe"
+          "sha256": "507a592a9a2d0ff585892be857b2769b7cce245619d438ce6e44454f9744b312"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
@@ -673,7 +673,7 @@
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "39937cb18a7f4de1afce4bd3501598ce9e79a6a741b19bd9185910d075e15cbe"
+          "sha256": "507a592a9a2d0ff585892be857b2769b7cce245619d438ce6e44454f9744b312"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
@@ -1578,7 +1578,7 @@
       "evidence": [
         {
           "path": "tests/conftest.py",
-          "sha256": "4f1786169909fca2a63b628ded2da614e1c4ed84dfa826048a2ca7ad6766b83e"
+          "sha256": "f355d688f1ed664cda4818a89b89d37540176c524b11c4f5b3739b5390bccc8f"
         },
         {
           "path": "docs/guardrails/STAGING_PLAN.md",
@@ -1823,7 +1823,7 @@
         },
         {
           "path": "tests/test_rls.py",
-          "sha256": "39937cb18a7f4de1afce4bd3501598ce9e79a6a741b19bd9185910d075e15cbe"
+          "sha256": "507a592a9a2d0ff585892be857b2769b7cce245619d438ce6e44454f9744b312"
         },
         {
           "path": "docs/guardrails/WORKSPACE_RLS_20261009.md",
