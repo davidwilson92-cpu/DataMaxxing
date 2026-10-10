@@ -13,3 +13,5 @@ Validation: focused strategy tests and Node onboarding/journey/schedule/Studio h
 Rollback: redeploy beta 4c0b041 without reverting data. This change has no schema migration. Keep newly created drafts; never resend uncertain publications. Known commercial/security gaps remain in docs/beta/KNOWN_GAPS.md and deferred-register.json.
 
 PR19 deployed as ebb6f48 (Render dep-db585qmk1f9s73e55l9g) at 18:25:42 UTC. CI38075491135 passed 265/one skip on each database. Assets/health/login/signup verified. Live generation exposed a rejected model response despite mocked journey passing. Follow-up adds precise schema constraints and one validated repair; it does not discard source/format restrictions or invent fallback recommendations.
+
+Final verification: PR20 live as4d86fe7 at18:31:51UTC, deployment dep-db588kn40ujc73c8cp90. CI38075939402 passed271/one skip on each database, plus required scoped checks. A real provider recommendation generated successfully; its Draft post opened an actual saved Instagram draft in Studio, survived reload, and became Open draft when revisited. No real publication. See sanitised validation JSON.

@@ -1,0 +1,45 @@
+{
+  "release_class": "limited-beta",
+  "commercial_ready": false,
+  "commit": "4d86fe76eb5c2fc2bfe7388b7b3a6f8491cf5789",
+  "deploy": "dep-db588kn40ujc73c8cp90",
+  "live_at_utc": "2026-10-10T18:31:51Z",
+  "ci_run": 38075939402,
+  "sqlite": {
+    "passed": 271,
+    "skipped": 1
+  },
+  "postgresql": {
+    "passed": 271,
+    "skipped": 1
+  },
+  "required_checks": "passed",
+  "live_checks": [
+    "existing login retained",
+    "recommendations generated from saved confirmed strategy",
+    "AI draft opened in Studio",
+    "Instagram selection retained",
+    "draft content persisted after reload",
+    "linked recommendation reopens existing draft",
+    "health/login/signup HTTP200"
+  ],
+  "synthetic_checks": [
+    "desktop and390x844 mobile layout",
+    "keyboard action",
+    "save failure prevents drafting/navigation",
+    "late workspace response suppression",
+    "malformed recommendations repair once",
+    "failed repair preserves existing actions"
+  ],
+  "real_social_posts": 0,
+  "charges": 0,
+  "limitations": [
+    "One live account/strategy validated, not all model outcomes",
+    "No live social publishing test",
+    "Broader commercial/security gaps remain open"
+  ],
+  "rollback": [
+    "ebb6f48 response-handling only",
+    "4c0b041 full scoped update, retain database and drafts"
+  ]
+}
