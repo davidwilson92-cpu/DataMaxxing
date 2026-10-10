@@ -1,0 +1,19 @@
+{
+  "candidate": "1398c7ececae2de5ab9370e7c43fa9021ba4c11d",
+  "pr": 17,
+  "ci_run": 37841005196,
+  "sqlite": {
+    "passed": 261,
+    "skipped": 1
+  },
+  "postgres": {
+    "passed": 261,
+    "skipped": 1
+  },
+  "dependency_vulnerabilities": 0,
+  "postgres_migration_restore": "passed",
+  "deployment": "blocked",
+  "blocker": "Required Production guardrails check absent; separate guardrail PR remains unmerged",
+  "production_unchanged": "38f1c265d5eeaa6f8ba6cf09445570cc7943d961",
+  "render_export_utc": "2026-10-08T20:35Z"
+}

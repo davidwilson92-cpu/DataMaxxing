@@ -75,3 +75,15 @@ jobs:
         with:
           name: postgres-release-evidence
           path: postgres-tests.xml
+
+  beta-release:
+    name: Production guardrails
+    needs: [synthetic-tests, postgres-release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Verify owner-authorised limited beta scope and retained gaps
+        run: python scripts/check_beta_release.py

@@ -28,3 +28,7 @@ Unlike the broader candidate, this release does not change password formats or i
 Initial remote run: all 259 tests passed on SQLite and PostgreSQL; restore and hosting smoke passed. Dependency gate identified oauthlib 3.3.1 (GHSA-xpv3-w29h-x7cv); pinning patched 4.0.0 and rerunning all checks. Added synthetic legacy X OAuth signing and PostgreSQL old-schema migration rehearsal.
 
 The existing Tweepy dependency caps oauthlib below the patched major version. The server used Tweepy only for its legacy text-post signing path; that path now signs the same X v2 request directly with oauthlib 4.0.0 and the existing HTTP client. Encrypted credentials, endpoint, success/error ledger and legacy approval gate are preserved. Synthetic success/denial signing tests cover this change. Standalone optional scripts installing their own Tweepy are outside the server runtime.
+
+## Final release attempt
+
+NOT DEPLOYED. Candidate `1398c7e`: all four push/PR jobs green; each database suite 261 passed / one expected skip. PostgreSQL upgrade/restore and Docker smoke passed; zero dependency vulnerabilities reported. GitHub rejected merge because the enforced Production guardrails check is missing. It belongs to separate PR #16 and remains blocked by its own open production requirements. No rule was changed and no hosting bypass attempted. Production remains `38f1c265`. Render pre-release export available at 20:35 UTC on 8 October; no customer data downloaded.
