@@ -1,3 +1,9 @@
+# Next move brand refinement — 11 October 2026
+
+Reworked the recommendation panel with a dark Zova card, original translucent Z asset, stronger type, Draft/Skip actions, compact evidence and icon refresh. Removed reason questionnaire and duplicated approval text. Skip advances to the next saved idea and requests more when exhausted, preserving visible cards on save failure. Local desktop/mobile and keyboard journey reviewed; candidate awaits release checks. No backend/model/schema changes. Broader beta defects remain open.
+
+---
+
 # Next move published and verified — 10 October 2026
 
 Live commit 4d86fe76eb5c2fc2bfe7388b7b3a6f8491cf5789, Render dep-db588kn40ujc73c8cp90, service live at 18:31:51 UTC. PR19 delivers the compact recommendation-to-draft journey; PR20 corrects invalid model response handling found during live verification. CI38075939402: 271 passed / one skipped on SQLite and PostgreSQL, required beta scope/restore/image/dependency checks passed.
