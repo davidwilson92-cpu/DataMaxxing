@@ -1,0 +1,39 @@
+{
+  "verified_at": "2026-10-12T07:44:37.164638+00:00",
+  "pr": 22,
+  "merge": "b82b04715c7c48efaa22d0a21d41d90021121cb4",
+  "render_deploy": "dep-db68tbjrjlhs73bfl820",
+  "status": "live",
+  "ci": 38218780881,
+  "sqlite": {
+    "passed": 272,
+    "skipped": 1
+  },
+  "postgres": {
+    "passed": 272,
+    "skipped": 1
+  },
+  "home_http": 200,
+  "assets_match": [
+    "strategy.js",
+    "strategy.css",
+    "social-brand.js",
+    "instagram-official.png"
+  ],
+  "live_checks": [
+    "single card navigation and wrap",
+    "Instagram glyph",
+    "readable review steps",
+    "reminder presets and timezone-labelled custom date"
+  ],
+  "synthetic_checks": [
+    "feedback regeneration",
+    "next-week and custom reminders",
+    "draft creation and reload",
+    "keyboard and mobile"
+  ],
+  "no_real_posts": true,
+  "no_schema_migration": true,
+  "rollback": "562d7a9404dead17ce5fac77279f155544037365",
+  "commercial_gaps": "remain open"
+}
