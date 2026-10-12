@@ -164,6 +164,7 @@ def test_logout_and_foreign_session_revoke():
 
 def test_runtime_scaling_configuration_refuses_unsafe_defaults(monkeypatch):
     from nova.runtime import validate_runtime,database_options
+    monkeypatch.setenv('DATABASE_URL','sqlite:///synthetic-config-only.db')
     monkeypatch.setenv('ZOVA_WEB_REPLICAS','2')
     with pytest.raises(ValueError,match='external'): validate_runtime()
     monkeypatch.setenv('ZOVA_SCHEDULER_MODE','external')
