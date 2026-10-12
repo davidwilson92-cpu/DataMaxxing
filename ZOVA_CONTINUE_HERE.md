@@ -1,3 +1,25 @@
+# Next move visual refinement ready for release checks — 11 October 2026
+
+Candidate15bd98e in PR21. Local browser design/interaction checks passed at desktop,390px and320px widths; see docs/NEXT_MOVE_BRAND_20261011.md. Hosted workflow38174288031 remains queued without started jobs. This design has NOT been merged or deployed. Finish required checks before publishing; do not bypass them. Broader beta gaps remain open.
+
+---
+
+# Next move brand refinement — 11 October 2026
+
+Reworked the recommendation panel with a dark Zova card, original translucent Z asset, stronger type, Draft/Skip actions, compact evidence and icon refresh. Removed reason questionnaire and duplicated approval text. Skip advances to the next saved idea and requests more when exhausted, preserving visible cards on save failure. Local desktop/mobile and keyboard journey reviewed; candidate awaits release checks. No backend/model/schema changes. Broader beta defects remain open.
+
+---
+
+# Next move published and verified — 10 October 2026
+
+Live commit 4d86fe76eb5c2fc2bfe7388b7b3a6f8491cf5789, Render dep-db588kn40ujc73c8cp90, service live at 18:31:51 UTC. PR19 delivers the compact recommendation-to-draft journey; PR20 corrects invalid model response handling found during live verification. CI38075939402: 271 passed / one skipped on SQLite and PostgreSQL, required beta scope/restore/image/dependency checks passed.
+
+Live authenticated verification: empty saved plan automatically generated three recommendations; Draft post created an actual AI-written draft, navigated to Studio, retained Instagram-only selection and content on reload; reopening Next move offers Open draft. Draft23 is the retained unapproved validation draft in workspace0. No real social publication, scheduling, charge or grant change occurred. Health/login/signup returned200; PR19 client asset matched the reviewed source. Desktop/mobile390x844 and keyboard/failure/late-response testing used isolated synthetic data. Saved screenshots include owner data and must not be committed publicly.
+
+Read docs/NEXT_MOVE_SIMPLE_20261010.md and docs/validation/next-move-live-20261010.json. Remaining limitations: live generation was verified for one saved strategy/account, not every provider/model outcome. Invalid output gets one repair; provider outages still require retry. Broader commercial/security backlog remains open in docs/beta/KNOWN_GAPS.md and deferred-register.json and must be prioritised on future updates. No schema migration; rollback to ebb6f48 for the repair or4c0b041 for the full Next move update, preserving drafts/data.
+
+---
+
 # Next move live-model follow-up — 10 October 2026
 
 PR19 is live as ebb6f48. The compact UI and synthetic journey passed, but live recommendations failed strict validation. Current follow-up supplies the exact schema/platform constraints and one bounded repair; awaiting full CI and live verification. Read docs/NEXT_MOVE_SIMPLE_20261010.md. Broader beta gaps remain open.

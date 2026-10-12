@@ -33,31 +33,63 @@
 
 .strategy-goal-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.strategy-goal-chips button{border:1px solid #d9c9ed;border-radius:999px;background:white;color:#5b21b6;font:inherit;font-size:13px;min-height:44px;padding:7px 10px;cursor:pointer}.strategy-goal-chips button:hover{background:#eee5fb}.strategy-panel #strategyStepHint{margin:8px 0;line-height:1.45}
 
-/* One recommendation, one primary action; supporting detail stays optional. */
-.simple-chat .strategy-panel{width:min(540px,calc(100% - 24px));max-height:calc(100dvh - 32px);border:1px solid #e8dff1;border-radius:24px;padding:22px;overflow-y:auto}
-.strategy-panel #strategyStepHint:empty{display:none}
-.strategy-panel .next-move-featured{margin-top:16px;padding:22px;border:1px solid #e5d5fa;border-radius:20px;background:linear-gradient(145deg,#faf6ff,#fff)}
-.strategy-panel .move-meta{display:flex;justify-content:space-between;gap:12px;font-size:12px;font-weight:600;color:#7136b5;margin:0 0 14px}
-.strategy-panel .next-move h3{font-size:23px;line-height:1.25;letter-spacing:-.5px;margin:0 0 20px;overflow-wrap:anywhere}
-.strategy-panel .move-draft{width:100%;display:flex;justify-content:space-between;align-items:center;min-height:48px;border-radius:12px;background:#7c3aed;color:#fff;font-weight:600;padding:12px 16px}
-.strategy-panel .move-context>summary,.strategy-panel .move-options>summary{font-size:13px;font-weight:400;color:#665770;display:list-item;align-content:center;line-height:22px}
-.strategy-panel .move-context{margin-top:8px}
-.strategy-panel .move-options{border-top:1px solid #eee6f4}
-.strategy-panel .move-alternatives{margin:8px 0;border-bottom:1px solid #eee6f4}
-.strategy-panel .move-alternatives>summary{color:#66349f;font-size:14px}
-.strategy-panel .move-alternatives .next-move{padding:16px 4px}
-.strategy-panel #recommendButton{margin:8px 0 0;width:100%;border:0;background:transparent;font-size:14px}
-.strategy-panel .move-approval-note{text-align:center;color:#74687d;font-size:12px;margin:6px 0 16px}
-.strategy-panel>details{margin-top:0;padding-top:0}
-.strategy-panel>details>summary{font-size:14px}
-.strategy-panel .move-empty{padding:18px 0;text-align:center}
-.strategy-panel .move-empty h3{font-size:21px;margin:0 0 6px}
-.strategy-panel #strategyConfirmedState:empty{display:none}
-@media(max-width:480px){.simple-chat .strategy-panel{padding:16px;border-radius:20px}.strategy-panel .next-move-featured{padding:16px}.strategy-panel .next-move h3{font-size:21px}.strategy-panel .move-meta{flex-wrap:wrap;gap:4px 12px}}
 
-.strategy-panel .move-options{padding-top:8px}.strategy-panel .move-options .quiet-button{display:block;width:100%;text-align:left}
+/* Zova idea card: an expressive focal point, with detail off the main path. */
+.simple-chat dialog.strategy-panel{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 32px);padding:20px;border:1px solid #e6e0ed;border-radius:28px;background:#fff;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;box-shadow:0 32px 100px #160c3438}
+.strategy-panel::backdrop{background:#160c345c;backdrop-filter:blur(5px)}
+.strategy-panel header{position:static;border:0;padding:0 0 16px;background:transparent}
+.strategy-panel #strategyPanelTitle{font-size:20px;letter-spacing:-.5px}
+.strategy-panel .move-header-tools{display:flex;gap:4px}
+.strategy-panel .move-header-tools button{width:44px;height:44px;padding:0;border:0;border-radius:50%;background:#f4f1f8;color:#493e58;font-size:24px;display:grid;place-items:center}
+.strategy-panel .move-header-tools button[hidden]{display:none}
+.strategy-panel .move-header-tools button:hover{background:#e9dfff;color:#6426ce}
+.strategy-panel #strategyStepHint:empty,.strategy-panel #strategyStatus:empty,.strategy-panel #strategyConfirmedState:empty{display:none}
+.strategy-panel #strategyActions .next-move{padding:0;border:0;margin:0}
+.strategy-panel .next-move>.move-hero{display:block}
+.strategy-panel .move-hero{position:relative;isolation:isolate;overflow:hidden;background:#171121;color:#fff;border-radius:20px;padding:24px}
+.strategy-panel .move-hero::before{content:"";position:absolute;z-index:-1;inset:0;background:radial-gradient(ellipse at 100% 0,#7034b54a,transparent 65%)}
+.strategy-panel .move-hero::after{content:"";position:absolute;z-index:-1;right:-38px;top:38px;width:220px;height:220px;background:url('/static/zova-mark.svg') center/contain no-repeat;opacity:.12;transform:rotate(-12deg);pointer-events:none}
+.strategy-panel .move-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:0 0 26px;font-size:12px;font-weight:500;color:#d5c5e8}
+.strategy-panel .move-platform{border:1px solid #ffffff30;border-radius:999px;padding:6px 10px;color:#f3eaff;background:#ffffff08}
+.strategy-panel #strategyActions h3{font-size:30px;line-height:1.14;letter-spacing:-1px;font-weight:650;margin:0 0 28px;color:inherit;overflow-wrap:anywhere;max-width:100%;outline-offset:6px}
+.strategy-panel .move-actions{display:flex;gap:10px;align-items:stretch}
+.strategy-panel .move-draft{flex:1;min-width:0;display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:50px;padding:12px 16px;border:1px solid transparent;border-radius:12px;background:#8040df;color:white;font-size:15px;font-weight:650;box-shadow:none}
+.strategy-panel .move-draft:hover{background:#7332d4;transform:none}
+.strategy-panel .move-draft span{font-size:22px;font-weight:400}
+.strategy-panel .move-skip{flex:none;min-height:50px;padding:10px 14px;border:1px solid #ffffff40;border-radius:12px;background:transparent;color:#fff;font:inherit;font-size:14px;cursor:pointer}
+.strategy-panel .move-skip:hover{background:#ffffff15}
+.strategy-panel .move-context{margin:0;padding:0 4px}
+.strategy-panel .move-context>summary{display:flex;justify-content:space-between;align-items:center;min-height:52px;font-size:13px;font-weight:500;color:#65566f;list-style:none}
+.strategy-panel summary::-webkit-details-marker{display:none}
+.strategy-panel .move-context>summary span{font-size:20px;transition:transform .15s}
+.strategy-panel .move-context[open]>summary span{transform:rotate(45deg)}
+.strategy-panel .move-detail-body{padding:0 4px 16px;color:#51465d}
+.strategy-panel .move-detail-body>p{margin:0 0 14px;line-height:1.6;font-size:14px}
+.strategy-panel .move-prep{padding:14px 16px;border-left:2px solid #a56bef;background:#f7f4fa;border-radius:0 12px 12px 0;margin:12px 0}
+.strategy-panel .move-prep>span{font-size:12px;font-weight:650;color:#634082}
+.strategy-panel .move-prep p{margin:4px 0 0}
+.strategy-panel .move-effort{color:#6d5b7b;font-size:12px!important}
+.strategy-panel .move-options{display:flex;gap:8px;border-top:1px solid #eee8f2;padding-top:8px}
+.strategy-panel .move-options button{border-radius:10px;color:#665273;font-size:13px}
+.strategy-panel .source-evidence{margin:8px 0;padding:0 12px;background:#f7f4fa}
+.strategy-panel .move-alternatives{border-top:1px solid #eee8f2;padding:0 4px}
+.strategy-panel .move-alternatives>summary{font-size:14px;min-height:50px;color:#6d28d9;justify-content:space-between}
+.strategy-panel .move-alternatives>summary::after{content:"+";font-size:20px;font-weight:400}
+.strategy-panel .move-alternatives[open]>summary::after{content:"−"}
+.strategy-panel .move-alternatives .move-hero{background:#f4eefb;color:#281839;margin-top:10px;padding:20px}
+.strategy-panel .move-alternatives .move-meta{color:#735886;margin-bottom:18px}
+.strategy-panel .move-alternatives .move-platform{color:#62417d;border-color:#d9c9e8}
+.strategy-panel .move-alternatives .move-skip{color:#62417d;border-color:#cbb6df}
+.strategy-panel #strategyActions .move-alternatives h3{font-size:23px;margin-bottom:20px}
+.strategy-panel #nextMoveSettings{border-top:1px solid #eee8f2;margin:0;padding:0 4px}
+.strategy-panel #nextMoveSettings>summary{font-size:13px;font-weight:500;color:#65566f;min-height:50px}
+.strategy-panel #nextMoveSettings>summary::after{content:"↗";margin-left:auto}
+.strategy-panel #nextMoveSettings>details{border-top:1px solid #eee8f2}
+.strategy-panel .move-empty{padding:28px 8px}
+.strategy-panel .move-empty h3{color:#32253f!important;font-size:24px!important;margin-bottom:8px!important}
 .strategy-panel .strategy-quick-start[open]>summary{display:none}
-.strategy-panel #nextMoveSettings>details{border-top:1px solid #eee6f4}
-.strategy-panel .next-move-featured{padding:18px}
-.strategy-panel .move-approval-note{margin:4px 0 8px}
-.strategy-panel #strategyActions .move-meta{margin:0 0 12px}
+.strategy-panel .move-stale{color:#e0d1ee;font-size:13px}
+.strategy-panel .next-move-checklist{color:#efe4fb;background:#ffffff10}
+.strategy-panel button:focus-visible,.strategy-panel summary:focus-visible{outline:3px solid #b48bff;outline-offset:3px}
+@media(max-width:480px){.simple-chat dialog.strategy-panel{padding:14px;border-radius:24px;max-height:calc(100dvh - 24px)}.strategy-panel .move-hero{padding:20px}.strategy-panel #strategyActions h3{font-size:27px;letter-spacing:-.75px}.strategy-panel .move-meta{margin-bottom:24px;gap:8px}.strategy-panel .move-draft{padding:12px;font-size:14px}.strategy-panel .move-skip{padding:10px 12px}.strategy-panel header{padding-bottom:12px}}
+@media(prefers-reduced-motion:reduce){.strategy-panel *{transition:none!important}}

@@ -1,10 +1,8 @@
 <dialog id="strategyPanel" aria-labelledby="strategyPanelTitle" class="strategy-panel">
- <header><h2 id="strategyPanelTitle">{% include "next_move_icon.html" %}<span>Next move</span></h2><button class="quiet-button" onclick="this.closest('dialog').close()" aria-label="Close next move">×</button></header>
+ <header><h2 id="strategyPanelTitle">{% include "next_move_icon.html" %}<span>Next move</span></h2><div class="move-header-tools"><button class="quiet-button move-refresh" hidden id="recommendButton" onclick="refreshStrategyActions(this)" aria-label="Refresh ideas" title="Refresh ideas">↻</button><button class="quiet-button move-close" onclick="this.closest('dialog').close()" aria-label="Close next move">×</button></div></header>
  <p id="strategyStatus" role="status"></p>
  <p id="strategyStepHint" class="support-note"></p>
  <div id="strategyActions"></div>
- <button class="quiet-button" hidden id="recommendButton" onclick="refreshStrategyActions(this)">Find post ideas</button>
- <p class="move-approval-note">Draft first. You decide what goes live.</p>
  <details id="nextMoveSettings"><summary id="nextMoveSettingsLabel">Plan &amp; settings</summary>
  <details id="recommendationHelp" class="recommendation-help" hidden><summary>Sources &amp; context</summary>
   <p id="strategySourceNote" class="support-note"></p><p id="strategyPerformanceNote" class="support-note" hidden></p>

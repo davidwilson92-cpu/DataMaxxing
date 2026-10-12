@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const nodes = new Map();
-function node(id) { if (!nodes.has(id)) nodes.set(id, {value:'',textContent:'',innerHTML:'',hidden:false,open:true,focus(){this.focused=true},addEventListener(){}}); return nodes.get(id); }
+function node(id) { if (!nodes.has(id)) nodes.set(id, {value:'',textContent:'',innerHTML:'',hidden:false,open:true,focus(){this.focused=true},addEventListener(){},setAttribute(){}}); return nodes.get(id); }
 let calls=0, payload, reject=false;
 const context = vm.createContext({document:{getElementById:node,querySelectorAll:()=>[]},headers:{},esc:x=>x,console,api:async(url,options)=>{calls++;payload=JSON.parse(options.body);if(reject)throw Error('Save unavailable');return {revision:2,proposal:{strategy:{goal:'Fill Saturday classes',themes:'Local pottery'},assumptions:[]}}}});
 vm.runInContext(fs.readFileSync('nova/static/strategy.js','utf8'),context);

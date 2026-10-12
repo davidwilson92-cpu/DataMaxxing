@@ -64,19 +64,22 @@ async function confirmStrategy(event){event.preventDefault();await strategyTask(
 function nextMoveSource(a){
  if(!a.source)return '<p class="source-kind">Evergreen · based on your strategy</p>';
  const s=a.source;
- return `<details class="source-evidence"><summary class="source-kind">${a.stale?'Refresh needed':s.kind==='public_social'?'Recent social discussion':'Recent web coverage'} · Source</summary><p><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a></p><small>Reported publication: ${esc(s.published_at)} · Checked ${esc(new Date(s.checked_at).toLocaleString())}</small>${a.stale?'<p>This source needs a fresh check before creating a draft.</p>':''}</details>`;
+ return `<details class="source-evidence"><summary class="source-kind">${a.stale?(a.draft_id?'Saved source':'Refresh needed'):s.kind==='public_social'?'Recent social discussion':'Recent web coverage'} · Source</summary><p><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a></p><small>Reported publication: ${esc(s.published_at)} · Checked ${esc(new Date(s.checked_at).toLocaleString())}</small>${a.stale&&!a.draft_id?'<p>This source needs a fresh check before creating a draft.</p>':''}</details>`;
 }
 function nextMoveCard(a,featured=false){
  const review=a.kind==='review',stale=a.stale&&!a.draft_id;
  const label=a.draft_id?'Open draft':stale?'Refresh idea':review?'Mark reviewed':'Draft post';
  const action=stale?'refreshStrategyActions(this)':review?`actionFeedback(${a.id},'complete',this)`:`draftNextMove(${a.id},this)`;
  return `<article class="next-move ${featured?'next-move-featured':''}">
- <div class="move-meta"><span>${featured?'Your next post':review?'Quick check':'Another idea'}</span><span>${esc(platformName(a.platform))}${a.platform==='instagram'?' · '+esc(a.format==='story'?'Story':'Post'):''}</span></div>
- <h3>${esc(a.title)}</h3>
+ <div class="move-hero">
+ <div class="move-meta"><span>${review?'Quick check':'Made for your plan'}</span><span class="move-platform">${esc(platformName(a.platform))}${a.platform==='instagram'?' · '+esc(a.format==='story'?'Story':'Post'):''}</span></div>
+ <h3 tabindex="-1">${esc(a.title)}</h3>
  ${review?`<p class="next-move-checklist">${esc(a.brief)}</p>`:''}
- ${stale?'<p>Let’s check this idea is still current.</p>':''}
- <button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true"> →</span></button>
- <details class="move-context"><summary>Why this idea</summary><p>${esc(a.reason)}</p>${a.needs?`<p><b>You’ll need:</b> ${esc(a.needs)}</p>`:''}<p>${esc(a.effort||'')}</p>${nextMoveSource(a)}<div class="move-options"><button class="quiet-button" onclick="actionFeedback(${a.id},'snoozed',this)">Remind me tomorrow</button><button class="quiet-button" onclick="actionFeedback(${a.id},'dismissed',this)">Skip idea</button><button class="quiet-button" onclick="actionFeedback(${a.id},'complete',this)">Already done</button><label>Reason (optional)<select id="actionReason${a.id}"><option value="">Choose</option>${['Not relevant','Too much effort','Bad timing','Already done'].map(v=>`<option>${v}</option>`).join('')}</select></label></div></details>
+ ${stale?'<p class="move-stale">Refresh the source before drafting.</p>':''}
+ <div class="move-actions"><button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true">↗</span></button><button class="move-skip" onclick="actionFeedback(${a.id},'dismissed',this)" aria-label="Skip this idea">Skip <span aria-hidden="true">→</span></button></div>
+ </div>
+ <details class="move-context"><summary>Behind the idea <span aria-hidden="true">+</span></summary>
+ <div class="move-detail-body"><p>${esc(a.reason)}</p>${a.needs?`<div class="move-prep"><span>You’ll need</span><p>${esc(a.needs)}</p></div>`:''}${a.effort?`<p class="move-effort">${esc(a.effort)}</p>`:''}${nextMoveSource(a)}<div class="move-options"><button class="quiet-button" onclick="actionFeedback(${a.id},'snoozed',this)">Tomorrow</button><button class="quiet-button" onclick="actionFeedback(${a.id},'complete',this)">Already done</button></div></div></details>
  </article>`;
 }
 async function loadNextMoves(){
@@ -87,11 +90,17 @@ async function loadNextMoves(){
  note.innerHTML=data.performance_note?esc(data.performance_note)+' <a href="/analytics">View performance</a>':'';
  const items=[...data.items].sort((a,b)=>(a.kind==='review')-(b.kind==='review'));
  document.getElementById('strategyActions').innerHTML=items.length?nextMoveCard(items[0],items[0].kind!=='review')+(items.length>1?`<details class="move-alternatives"><summary>${items.length-1} more ${items.length===2?'idea':'ideas'}</summary>${items.slice(1).map(a=>nextMoveCard(a)).join('')}</details>`:''):(hasConfirmedStrategy?'<div class="move-empty"><h3>Let’s find your next post.</h3><p>Based on your saved plan.</p></div>':'');
- document.getElementById('recommendButton').textContent=items.length?'Find fresh ideas':'Find post ideas';
+ document.getElementById('recommendButton').setAttribute('aria-label',items.length?'Refresh ideas':'Find post ideas');
  return items;
 }
-async function refreshStrategyActions(button){await strategyTask(button,async()=>{strategyStatus('Checking recent web coverage and public social discussions against your strategy…');await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();strategyStatus('');});}
-async function actionFeedback(id,status,button){await strategyTask(button,async()=>{await api(`/api/strategy/actions/${id}/feedback`,{method:'POST',headers,body:JSON.stringify({status,reason:document.getElementById('actionReason'+id).value})});await loadNextMoves();strategyStatus(status==='snoozed'?'Snoozed for 24 hours.':'Feedback saved.');});}
+async function refreshStrategyActions(button){await strategyTask(button,async()=>{strategyStatus('Finding your next post…');await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();strategyStatus('');});}
+async function actionFeedback(id,status,button){await strategyTask(button,async()=>{
+ await api(`/api/strategy/actions/${id}/feedback`,{method:'POST',headers,body:JSON.stringify({status,reason:''})});
+ const items=await loadNextMoves();
+ if(!items.length&&hasConfirmedStrategy){strategyStatus('Finding your next post…');await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();}
+ strategyStatus(status==='snoozed'?'Saved for tomorrow.':'');
+ document.querySelector('#strategyActions h3')?.focus();
+});}
 async function openLinkedDraft(url,button){
  if(sendingMessage||mediaUploading||studioLoading){strategyStatus('Finish the current upload or response first.');return;}
  await strategyTask(button,async()=>{
