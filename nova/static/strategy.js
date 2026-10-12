@@ -1,5 +1,7 @@
 /* Progressive disclosure: the default Studio remains a conversation. */
 let hasConfirmedStrategy=false;
+let moveItems=[],moveIndex=0;
+const movePlatform=p=>window.zovaPlatformLabel?window.zovaPlatformLabel(p):esc(platformName(p));
 let strategyRevision=0, strategyLoaded=false, strategyPending=false, seriesRequestKey=null, seriesPreviewBody=null;
 const strategyKeys=['goal','audience','offer','voice','themes','rhythm','resources','avoid'];
 const strategyStatus=text=>{document.getElementById('strategyStatus').textContent=text;};
@@ -66,40 +68,61 @@ function nextMoveSource(a){
  const s=a.source;
  return `<details class="source-evidence"><summary class="source-kind">${a.stale?(a.draft_id?'Saved source':'Refresh needed'):s.kind==='public_social'?'Recent social discussion':'Recent web coverage'} · Source</summary><p><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a></p><small>Reported publication: ${esc(s.published_at)} · Checked ${esc(new Date(s.checked_at).toLocaleString())}</small>${a.stale&&!a.draft_id?'<p>This source needs a fresh check before creating a draft.</p>':''}</details>`;
 }
-function nextMoveCard(a,featured=false){
+function nextMoveCard(a){
  const review=a.kind==='review',stale=a.stale&&!a.draft_id;
- const label=a.draft_id?'Open draft':stale?'Refresh idea':review?'Mark reviewed':'Draft post';
- const action=stale?'refreshStrategyActions(this)':review?`actionFeedback(${a.id},'complete',this)`:`draftNextMove(${a.id},this)`;
- return `<article class="next-move ${featured?'next-move-featured':''}">
+ const label=a.draft_id?'Open draft':stale?'Refresh idea':review?'See steps':'Draft post';
+ const action=stale?'refreshStrategyActions(this)':review?`showMoveSteps(${a.id})`:`draftNextMove(${a.id},this)`;
+ return `<article class="next-move next-move-featured">
  <div class="move-hero">
- <div class="move-meta"><span>${review?'Quick check':'Made for your plan'}</span><span class="move-platform">${esc(platformName(a.platform))}${a.platform==='instagram'?' · '+esc(a.format==='story'?'Story':'Post'):''}</span></div>
+ <div class="move-meta"><span class="move-platform">${movePlatform(a.platform)}${a.platform==='instagram'?' · '+esc(a.format==='story'?'Story':'Post'):''}</span></div>
  <h3 tabindex="-1">${esc(a.title)}</h3>
- ${review?`<p class="next-move-checklist">${esc(a.brief)}</p>`:''}
  ${stale?'<p class="move-stale">Refresh the source before drafting.</p>':''}
- <div class="move-actions"><button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true">↗</span></button><button class="move-skip" onclick="actionFeedback(${a.id},'dismissed',this)" aria-label="Skip this idea">Skip <span aria-hidden="true">→</span></button></div>
+ <div class="move-actions"><button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true">↗</span></button></div>
  </div>
- <details class="move-context"><summary>Behind the idea <span aria-hidden="true">+</span></summary>
- <div class="move-detail-body"><p>${esc(a.reason)}</p>${a.needs?`<div class="move-prep"><span>You’ll need</span><p>${esc(a.needs)}</p></div>`:''}${a.effort?`<p class="move-effort">${esc(a.effort)}</p>`:''}${nextMoveSource(a)}<div class="move-options"><button class="quiet-button" onclick="actionFeedback(${a.id},'snoozed',this)">Tomorrow</button><button class="quiet-button" onclick="actionFeedback(${a.id},'complete',this)">Already done</button></div></div></details>
+ <div class="move-pager" role="group" aria-label="Browse ideas"><button type="button" onclick="changeMove(-1)" aria-label="Previous idea" ${moveItems.length<2?'disabled':''}>←</button><span role="status">${moveIndex+1} of ${moveItems.length}</span><button type="button" onclick="changeMove(1)" aria-label="Next idea" ${moveItems.length<2?'disabled':''}>→</button></div>
+ <details class="move-context" id="moveDetails${a.id}"><summary>Details <span aria-hidden="true">+</span></summary>
+ <div class="move-detail-body">${review?`<div class="move-review-steps"><p>${esc(a.brief)}</p><button class="quiet-button" onclick="actionFeedback(${a.id},'complete',this)">Mark done</button></div>`:''}<p>${esc(a.reason)}</p>${a.needs?`<p><strong>To make it:</strong> ${esc(a.needs)}</p>`:''}${a.effort?`<p class="move-effort">${esc(a.effort)}</p>`:''}${nextMoveSource(a)}</div></details>
+ <details class="move-feedback"><summary>Change this idea <span aria-hidden="true">↗</span></summary><label for="moveFeedback${a.id}">What would work better?</label><input id="moveFeedback${a.id}" maxlength="80" placeholder="E.g. less filming, more tips for beginners"><button class="button primary" onclick="refineMove(${a.id},this)">Find a better idea</button><button class="quiet-button" onclick="actionFeedback(${a.id},'dismissed',this)">Not for me</button></details>
+ <details class="move-reminder"><summary>Remind me <span aria-hidden="true">+</span></summary><p>Bring this idea back later. This does not schedule a post.</p><div class="move-reminder-shortcuts"><button onclick="remindMove(${a.id},1,this)">Tomorrow</button><button onclick="remindMove(${a.id},7,this)">Next week</button></div><label for="moveReminder${a.id}">Or choose a date and time (${esc(Intl.DateTimeFormat().resolvedOptions().timeZone)})</label><input type="datetime-local" id="moveReminder${a.id}"><button class="quiet-button" onclick="remindMove(${a.id},null,this)">Set reminder</button></details>
  </article>`;
 }
+function showMoveSteps(id){const details=document.getElementById('moveDetails'+id);details.open=true;details.querySelector('summary')?.focus();}
+function renderNextMove(){
+ moveIndex=Math.max(0,Math.min(moveIndex,moveItems.length-1));
+ document.getElementById('strategyActions').innerHTML=moveItems.length?nextMoveCard(moveItems[moveIndex]):(hasConfirmedStrategy?'<div class="move-empty"><h3>Ready for a new idea?</h3><button class="button primary" onclick="refreshStrategyActions(this)">Find an idea</button></div>':'');
+}
+function changeMove(direction){if(strategyPending||moveItems.length<2)return;moveIndex=(moveIndex+direction+moveItems.length)%moveItems.length;renderNextMove();document.querySelector('#strategyActions h3')?.focus();}
 async function loadNextMoves(){
  document.getElementById('recommendationHelp').hidden=!hasConfirmedStrategy;
  const data=await api('/api/strategy/actions');
  document.getElementById('strategySourceNote').textContent=data.source_note||'';
  const note=document.getElementById('strategyPerformanceNote');note.hidden=!data.performance_note;
  note.innerHTML=data.performance_note?esc(data.performance_note)+' <a href="/analytics">View performance</a>':'';
+ const currentId=moveItems[moveIndex]?.id;
  const items=[...data.items].sort((a,b)=>(a.kind==='review')-(b.kind==='review'));
- document.getElementById('strategyActions').innerHTML=items.length?nextMoveCard(items[0],items[0].kind!=='review')+(items.length>1?`<details class="move-alternatives"><summary>${items.length-1} more ${items.length===2?'idea':'ideas'}</summary>${items.slice(1).map(a=>nextMoveCard(a)).join('')}</details>`:''):(hasConfirmedStrategy?'<div class="move-empty"><h3>Let’s find your next post.</h3><p>Based on your saved plan.</p></div>':'');
+ moveItems=items;const kept=items.findIndex(a=>a.id===currentId);moveIndex=kept<0?0:kept;renderNextMove();
  document.getElementById('recommendButton').setAttribute('aria-label',items.length?'Refresh ideas':'Find post ideas');
  return items;
 }
 async function refreshStrategyActions(button){await strategyTask(button,async()=>{strategyStatus('Finding your next post…');await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();strategyStatus('');});}
-async function actionFeedback(id,status,button){await strategyTask(button,async()=>{
- await api(`/api/strategy/actions/${id}/feedback`,{method:'POST',headers,body:JSON.stringify({status,reason:''})});
+async function actionFeedback(id,status,button,extra={}){await strategyTask(button,async()=>{
+ await api(`/api/strategy/actions/${id}/feedback`,{method:'POST',headers,body:JSON.stringify({status,reason:'',...extra})});
  const items=await loadNextMoves();
- if(!items.length&&hasConfirmedStrategy){strategyStatus('Finding your next post…');await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();}
- strategyStatus(status==='snoozed'?'Saved for tomorrow.':'');
+ if(!items.length&&hasConfirmedStrategy&&status!=='snoozed'){strategyStatus('Finding your next post…');await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();}
+ strategyStatus(status==='snoozed'?'Reminder saved. Nothing is scheduled to post.':'');
  document.querySelector('#strategyActions h3')?.focus();
+});}
+async function remindMove(id,days,button){
+ const date=days===null?new Date(document.getElementById('moveReminder'+id).value):new Date();
+ if(days!==null)date.setDate(date.getDate()+days);
+ if(!Number.isFinite(date.getTime())||date<=new Date())return strategyStatus('Choose a future date and time.');
+ await actionFeedback(id,'snoozed',button,{remind_at:date.toISOString()});
+}
+async function refineMove(id,button){await strategyTask(button,async()=>{
+ const field=document.getElementById('moveFeedback'+id),reason=field.value.trim();
+ if(!reason){field.focus();throw Error('Tell Zova what to change.');}
+ await api(`/api/strategy/actions/${id}/feedback`,{method:'POST',headers,body:JSON.stringify({status:'dismissed',reason})});
+ strategyStatus('Finding a better fit…');await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});moveIndex=0;await loadNextMoves();strategyStatus('');
 });}
 async function openLinkedDraft(url,button){
  if(sendingMessage||mediaUploading||studioLoading){strategyStatus('Finish the current upload or response first.');return;}

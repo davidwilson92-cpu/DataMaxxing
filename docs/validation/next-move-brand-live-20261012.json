@@ -1,0 +1,27 @@
+{
+  "release_class": "limited-beta",
+  "commercial_ready": false,
+  "commit": "562d7a9404dead17ce5fac77279f155544037365",
+  "deploy": "dep-db68joek1f9s73f2g5dg",
+  "live_at_utc": "2026-10-12T07:20:05Z",
+  "ci_run": 38216870312,
+  "sqlite": {
+    "passed": 271,
+    "skipped": 1
+  },
+  "postgresql": {
+    "passed": 271,
+    "skipped": 1
+  },
+  "checks": "all required passed",
+  "live_validation": [
+    "health HTTP200",
+    "exact client JS/CSS matched",
+    "existing authenticated Studio session retained",
+    "new Next move card rendered",
+    "stale source warning preserved"
+  ],
+  "github_actions": "restored enabled:true; protections retained",
+  "real_social_posts": 0,
+  "rollback": "4d86fe7; preserve data"
+}

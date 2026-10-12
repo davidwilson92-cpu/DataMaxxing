@@ -19,8 +19,10 @@ const idea={id:9,title:'Show how you make a mug',reason:'Help beginners get star
  c.saveDraftNow=async()=>{throw Error('Save failed');};calls.length=0;await vm.runInContext('draftNextMove(9,{})',c);assert.equal(calls.length,0);assert.equal(navigations.length,0);assert.match(node('strategyStatus').textContent,/Save failed/);
  c.saveDraftNow=async()=>{};c.api=async()=>({draft_id:42});await vm.runInContext('draftNextMove(9,{})',c);assert.deepEqual(navigations,['/studio?draft=42&workspace=7']);
  navigations.length=0;c.api=async()=>{c.workspaceEpoch++;return {draft_id:43};};await vm.runInContext('draftNextMove(9,{})',c);assert.equal(navigations.length,0);assert.match(node('strategyStatus').textContent,/current chat is unchanged/);
- c.api=async()=>({items:[{...idea,id:1,kind:'review',brief:'Read recent questions'},idea]});await c.loadNextMoves();assert.ok(node('strategyActions').innerHTML.indexOf('Made for your plan')<node('strategyActions').innerHTML.indexOf('Quick check'));assert.match(node('strategyActions').innerHTML,/1 more idea/);
- const card=c.nextMoveCard(idea,true);assert.ok(!card.includes('Reason (optional)'));assert.match(card,/Skip this idea/);assert.match(card,/Behind the idea/);
+ c.api=async()=>({items:[{...idea,id:1,kind:'review',brief:'Read recent questions'},idea]});await c.loadNextMoves();assert.match(node('strategyActions').innerHTML,/Show how you make a mug/);assert.doesNotMatch(node('strategyActions').innerHTML,/Read recent questions/);assert.match(node('strategyActions').innerHTML,/1 of 2/);
+ c.changeMove(1);assert.match(node('strategyActions').innerHTML,/Read recent questions/);assert.doesNotMatch(node('strategyActions').innerHTML,/Made for your plan|Quick check|Behind the idea|You’ll need|more ideas/);assert.match(node('strategyActions').innerHTML,/2 of 2/);
+ c.changeMove(1);assert.match(node('strategyActions').innerHTML,/1 of 2/);c.changeMove(-1);assert.match(node('strategyActions').innerHTML,/2 of 2/);
+ const card=c.nextMoveCard(idea);assert.ok(!card.includes('Reason (optional)'));assert.match(card,/Change this idea/);assert.match(card,/Remind me/);
  let remaining=[idea,{...idea,id:10}],feedbackCalls=[],generated=0;
  c.api=async(url,options)=>{if(url.includes('/feedback')){feedbackCalls.push(JSON.parse(options.body));remaining.shift();return {};}
  if(url==='/api/strategy/actions')return {items:remaining};
@@ -29,5 +31,9 @@ const idea={id:9,title:'Show how you make a mug',reason:'Help beginners get star
  await c.actionFeedback(9,'dismissed',{});assert.equal(feedbackCalls[0].reason,'');assert.equal(generated,0);assert.equal(remaining[0].id,10);
  await c.actionFeedback(10,'dismissed',{});assert.equal(generated,1);assert.equal(remaining[0].id,11);
  c.api=async()=>{throw Error('Feedback not saved');};const before=node('strategyActions').innerHTML;await c.actionFeedback(11,'dismissed',{});assert.equal(node('strategyActions').innerHTML,before);assert.match(node('strategyStatus').textContent,/Feedback not saved/);
+ c.api=async(url,opts)=>{if(url.includes('/feedback')){feedbackCalls.push(JSON.parse(opts.body));return {};}return {items:[]};};
+ node('moveReminder11').value='';await c.remindMove(11,null,{});assert.match(node('strategyStatus').textContent,/future date/);
+ await c.remindMove(11,7,{});assert.equal(feedbackCalls.at(-1).status,'snoozed');assert.ok(new Date(feedbackCalls.at(-1).remind_at)>new Date());assert.match(node('strategyStatus').textContent,/Nothing is scheduled/);
+ node('moveFeedback11').value='Less filming';let refined=false;c.api=async(url,opts)=>{if(url.includes('/feedback')){assert.equal(JSON.parse(opts.body).reason,'Less filming');return {}; }if(url.endsWith('/recommend')){refined=true;return {};}return {items:[idea]};};await c.refineMove(11,{});assert.ok(refined);
  console.log('Next move journey: automatic ideas, no repeated generation, retry, failed save, workspace link and late response passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
