@@ -1,3 +1,9 @@
+# Next Move visible sections are live — 12 October 2026
+
+PR27 merged as f1c7c12ed3076990b1262e7cefbd614c699f95bd. Render dep-db6cpk2vcj2c73fgrcng confirmed Live. Final head624ff5f passed all required checks in PR38246492944 and push38246487073. Health200; exact strategy.js and studio-design.css matches verified after a transient startup HTTP error recovered. Signed-in live Next Move shows Details and Change this idea as always-visible sections with bold headings and no dropdown toggles. Keyboard access to feedback verified without entering or submitting data. Screenshot local only: docs/validation/next-move-open-sections-live.jpg. No real posts, account/grant/billing changes or schema migration. All79 broader beta gaps remain open. Rollback db9a4ff6daff2735b48ff989771c9ae8c91e866c preserves data and connections.
+
+---
+
 # Next Move always-visible sections — 12 October 2026 (not deployed)
 
 Branch codex/next-move-open-sections-20261012 replaces the Details and Change this idea dropdowns with always-visible, labelled sections and bold16px headings. No collapse controls on either section. Source evidence retains its separate disclosure. See steps now focuses the visible Details heading. Existing draft/feedback behavior preserved. Node journey/onboarding suites and4 beta scope tests passed. Synthetic desktop1280x720 and mobile390x844 reviewed; feedback input directly accessible, no horizontal panel overflow. No provider, schema, account or billing changes; all79 gaps retained. Rollback live db9a4ff6daff2735b48ff989771c9ae8c91e866c. Hosting checks required before publication.
