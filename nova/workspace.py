@@ -84,3 +84,29 @@ def save_workspace(db, row, body, user_id):
         db.rollback(); raise HTTPException(409,'This draft changed in another tab. Your local changes are still visible; open the latest saved version before retrying.')
     db.commit()
     return {'id':row.id,'saved':True,'revision':revision+1}
+
+
+def draft_media_previews(db, rows, user_id):
+    """One bounded lookup, rechecking ownership; never trust stored media URLs."""
+    selections={}
+    for row in rows:
+        try:
+            workspace=json.loads(row.workspace_json or '{}')
+            ids=workspace.get('media_asset_ids', []) if isinstance(workspace,dict) else []
+            selections[row.id]=[i for i in ids[:10] if type(i) is int] if isinstance(ids,list) else []
+        except (TypeError,ValueError):
+            selections[row.id]=[]
+    ids={i for values in selections.values() for i in values}
+    if not ids:return {}
+    assets={a.id:a for a in db.scalars(select(MediaAsset).where(MediaAsset.user_id==user_id,MediaAsset.id.in_(ids))).all()}
+    result={}
+    for row in rows:
+        for aid in selections[row.id]:
+            asset=assets.get(aid)
+            if not asset or asset.brand_id!=row.brand_id:continue
+            if asset.mime_type.startswith('image/'):
+                result[row.id]={'kind':'image','url':f'/media/preview/{asset.id}'}
+                break
+            if asset.mime_type.startswith('video/'):
+                result.setdefault(row.id,{'kind':'video'})
+    return result

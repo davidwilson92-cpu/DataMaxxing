@@ -1,4 +1,9 @@
 /* Chat presentation; persistence and immutable approval remain separate. */
+const studioWelcome=document.querySelector('.welcome-message')?.cloneNode(true);
+function resetStudioWelcome(){
+ if(studioWelcome)document.getElementById('chatFeed').append(studioWelcome.cloneNode(true));
+ else addAssistantMessage('How can we grow your engagement today?');
+}
 const instagramFormat=()=>document.getElementById('instagramFormat').value;
 const instagramLabel=()=>instagramFormat()==='story'?'Story':uploadedMediaKind==='video'?'Reel · shared to feed':'Post · feed';
 const instagramNote=()=>instagramFormat()==='story'?'One image or video, visible for 24 hours. Only the visual publishes: draft text is planning notes, not an overlay or caption. Add any text to your file first. Business account required.':'An image publishes to your feed. A video publishes as a Reel shared to your feed.';
@@ -104,9 +109,14 @@ async function connectSelectedPlatform(button){
 }
 let recentPosts=[];
 let historyRequest=0;
+function historyVisual(row){
+ const thumbnail=row.thumbnail;
+ if(thumbnail?.kind==='image'&&/^\/media\/preview\/\d+$/.test(thumbnail.url||''))return `<span class="history-visual" aria-hidden="true"><img src="${esc(window.zovaWorkspaceUrl(thumbnail.url))}" alt="" loading="lazy" onerror="this.hidden=true"></span>`;
+ return `<span class="history-visual" aria-hidden="true"><svg viewBox="0 0 24 24">${thumbnail?.kind==='video'?'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3Z"/>':'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>'}</svg></span>`;
+}
 function renderRecentPosts(){
   const rows=recentPosts.slice(0,20);
-  document.querySelectorAll('.recent-posts').forEach(nav=>{nav.innerHTML=rows.length?rows.map(row=>`<a href="${esc(window.zovaWorkspaceUrl(`/studio?draft=${row.id}`))}" ${Number(currentDraftId)===row.id?'aria-current="page"':''} onclick="openSavedPost(event,${row.id})"><span>${esc(row.title||row.brief||'Untitled conversation')}</span><small>${esc(row.status==='draft'?'Draft':publicationStatus(row.status))}</small></a>`).join(''):'<p>Your conversations and drafts will appear here as you write.</p>';});
+  document.querySelectorAll('.recent-posts').forEach(nav=>{nav.innerHTML=rows.length?rows.map(row=>`<a href="${esc(window.zovaWorkspaceUrl(`/studio?draft=${row.id}`))}" ${Number(currentDraftId)===row.id?'aria-current="page"':''} title="${esc(row.title||row.brief||'Untitled conversation')}" onclick="openSavedPost(event,${row.id})">${historyVisual(row)}<span>${esc(row.title||row.brief||'Untitled conversation')}</span><small>${esc(row.status==='draft'?'Draft':publicationStatus(row.status))}</small></a>`).join(''):'<p>Your conversations and drafts will appear here as you write.</p>';});
 }
 async function loadRecentPosts(){
   const request=++historyRequest;
@@ -117,7 +127,8 @@ function rememberSavedPost(){
   if(!currentDraftId)return;
   historyRequest++;
   const title=currentDraftTitle||lastBrief||conversation.find(m=>m.role==='user')?.content||document.getElementById('brief').value||'Untitled conversation';
-  recentPosts=[{id:Number(currentDraftId),title:title.slice(0,100),status:currentDraftStatus},...recentPosts.filter(r=>r.id!==Number(currentDraftId))];renderRecentPosts();
+  const image=uploadedMedia.find(m=>m.kind==='image'&&Number.isSafeInteger(m.id)&&m.id>0);
+  recentPosts=[{id:Number(currentDraftId),title:title.slice(0,100),status:currentDraftStatus,thumbnail:image?{kind:'image',url:'/media/preview/'+image.id}:uploadedMedia.some(m=>m.kind==='video')?{kind:'video'}:null},...recentPosts.filter(r=>r.id!==Number(currentDraftId))];renderRecentPosts();
 }
 async function openSavedPost(event,id){
   if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;

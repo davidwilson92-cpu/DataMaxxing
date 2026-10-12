@@ -1,3 +1,9 @@
+# Creator Studio refinement — 12 October 2026 (not deployed)
+
+Branch codex/creator-studio-20261012 implements the creator critique with the owner's overriding preference: Studio starts with a blank chat; recommendations stay ONLY in Next Move. No home recommendation card or background generation. Refined purple identity/controls, saved brand/profile label, owned attachment thumbnails with safe fallbacks, readable two-line history, natural creator-hook guidance and consistent New chat welcome. Three visual review passes; desktop390px/320px mobile, keyboard-to-draft, media reopening and clean reset verified on synthetic localhost. Local274passed/1skipped; Node suites passed; ownership/brand/URL preview regressions added. See docs/CREATOR_STUDIO_REVIEW_20261012.md for the executed prompt, heuristic scores and evidence limits. All79 broader gaps retained; no migration, real posts, grants or charges. Hosted checks pending. Rollback live798796b86168b68aa1e9993ca3a028991b3eee49.
+
+---
+
 # Studio design coherence is live — 12 October 2026
 
 PR25 merged as 798796b86168b68aa1e9993ca3a028991b3eee49. Required synthetic, PostgreSQL and production guardrail checks passed on final candidate 282ee8e in CI38241265879 and push38241259549. Live health returned200; studio-design.css, studio.js, studio-experience.js and strategy.js matched the tested files. Signed-in live draft24 and the loaded Next Move panel visually verified: compact composer, conditional Post/Story, primary Review & publish, consistent navigation icons, restrained branding and Details/Change this idea. No real social posts, grants or billing changes. Render dashboard connection closed during verification, so deployment ID was not recorded; live application and asset verification succeeded. No schema migration. Rollback to1998cec03762931a362c17705b8a04081c5cdb94 preserves data. All79 broader beta gaps remain open. Owner screenshots are local only. See docs/STUDIO_DESIGN_REVIEW_20261012.md.
