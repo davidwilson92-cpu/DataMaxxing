@@ -1,3 +1,9 @@
+# Next Move always-visible sections — 12 October 2026 (not deployed)
+
+Branch codex/next-move-open-sections-20261012 replaces the Details and Change this idea dropdowns with always-visible, labelled sections and bold16px headings. No collapse controls on either section. Source evidence retains its separate disclosure. See steps now focuses the visible Details heading. Existing draft/feedback behavior preserved. Node journey/onboarding suites and4 beta scope tests passed. Synthetic desktop1280x720 and mobile390x844 reviewed; feedback input directly accessible, no horizontal panel overflow. No provider, schema, account or billing changes; all79 gaps retained. Rollback live db9a4ff6daff2735b48ff989771c9ae8c91e866c. Hosting checks required before publication.
+
+---
+
 # Creator Studio refinement is live — 12 October 2026
 
 PR26 merged as db9a4ff6daff2735b48ff989771c9ae8c91e866c. Render dep-db6cikc9v7es739ubsbg is Live (56.6s rollout). Final candidate83fb222 passed all required checks in PR38244952639 and push38244944763. Brief startup HTTP errors recovered; health200 and exact deployed studio-design.css, studio-state.js and studio-experience.js matches verified. Signed-in live Studio starts with a blank composer/welcome and no recommendation card; saved history and personal workspace label render; recommendations load inside Next Move with existing Open draft, Details and Change this idea controls. No real post, grant or charge performed. Owner screenshot is local only: docs/validation/creator-studio-live.jpg. No schema change. Rollback798796b86168b68aa1e9993ca3a028991b3eee49 preserves data, uploads, sessions and connections. All79 broader beta findings remain open.
