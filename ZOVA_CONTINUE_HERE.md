@@ -1,3 +1,9 @@
+# Details-only Next move is live — 12 October 2026
+
+PR24 merged as1998cec03762931a362c17705b8a04081c5cdb94. Render dep-db6bf3k9v7es739t2iag is Live. All required checks passed in PR CI38236867250 and push38236860942. Brief startup502 recovered; health200 and exact strategy.css/strategy.js matches verified. Signed-in live Next move shows only Details and Change this idea beneath the card/carousel; planning controls remain accessible via Post options. Purple gradient launcher shipped. No real posts or account/billing mutations performed. Rollback to1c978a1401427246bfe57ad230faa2f475ae54f9 preserves data. Broader beta gaps remain open.
+
+---
+
 # Next move details-only refinement — 12 October 2026 (not deployed)
 
 Branch codex/next-move-details-only-20261012: recommendation view exposes only Details and Change this idea beneath the card/carousel. Removed More options wrapper and reminder UI. Plan/settings/recurring controls are hidden from Next move and remain accessible in the separate Your plan view through Post options or Plan my socials. New accounts see Set your goal; confirming the plan returns to recommendations. Launcher retains white text/shimmer with a near-black plum-to-violet gradient. No backend/data/auth/publication changes. All79 broader beta findings retained.
