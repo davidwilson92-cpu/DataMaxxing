@@ -42,7 +42,7 @@ Computed solid-colour contrast: white on primary#7137bd7.04:1; muted#65596f on#f
 
 ## Validation and limits
 
-Full local SQLite suite272passed/1skipped. Node journey/onboarding/schedule/Studio harnesses passed, including failed-save/late-response coverage. Synthetic browser: desktop1280x720,390x844,320x740; edit/save/reload, keyboard review readiness, plan confirmation, recommendation disclosure via Enter. No browser console errors observed. Test providers mocked; no real social publication, grants or charges. Latest post-test changes are CSS/template narrow-header correction only; beta scope tests rerun. Hosted PostgreSQL release checks pending.
+Full local SQLite suite272passed/1skipped. Node journey/onboarding/schedule/Studio harnesses passed, including failed-save/late-response coverage. Synthetic browser: desktop1280x720,390x844,320x740; edit/save/reload, keyboard review readiness, plan confirmation, recommendation disclosure via Enter. No browser console errors observed. Test providers mocked; no real social publication, grants or charges. Latest post-test changes are CSS/template narrow-header correction only; beta scope tests rerun. Hosted PR CI38240968536 and push CI38240961652 passed synthetic-tests, postgres-release and Production guardrails for the implementation candidate. PR25 is ready for release review; not merged or deployed.
 
 Screenshots (synthetic/local): docs/validation/studio-design-desktop.jpg, studio-design-mobile.jpg, studio-design-next-move.jpg.
 
