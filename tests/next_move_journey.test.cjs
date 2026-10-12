@@ -22,7 +22,7 @@ const idea={id:9,title:'Show how you make a mug',reason:'Help beginners get star
  c.api=async()=>({items:[{...idea,id:1,kind:'review',brief:'Read recent questions'},idea]});await c.loadNextMoves();assert.match(node('strategyActions').innerHTML,/Show how you make a mug/);assert.doesNotMatch(node('strategyActions').innerHTML,/Read recent questions/);assert.match(node('strategyActions').innerHTML,/1 of 2/);
  c.changeMove(1);assert.match(node('strategyActions').innerHTML,/Read recent questions/);assert.doesNotMatch(node('strategyActions').innerHTML,/Made for your plan|Quick check|Behind the idea|You’ll need|more ideas/);assert.match(node('strategyActions').innerHTML,/2 of 2/);
  c.changeMove(1);assert.match(node('strategyActions').innerHTML,/1 of 2/);c.changeMove(-1);assert.match(node('strategyActions').innerHTML,/2 of 2/);
- const card=c.nextMoveCard(idea);assert.ok(!card.includes('Reason (optional)'));assert.match(card,/Change this idea/);assert.match(card,/Remind me/);
+ const card=c.nextMoveCard(idea);assert.ok(!card.includes('Reason (optional)'));assert.match(card,/Change this idea/);assert.doesNotMatch(card,/Remind me|More options/);c.setPlanningView(false);assert.equal(node("nextMoveSettings").hidden,true);assert.equal(node("strategyActions").hidden,false);c.setPlanningView(true);assert.equal(node("nextMoveSettings").hidden,false);assert.equal(node("strategyActions").hidden,true);
  let remaining=[idea,{...idea,id:10}],feedbackCalls=[],generated=0;
  c.api=async(url,options)=>{if(url.includes('/feedback')){feedbackCalls.push(JSON.parse(options.body));remaining.shift();return {};}
  if(url==='/api/strategy/actions')return {items:remaining};
