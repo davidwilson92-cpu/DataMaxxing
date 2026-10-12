@@ -123,3 +123,12 @@
 }
 
 @media(max-width:360px){.simple-chat .chat-navigation .app-menu>a{font-size:13px;gap:6px;padding:10px 6px;letter-spacing:-.15px}.simple-chat .chat-navigation .nav-glyph,.simple-chat .chat-navigation .nav-glyph svg{width:18px;height:18px;flex-shrink:0}}
+
+/* Next Move sections are always visible, with headings rather than toggles. */
+.strategy-panel .move-open-section{padding:18px 4px;margin:0;border-top:1px solid #e5dfea}
+.strategy-panel .move-open-section>h4{font-size:16px;line-height:1.35;font-weight:700;color:#33213f;margin:0 0 12px;letter-spacing:-.15px}
+.strategy-panel .move-open-section .move-detail-body{padding:0}
+.strategy-panel .move-open-section .move-detail-body>p:first-child{margin-top:0}
+.strategy-panel .move-open-section label{font-size:14px;font-weight:400;color:#65516f;margin:0}
+.strategy-panel .move-open-section input{font-size:14px;min-height:44px}
+.strategy-panel .move-open-section h4:focus-visible{outline:2px solid #9b72cc;outline-offset:4px}

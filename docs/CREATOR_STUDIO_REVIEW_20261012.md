@@ -45,3 +45,8 @@ These are presentation judgments only. A customer-validated 8 across desirabilit
 ## Release and rollback
 
 Implementation and local validation complete. PR26 implementation head2ec749a passed all hosted checks in PR run38244715161 and push run38244710412: synthetic tests, PostgreSQL release, dependency audit, synthetic restore, hosting image smoke test and production guardrails. Not deployed. No live model/provider validation, real posts, grants or charges. No schema migration. Roll back code to live798796b86168b68aa1e9993ca3a028991b3eee49 while keeping database, uploads, sessions, connection keys and publication ledgers intact. Never restore stale customer data or replay unknown publications. All79 known beta findings remain open.
+
+
+## Publication verification
+
+Published on12October2026 through PR26, merge db9a4ff6daff2735b48ff989771c9ae8c91e866c. Final-head83fb222 required checks passed in38244952639 and38244944763. Render dep-db6cikc9v7es739ubsbg confirmed Live. Health200; exact deployed design CSS and state/experience JavaScript match the candidate. Live signed-in blank entry, personal workspace label, history and Next Move-only recommendations verified. Temporary startup HTTP errors recovered. No real social publication or account/billing mutation used for verification. Rollback remains798796b. The earlier not-deployed section describes the implementation checkpoint; this publication verification supersedes it.
