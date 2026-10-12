@@ -1,7 +1,7 @@
 """Brand-owned strategy and explicitly unapproved recommendations."""
 import hashlib
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, ValidationError
@@ -227,14 +227,26 @@ def recommend(request: Request, db=Depends(get_db)):
 
 class Feedback(BaseModel):
     status: Literal['complete','dismissed','snoozed']
-    reason: Literal['','Not relevant','Too much effort','Bad timing','Already done'] = ''
+    reason: str = Field(default='', max_length=80)
+    remind_at: datetime | None = None
 
 
 @router.post('/actions/{action_id}/feedback')
 def feedback(action_id: int, body: Feedback, request: Request, db=Depends(get_db)):
     row = owned(db,StrategyAction,current_user(request).id,action_id)
-    row.status=body.status;row.feedback=body.reason
-    row.snoozed_until=utcnow()+timedelta(days=1) if body.status=='snoozed' else None
+    reminder = None
+    if body.status=='snoozed':
+        reminder = body.remind_at or (datetime.now(timezone.utc)+timedelta(days=1))
+        if reminder.tzinfo is None or reminder.utcoffset() is None:
+            raise HTTPException(400,'Choose a reminder with a timezone.')
+        reminder=reminder.astimezone(timezone.utc)
+        now=datetime.now(timezone.utc)
+        if not now < reminder <= now+timedelta(days=366):
+            raise HTTPException(400,'Choose a reminder within the next year.')
+    elif body.remind_at is not None:
+        raise HTTPException(400,'A reminder date is only valid for Remind me.')
+    row.status=body.status;row.feedback=body.reason.strip()
+    row.snoozed_until=reminder
     db.commit();return {'status':row.status}
 
 

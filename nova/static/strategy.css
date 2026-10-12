@@ -93,3 +93,18 @@
 .strategy-panel button:focus-visible,.strategy-panel summary:focus-visible{outline:3px solid #b48bff;outline-offset:3px}
 @media(max-width:480px){.simple-chat dialog.strategy-panel{padding:14px;border-radius:24px;max-height:calc(100dvh - 24px)}.strategy-panel .move-hero{padding:20px}.strategy-panel #strategyActions h3{font-size:27px;letter-spacing:-.75px}.strategy-panel .move-meta{margin-bottom:24px;gap:8px}.strategy-panel .move-draft{padding:12px;font-size:14px}.strategy-panel .move-skip{padding:10px 12px}.strategy-panel header{padding-bottom:12px}}
 @media(prefers-reduced-motion:reduce){.strategy-panel *{transition:none!important}}
+
+/* One idea at a time: readable review text and optional response/reminder controls. */
+.strategy-panel .move-meta{justify-content:flex-start;margin-bottom:20px}
+.strategy-panel .move-review-steps{background:#f6f2fa;color:#352640;border-radius:12px;padding:14px 16px;margin-top:12px;border-left:3px solid #8040df}
+.strategy-panel .move-review-steps p{color:#352640;white-space:pre-line;margin:0;font-size:14px;line-height:1.65}
+.strategy-panel .move-pager{display:flex;align-items:center;justify-content:center;gap:22px;padding:8px 0}
+.strategy-panel .move-pager button{width:44px;min-height:44px;border:1px solid #ded3e9;border-radius:50%;background:white;color:#5b278f;font-size:20px;cursor:pointer}
+.strategy-panel .move-pager span{font-size:13px;color:#64516f;min-width:44px;text-align:center}
+.strategy-panel .move-feedback,.strategy-panel .move-reminder{border-top:1px solid #eee8f2;padding:0 4px 4px}
+.strategy-panel .move-feedback summary,.strategy-panel .move-reminder summary{display:flex;justify-content:space-between;color:#65566f;font-size:13px;font-weight:500;min-height:48px}
+.strategy-panel .move-feedback input{border:1px solid #cdbbdd;border-radius:10px;padding:10px;margin:6px 0 12px}
+.strategy-panel .move-reminder p{color:#65566f;font-size:13px}
+.strategy-panel .move-reminder-shortcuts{display:flex;gap:8px}.strategy-panel .move-reminder-shortcuts button{border:1px solid #dbcde6;background:#f7f1ff;color:#5d3282;border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer}
+.strategy-panel .move-reminder input{border:1px solid #cdbbdd;border-radius:10px;padding:8px}
+.strategy-panel .move-platform{display:inline-flex;align-items:center;gap:6px}

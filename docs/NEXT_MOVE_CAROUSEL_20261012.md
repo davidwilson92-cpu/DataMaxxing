@@ -1,0 +1,7 @@
+# Next move carousel review
+
+Observed screenshots showed stacked ideas, ambiguous headings, a one-day defer action mistaken for scheduling, and light text on a light review card. Replace the list with a single card and previous/next buttons with an announced position. Manual review uses See steps, readable expanded instructions and Mark done. Optional feedback is stored with the discarded suggestion and supplied to recommendation generation. Reminders accept timezone-aware future dates within366 days; ownership is enforced. No database migration or publication schedule is created. Errors retain the current card/input.
+
+Browser review on390px mobile: navigated between post and review cards with keyboard, inspected review text contrast, saved a next-week reminder, submitted feedback and generated a draft. Desktop and reload checks required. Node journey/onboarding/Studio/schedule harnesses passed;28 focused backend tests passed. Hosted full release checks pending. Official icon source and display details are recorded in docs/INSTAGRAM_ASSET.md. Keep platform names in accessible labels, native selects and explanatory/legal prose. Rollback to562d7a9, preserving all drafts/data; custom reminder timestamps remain compatible with existing reader code.
+
+Broader security/commercial backlog is retained; this is a scoped beta improvement, not commercial certification.

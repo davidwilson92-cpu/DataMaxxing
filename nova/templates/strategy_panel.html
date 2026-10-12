@@ -32,7 +32,7 @@
    {% for key,label,limit in [('goal','Goal',1500)] %}
    <label for="strategy_{{ key }}">{{ label }}</label><textarea id="strategy_{{ key }}" name="{{ key }}" rows="2" maxlength="{{ limit }}"></textarea>
    {% endfor %}
-   <fieldset><legend>Platforms</legend>{% for p,label in [('x','X'),('instagram','Instagram'),('facebook','Facebook'),('tiktok','TikTok')] %}<label class="inline-choice"><input type="checkbox" name="strategy_platform" value="{{ p }}">{{ label }}</label>{% endfor %}</fieldset>
+   <fieldset><legend>Platforms</legend>{% for p,label in [('x','X'),('instagram','Instagram'),('facebook','Facebook'),('tiktok','TikTok')] %}<label class="inline-choice"><input type="checkbox" name="strategy_platform" value="{{ p }}">{% if p == 'instagram' %}{% include 'instagram_icon.html' %}{% else %}{{ label }}{% endif %}</label>{% endfor %}</fieldset>
    <details id="strategyAdvanced"><summary>Audience, voice &amp; details</summary>
     {% for key,label,limit in [('audience','Audience',1500),('resources','Time and resources',1000),('offer','Your offer',1500),('voice','Voice',1500),('themes','Public content themes (used for search)',2000),('rhythm','Posting rhythm',1000),('avoid','Topics to avoid',1500)] %}
     <label for="strategy_{{ key }}">{{ label }}</label><textarea id="strategy_{{ key }}" name="{{ key }}" rows="2" maxlength="{{ limit }}"></textarea>

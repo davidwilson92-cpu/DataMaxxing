@@ -271,3 +271,24 @@ def test_failed_recommendation_repair_preserves_existing_ideas(monkeypatch):
     assert r.status_code==502
     assert len(calls)==2
     assert [a['id'] for a in c.get('/api/strategy/actions').json()['items']]==[a['id'] for a in items]
+
+
+def test_custom_reminder_and_feedback_bounds(monkeypatch):
+    from datetime import timedelta
+    c,uid,items=setup_strategy(monkeypatch)
+    path=f'/api/strategy/actions/{items[0]["id"]}/feedback'
+    when=datetime.now(timezone.utc)+timedelta(days=7)
+    r=c.post(path,json={'status':'snoozed','remind_at':when.isoformat()})
+    assert r.status_code==200,r.text
+    assert items[0]['id'] not in [x['id'] for x in c.get('/api/strategy/actions').json()['items']]
+    with SessionLocal() as db:
+        row=db.get(StrategyAction,items[0]['id'])
+        assert abs((row.snoozed_until.replace(tzinfo=timezone.utc)-when).total_seconds())<1
+    for invalid in [(when-timedelta(days=9)).isoformat(),when.replace(tzinfo=None).isoformat(),(when+timedelta(days=400)).isoformat()]:
+        assert c.post(path,json={'status':'snoozed','remind_at':invalid}).status_code==400
+    assert c.post(path,json={'status':'complete','remind_at':when.isoformat()}).status_code==400
+    assert c.post(path,json={'status':'dismissed','reason':'x'*81}).status_code==422
+    assert c.post(path,json={'status':'dismissed','reason':'Less filming, more practical advice'}).status_code==200
+    with SessionLocal() as db:assert db.get(StrategyAction,items[0]['id']).feedback=='Less filming, more practical advice'
+    other,*_=account()
+    assert other.post(path,json={'status':'snoozed','remind_at':when.isoformat()}).status_code==404
