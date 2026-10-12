@@ -107,3 +107,19 @@
 /* Two short lines recognise a post faster than a heavily truncated title. */
 .simple-chat .recent-posts a>span:not(.history-visual){display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal;line-height:1.4;font-size:13px;overflow-wrap:anywhere}
 .simple-chat .history-visual svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+/* Phone navigation keeps recent work within reach, without removing destinations. */
+@media(max-width:760px){
+ .simple-chat .chat-navigation{width:min(360px,calc(100% - 24px))}
+ .simple-chat .chat-navigation .app-brand{align-self:flex-start;margin-bottom:14px}
+ .simple-chat .chat-navigation .app-menu{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+ .simple-chat .chat-navigation .app-menu>a{justify-content:flex-start;font-size:14px;gap:8px;padding:10px 8px;color:#d7c9e3;min-height:46px}
+ .simple-chat .chat-navigation .app-menu>a.active{color:white}
+ .simple-chat .chat-navigation .mobile-menu-extra{grid-column:1/-1;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;border-top:1px solid #392b45;margin-top:10px;padding-top:6px}
+ .simple-chat .chat-navigation .mobile-menu-extra>a{font-size:12px;padding:8px;min-height:44px;color:#bba8ca}
+ .simple-chat .chat-navigation .mobile-menu-extra form{grid-column:1/-1}
+ .simple-chat .chat-navigation .mobile-menu-extra button{min-height:44px}
+ .simple-chat .chat-navigation .saved-history{padding-top:16px}
+}
+
+@media(max-width:360px){.simple-chat .chat-navigation .app-menu>a{font-size:13px;gap:6px;padding:10px 6px;letter-spacing:-.15px}.simple-chat .chat-navigation .nav-glyph,.simple-chat .chat-navigation .nav-glyph svg{width:18px;height:18px;flex-shrink:0}}

@@ -14,6 +14,8 @@ Review the rendered result, identify actual defects, refine and repeat. Validate
 2. Browser review found that a missing preview collapsed the title column. Added a persistent thumbnail container and explicit grid placement; failure now leaves a quiet placeholder. Expanded titles to two short lines, with full titles available through accessible link text and hover. Added dark mobile-navigation active-state contrast.
 3. Browser review found that New chat returned a different presentation from initial entry. It now restores the same blank welcome without inserting an assistant message into conversation history. Preserved empty composer and Next Move-only recommendations. Verified narrow mobile layouts and the existing direct draft flow.
 
+4. Mobile navigation review found that a long link stack buried saved posts. Converted only the Studio phone drawer to a two-column menu and compact legal row; all destinations remain available. A320px pass then tightened icon spacing and text to keep Performance and Voice distinct.
+
 No draft content, titles, account identity records, connections or permissions are rewritten by presentation changes. User names are autoescaped by Jinja. History titles/URLs are escaped. Preview metadata is derived from asset IDs, rechecked against user and brand, fetched in one bounded query, and rendered only through the existing authenticated preview route. Existing media-storage/privacy limitations remain deferred, not fixed by this work.
 
 ## Re-review
