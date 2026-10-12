@@ -1,3 +1,11 @@
+# Next move brand update is live — 12 October 2026
+
+PR21 merged as562d7a9404dead17ce5fac77279f155544037365. Render deployment dep-db68joek1f9s73f2g5dg succeeded, live at07:20:05UTC. GitHub Actions had been disabled (enabled:false); re-enabled existing workflow and ran normal PR checks. No branch protection bypass. CI38216870312 passed all required checks,271 passed/one skipped for each SQLite and PostgreSQL.
+
+Live health200 and exact strategy.js/strategy.css content match verified. Existing signed-in draft22 opened and the new dark Next move card, Skip and compact disclosures rendered. Existing stale-source warning remained accurate. No ideas were dismissed, real social posts sent, grants changed or charges made for this release verification. Screenshot is local only and contains owner context. Broader beta/security gaps remain open in docs/beta/KNOWN_GAPS.md and deferred-register.json. Rollback to4d86fe7 while preserving data, drafts and sessions.
+
+---
+
 # Next move visual refinement ready for release checks — 11 October 2026
 
 Candidate15bd98e in PR21. Local browser design/interaction checks passed at desktop,390px and320px widths; see docs/NEXT_MOVE_BRAND_20261011.md. Hosted workflow38174288031 remains queued without started jobs. This design has NOT been merged or deployed. Finish required checks before publishing; do not bypass them. Broader beta gaps remain open.
