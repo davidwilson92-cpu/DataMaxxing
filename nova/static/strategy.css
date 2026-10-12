@@ -108,3 +108,19 @@
 .strategy-panel .move-reminder-shortcuts{display:flex;gap:8px}.strategy-panel .move-reminder-shortcuts button{border:1px solid #dbcde6;background:#f7f1ff;color:#5d3282;border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer}
 .strategy-panel .move-reminder input{border:1px solid #cdbbdd;border-radius:10px;padding:8px}
 .strategy-panel .move-platform{display:inline-flex;align-items:center;gap:6px}
+
+/* Focused launch and progressive disclosure. White text remains readable throughout. */
+.simple-chat .studio-header-actions .next-move-launch{position:relative;overflow:hidden;background:#09090b;border:1px solid #09090b;color:#fff;font-size:16px;font-weight:650;min-height:52px;padding:12px 21px;gap:10px;box-shadow:0 4px 14px #160e2520}
+.simple-chat .studio-header-actions .next-move-launch:hover{background:#211829;border-color:#211829}
+.simple-chat .next-move-launch .next-move-sparkle{fill:#fff;width:26px;height:26px;animation:move-diamond-glow 5s ease-in-out 2}
+.simple-chat .next-move-launch>span{color:#fff;text-shadow:0 0 0 transparent;animation:move-type-glow 5s ease-in-out 2}
+.simple-chat .next-move-launch::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 25%,#ffffff24 49%,transparent 73%);transform:translateX(-130%);animation:move-sheen 5s ease-in-out 2}
+@keyframes move-sheen{0%,45%{transform:translateX(-130%)}80%,100%{transform:translateX(130%)}}
+@keyframes move-diamond-glow{0%,45%,100%{filter:none}65%{filter:drop-shadow(0 0 5px #fff)}}
+@keyframes move-type-glow{0%,45%,100%{text-shadow:none}65%{text-shadow:0 0 9px #ffffff80}}
+.strategy-panel .move-options>summary{display:flex;align-items:center;justify-content:space-between;min-height:48px;color:#65566f;font-size:14px;cursor:pointer}
+.strategy-panel .move-options{padding:0 4px}.strategy-panel .move-options[open]{border-top:1px solid #eee8f2}.strategy-panel .move-options[open]>summary{font-weight:600}
+.strategy-panel #nextMoveSettings>summary{min-height:44px;font-size:12px}.strategy-panel .move-pager{padding:4px 0;gap:18px}
+@media(max-width:600px){.simple-chat .studio-header-actions .next-move-launch{font-size:14px;min-height:48px;padding:10px 14px;gap:7px}.simple-chat .next-move-launch .next-move-sparkle{width:23px;height:23px}}
+@media(prefers-reduced-motion:reduce){.simple-chat .next-move-launch::after,.simple-chat .next-move-launch>span,.simple-chat .next-move-launch .next-move-sparkle{animation:none}}
+.strategy-panel .move-options>summary>span{margin-left:auto}

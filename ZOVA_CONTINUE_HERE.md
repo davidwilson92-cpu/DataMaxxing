@@ -1,6 +1,14 @@
-# Next move carousel candidate — 12 October 2026
+# Next move focus and platform icons — 12 October 2026 (local, not deployed)
 
-One recommendation at a time with previous/next, Details, optional Change this idea, and Remind me (tomorrow/next week/custom browser-local date converted to UTC). This is idea deferral, not post scheduling. Removed Made for your plan/Quick check/Behind the idea/You’ll need labels; review instructions now use readable dark text. Official Instagram artwork sourced from Meta’s brand page is shared across composer, draft/platform controls, account connections and analytics. Prose/legal names remain readable. No schema migration; feedback fits existing80-character column. Local mocked browser journey and focused tests passed; awaiting full release checks. See docs/NEXT_MOVE_CAROUSEL_20261012.md. Broader beta gaps remain open.
+Branch codex/next-move-focus-icons-20261012 simplifies the card to one More options disclosure, retaining feedback, reminders, context and keyboard navigation. Studio launcher is larger black/white with two gentle shimmer cycles; reduced-motion disables animation. Shared locally hosted X/Facebook/TikTok SVG marks replace text approximations across composer, strategy, draft/review/results, analytics, account and landing controls. Names remain in accessible labels and prose. No backend, auth, billing or publication changes. All broader beta gaps remain open.
+
+Validation: desktop and390px browser review, icon accessible names, secondary disclosure; existing Node journey/onboarding/schedule/Studio suites pass. Full local SQLite suite:271 pass/one skip with only stale scope manifest failure; refreshed exact scope after review and all4 beta gate tests passed. PostgreSQL hosted checks and deployment have not been run for this candidate. Rollback to b82b047 preserves all data. Screenshot docs/validation/next-move-focus-studio.jpg is synthetic and local.
+
+---
+
+# Next move carousel is live — 12 October 2026
+
+One recommendation at a time with previous/next, Details, optional Change this idea, and Remind me (tomorrow/next week/custom browser-local date converted to UTC). This is idea deferral, not post scheduling. Removed Made for your plan/Quick check/Behind the idea/You’ll need labels; review instructions now use readable dark text. Official Instagram artwork sourced from Meta’s brand page is shared across composer, draft/platform controls, account connections and analytics. Prose/legal names remain readable. No schema migration; feedback fits existing80-character column. PR22 merged as b82b04715c7c48efaa22d0a21d41d90021121cb4. Render deployment dep-db68tbjrjlhs73bfl820 is Live. CI38218780881 passed all required checks: 272 passed/one skipped on both SQLite and PostgreSQL; client interaction checks passed. Live home returned200 and four deployed assets exactly matched. Live signed-in carousel navigation, Instagram glyph, readable review steps and reminder choices verified without changing owner recommendations or publishing posts. Local synthetic feedback, reminder, draft/reload and keyboard/mobile journeys passed. See docs/NEXT_MOVE_CAROUSEL_20261012.md. Broader beta gaps remain open.
 
 ---
 

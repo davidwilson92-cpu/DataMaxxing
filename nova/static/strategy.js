@@ -80,13 +80,14 @@ function nextMoveCard(a){
  <div class="move-actions"><button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true">↗</span></button></div>
  </div>
  <div class="move-pager" role="group" aria-label="Browse ideas"><button type="button" onclick="changeMove(-1)" aria-label="Previous idea" ${moveItems.length<2?'disabled':''}>←</button><span role="status">${moveIndex+1} of ${moveItems.length}</span><button type="button" onclick="changeMove(1)" aria-label="Next idea" ${moveItems.length<2?'disabled':''}>→</button></div>
+ <details class="move-options" id="moveOptions${a.id}"><summary>More options <span aria-hidden="true">+</span></summary>
  <details class="move-context" id="moveDetails${a.id}"><summary>Details <span aria-hidden="true">+</span></summary>
  <div class="move-detail-body">${review?`<div class="move-review-steps"><p>${esc(a.brief)}</p><button class="quiet-button" onclick="actionFeedback(${a.id},'complete',this)">Mark done</button></div>`:''}<p>${esc(a.reason)}</p>${a.needs?`<p><strong>To make it:</strong> ${esc(a.needs)}</p>`:''}${a.effort?`<p class="move-effort">${esc(a.effort)}</p>`:''}${nextMoveSource(a)}</div></details>
  <details class="move-feedback"><summary>Change this idea <span aria-hidden="true">↗</span></summary><label for="moveFeedback${a.id}">What would work better?</label><input id="moveFeedback${a.id}" maxlength="80" placeholder="E.g. less filming, more tips for beginners"><button class="button primary" onclick="refineMove(${a.id},this)">Find a better idea</button><button class="quiet-button" onclick="actionFeedback(${a.id},'dismissed',this)">Not for me</button></details>
  <details class="move-reminder"><summary>Remind me <span aria-hidden="true">+</span></summary><p>Bring this idea back later. This does not schedule a post.</p><div class="move-reminder-shortcuts"><button onclick="remindMove(${a.id},1,this)">Tomorrow</button><button onclick="remindMove(${a.id},7,this)">Next week</button></div><label for="moveReminder${a.id}">Or choose a date and time (${esc(Intl.DateTimeFormat().resolvedOptions().timeZone)})</label><input type="datetime-local" id="moveReminder${a.id}"><button class="quiet-button" onclick="remindMove(${a.id},null,this)">Set reminder</button></details>
- </article>`;
+ </details></article>`;
 }
-function showMoveSteps(id){const details=document.getElementById('moveDetails'+id);details.open=true;details.querySelector('summary')?.focus();}
+function showMoveSteps(id){document.getElementById('moveOptions'+id).open=true;const details=document.getElementById('moveDetails'+id);details.open=true;details.querySelector('summary')?.focus();}
 function renderNextMove(){
  moveIndex=Math.max(0,Math.min(moveIndex,moveItems.length-1));
  document.getElementById('strategyActions').innerHTML=moveItems.length?nextMoveCard(moveItems[moveIndex]):(hasConfirmedStrategy?'<div class="move-empty"><h3>Ready for a new idea?</h3><button class="button primary" onclick="refreshStrategyActions(this)">Find an idea</button></div>':'');

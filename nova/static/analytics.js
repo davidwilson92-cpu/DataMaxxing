@@ -1,7 +1,7 @@
 const analyticsEsc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]));
 const analyticsNumber=value=>(value==null?"—":Number(value).toLocaleString());
 const analyticsPlatform=value=>value==="x"?"X":value.charAt(0).toUpperCase()+value.slice(1);
-const analyticsIcon=platform=>platform==="x"?'𝕏':platform==="instagram"?window.zovaInstagramIcon():platform==="facebook"?'f':'♪';
+const analyticsIcon = platform => window.zovaPlatformLabel(platform);
 
 async function analyticsApi(url,options={}){const response=await fetch(url,options);let data;try{data=await response.json();}catch{data={detail:"Zova could not read that response."};}if(!response.ok)throw new Error(data.detail||"Request failed");return data;}
 
