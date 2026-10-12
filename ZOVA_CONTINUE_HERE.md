@@ -1,3 +1,17 @@
+# Next move details-only refinement — 12 October 2026 (not deployed)
+
+Branch codex/next-move-details-only-20261012: recommendation view exposes only Details and Change this idea beneath the card/carousel. Removed More options wrapper and reminder UI. Plan/settings/recurring controls are hidden from Next move and remain accessible in the separate Your plan view through Post options or Plan my socials. New accounts see Set your goal; confirming the plan returns to recommendations. Launcher retains white text/shimmer with a near-black plum-to-violet gradient. No backend/data/auth/publication changes. All79 broader beta findings retained.
+
+Validated synthetic browser setup-to-plan-confirm-to-recommendation flow, clean panel and separate Post options planning access; Node onboarding, journey, schedule and Studio checks pass. Regression asserts planning/recommendation visibility separation. Hosted release checks/deployment remain pending. Rollback to1c978a1 preserves data.
+
+---
+
+# Next move focus release is live — 12 October 2026
+
+PR23 merged as1c978a1401427246bfe57ad230faa2f475ae54f9. Render dep-db6b7poae00c73afn09g is Live. Required synthetic, PostgreSQL and production guardrails checks passed in CI38235232320 (also push38235226889). Health200 and exact deployed strategy CSS/JS, shared icon helper and X/Facebook/TikTok SVG matches verified. Signed-in Studio displays the larger black/white launcher and all four platform icons. No real social posts, grants or billing changes. Broader beta gaps remain open. Rollback to b82b04715c7c48efaa22d0a21d41d90021121cb4, preserving data.
+
+---
+
 # Next move focus and platform icons — 12 October 2026 (local, not deployed)
 
 Branch codex/next-move-focus-icons-20261012 simplifies the card to one More options disclosure, retaining feedback, reminders, context and keyboard navigation. Studio launcher is larger black/white with two gentle shimmer cycles; reduced-motion disables animation. Shared locally hosted X/Facebook/TikTok SVG marks replace text approximations across composer, strategy, draft/review/results, analytics, account and landing controls. Names remain in accessible labels and prose. No backend, auth, billing or publication changes. All broader beta gaps remain open.

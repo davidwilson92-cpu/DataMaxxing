@@ -124,3 +124,8 @@
 @media(max-width:600px){.simple-chat .studio-header-actions .next-move-launch{font-size:14px;min-height:48px;padding:10px 14px;gap:7px}.simple-chat .next-move-launch .next-move-sparkle{width:23px;height:23px}}
 @media(prefers-reduced-motion:reduce){.simple-chat .next-move-launch::after,.simple-chat .next-move-launch>span,.simple-chat .next-move-launch .next-move-sparkle{animation:none}}
 .strategy-panel .move-options>summary>span{margin-left:auto}
+
+/* Near-black plum with Zova's violet depth; text stays white. */
+.simple-chat .studio-header-actions .next-move-launch{background:linear-gradient(115deg,#100c18 0%,#21132f 62%,#43215e 100%);border-color:#4d3265;box-shadow:0 4px 16px #32184a26,inset 0 1px 0 #d6b6ff24}
+.simple-chat .studio-header-actions .next-move-launch:hover{background:linear-gradient(115deg,#191022,#321b48 62%,#573079);border-color:#78509c}
+.strategy-panel #nextMoveSettings[hidden],.strategy-panel #strategyActions[hidden]{display:none!important}

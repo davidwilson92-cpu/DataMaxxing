@@ -26,21 +26,30 @@ async function strategyTask(button,work){
  try{await work();}catch(e){strategyStatus(e.message||'Could not save. Your input is still here.');}
  finally{strategyPending=false;if(button)button.disabled=false;}
 }
-async function openNextMove(){
+function setPlanningView(planning){
+ document.getElementById('nextMoveSettings').hidden=!planning;
+ document.getElementById('strategyActions').hidden=planning;
+ document.getElementById('strategyTitleText').textContent=planning?'Your plan':'Next move';
+ document.getElementById('strategyClose').setAttribute('aria-label',planning?'Close your plan':'Close next move');
+ document.getElementById('strategyStepHint').hidden=!planning;
+}
+async function openNextMove(planning=false){
+ setPlanningView(planning);
  document.getElementById('strategyPanel').showModal();
  await strategyTask(null,async()=>{
   const data=await api('/api/strategy');const reloadPlan=!strategyLoaded||data.revision!==strategyRevision;strategyRevision=data.revision;hasConfirmedStrategy=Boolean(data.confirmed.goal);
   document.getElementById('strategyForm').hidden=!(data.proposal.strategy||hasConfirmedStrategy);
-  document.getElementById('recommendButton').hidden=!hasConfirmedStrategy;
+  document.getElementById('recommendButton').hidden=planning||!hasConfirmedStrategy;
   if(reloadPlan)fillStrategy(data.proposal.strategy||data.confirmed.goal&&data.confirmed||data.defaults);
   strategyStepHint(data.proposal.strategy?'proposal':hasConfirmedStrategy?'confirmed':'new');
   document.getElementById('strategyConfirmedState').textContent=data.proposal.strategy?'Review before saving. Your current plan stays in use.':'';
   showStrategyAssumptions(data.proposal.assumptions||[]);
-  document.getElementById('strategyDetails').open=!hasConfirmedStrategy;
-  document.getElementById('nextMoveSettings').open=!hasConfirmedStrategy;document.getElementById('nextMoveSettingsLabel').hidden=!hasConfirmedStrategy;
+  document.getElementById('strategyDetails').open=planning||!hasConfirmedStrategy;
+  document.getElementById('nextMoveSettings').open=planning;document.getElementById('nextMoveSettingsLabel').hidden=true;
   document.getElementById('strategyQuickStart').open=!(data.proposal.strategy||hasConfirmedStrategy);
   document.getElementById('strategyManualEdit').hidden=Boolean(data.proposal.strategy||hasConfirmedStrategy);
   strategyLoaded=true;
+  if(planning){strategyStatus('');return;}
   const items=await loadNextMoves();
   if(hasConfirmedStrategy&&(!items.length||items.every(a=>a.stale&&!a.draft_id))){
    strategyStatus('Finding your next post…');
@@ -61,7 +70,7 @@ async function proposeStrategy(button){await strategyTask(button,async()=>{
 async function confirmStrategy(event){event.preventDefault();await strategyTask(event.submitter,async()=>{
  const strategy=Object.fromEntries(strategyKeys.map(k=>[k,document.getElementById('strategy_'+k).value]));strategy.platforms=Array.from(document.querySelectorAll('[name=strategy_platform]:checked'),n=>n.value);
  const r=await api('/api/strategy/confirm',{method:'POST',headers,body:JSON.stringify({strategy,revision:strategyRevision})});strategyRevision=r.revision;hasConfirmedStrategy=true;strategyStepHint('confirmed');document.getElementById('recommendButton').hidden=false;showStrategyAssumptions([]);
- document.getElementById('strategyConfirmedState').textContent='';document.getElementById('nextMoveSettings').open=false;document.getElementById('nextMoveSettingsLabel').hidden=false;document.getElementById('strategyDetails').open=false;strategyStatus('Strategy saved. Preparing your next moves…');try{await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();strategyStatus('');}catch(e){await loadNextMoves();strategyStatus('Plan saved. Couldn’t load ideas. Try Find post ideas.');}
+ setPlanningView(false);document.getElementById('strategyConfirmedState').textContent='';document.getElementById('nextMoveSettings').open=false;document.getElementById('nextMoveSettingsLabel').hidden=true;document.getElementById('strategyDetails').open=false;strategyStatus('Strategy saved. Preparing your next moves…');try{await api('/api/strategy/recommend',{method:'POST',headers,body:'{}'});await loadNextMoves();strategyStatus('');}catch(e){await loadNextMoves();strategyStatus('Plan saved. Couldn’t load ideas. Try Find post ideas.');}
 });}
 function nextMoveSource(a){
  if(!a.source)return '<p class="source-kind">Evergreen · based on your strategy</p>';
@@ -80,17 +89,15 @@ function nextMoveCard(a){
  <div class="move-actions"><button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true">↗</span></button></div>
  </div>
  <div class="move-pager" role="group" aria-label="Browse ideas"><button type="button" onclick="changeMove(-1)" aria-label="Previous idea" ${moveItems.length<2?'disabled':''}>←</button><span role="status">${moveIndex+1} of ${moveItems.length}</span><button type="button" onclick="changeMove(1)" aria-label="Next idea" ${moveItems.length<2?'disabled':''}>→</button></div>
- <details class="move-options" id="moveOptions${a.id}"><summary>More options <span aria-hidden="true">+</span></summary>
  <details class="move-context" id="moveDetails${a.id}"><summary>Details <span aria-hidden="true">+</span></summary>
  <div class="move-detail-body">${review?`<div class="move-review-steps"><p>${esc(a.brief)}</p><button class="quiet-button" onclick="actionFeedback(${a.id},'complete',this)">Mark done</button></div>`:''}<p>${esc(a.reason)}</p>${a.needs?`<p><strong>To make it:</strong> ${esc(a.needs)}</p>`:''}${a.effort?`<p class="move-effort">${esc(a.effort)}</p>`:''}${nextMoveSource(a)}</div></details>
  <details class="move-feedback"><summary>Change this idea <span aria-hidden="true">↗</span></summary><label for="moveFeedback${a.id}">What would work better?</label><input id="moveFeedback${a.id}" maxlength="80" placeholder="E.g. less filming, more tips for beginners"><button class="button primary" onclick="refineMove(${a.id},this)">Find a better idea</button><button class="quiet-button" onclick="actionFeedback(${a.id},'dismissed',this)">Not for me</button></details>
- <details class="move-reminder"><summary>Remind me <span aria-hidden="true">+</span></summary><p>Bring this idea back later. This does not schedule a post.</p><div class="move-reminder-shortcuts"><button onclick="remindMove(${a.id},1,this)">Tomorrow</button><button onclick="remindMove(${a.id},7,this)">Next week</button></div><label for="moveReminder${a.id}">Or choose a date and time (${esc(Intl.DateTimeFormat().resolvedOptions().timeZone)})</label><input type="datetime-local" id="moveReminder${a.id}"><button class="quiet-button" onclick="remindMove(${a.id},null,this)">Set reminder</button></details>
- </details></article>`;
+ </article>`;
 }
-function showMoveSteps(id){document.getElementById('moveOptions'+id).open=true;const details=document.getElementById('moveDetails'+id);details.open=true;details.querySelector('summary')?.focus();}
+function showMoveSteps(id){const details=document.getElementById('moveDetails'+id);details.open=true;details.querySelector('summary')?.focus();}
 function renderNextMove(){
  moveIndex=Math.max(0,Math.min(moveIndex,moveItems.length-1));
- document.getElementById('strategyActions').innerHTML=moveItems.length?nextMoveCard(moveItems[moveIndex]):(hasConfirmedStrategy?'<div class="move-empty"><h3>Ready for a new idea?</h3><button class="button primary" onclick="refreshStrategyActions(this)">Find an idea</button></div>':'');
+ document.getElementById('strategyActions').innerHTML=moveItems.length?nextMoveCard(moveItems[moveIndex]):(hasConfirmedStrategy?'<div class="move-empty"><h3>Ready for a new idea?</h3><button class="button primary" onclick="refreshStrategyActions(this)">Find an idea</button></div>':'<div class="move-empty"><h3>Give your ideas a direction</h3><button class="button primary" onclick="openNextMove(true)">Set your goal</button></div>');
 }
 function changeMove(direction){if(strategyPending||moveItems.length<2)return;moveIndex=(moveIndex+direction+moveItems.length)%moveItems.length;renderNextMove();document.querySelector('#strategyActions h3')?.focus();}
 async function loadNextMoves(){
