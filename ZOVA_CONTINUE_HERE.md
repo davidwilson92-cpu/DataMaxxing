@@ -1,3 +1,15 @@
+# Shared web/iOS foundations — 12 October 2026 (not deployed)
+
+Branch codex/shared-mobile-foundations-20261012. Native access and durable AI queue are disabled by default; existing web/scheduler defaults preserved. Implements shared v1 API, browser-confirmed S256 handoff, hashed rotating native sessions, ownership/revision/idempotency guards, private native media paths, durable generation jobs, separate worker roles, pool controls, optional offline schema preparation/read-only verification and worker diagnostics. Owner preference: keep beta hosting costs minimal; stay on Render and do not provision paid resources. Architecture/cost comparison, rollout limitations and rollback: docs/SHARED_WEB_IOS_ARCHITECTURE_20261012.md. Native API contract: docs/api/mobile-v1.openapi.json. Full local regression295passed/2skipped; expanded mobile/contract/beta checks26passed/1skipped and Node suites passed. Final hosted PostgreSQL/restore/image validation pending. All79 broader gaps retained; no data/grant/billing/deployment changes. Existing placeholder change is included.
+
+---
+
+# Studio composer wording — 12 October 2026 (not deployed)
+
+Changed the composer placeholder and matching accessible label from Message Zova to Start drafting your next post. Template-only wording change; reviewed diff and exact beta scope validation passed. No behavior change. All 79 broader beta gaps remain open. Await publication request.
+
+---
+
 # Next Move visible sections are live — 12 October 2026
 
 PR27 merged as f1c7c12ed3076990b1262e7cefbd614c699f95bd. Render dep-db6cpk2vcj2c73fgrcng confirmed Live. Final head624ff5f passed all required checks in PR38246492944 and push38246487073. Health200; exact strategy.js and studio-design.css matches verified after a transient startup HTTP error recovered. Signed-in live Next Move shows Details and Change this idea as always-visible sections with bold headings and no dropdown toggles. Keyboard access to feedback verified without entering or submitting data. Screenshot local only: docs/validation/next-move-open-sections-live.jpg. No real posts, account/grant/billing changes or schema migration. All79 broader beta gaps remain open. Rollback db9a4ff6daff2735b48ff989771c9ae8c91e866c preserves data and connections.

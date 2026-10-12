@@ -16,6 +16,8 @@ log = logging.getLogger("nova.scheduler")
 
 
 def process_due(limit: int = 25) -> dict[str, int]:
+    from .mobile_auth import remove_expired_sessions
+    remove_expired_sessions()
     published = failed = 0
     with SessionLocal() as db:
         from .db import PendingConnection

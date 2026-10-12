@@ -12,7 +12,8 @@ if DATABASE_URL.startswith('postgres://'):
 elif DATABASE_URL.startswith('postgresql://'):
     DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg://', 1)
 connect_args = {'check_same_thread': False} if DATABASE_URL.startswith('sqlite') else {}
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args)
+from .runtime import database_options
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args, **database_options(DATABASE_URL))
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 
@@ -461,9 +462,74 @@ class SeriesApproval(BrandScoped, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-Base.metadata.create_all(bind=engine)
-from .migrations import run_migrations
-run_migrations(engine)
+class MobileGrant(Base):
+    __tablename__ = 'zova_mobile_grants'
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    client_id: Mapped[str] = mapped_column(String(40))
+    redirect_uri: Mapped[str] = mapped_column(String(500))
+    challenge: Mapped[str] = mapped_column(String(43))
+    state: Mapped[str] = mapped_column(String(128))
+    user_id: Mapped[int | None] = mapped_column(ForeignKey('nova_users.id'), nullable=True)
+    auth_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    code_hash: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class MobileSession(Base):
+    __tablename__ = 'zova_mobile_sessions'
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    auth_version: Mapped[int] = mapped_column(Integer)
+    access_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    access_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MobileRefresh(Base):
+    __tablename__ = 'zova_mobile_refresh_tokens'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    session_id: Mapped[str] = mapped_column(ForeignKey('zova_mobile_sessions.id'), index=True)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class ClientMutation(Base):
+    __tablename__ = 'zova_client_mutations'
+    __table_args__ = (UniqueConstraint('user_id', 'brand_id', 'request_key'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'))
+    brand_id: Mapped[int] = mapped_column(Integer)
+    request_key: Mapped[str] = mapped_column(String(80))
+    # Keep the receipt after draft deletion so a retried request cannot recreate it.
+    draft_id: Mapped[int] = mapped_column(Integer)
+
+
+class GenerationJob(BrandScoped, Base):
+    __tablename__ = 'zova_generation_jobs'
+    __table_args__ = (UniqueConstraint('user_id', 'brand_id', 'request_key'),)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    request_key: Mapped[str] = mapped_column(String(80))
+    payload_hash: Mapped[str] = mapped_column(String(64))
+    payload_json: Mapped[str] = mapped_column(Text)
+    auth_version: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20), default='queued', index=True)
+    result_json: Mapped[str] = mapped_column(Text, default='{}')
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class WorkerHeartbeat(Base):
+    __tablename__ = 'zova_worker_heartbeats'
+    role: Mapped[str] = mapped_column(String(30), primary_key=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20))
+
+
+from .runtime import prepare_schema
+prepare_schema(Base.metadata,engine)
 
 
 def get_db(request: Request):

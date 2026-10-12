@@ -10,11 +10,12 @@ def bind_request(db, request):
     # These endpoints establish their own signed provider authority, not browser workspace authority.
     if request.url.path in {'/data-deletion/callback', '/billing/webhook'}:
         return
-    from .security import user_from_session
-    user = user_from_session(request.cookies.get('nova_session'))
+    from .security import user_from_session, current_user
+    native = request.url.path.startswith('/api/v1/')
+    user = current_user(request) if native else user_from_session(request.cookies.get('nova_session'))
     if not user:
         return
-    raw = request.headers.get('X-Zova-Brand', request.query_params.get('workspace', request.cookies.get('zova_brand', '0')))
+    raw = request.headers.get('X-Zova-Brand', request.query_params.get('workspace', '0' if native else request.cookies.get('zova_brand', '0')))
     try:
         brand_id = int(raw)
     except (ValueError, TypeError):

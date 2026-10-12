@@ -83,3 +83,17 @@ Current production baseline: main `78d9924` (21 September Instagram reauthentica
 See `COMMERCIAL_OPERATIONS_20260920.md`, `CUSTOMER_VALIDATION_20260920.md` and `COMMERCIAL_READINESS_EVIDENCE_20260920.md`. Provider approval is never inferred from code, old credentials, a connected status or a mock.
 
 Next move simplification: automatically fills empty/stale recommendations; post-first card with one draft action; compact alternatives/context/settings; linked draft title and explicit platform saved. Browser synthetic goal-to-draft/reload and failure/late-navigation harnesses validated. Live model relevance remains a separate check. See NEXT_MOVE_SIMPLE_20261010.md.
+
+
+## Shared web/iOS foundation candidate — 12 October 2026
+
+| Capability | Implementation | Validation / availability |
+| --- | --- | --- |
+| Native account handoff and rotating sessions | Implemented; disabled by default | Synthetic PKCE/replay/revocation/ownership tests; device callback unverified |
+| Shared v1 API and owned workspaces | Implemented; explicit route allowlist | Existing web handlers reused; no native interface yet |
+| Retry-safe drafts and revision conflicts | Implemented | Concurrent create and cross-device stale edit tests |
+| Durable background generation | Implemented; disabled until worker provisioned | Disconnect, cancellation, stale revision, interruption and account-revocation tests |
+| Separate publishing/generation workers | Entrypoints and PostgreSQL locks implemented | No production workers provisioned; hosted PostgreSQL check required |
+| Portable scaling controls | Pool bounds, schema mode, replica preconditions | Does not certify actual capacity or infrastructure privacy |
+
+Full limits and rollback: SHARED_WEB_IOS_ARCHITECTURE_20261012.md. No native billing, push, complete offline sync or public iOS release is claimed. All broader beta gaps remain open.

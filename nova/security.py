@@ -97,6 +97,9 @@ def user_from_session(token: str | None) -> User | None:
 
 
 def current_user(request: Request) -> User:
+    if request.url.path.startswith('/api/v1/'):
+        from .mobile_auth import native_user
+        return native_user(request)
     user = user_from_session(request.cookies.get('nova_session'))
     if not user:
         raise HTTPException(status_code=401, detail='Sign in required')
