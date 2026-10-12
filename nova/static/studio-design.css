@@ -1,0 +1,76 @@
+/* Studio hierarchy: content first, one primary action, controls at point of use. */
+.simple-chat{--zova-ink:#292132;--zova-muted:#65596f;--zova-line:#e5dfea;--zova-purple:#7137bd}
+.simple-chat .studio-watermark{display:none}
+.simple-chat .conversation-layout:has(.welcome-message) .studio-watermark{display:flex;opacity:.018}
+@media(min-width:761px){.simple-chat .chat-brand .zova-symbol{display:none}}
+.simple-chat .chat-brand a{font-size:22px;letter-spacing:-.5px}
+.simple-chat .chat-feed{padding-top:24px;padding-bottom:24px}
+.simple-chat .draft-working-title{font-size:19px;line-height:1.4;font-weight:650;letter-spacing:-.25px;margin-bottom:10px}
+.simple-chat .draft-scope{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--zova-muted);margin-bottom:16px}
+.simple-chat .draft-text p{font-size:16px;line-height:1.75}
+.simple-chat .response-actions{gap:6px;margin-top:20px;padding-top:14px;border-top:1px solid var(--zova-line)}
+.simple-chat .response-actions button,.simple-chat .response-actions summary{font-size:14px;color:#5f526c;min-height:44px;padding:10px 13px}
+.simple-chat .response-actions .review-button{background:var(--zova-purple);color:#fff;border:1px solid var(--zova-purple);font-weight:600;padding:10px 18px;border-radius:12px;margin-right:6px}
+.simple-chat .response-actions .review-button:hover{background:#5c279e;color:#fff}
+.simple-chat .draft-options summary{display:flex;align-items:center;gap:8px;list-style:none}
+.simple-chat .draft-options summary::after{content:'⌄';font-size:17px}
+.simple-chat .draft-options[open] summary::after{transform:rotate(180deg)}
+/* Text, destinations and utilities have a stable reading and tab order. */
+.simple-chat .chat-composer{display:flex;flex-direction:column;gap:8px;padding:12px 14px 10px;background:#fcfbfd;border-radius:20px;border-color:#dcd2e5;box-shadow:0 3px 16px #21112b05}
+.simple-chat #brief{min-height:44px;margin:0;padding:4px 2px 8px;font-size:16px;line-height:1.5}
+.simple-chat #brief::placeholder{color:#76677f}
+.simple-chat #editingScope{margin:0;font-size:13px;color:#65596f}
+.simple-chat .composer-destinations{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0;order:initial}
+.simple-chat .composer-platforms{gap:5px}
+.simple-chat .composer-platforms .platform-check label{width:44px;height:44px;padding:8px;box-sizing:border-box;border-radius:10px;background:#f3f0f6;border-color:transparent}
+.simple-chat .composer-platforms .platform-check:not(.is-selected) label img,.simple-chat .composer-platforms .platform-check:not(.is-selected) .instagram-glyph{opacity:.58}
+.simple-chat .composer-platforms .is-selected label{background:#efe6fc;border-color:#9b72cc;box-shadow:inset 0 0 0 1px #9b72cc}
+.simple-chat .composer-platforms .is-connected label::after{position:absolute;right:4px;bottom:4px;margin:0;width:5px;height:5px}
+.simple-chat .composer-platforms .platform-check label{position:relative}
+.simple-chat .instagram-format-choices{display:flex;gap:4px;flex-wrap:wrap;align-items:center;border:0;border-left:1px solid #ddd2e7;padding:0 0 0 10px;margin:0;width:auto}
+.simple-chat .instagram-format-choices label{min-height:44px;padding:8px 10px;font-size:14px;font-weight:500;border-radius:9px}
+.simple-chat .instagram-format-choices input{width:16px;height:16px}
+.simple-chat .composer-format{margin:0;min-height:44px}
+.simple-chat .composer-toolbar{display:flex;align-items:center;justify-content:space-between;width:100%;border-top:1px solid #eee7f3;padding-top:6px;margin:0}
+.simple-chat .composer-toolbar .quiet-button{color:#63556e;font-size:14px;padding:8px 10px}
+.simple-chat .composer-toolbar .attachment-button{font-size:24px;width:44px;min-height:44px;padding:0}
+.simple-chat .send-button{width:44px;height:44px;min-height:44px}
+.simple-chat .composer-footnote{font-size:12px;color:#6b5c76;padding-top:6px}
+.simple-chat .saved-history header h2{font-size:16px}
+.simple-chat .saved-history a{font-size:14px}
+.simple-chat .saved-history small,.simple-chat .saved-history header p{color:#6b5c76}
+/* Compact recommendation shell; preserve the two requested disclosures. */
+.simple-chat dialog.strategy-panel{width:min(520px,calc(100% - 24px));padding:18px;border-radius:24px}
+.strategy-panel header{padding:0 0 12px}
+.strategy-panel #strategyPanelTitle{font-size:19px}
+.strategy-panel .move-hero{padding:22px;border-radius:18px}
+.strategy-panel .move-hero::after{width:160px;height:160px;top:auto;bottom:-25px;right:-25px;opacity:.065}
+.strategy-panel .move-meta{margin-bottom:18px}
+.strategy-panel #strategyActions h3{font-size:26px;line-height:1.22;letter-spacing:-.6px;margin-bottom:22px}
+.strategy-panel .move-draft{min-height:48px;font-size:15px}
+.strategy-panel .move-context>summary,.strategy-panel .move-feedback>summary{font-size:14px;min-height:48px;color:#574563;align-items:center}
+.strategy-panel .move-context>summary .disclosure-chevron,.strategy-panel .move-feedback>summary .disclosure-chevron{font-size:20px;line-height:1;transform:none}
+.strategy-panel .move-context[open]>summary .disclosure-chevron,.strategy-panel .move-feedback[open]>summary .disclosure-chevron{transform:rotate(180deg)}
+.strategy-panel .move-detail-body>p{font-size:15px;line-height:1.6}
+.strategy-panel .move-effort,.strategy-panel .source-kind{font-size:13px!important;color:#65516f}
+@media(max-width:760px){
+ .simple-chat .chat-feed{padding:18px 18px}
+ .simple-chat .draft-working-title{font-size:18px}
+ .simple-chat .chat-composer{padding:10px 11px 8px;gap:6px}
+ .simple-chat .composer-destinations{gap:6px}
+ .simple-chat .response-actions{gap:2px}
+ .simple-chat .response-actions .review-button{margin-right:0;padding:10px 12px}
+ .simple-chat .instagram-format-choices{border-left:0;padding-left:0}
+ .simple-chat dialog.strategy-panel{padding:14px}
+ .strategy-panel .move-hero{padding:20px}
+ .strategy-panel #strategyActions h3{font-size:25px}
+}
+@media(max-height:560px){.simple-chat .chat-composer{gap:4px}.simple-chat .composer-wrap{max-height:50dvh}}
+
+/* Second review: inherited form-label margins added 20px of empty space. */
+.simple-chat .instagram-format-choices label,.simple-chat .composer-format label{margin:0}
+.simple-chat .composer-format label{font-size:13px}
+@media(min-width:360px) and (max-width:760px){.simple-chat .instagram-format-choices{gap:3px}.simple-chat .instagram-format-choices label{padding:6px;gap:5px;font-size:13px}}
+.simple-chat .composer-platforms .platform-check label{min-width:44px}
+@media(min-width:360px) and (max-width:760px){.simple-chat .composer-destinations{gap:4px}}
+@media(max-width:360px){.simple-chat .studio-header-actions #newChatBtn{font-size:0;width:44px;min-width:44px;padding:0}.simple-chat .studio-header-actions #newChatBtn::after{content:"+";font-size:23px}.simple-chat .chat-brand a{font-size:19px}.simple-chat .studio-header-actions .next-move-launch{padding:10px 11px;font-size:13px}}
