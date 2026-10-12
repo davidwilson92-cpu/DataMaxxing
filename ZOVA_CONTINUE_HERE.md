@@ -1,3 +1,9 @@
+# Studio design coherence candidate — 12 October 2026 (not deployed)
+
+Branch codex/studio-design-coherence-20261012 completes three visual review passes against the six cosmetic criteria. See docs/STUDIO_DESIGN_REVIEW_20261012.md for recommendations, benchmark sources, measured layouts, scores and limits. Primary draft action, composer grouping, restrained branding, shared navigation icons, readable controls, compact Next Move and plain-language recommendation guidance implemented. Local SQLite272passed/1skipped; Node suites and synthetic desktop/mobile/keyboard/edit/reload review passed. Hosted PostgreSQL checks still required before release. All79 broader beta findings retained; design8/10 scores are heuristic, not commercial readiness. No real provider actions or schema migration. Rollback1998cec.
+
+---
+
 # Details-only Next move is live — 12 October 2026
 
 PR24 merged as1998cec03762931a362c17705b8a04081c5cdb94. Render dep-db6bf3k9v7es739t2iag is Live. All required checks passed in PR CI38236867250 and push38236860942. Brief startup502 recovered; health200 and exact strategy.css/strategy.js matches verified. Signed-in live Next move shows only Details and Change this idea beneath the card/carousel; planning controls remain accessible via Post options. Purple gradient launcher shipped. No real posts or account/billing mutations performed. Rollback to1c978a1401427246bfe57ad230faa2f475ae54f9 preserves data. Broader beta gaps remain open.

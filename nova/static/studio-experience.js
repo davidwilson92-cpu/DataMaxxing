@@ -40,7 +40,7 @@ function renderCanvasPreview(){
 function renderReadiness(){
   const platforms=selectedPlatforms();
   const scope=document.getElementById('editingScope');
-  if(scope){scope.hidden=!variants[currentPlatform];scope.textContent=variants[currentPlatform]?`${editableDraft()?'Working on':'Viewing'} ${platformName(currentPlatform)}${!editableDraft()?'. This post is read-only.':Object.keys(variants).length>1?'. Name another platform or say “all versions” to change the scope.':'.'}`:'';}
+  if(scope){scope.hidden=!variants[currentPlatform]||(editableDraft()&&Object.keys(variants).length===1);scope.textContent=variants[currentPlatform]?`${editableDraft()?'Working on':'Viewing'} ${platformName(currentPlatform)}${!editableDraft()?'. This post is read-only.':Object.keys(variants).length>1?'. Name another platform or say “all versions” to change the scope.':'.'}`:'';}
 
   document.getElementById('destinationReadiness').innerHTML=platforms.map(p=>{
     const accounts=connectionData[p]||[];

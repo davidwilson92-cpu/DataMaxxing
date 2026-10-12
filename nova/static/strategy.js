@@ -77,6 +77,7 @@ function nextMoveSource(a){
  const s=a.source;
  return `<details class="source-evidence"><summary class="source-kind">${a.stale?(a.draft_id?'Saved source':'Refresh needed'):s.kind==='public_social'?'Recent social discussion':'Recent web coverage'} · Source</summary><p><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a></p><small>Reported publication: ${esc(s.published_at)} · Checked ${esc(new Date(s.checked_at).toLocaleString())}</small>${a.stale&&!a.draft_id?'<p>This source needs a fresh check before creating a draft.</p>':''}</details>`;
 }
+function moveReason(text){return String(text||'').replace(/\s*\(strategy:[^)]*\)/gi,'').trim();}
 function nextMoveCard(a){
  const review=a.kind==='review',stale=a.stale&&!a.draft_id;
  const label=a.draft_id?'Open draft':stale?'Refresh idea':review?'See steps':'Draft post';
@@ -86,12 +87,12 @@ function nextMoveCard(a){
  <div class="move-meta"><span class="move-platform">${movePlatform(a.platform)}${a.platform==='instagram'?' · '+esc(a.format==='story'?'Story':'Post'):''}</span></div>
  <h3 tabindex="-1">${esc(a.title)}</h3>
  ${stale?'<p class="move-stale">Refresh the source before drafting.</p>':''}
- <div class="move-actions"><button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true">↗</span></button></div>
+ <div class="move-actions"><button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true">→</span></button></div>
  </div>
  <div class="move-pager" role="group" aria-label="Browse ideas"><button type="button" onclick="changeMove(-1)" aria-label="Previous idea" ${moveItems.length<2?'disabled':''}>←</button><span role="status">${moveIndex+1} of ${moveItems.length}</span><button type="button" onclick="changeMove(1)" aria-label="Next idea" ${moveItems.length<2?'disabled':''}>→</button></div>
- <details class="move-context" id="moveDetails${a.id}"><summary>Details <span aria-hidden="true">+</span></summary>
- <div class="move-detail-body">${review?`<div class="move-review-steps"><p>${esc(a.brief)}</p><button class="quiet-button" onclick="actionFeedback(${a.id},'complete',this)">Mark done</button></div>`:''}<p>${esc(a.reason)}</p>${a.needs?`<p><strong>To make it:</strong> ${esc(a.needs)}</p>`:''}${a.effort?`<p class="move-effort">${esc(a.effort)}</p>`:''}${nextMoveSource(a)}</div></details>
- <details class="move-feedback"><summary>Change this idea <span aria-hidden="true">↗</span></summary><label for="moveFeedback${a.id}">What would work better?</label><input id="moveFeedback${a.id}" maxlength="80" placeholder="E.g. less filming, more tips for beginners"><button class="button primary" onclick="refineMove(${a.id},this)">Find a better idea</button><button class="quiet-button" onclick="actionFeedback(${a.id},'dismissed',this)">Not for me</button></details>
+ <details class="move-context" id="moveDetails${a.id}"><summary>Details <span class="disclosure-chevron" aria-hidden="true">⌄</span></summary>
+ <div class="move-detail-body">${review?`<div class="move-review-steps"><p>${esc(a.brief)}</p><button class="quiet-button" onclick="actionFeedback(${a.id},'complete',this)">Mark done</button></div>`:''}<p>${esc(moveReason(a.reason))}</p>${a.needs?`<p><strong>To make it:</strong> ${esc(a.needs)}</p>`:''}${a.effort?`<p class="move-effort">${esc(a.effort)}</p>`:''}${nextMoveSource(a)}</div></details>
+ <details class="move-feedback"><summary>Change this idea <span class="disclosure-chevron" aria-hidden="true">⌄</span></summary><label for="moveFeedback${a.id}">What would work better?</label><input id="moveFeedback${a.id}" maxlength="80" placeholder="E.g. less filming, more tips for beginners"><button class="button primary" onclick="refineMove(${a.id},this)">Find a better idea</button><button class="quiet-button" onclick="actionFeedback(${a.id},'dismissed',this)">Not for me</button></details>
  </article>`;
 }
 function showMoveSteps(id){const details=document.getElementById('moveDetails'+id);details.open=true;details.querySelector('summary')?.focus();}
