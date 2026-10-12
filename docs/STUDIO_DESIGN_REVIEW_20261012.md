@@ -1,6 +1,6 @@
 # Studio design benchmark and iteration review — 12 October 2026
 
-Scope: Studio and Next Move cosmetics/interaction hierarchy, against the six areas in the preceding critique. This is a heuristic design assessment, not customer research, independent certification or commercial/security readiness. Production remains1998cec until separately released. All79 commercial/security register entries retained.
+Scope: Studio and Next Move cosmetics/interaction hierarchy, against the six areas in the preceding critique. This is a heuristic design assessment, not customer research, independent certification or commercial/security readiness. Published through PR25 as798796b86168b68aa1e9993ca3a028991b3eee49. Final required checks passed in CI38241265879 and38241259549; health200, exact deployed asset matches and signed-in Studio/Next Move visual verification passed. Rollback1998cec remains available; no schema changes. All79 commercial/security register entries retained.
 
 ## Benchmark principles
 

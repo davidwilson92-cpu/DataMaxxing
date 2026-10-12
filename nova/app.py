@@ -1046,13 +1046,15 @@ def api_drafts(request:Request,db:Session=Depends(get_db)):
     statement=select(Draft).where(Draft.user_id==user.id)
     if query:statement=statement.where(or_(Draft.title.icontains(query,autoescape=True),Draft.brief.icontains(query,autoescape=True),Draft.variants_json.icontains(query,autoescape=True),Draft.workspace_json.icontains(query,autoescape=True)))
     rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).limit(100)).all()
+    from .workspace import draft_media_previews
+    previews=draft_media_previews(db,rows,user.id)
     output=[]
     for r in rows:
         acts=db.scalars(select(Activity).where(Activity.user_id==user.id,Activity.draft_id==r.id,Activity.url.is_not(None)).order_by(Activity.id.desc())).all()
         title=draft_title(r)
         try:platforms=json.loads(r.platforms_json or "[]")
         except (TypeError,ValueError):platforms=[]
-        output.append({"id":r.id,"title":title[:100],"brief":r.brief,"platforms":platforms,"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
+        output.append({"id":r.id,"thumbnail":previews.get(r.id),"title":title[:100],"brief":r.brief,"platforms":platforms,"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
     return output
 
 @app.get("/api/drafts/{draft_id}")

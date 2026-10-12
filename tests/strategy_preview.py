@@ -8,7 +8,7 @@ os.environ.update(PUBLIC_BASE_URL='http://127.0.0.1:8784',STRIPE_MODE='off',PLAN
 from nova.app import app
 from nova import ai, strategy, trends
 from datetime import datetime, timezone
-from nova.db import SessionLocal,User,Draft
+from nova.db import SessionLocal,User,Draft,MediaAsset
 from nova.security import hash_password
 def mocked_json(uid,instruction,data):
     if 'exactly three' in instruction:
@@ -19,7 +19,13 @@ trends.discover=lambda themes,uid:{'topics':[{'id':'source-1','title':'Synthetic
 ai.generate_variants=lambda **kw:{p:{'posts':['New to pottery? Start with a small piece of clay and give yourself time to learn. What would you like to try making?']} for p in kw['platforms']}
 with SessionLocal() as db:
     user=User(email='strategy@example.test',display_name='Synthetic creator',password_hash=hash_password('Synthetic-preview-2026!'));db.add(user);db.commit()
-    db.add(Draft(user_id=user.id,brief='Welcome to our pottery studio',platforms_json='["instagram"]',variants_json='{"instagram":{"posts":["A warm welcome to our pottery studio."]}}'));db.commit()
+    from PIL import Image
+    from nova.storage import UPLOAD_DIR
+    UPLOAD_DIR.mkdir(parents=True,exist_ok=True)
+    Image.new('RGB',(80,80),(131,76,174)).save(UPLOAD_DIR/'creator-synthetic.png')
+    media=MediaAsset(user_id=user.id,filename='Synthetic colour sample.png',mime_type='image/png',storage_key=str(UPLOAD_DIR/'creator-synthetic.png'),public_url='http://127.0.0.1:8784/media/raw/creator-synthetic.png')
+    db.add(media);db.flush()
+    db.add(Draft(user_id=user.id,workspace_json=json.dumps({'media_asset_ids':[media.id],'media':[{'id':media.id,'kind':'image','url':f'/media/preview/{media.id}','filename':'Synthetic colour sample.png'}]}),brief='Welcome to our pottery studio',platforms_json='["instagram"]',variants_json='{"instagram":{"posts":["A warm welcome to our pottery studio."]}}'));db.commit()
 os.chdir(repo)
 import uvicorn
 uvicorn.run(app,host='127.0.0.1',port=8784,lifespan='off',access_log=False)
