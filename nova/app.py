@@ -790,7 +790,7 @@ def oauth_instagram_callback(request:Request,code:str|None=None,state:str|None=N
         return connection_return(request,"instagram","connection_failed")
     profile=result["profile"]
     from .connection_review import stage
-    return stage(db,request,row,'instagram',[dict(platform="instagram",account_id=str(profile["id"]),username=profile.get("username","") or "",display_name=profile.get("name","") or profile.get("username","") or "",access=result["access_token"],expires_in=result.get("expires_in"),scope=os.environ.get("INSTAGRAM_SCOPES",INSTAGRAM_SCOPES),metadata={"auth_provider":"instagram_login","profile_picture_url":profile.get("profile_picture_url")})])
+    return stage(db,request,row,'instagram',[dict(platform="instagram",account_id=str(profile["id"]),username=profile.get("username","") or "",display_name=profile.get("name","") or profile.get("username","") or "",access=result["access_token"],expires_in=result.get("expires_in"),scope=result.get("scope", ""),metadata={"auth_provider":"instagram_login","profile_picture_url":profile.get("profile_picture_url"),"long_lived":result.get("long_lived",False),"token_obtained_at":utcnow().timestamp()})])
 @app.get("/oauth/tiktok/start")
 def oauth_tiktok_start(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
