@@ -169,7 +169,7 @@ def test_other_platform_authorisation_destinations(signed_in):
         assert parsed.hostname in ({"twitter.com","x.com"} if platform=="x" else {host})
         if platform=="tiktok":
             scopes=parse_qs(parsed.query)["scope"][0].split(",")
-            assert "video.upload" in scopes and "video.publish" not in scopes
+            assert "video.publish" in scopes and "video.upload" not in scopes
 
 
 def test_instagram_facebook_is_explicit_and_connects_only_instagram(signed_in, monkeypatch):

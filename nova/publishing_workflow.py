@@ -25,6 +25,8 @@ def capability_error(conn,media):
     scopes=set((conn.scope or '').replace(' ',',').split(','))
     if conn.platform=='x' and 'tweet.write' not in scopes:
         return 'This X connection does not have publishing permission.'
+    if conn.platform=='x' and media and 'media.write' not in scopes:
+        return 'Reconnect X to allow image uploads. Text-only publishing remains available.'
     if conn.platform=='facebook' and 'pages_manage_posts' not in scopes:
         return 'Facebook publishing permission is not present on this connection. Existing access is preserved; publishing needs separately approved permissions.'
     if conn.platform=='instagram' and not scopes.intersection({'instagram_business_content_publish','instagram_content_publish'}):
@@ -113,13 +115,17 @@ def prepare_review(db,uid,body):
             posts=[]  # Notes are not a supported Story caption or overlay.
         if p=='tiktok':
             settings=options.get(p,{})
-            if settings.get('privacy_level') not in context.get('privacy_options',[]):raise HTTPException(400,'Choose an available TikTok privacy setting.')
+            inbox=context.get('posting_mode')=='inbox'
+            if settings.get('posting_mode','direct') != ('inbox' if inbox else 'direct'):
+                raise HTTPException(409,'TikTok delivery mode changed. Review the settings again.')
+            if not inbox and settings.get('privacy_level') not in context.get('privacy_options',[]):raise HTTPException(400,'Choose an available TikTok privacy setting.')
             for key,disabled in [('allow_comment','comment_disabled'),('allow_duet','duet_disabled'),('allow_stitch','stitch_disabled')]:
                 if settings.get(key) and context.get(disabled):raise HTTPException(400,'A selected TikTok interaction is unavailable.')
-            if videos:
+            if videos and not inbox:
                 duration=float(settings.get('video_duration_sec') or 0)
                 if duration<=0 or (context.get('max_video_duration_sec') and duration>context['max_video_duration_sec']):raise HTTPException(400,'Check the video duration for this TikTok account.')
         targets[p]={'connection_id':conn.id,'account_id':conn.account_id,'username':context.get('username'),'display_name':context.get('display_name'),'posts':posts,'link':body.link_url if p=='facebook' and not media else ''}
+        if p=='tiktok':targets[p]['requires_tiktok_completion']=context.get('requires_tiktok_completion',False)
         if p=='instagram':targets[p]['format']=instagram_format;targets[p]['format_label']='Story' if story else ('Reel · shared to feed' if videos else 'Post · feed')
     from .series import planned_context
     planned=planned_context(db,draft.id)

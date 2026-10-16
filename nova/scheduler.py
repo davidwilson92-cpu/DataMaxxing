@@ -35,8 +35,10 @@ def process_due(limit: int = 25) -> dict[str, int]:
                 stored=json.loads(item.result_json);conn=selected_connection(db,item.user_id,item.platform,item.connection_id)
                 state=resolve_tiktok_post(db,conn,stored['post_id']);remote=str(state.get('status','')).upper()
                 if remote=='PUBLISH_COMPLETE':
-                    item.status='published';stored['pending']=False
+                    item.status='published';stored['pending']=False;stored['requires_tiktok_completion']=False
                     if state.get('public_ids'):stored['url']='https://www.tiktok.com/@'+conn.username+'/video/'+str(state['public_ids'][0])
+                elif remote=='SEND_TO_USER_INBOX':
+                    stored['requires_tiktok_completion']=True;stored['delivered_to_inbox']=True
                 elif remote=='FAILED':
                     from .allowances import finish
                     item.status='failed';stored['error']='TikTok reported this publication failed. Review before retrying.'
