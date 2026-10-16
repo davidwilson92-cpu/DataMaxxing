@@ -121,9 +121,10 @@ def prepare_review(db,uid,body):
             if not inbox and settings.get('privacy_level') not in context.get('privacy_options',[]):raise HTTPException(400,'Choose an available TikTok privacy setting.')
             for key,disabled in [('allow_comment','comment_disabled'),('allow_duet','duet_disabled'),('allow_stitch','stitch_disabled')]:
                 if settings.get(key) and context.get(disabled):raise HTTPException(400,'A selected TikTok interaction is unavailable.')
-            if videos and not inbox:
-                duration=float(settings.get('video_duration_sec') or 0)
-                if duration<=0 or (context.get('max_video_duration_sec') and duration>context['max_video_duration_sec']):raise HTTPException(400,'Check the video duration for this TikTok account.')
+            if not inbox:
+                from .tiktok_policy import validate_direct
+                try:validate_direct(settings,context,posts,media)
+                except ValueError as exc:raise HTTPException(400,str(exc))
         targets[p]={'connection_id':conn.id,'account_id':conn.account_id,'username':context.get('username'),'display_name':context.get('display_name'),'posts':posts,'link':body.link_url if p=='facebook' and not media else ''}
         if p=='tiktok':targets[p]['requires_tiktok_completion']=context.get('requires_tiktok_completion',False)
         if p=='instagram':targets[p]['format']=instagram_format;targets[p]['format_label']='Story' if story else ('Reel · shared to feed' if videos else 'Post · feed')

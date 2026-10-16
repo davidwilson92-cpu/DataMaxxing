@@ -1,8 +1,38 @@
+
+function tiktokDeclaration(paid){return `<p>By posting, you agree to TikTok’s ${paid?'<a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noopener">Branded Content Policy</a> and ':''}<a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener">Music Usage Confirmation</a>.</p>`;}
+function tiktokDirectControls(c){
+ const video=uploadedMediaKind==='video';
+ const interactions=[['allow_comment','Allow comments','comment_disabled'],...(video?[['allow_duet','Allow Duet','duet_disabled'],['allow_stitch','Allow Stitch','stitch_disabled']]:[])];
+ return `<div id="tiktokDirectSettings"><p>Posting to ${esc(c.display_name)}${c.username?' @'+esc(c.username):''}</p><label>Who can see this post?<select id="reviewPrivacy" onchange="resetTikTokConsent();updateTikTokControls()" required><option value="">Choose privacy</option>${(c.privacy_options||[]).map(v=>`<option value="${esc(v)}">${esc(({PUBLIC_TO_EVERYONE:'Everyone',MUTUAL_FOLLOW_FRIENDS:'Friends',FOLLOWER_OF_CREATOR:'Followers',SELF_ONLY:'Only me'})[v]||v)}</option>`).join('')}</select></label>${interactions.map(([key,label,disabled])=>`<label><input id="review_${key}" type="checkbox" ${c[disabled]?'disabled':''}> ${label}${c[disabled]?' (unavailable for this account)':''}</label>`).join('')}<label><input id="review_is_aigc" type="checkbox"> This media is AI-generated</label><label><input id="review_commercial_content" type="checkbox" onchange="resetTikTokConsent();updateTikTokControls()"> This post promotes a brand, product or service</label><div id="tiktokDisclosure" hidden><label><input id="review_your_brand" type="checkbox" onchange="resetTikTokConsent();updateTikTokControls()"> Your brand</label><label><input id="review_brand_content" type="checkbox" onchange="resetTikTokConsent();updateTikTokControls()"> Branded content (paid partnership)</label><p id="tiktokDisclosureLabel" aria-live="polite"></p></div><p id="tiktokPrivacyNote" aria-live="polite"></p><div id="tiktokDeclaration">${tiktokDeclaration(false)}</div><label><input id="review_consent" type="checkbox" onchange="updateTikTokControls()"> I agree and want to post this content to TikTok</label><p>${video?'Video duration is checked against your account limit. ':''}You can edit the caption and preview your media before final confirmation.</p></div>`;
+}
+function resetTikTokConsent(){const n=document.getElementById('review_consent');if(n)n.checked=false;}
+function updateTikTokControls(){
+ const node=id=>document.getElementById(id),commercial=node('review_commercial_content')?.checked||false;
+ const own=node('review_your_brand'),paid=node('review_brand_content'),privacy=node('reviewPrivacy');
+ if(!privacy)return true;
+ if(!commercial){own.checked=false;paid.checked=false;}
+ node('tiktokDisclosure').hidden=!commercial;
+ const privatePost=privacy.value==='SELF_ONLY';
+ if(privatePost)paid.checked=false;
+ paid.disabled=privatePost;
+ for(const option of privacy.options||[])if(option.value==='SELF_ONLY')option.disabled=!!paid.checked;
+ node('tiktokPrivacyNote').textContent=privatePost?'Branded content cannot use Only me privacy.':'';
+ node('tiktokDisclosureLabel').textContent=paid.checked?'Your post will be labelled Paid partnership.':own.checked?'Your post will be labelled Promotional content.':'Choose Your brand, Branded content, or both.';
+ node('tiktokDeclaration').innerHTML=tiktokDeclaration(paid.checked);
+ const ready=!!privacy.value&&(!commercial||own.checked||paid.checked)&&!!node('review_consent')?.checked;
+ const button=document.getElementById('reviewFinalPost');if(button){button.disabled=!ready;button.title=commercial&&!own.checked&&!paid.checked?'Choose what your content promotes.':'';}
+ return ready;
+}
+async function changeReviewDestination(){
+ const ids={};for(const p of reviewPlatforms)ids[p]=Number(document.querySelector(`[data-destination="${p}"]`)?.value||reviewContexts[p].connection_id);
+ await requestPublishConfirmation(reviewMode,pendingSchedule,[...reviewPlatforms],ids);
+}
+
 /* Review stores a server-owned snapshot; final confirmation never re-reads editable text. */
 let pendingReview=null;
 let reviewPlatforms=[];
 function mediaPreview(asset){return asset.url?(asset.kind==='video'?`<video controls preload="metadata" src="${esc(mediaPreviewUrl(asset.url))}" aria-label="${esc(asset.filename)}"></video>`:`<img src="${esc(mediaPreviewUrl(asset.url))}" alt="${esc(asset.filename)}">`):`<p>${esc(asset.filename)} — preview unavailable</p>`;}
-async function requestPublishConfirmation(mode,scheduledLocal=null,targets=null){
+async function requestPublishConfirmation(mode,scheduledLocal=null,targets=null,connectionIds={}){
   if(mediaUploading||!editableDraft())return addAssistantMessage('Finish the upload or check this draft’s current results first.');
   reviewPlatforms=targets||selectedPlatforms().filter(p=>variants[p]);
   if(!reviewPlatforms.length)return addAssistantMessage('Select at least one platform with a draft.');
@@ -11,7 +41,7 @@ async function requestPublishConfirmation(mode,scheduledLocal=null,targets=null)
   const epoch=reviewEpoch;
   try{
     await saveDraftNow();if(epoch!==reviewEpoch)return;
-    const result=await api('/api/publish-context',{method:'POST',headers,body:JSON.stringify({platforms:reviewPlatforms,variants})});if(epoch!==reviewEpoch)return;reviewContexts=result.platforms;
+    const result=await api('/api/publish-context',{method:'POST',headers,body:JSON.stringify({platforms:reviewPlatforms,variants,connection_ids:connectionIds})});if(epoch!==reviewEpoch)return;reviewContexts=result.platforms;
     const blocked=reviewPlatforms.filter(p=>reviewContexts[p]?.error);
     if(blocked.length){
       const ready=reviewPlatforms.filter(p=>!blocked.includes(p));
@@ -19,14 +49,14 @@ async function requestPublishConfirmation(mode,scheduledLocal=null,targets=null)
     }
     const needsSettings=mode==='schedule'||reviewPlatforms.includes('tiktok')||reviewPlatforms.some(p=>(reviewContexts[p]?.accounts||[]).length>1);
     if(!needsSettings)return buildPublicationReview();
-    let controls=reviewPlatforms.map(p=>`<label>${window.zovaPlatformLabel(p)} destination<select data-destination="${p}">${(reviewContexts[p].accounts||[]).map(a=>`<option value="${a.id}" ${a.id===reviewContexts[p].connection_id?'selected':''}>${esc(a.name)} (${esc(a.account_id)})</option>`).join('')}</select></label>`).join('');
+    let controls=reviewPlatforms.map(p=>`<label>${window.zovaPlatformLabel(p)} destination<select data-destination="${p}" onchange="changeReviewDestination()">${(reviewContexts[p].accounts||[]).map(a=>`<option value="${a.id}" ${a.id===reviewContexts[p].connection_id?'selected':''}>${esc(a.name)} (${esc(a.account_id)})</option>`).join('')}</select></label>`).join('');
     if(reviewPlatforms.includes('tiktok')){
       const c=reviewContexts.tiktok;
       if(c.posting_mode==='inbox')controls+=`<p>Send this video to your TikTok inbox. Finish the caption, privacy and publishing in TikTok. Zova does not publish it automatically.</p>`;
-      else controls+=`<label>TikTok privacy<select id="reviewPrivacy" required><option value="">Choose privacy</option>${(c.privacy_options||[]).map(v=>`<option>${esc(v)}</option>`).join('')}</select></label>${[['allow_comment','Allow comments','comment_disabled'],['allow_duet','Allow Duet','duet_disabled'],['allow_stitch','Allow Stitch','stitch_disabled'],['your_brand','Promotes my own brand',''],['brand_content','Paid brand partnership','']].map(([key,label,disabled])=>`<label><input id="review_${key}" type="checkbox" ${c[disabled]?'disabled':''}> ${label}</label>`).join('')}`;
+      else controls+=tiktokDirectControls(c);
     }
     if(mode==='schedule')controls+=`<label>Posting time (${esc(plannedOccurrence?.timezone||'your Zova account timezone')})<input id="reviewTime" type="datetime-local" value="${esc(scheduledLocal||'')}" required></label><p>The final review will show the timezone and exact time.</p><button type="button" onclick="loadTimeSuggestions(this)">Suggest starting times</button><div id="timeSuggestions"></div>`;
-    reviewHost().insertAdjacentHTML('beforeend',`<section class="chat-confirmation"><h3>Review destinations and settings</h3>${controls}<button class="button primary" onclick="buildPublicationReview()">Review final post</button></section>`);openReview();
+    reviewHost().insertAdjacentHTML('beforeend',`<section class="chat-confirmation"><h3>Review destinations and settings</h3>${controls}<button id="reviewFinalPost" class="button primary" onclick="buildPublicationReview()">Review final post</button></section>`);updateTikTokControls();openReview();
   }catch(error){if(epoch===reviewEpoch)addAssistantMessage(error.message);}
 }
 async function buildPublicationReview(){
@@ -38,7 +68,8 @@ async function buildPublicationReview(){
     const inbox=reviewContexts.tiktok.posting_mode==='inbox';
     const privacy=document.getElementById('reviewPrivacy')?.value;if(!inbox&&!privacy)return addAssistantMessage('Choose TikTok privacy before continuing.');
     options.tiktok=inbox?{posting_mode:"inbox"}:{posting_mode:"direct",privacy_level:privacy,video_duration_sec:uploadedVideoDuration};
-    if(!inbox)['allow_comment','allow_duet','allow_stitch','your_brand','brand_content'].forEach(key=>options.tiktok[key]=Boolean(document.getElementById('review_'+key)?.checked));
+    if(!inbox&&!updateTikTokControls())return addAssistantMessage('Complete the TikTok settings and consent first.');
+    if(!inbox)['allow_comment','allow_duet','allow_stitch','commercial_content','your_brand','brand_content','consent','is_aigc'].forEach(key=>options.tiktok[key]=Boolean(document.getElementById('review_'+key)?.checked));
   }
   const body={draft_id:currentDraftId,platforms:[...reviewPlatforms],variants:Object.fromEntries(reviewPlatforms.map(p=>[p,variants[p]])),media_asset_ids:[...uploadedMediaIds],link_url:document.getElementById('linkUrl').value,publish_options:options,connection_ids};
   if(reviewMode==='schedule'){body.scheduled_local=document.getElementById('reviewTime')?.value||pendingSchedule;if(!body.scheduled_local)return addAssistantMessage('Choose a posting time.');}
@@ -49,7 +80,7 @@ async function buildPublicationReview(){
     const s=result.snapshot;
     const inboxOnly=s.platforms.length===1&&s.targets.tiktok?.requires_tiktok_completion;
     const confirmLabel=s.scheduled_utc?"Confirm schedule":inboxOnly?"Send to TikTok":"Confirm publish";
-    reviewHost().insertAdjacentHTML('beforeend',`<section class="chat-confirmation"><h3>${confirmLabel}</h3>${s.platforms.map(p=>`<article><h4>${window.zovaPlatformLabel(p)}${p==='instagram'?' · '+esc(s.targets[p].format_label):''} · ${esc(s.targets[p].display_name)} ${s.targets[p].username?'@'+esc(s.targets[p].username):''}</h4><small>Account ${esc(s.targets[p].account_id)}</small>${s.targets[p].link?`<p>Attached link: ${esc(s.targets[p].link)}</p>`:''}${s.targets[p].format==='story'?'<p>Only the visual below will publish to your Story for 24 hours. Planning text and the source link are not included. No text overlays, stickers or music are added.</p>':''}${s.targets[p].posts.map(text=>`<p class="review-copy">${esc(text)}</p>`).join('')}${s.targets[p].requires_tiktok_completion?'<p>Send video to TikTok inbox only. Caption, privacy and the final publish are completed in TikTok; text above is a reference and is not attached to the upload.</p>':''}${p==='tiktok'&&!s.targets[p].requires_tiktok_completion&&s.publish_options[p]?`<p>Privacy: ${esc(s.publish_options[p].privacy_level)} · Comments: ${s.publish_options[p].allow_comment?'on':'off'} · Duet: ${s.publish_options[p].allow_duet?'on':'off'} · Stitch: ${s.publish_options[p].allow_stitch?'on':'off'} · Own brand: ${s.publish_options[p].your_brand?'yes':'no'} · Partnership: ${s.publish_options[p].brand_content?'yes':'no'}</p>`:''}</article>`).join('')}<div class="review-media">${s.media.map(mediaPreview).join('')}</div>${s.link_url?`<p>Source link: ${esc(s.link_url)}</p>`:''}<p>${s.scheduled_utc?'Scheduled for '+esc(new Date(s.scheduled_utc).toLocaleString(undefined,{timeZone:s.timezone}))+' ('+esc(s.timezone)+')':inboxOnly?'Send this reviewed video to your TikTok inbox now?':'Publish these reviewed versions now?'}</p><button class="button ghost" onclick="invalidateReview();canvasView('edit')">Make a change</button><button class="button primary" onclick="confirmChatPublish(this)">${confirmLabel}</button></section>`);openReview();
+    reviewHost().insertAdjacentHTML('beforeend',`<section class="chat-confirmation"><h3>${confirmLabel}</h3>${s.platforms.map(p=>`<article><h4>${window.zovaPlatformLabel(p)}${p==='instagram'?' · '+esc(s.targets[p].format_label):''} · ${esc(s.targets[p].display_name)} ${s.targets[p].username?'@'+esc(s.targets[p].username):''}</h4><small>Account ${esc(s.targets[p].account_id)}</small>${s.targets[p].link?`<p>Attached link: ${esc(s.targets[p].link)}</p>`:''}${s.targets[p].format==='story'?'<p>Only the visual below will publish to your Story for 24 hours. Planning text and the source link are not included. No text overlays, stickers or music are added.</p>':''}${s.targets[p].posts.map(text=>`<p class="review-copy">${esc(text)}</p>`).join('')}${s.targets[p].requires_tiktok_completion?'<p>Send video to TikTok inbox only. Caption, privacy and the final publish are completed in TikTok; text above is a reference and is not attached to the upload.</p>':''}${p==='tiktok'&&!s.targets[p].requires_tiktok_completion&&s.publish_options[p]?`<p>Privacy: ${esc(s.publish_options[p].privacy_level)} · Comments: ${s.publish_options[p].allow_comment?'on':'off'} · Duet: ${s.publish_options[p].allow_duet?'on':'off'} · Stitch: ${s.publish_options[p].allow_stitch?'on':'off'} · Own brand: ${s.publish_options[p].your_brand?'yes':'no'} · Partnership: ${s.publish_options[p].brand_content?'yes':'no'} · AI-generated media: ${s.publish_options[p].is_aigc?'yes':'no'}</p>${tiktokDeclaration(s.publish_options[p].brand_content)}<p>After confirmation, TikTok may take a few minutes to process your post before it appears on your profile.</p>`:''}</article>`).join('')}<div class="review-media">${s.media.map(mediaPreview).join('')}</div>${s.link_url?`<p>Source link: ${esc(s.link_url)}</p>`:''}<p>${s.scheduled_utc?'Scheduled for '+esc(new Date(s.scheduled_utc).toLocaleString(undefined,{timeZone:s.timezone}))+' ('+esc(s.timezone)+')':inboxOnly?'Send this reviewed video to your TikTok inbox now?':'Publish these reviewed versions now?'}</p><button class="button ghost" onclick="invalidateReview();canvasView('edit')">Make a change</button><button class="button primary" onclick="confirmChatPublish(this)">${confirmLabel}</button></section>`);openReview();
   }catch(error){if(epoch===reviewEpoch)addAssistantMessage(error.message);}
 }
 function showPublicationResults(result){
@@ -57,13 +88,13 @@ function showPublicationResults(result){
   document.querySelectorAll('[data-publication-results]').forEach(node=>node.remove());
   const entries=Object.entries(result.results||{});
   const remaining=Object.keys(variants).filter(p=>!Object.hasOwn(result.results||{},p));
-  reviewHost().insertAdjacentHTML('beforeend',`<section data-publication-results class="chat-confirmation"><h3>Publication results</h3>${entries.map(([p,r])=>`<p><b>${window.zovaPlatformLabel(p)}${r.format==='story'?' Story':''}: ${esc(publicationStatus(r.status))}</b> ${r.requires_tiktok_completion?'Complete this video in TikTok; it is not published yet.':r.status==='pending'?'The platform is still processing this post.':''}${r.error?`<br>${esc(r.error)}`:''}${r.support_reference?`<br><small>Support reference: ${esc(r.support_reference)}</small>`:''}${r.url&&/^https?:\/\//.test(r.url)?` <a target="_blank" rel="noopener" href="${esc(r.url)}">View post</a>`:''}${r.status==='failed'?` <button onclick="requestPublishConfirmation('publish',null,['${p}'])">Review and retry ${window.zovaPlatformLabel(p)}</button>`:''}</p>`).join('')}${remaining.length?`<p>${remaining.map(platformName).join(', ')} were not submitted. Keep working on them in a separate idea.</p><button onclick="continueUnsubmitted(this,${esc(JSON.stringify(remaining))})">Continue unsubmitted versions</button>`:''}<button onclick="refreshPublicationResults()">Refresh results</button><a href="/drafts">Open drafts and schedules</a></section>`);openReview();
+  reviewHost().insertAdjacentHTML('beforeend',`<section data-publication-results class="chat-confirmation"><h3>Publication results</h3>${entries.map(([p,r])=>`<p><b>${window.zovaPlatformLabel(p)}${r.format==='story'?' Story':''}: ${esc(r.status==='pending'&&r.delivered_to_inbox?'Delivered to TikTok inbox':publicationStatus(r.status))}</b> ${r.requires_tiktok_completion?'Complete this video in TikTok; it is not published yet.':r.status==='pending'?'The platform is still processing this post.':''}${r.error?`<br>${esc(r.error)}`:''}${r.support_reference?`<br><small>Support reference: ${esc(r.support_reference)}</small>`:''}${r.url&&/^https?:\/\//.test(r.url)?` <a target="_blank" rel="noopener" href="${esc(r.url)}">View post</a>`:''}${r.status==='failed'?` <button onclick="requestPublishConfirmation('publish',null,['${p}'])">Review and retry ${window.zovaPlatformLabel(p)}</button>`:''}</p>`).join('')}${remaining.length?`<p>${remaining.map(platformName).join(', ')} were not submitted. Keep working on them in a separate idea.</p><button onclick="continueUnsubmitted(this,${esc(JSON.stringify(remaining))})">Continue unsubmitted versions</button>`:''}<button onclick="refreshPublicationResults()">Refresh results</button><a href="/drafts">Open drafts and schedules</a></section>`);openReview();
 }
 async function refreshPublicationResults(){const id=currentDraftId,epoch=workspaceEpoch;try{const result=await api(`/api/publications/${id}`);if(id!==currentDraftId||epoch!==workspaceEpoch)return;currentDraftStatus=result.draft_status;refreshDraft();showPublicationResults(result);rememberSavedPost();}catch(error){if(id===currentDraftId&&epoch===workspaceEpoch)addAssistantMessage(error.message);}}
 async function confirmChatPublish(button){
   if(!pendingReview||mediaUploading||sendingMessage)return;
   const review=JSON.parse(JSON.stringify(pendingReview)),s=review.snapshot;
-  studioBusy(true);busy(button,true,s.scheduled_utc?'Scheduling…':'Publishing…');
+  studioBusy(true);busy(button,true,s.scheduled_utc?'Scheduling…':s.platforms.length===1&&s.targets.tiktok?.requires_tiktok_completion?'Sending to TikTok…':'Publishing…');
   const body={review_token:review.review_token,draft_id:s.draft_id,platforms:s.platforms,variants:s.variants,media_asset_ids:s.media_asset_ids,link_url:s.link_url,publish_options:s.publish_options};
   if(s.scheduled_utc)body.scheduled_local=s.scheduled_utc;
   try{

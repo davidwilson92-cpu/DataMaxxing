@@ -1,3 +1,9 @@
+# Shared Direct Post preparation - 16 October 2026
+
+Integrates PR33 implementation5d8cdc5 into disabled native foundation. Consent/disclosure, current creator restrictions, verified URL delivery and server video-duration validation are shared by web and native reviewed-publication APIs. TikTok draft revision saved; real direct evidence/audit approval still pending. No production or native enablement. Required checks must pass for this merge. See docs/TIKTOK_DIRECT_POST_20261016.md.
+
+---
+
 # Shared social review update - 16 October 2026
 
 Integrates main PR32 (8ef1230) cache-version and API context regression. PR31 is verified Live on Render dep-db8vpf49v7es739c6840; Facebook now requests only Page list/read/manage-posts. Final Page grant awaiting owner permission. X test verified at https://x.com/DataMaxxingUK/status/2111033940157055189 ; do not resend. TikTok draft27 remains unsent pending corrected live inbox review. PR32 required checks passed; deployment verification pending. Native branch remains draft, disabled and undeployed; required checks rerun for this merge. Previous native head ab65267 passed all checks in38887796720/38887804394. All79 gaps retained.

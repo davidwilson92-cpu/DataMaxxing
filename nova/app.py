@@ -852,7 +852,10 @@ def conversation_plan(body:ConversationRequest,request:Request,db:Session=Depend
         ai_user.reset(ai_context)
 
 class VoiceLearnRequest(BaseModel): content:str=Field(min_length=80,max_length=30000)
-class PreviewRequest(BaseModel): platforms:list[str]; variants:dict[str,Any]
+class PreviewRequest(BaseModel):
+    platforms:list[str]
+    variants:dict[str,Any]
+    connection_ids:dict[str,int]={}
 class PublishRequest(BaseModel):
     draft_id:int|None=None
     platforms:list[str]
@@ -1014,7 +1017,7 @@ def api_publish_context(body:PreviewRequest,request:Request,db:Session=Depends(g
     user=current_user(request);subscription_guard(user);platforms=_validate_platforms(body.platforms);contexts={}
     for platform in platforms:
         try:
-            contexts[platform]=publishing_context(db,user.id,platform)
+            contexts[platform]=publishing_context(db,user.id,platform,body.connection_ids.get(platform))
             contexts[platform]['accounts']=[{'id':c.id,'account_id':c.account_id,'name':c.display_name or c.username or c.account_id} for c in db.scalars(select(SocialConnection).where(SocialConnection.user_id==user.id,SocialConnection.platform==platform,SocialConnection.active.is_(True))).all()]
         except RuntimeError as exc:contexts[platform]={"platform":platform,"error":"Account publishing settings are unavailable. Check the connection and try again."}
     return {"platforms":contexts}
