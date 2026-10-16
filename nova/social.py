@@ -186,6 +186,11 @@ def instagram_exchange(code: str) -> dict[str, Any]:
     if token_r.status_code >= 400:
         raise RuntimeError(f"Instagram token exchange failed: {token_r.text}")
     short = token_r.json()
+    # Meta documents a data envelope; retain compatibility with flat responses.
+    if isinstance(short, dict) and isinstance(short.get('data'), list):
+        short = short['data'][0] if len(short['data']) == 1 else {}
+    if not isinstance(short, dict):
+        raise RuntimeError("Instagram returned an invalid token response")
     access = short.get("access_token")
     if not access:
         raise RuntimeError("Instagram did not return an access token")
@@ -207,7 +212,12 @@ def instagram_exchange(code: str) -> dict[str, Any]:
     account_id = str(profile.get("user_id") or profile.get("id") or short.get("user_id") or "")
     if not account_id:
         raise RuntimeError("Instagram did not return an account identifier")
-    return {"access_token": access, "expires_in": token.get("expires_in"), "profile": {**profile, "id": account_id}}
+    permissions = short.get('permissions', '')
+    if isinstance(permissions, list):
+        permissions = ','.join(p for p in permissions if isinstance(p, str))
+    return {"access_token": access, "expires_in": token.get("expires_in", 3600),
+            "scope": permissions if isinstance(permissions, str) else '',
+            "long_lived": token is not short, "profile": {**profile, "id": account_id}}
 
 
 def instagram_graph_base(conn: SocialConnection) -> str:
@@ -267,12 +277,53 @@ def access_token(conn: SocialConnection, db: Session) -> str:
     expires = conn.expires_at
     if expires and expires.tzinfo is None:
         expires = expires.replace(tzinfo=timezone.utc)
+    if conn.platform == 'instagram' and json_meta(conn).get('auth_provider') == 'instagram_login':
+        if expires and expires <= utcnow():
+            raise RuntimeError('Instagram connection expired; reconnect Instagram')
+        if expires and expires <= utcnow() + timedelta(days=7):
+            meta = json_meta(conn)
+            # Only known long-lived tokens qualify. Legacy tokens need reconnect;
+            # never infer refresh eligibility from an expiry alone.
+            refreshed = meta.get('token_obtained_at')
+            try:
+                old_enough = utcnow().timestamp() - float(refreshed) >= 86400
+            except (TypeError, ValueError):
+                old_enough = False
+            if meta.get('long_lived') and old_enough:
+                return _instagram_refresh(conn, db)
     if expires and expires <= utcnow() + timedelta(minutes=2):
         if conn.platform == "x":
             return _x_refresh(conn, db)
         if conn.platform == "tiktok":
             return _tiktok_refresh(conn, db)
     return decrypt(conn.encrypted_access_token)
+
+
+def _instagram_refresh(conn: SocialConnection, db: Session) -> str:
+    """Refresh without replacing a connection concurrently changed/disconnected."""
+    from sqlalchemy import update
+    original = conn.encrypted_access_token
+    try:
+        response = httpx.get('https://graph.instagram.com/refresh_access_token',
+            params={'grant_type': 'ig_refresh_token', 'access_token': decrypt(original)}, timeout=30.0)
+        payload = response.json() if response.status_code < 400 else {}
+        token = payload.get('access_token')
+        lifetime = payload.get('expires_in')
+        if not isinstance(token, str) or not token or type(lifetime) is not int or lifetime <= 60:
+            raise ValueError('Invalid refresh')
+    except Exception:
+        raise RuntimeError('Instagram access could not be renewed. Reconnect Instagram or try again.') from None
+    meta = {**json_meta(conn), 'token_obtained_at': utcnow().timestamp()}
+    result = db.execute(update(SocialConnection).where(
+        SocialConnection.id == conn.id, SocialConnection.user_id == conn.user_id,
+        SocialConnection.active.is_(True), SocialConnection.encrypted_access_token == original
+    ).values(encrypted_access_token=encrypt(token), expires_at=utcnow()+timedelta(seconds=lifetime-60),
+             metadata_json=json.dumps(meta)).execution_options(synchronize_session=False))
+    db.commit()
+    if result.rowcount != 1:
+        raise RuntimeError('Instagram connection changed. Review the connection before retrying.')
+    db.refresh(conn)
+    return token
 
 
 def connection_for(db: Session, user_id: int, platform: str) -> SocialConnection:
@@ -317,7 +368,8 @@ def upsert_connection(
         conn.encrypted_refresh_token = encrypt(refresh)
     if expires_in:
         conn.expires_at = utcnow() + timedelta(seconds=max(int(expires_in) - 60, 60))
-    conn.scope = scope or conn.scope
+    # Reconnection must not retain permissions the new direct token did not grant.
+    conn.scope = scope if (metadata or {}).get('auth_provider') == 'instagram_login' else (scope or conn.scope)
     conn.active = True
     if metadata is not None:
         save_meta(conn, metadata)
