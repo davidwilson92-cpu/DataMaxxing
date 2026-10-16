@@ -1,3 +1,19 @@
+# Saved stopping point - 16 October 2026
+
+Owner will return tonight; no scheduled reminder or background posting requested. TikTok Direct Post works in the isolated sandbox: draft1 returned Published after refreshing provider status, for @davidwilson493 with Only me visibility. Do not resend this draft. Independent viewing of the private video in TikTok remains unconfirmed.
+
+Next session: read this handoff, check sandbox availability/session first, and have owner verify the private video on TikTok. Prepare a NEW draft for the recorded demonstration: connect account, upload original media, edit caption, show privacy/interactions/disclosures and consent, final review, owner-authorised private publication, refresh status, then show the actual TikTok post. Review recording before submitting TikTok production video.publish revision and separate public-access audit. Neither is submitted/approved yet. Production stays inbox-only; approval enables eligible customers to publish publicly from the main site. No further implementation or production activation is implied by the successful private test.
+
+Sandbox https://zova-tiktok-sandbox.onrender.com is FREE with ephemeral SQLite/uploads; restart/spindown/redeploy can lose test state and require a fresh test login/reconnection. Auto-deploy is Off. Do not reconnect its database to production. Code/configuration evidence and recording plan are saved in docs/TIKTOK_DIRECT_POST_20261016.md; screenshots and synthetic video remain locally under social-proof/. Do not expose credentials or upload the whole proof folder. Preserve all79 known beta gaps and existing connections.
+
+---
+
+# TikTok private Direct Post confirmed by refreshed provider status - 16 October 2026
+
+On return to sandbox draft1, UI was already Waiting for platform processing (dispatch occurred outside this agent turn). Agent only clicked Refresh results, never Confirm publish. Refreshed publication result and sidebar both show Published. Reviewed destination @davidwilson493, Only me, exact test caption and6second video described below. Evidence social-proof/tiktok-private-published.png. This establishes Zova provider-status confirmation of private Direct Post; independent viewing in TikTok still needed for recording. Do not resend. Public approval/audit remains pending. Production unchanged.
+
+---
+
 # TikTok final private review verified - 16 October 2026
 
 Owner explicitly approved accepting TikTok Music Usage Confirmation and opening final review only. Accepted agreement and generated server-owned final snapshot successfully for sandbox draft1, David Wilson @davidwilson493, six-second zova-beta-test.mp4, exact caption: Zova Direct Post integration test — checking our reviewed publishing flow. Final review displays SELF_ONLY; comments/Duet/Stitch off; own brand/partnership/AI-generated media no; video preview and processing notice. Confirm publish was NOT clicked. No provider publication outcome claimed. Evidence social-proof/tiktok-final-review-ready.png. Await exact separate private-test publication approval or owner recording; do not resend previous tests. Production unchanged. Cosmetic follow-ups: raw SELF_ONLY and opaque provider ID appear in review; mixed create + do-not-publish intent quirk remains.
