@@ -1,3 +1,7 @@
+## Meta activation update 16 October 2026
+
+Direct Instagram basic/content publishing approval and Meta publication verified. Focused token lifecycle fix is live in PR29. Real OAuth verification remains blocked by Instagram login loop; real Post/Story delivery unverified. Facebook Page publishing, separate Instagram Facebook route, advanced insights and TikTok direct/inbox permissions are not established by this approval. Shared iOS Post/Story tests pass locally; PR28 remains undeployed and native access disabled. See [activation evidence](META_BETA_ACTIVATION_20261016.md).
+
 # Focused UX release — 8 October 2026
 
 See [release scope and evidence](UX_RELEASE_20261008.md). Implemented: Studio scope/state/recovery UX; editable titles and status summary; goal-first strategy; bounded Performance context; weekly scheduling and reschedule race fix; compact signup and truthful beta offer. Local focused and frontend checks passed; remote CI/provider/deployment status remains separate. Earlier unreleased security/recovery/newsletter work is excluded.

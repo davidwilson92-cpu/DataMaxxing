@@ -210,6 +210,27 @@ def test_mobile_publication_preserves_immutable_review_and_dedup(monkeypatch):
     assert len(calls)==1
 
 
+@pytest.mark.parametrize('placement', ['post', 'story'])
+def test_native_instagram_matches_web_review_and_prevents_format_swap(monkeypatch, placement):
+    from test_instagram_formats import story_draft
+    import nova.app as module
+    web, body = story_draft(monkeypatch, placement)
+    pair = TestClient(app).post('/api/v1/auth/token', json=code_for(web)).json()
+    native = TestClient(app, headers={'Authorization': 'Bearer '+pair['access_token']})
+    calls = []
+    monkeypatch.setattr(module, 'publish_platform', lambda *a, **k: calls.append(k) or {'post_id': 'synthetic'})
+    review = native.post('/api/v1/publish-review', json=body)
+    assert review.status_code == 200, review.text
+    assert review.json()['snapshot']['targets']['instagram']['format_label'] == ('Story' if placement == 'story' else 'Post · feed')
+    approved = {**body, 'review_token': review.json()['review_token']}
+    changed = {**approved, 'publish_options': {'instagram': {'format': 'post' if placement == 'story' else 'story'}}}
+    assert native.post('/api/v1/publish', json=changed).status_code == 409
+    assert not calls
+    assert native.post('/api/v1/publish', json=approved).status_code == 200
+    assert native.post('/api/v1/publish', json=approved).status_code == 200
+    assert len(calls) == 1 and calls[0]['options']['format'] == placement
+
+
 def test_background_generation_survives_disconnect_and_refuses_stale_edits(monkeypatch):
     import nova.ai as ai
     from nova.generation_jobs import process_jobs

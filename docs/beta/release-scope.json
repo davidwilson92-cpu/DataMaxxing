@@ -159,7 +159,7 @@
     "tests/test_instagram_formats.py": "a61e89396aac855a11a4a3c493c117a46cb38c7dab20ba68da7acb11efc3bf65",
     "tests/test_legacy_compatibility.py": "acaccf16a52e92d0f0210845265b90583751c3306605941be65943875edab98b",
     "tests/test_media_inspection.py": "8e1d50fcdf5e36c70815e75fecdc8de164b0a74036536533074b09624dbaa7a8",
-    "tests/test_mobile_foundations.py": "0498e0fef8f126cb4173649ad660a2371197e7d7e90ea19c2306244cf84a2193",
+    "tests/test_mobile_foundations.py": "d757b99f2ad6d0a5a96b39f2e34f453b5cf65e4058c4d5df78bfe0a37876a9f1",
     "tests/test_oct8_journey.py": "a3fdcc39807dd5e396011615e8409c1d37d16a43125f3406a69d57cec5cd637b",
     "tests/test_oct8_review_regressions.py": "c0f189cd38a4837a6728534f619ddfa28c04b052f480a9072d9f33545c1bd8f1",
     "tests/test_onboarding.py": "495713c3586e640ebcd7ca9f6960ef64cc18320c1f487f8ac1349624c34a4ac7",
