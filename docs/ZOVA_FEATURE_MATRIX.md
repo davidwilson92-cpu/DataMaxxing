@@ -3,9 +3,9 @@
 | Capability | Implementation and tests | Live provider / deployment evidence |
 |---|---|---|
 | Instagram Post / Story | Existing routes/scopes preserved; regressions pass | Owner-confirmed working; Instagram routes and scopes preserved through PR32 |
-| Facebook Page text / image | Actual-grant checks, posting scope, reviewed snapshots and receipts tested with mocked provider | Page use case and all three permission review requests saved, not submitted/approved; narrowed final Page grant awaiting owner confirmation; real delivery pending |
+| Facebook Page text / image | Actual-grant checks, posting scope, reviewed snapshots and receipts tested with mocked provider | Page use case and all three permission review requests saved, not submitted/approved; narrowed Page grant saved and exact Zova Social connection verified; real post delivery pending |
 | X text / thread / image | Media scope and immutable review/adapter tests; partial thread prevents resend | Callback corrected, account connected; authorised text test independently verified on X (2111033940157055189). Live images/threads not tested |
-| TikTok video to inbox | Approved scopes, review, chunk upload, inbox/published status and duplicate prevention tested | Approved inbox-only Web app; connected David Wilson; corrected live inbox final review verified after PR32. Synthetic draft27 awaits exact send approval and receipt |
+| TikTok video to inbox | Approved scopes, review, chunk upload, inbox/published status and duplicate prevention tested | Approved inbox-only Web app; connected David Wilson; corrected live inbox final review verified after PR32. Synthetic draft27 sent once after exact approval; owner confirmed inbox receipt. Public completion remains in TikTok; pending label needs refinement |
 | TikTok direct publishing / analytics | Explicitly outside current approved scope | Separate provider approval required; not beta-ready capabilities |
 | Shared iOS | Shared API foundation remains draft PR28, flags off | Native registration/device/provider tests and deployment outstanding |
 

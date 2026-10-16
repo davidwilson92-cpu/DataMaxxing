@@ -1,3 +1,11 @@
+# Provider validation update - 16 October 2026
+
+Owner explicitly approved the narrowed Facebook grant and six-second TikTok inbox test. Saved Meta grant for Zova Social Page1232370066628887 only, then confirmed the exact Page in david1@gmail.com / My brand. Zova Account shows Connected. No Facebook post sent yet; draft28 is being prepared for separate exact publication approval.
+
+Submitted synthetic video from reviewed TikTok draft27 once. Zova returned pending/complete in TikTok, without error. Owner independently confirmed "Video received in TikTok" on16 October2026. This verifies inbox delivery, not public publication. Do not resend. UI still says Waiting for platform processing even after confirmed inbox receipt; improve delivered-to-inbox labelling as a follow-up without marking it publicly published. Instagram unchanged. Facebook public-customer permissions review remains unsubmitted/unapproved. Shared native integration head93af22c passed all required CI38888696671/38888702089, remains disabled/undeployed.
+
+---
+
 # Live social review fix - 16 October 2026
 
 PR32 is Live (8ef1230, Render dep-db8vtgjrjlhs73betts0); all required checks passed; health200 and real TikTok draft27 final inbox review verified. X approved test already published once: https://x.com/DataMaxxingUK/status/2111033940157055189 . Do not resend. Pending owner answers: final narrowed Facebook grant for Zova Social only; exact six-second synthetic TikTok inbox send. Do not treat elapsed time as approval. No Facebook/TT delivery receipt yet. Shared native branch93af22c integrates all fixes, remains disabled/undeployed. See docs/SOCIAL_BETA_COMPLETION_20261016.md and feature matrix.
