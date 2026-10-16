@@ -44,7 +44,7 @@
     "nova/scheduler.py": "dad1b3b0f356930ff22e2186d8e3e8e51e5088488afd6aa51ea7eef00847c625",
     "nova/security.py": "75abf664ca6ac1ef9b304bebcc2997fa1bea4578873cb6d77337283596a68c6c",
     "nova/series.py": "21d8cd0b3e97ca407c7294ef64461d39cbd154b98e7c44ead6bb24a8bdcd11f9",
-    "nova/social.py": "4f13ab16f50af84b2a87e71e3434c5373e8afd30db7e081a814526d1ee488e9a",
+    "nova/social.py": "ac5a28a7fd460f43d6559d2f740178289d723ec0231c74087f18da4bea936609",
     "nova/static/analytics.js": "78eef2809736fdedd0d10418b0289a11ee7ab0e6bb74d9cbb1c07fd13f265dba",
     "nova/static/billing.css": "84f22e7cda72fe58c0df6bdad4d2c03a99d3f2f60a77ed0f81f9deedf75b6df6",
     "nova/static/brand-context.css": "5bd7902a56da9704ec71a0199028d1b71facd8e4c2c832da222198340e1bcd33",
@@ -161,7 +161,7 @@
     "tests/test_schedule_windows.py": "9c3ab9646ea4730e321276c88df6165e3adbf88b4609a53f93c68edcce2271c8",
     "tests/test_security_controls.py": "f25aa16644f7d1248e999842872fcfaa22681517fbdf7e43ea2c4f6f91bd2b4e",
     "tests/test_signup_recovery_ux.py": "8c6a682e569addea81a9400a17365364602c74ae321301bdc40f58d1ecaac327",
-    "tests/test_social_beta_permissions.py": "2a2f09f0ae24a9fea9ca91d5fc919ff619fb64ee03e4f58f1e5ba3642dcf95c9",
+    "tests/test_social_beta_permissions.py": "5f84a7ec805d842a5bda439da8f8053404a2323341c2b7596c0658107edbde38",
     "tests/test_social_login_routes.py": "6879fb69865fc63c4f6e7ddc7db7e12d75a6414cf730d22ee7d61c34780105e3",
     "tests/test_strategy_series.py": "72eb954f7b95edf14e5e870eee18ae2b8a8be2753d159480e8335ab5d2e5b34f",
     "tests/test_stripe_billing.py": "fc8fc032ac23654404b7a8bb82ddd952ca6b4137c2eee99aecd0acec377c1984",
@@ -172,6 +172,6 @@
     "tests/test_workspace_persistence.py": "8cce3a676c81c504d65424b90a14ca719d88407b4b8033ef8afa0490f2ccde61"
   },
   "release_class": "limited-beta",
-  "reviewed_update": "2026-10-16: Facebook actual grants/Page posting scope, X media scope, approved TikTok inbox review/chunks/status and immutable delivery mode; Instagram preserved; no schema/billing/native activation.",
-  "source_candidate": "0105751acd9ffb75dae94016548b8d25ba751ed3"
+  "reviewed_update": "2026-10-16: remove unnecessary business_management from Facebook-only login, preserving Instagram-linked scope string. Social beta fixes from PR30 retained.",
+  "source_candidate": "786183f05619d2706f71765cd2b86d56536a87d3"
 }
