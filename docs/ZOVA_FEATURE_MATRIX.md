@@ -2,14 +2,14 @@
 
 | Capability | Implementation and tests | Live provider / deployment evidence |
 |---|---|---|
-| Instagram Post / Story | Existing routes/scopes preserved; regressions pass | Owner-confirmed working; previous release remains live pending this bounded increment |
-| Facebook Page text / image | Actual-grant checks, posting scope, reviewed snapshots and receipts tested with mocked provider | Page use case saved; pages_manage_posts draft review not submitted/approved; real Page delivery pending |
-| X text / thread / image | Media scope and immutable review/adapter tests; partial thread prevents resend | Callback corrected; permission screen reached; grant and real delivery pending |
-| TikTok video to inbox | Approved scopes, review, chunk upload, inbox/published status and duplicate prevention tested | Approved inbox-only Web app; live hosting uses inbox mode; new implementation awaiting rollout and real receipt |
+| Instagram Post / Story | Existing routes/scopes preserved; regressions pass | Owner-confirmed working; Instagram routes and scopes preserved through PR32 |
+| Facebook Page text / image | Actual-grant checks, posting scope, reviewed snapshots and receipts tested with mocked provider | Page use case and all three permission review requests saved, not submitted/approved; narrowed Page grant and connection verified; approved text test published once and independently verified on Facebook (122119807485439972). General customer permissions review still pending; live images not tested |
+| X text / thread / image | Media scope and immutable review/adapter tests; partial thread prevents resend | Callback corrected, account connected; authorised text test independently verified on X (2111033940157055189). Live images/threads not tested |
+| TikTok video to inbox | Approved scopes, review, chunk upload, inbox/published status and duplicate prevention tested | Approved inbox-only Web app; connected David Wilson; corrected live inbox final review verified after PR32. Synthetic draft27 sent once after exact approval; owner confirmed inbox receipt. Public completion remains in TikTok; pending label needs refinement |
 | TikTok direct publishing / analytics | Explicitly outside current approved scope | Separate provider approval required; not beta-ready capabilities |
 | Shared iOS | Shared API foundation remains draft PR28, flags off | Native registration/device/provider tests and deployment outstanding |
 
-Candidate d844afa passed CI38882996566: SQLite299 passed/1 skipped; PostgreSQL299 passed/1 skipped, restore/container/dependency and exact beta scope checks pass. No real posts or new customer grants performed. See [social evidence and rollback](SOCIAL_BETA_COMPLETION_20261016.md). All79 broader gaps retained; no commercial certification.
+Candidate d844afa passed CI38882996566: SQLite299 passed/1 skipped; PostgreSQL299 passed/1 skipped, restore/container/dependency and exact beta scope checks pass. Owner-approved X and TikTok connections saved; exact approved X text test published once. PR30/31/32 required checks passed and deployment verified; no Facebook or TikTok post sent. See [social evidence and rollback](SOCIAL_BETA_COMPLETION_20261016.md). All79 broader gaps retained; no commercial certification.
 
 ---
 

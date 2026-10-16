@@ -1,3 +1,31 @@
+# TikTok Direct Post preparation - 16 October 2026
+
+See docs/TIKTOK_DIRECT_POST_20261016.md. Production remains inbox-only. TikTok draft revision saved with video.publish and Direct Post; not submitted. Existing URL prefix https://zova-social.com/ verified. Separate audit form at Supporting documents, not submitted, browser answers may be ephemeral. New real Direct Post recording and provider validation required. Local implementation includes consent/disclosure/fresh creator/duration/verified-media controls and tests; no live Direct Post or native rollout claimed. All79 gaps retained.
+
+---
+
+# Facebook live publication verified - 16 October 2026
+
+Owner explicitly approved the exact single public text-only Facebook test. Published once through draft28 immutable final review to Zova Social Page1232370066628887. Zova returned Published and receipt122119807485439972. Independently opened Facebook and verified the exact text, Zova Social author and Public audience at https://www.facebook.com/61593199172836/posts/122119807485439972/ . Leave the post in place; do not resend or remove without owner request. Screenshot social-proof/facebook-provider-verified.png is local evidence.
+
+Facebook app-role connection and text publication now verified. General customer access remains blocked on the separate unsubmitted Meta Page-permission review; do not equate this test with approval. X text test verified; TikTok inbox received per owner, not publicly published. Instagram unchanged. Image/thread/scheduling and native device validation are not established by these live text/inbox tests. All79 broader gaps retained.
+
+---
+
+# Provider validation update - 16 October 2026
+
+Owner explicitly approved the narrowed Facebook grant and six-second TikTok inbox test. Saved Meta grant for Zova Social Page1232370066628887 only, then confirmed the exact Page in david1@gmail.com / My brand. Zova Account shows Connected. No Facebook post sent yet; draft28 is being prepared for separate exact publication approval.
+
+Submitted synthetic video from reviewed TikTok draft27 once. Zova returned pending/complete in TikTok, without error. Owner independently confirmed "Video received in TikTok" on16 October2026. This verifies inbox delivery, not public publication. Do not resend. UI still says Waiting for platform processing even after confirmed inbox receipt; improve delivered-to-inbox labelling as a follow-up without marking it publicly published. Instagram unchanged. Facebook public-customer permissions review remains unsubmitted/unapproved. Shared native integration head93af22c passed all required CI38888696671/38888702089, remains disabled/undeployed.
+
+---
+
+# Live social review fix - 16 October 2026
+
+PR32 is Live (8ef1230, Render dep-db8vtgjrjlhs73betts0); all required checks passed; health200 and real TikTok draft27 final inbox review verified. X approved test already published once: https://x.com/DataMaxxingUK/status/2111033940157055189 . Do not resend. Pending owner answers: final narrowed Facebook grant for Zova Social only; exact six-second synthetic TikTok inbox send. Do not treat elapsed time as approval. No Facebook/TT delivery receipt yet. Shared native branch93af22c integrates all fixes, remains disabled/undeployed. See docs/SOCIAL_BETA_COMPLETION_20261016.md and feature matrix.
+
+---
+
 # Social beta integration work - 16 October 2026
 
 Read docs/SOCIAL_BETA_COMPLETION_20261016.md for evidence and rollback. Instagram preserved. PR30 live; X authorised test published once and verified: https://x.com/DataMaxxingUK/status/2111033940157055189 . Do not resend. TikTok connected; draft27 holds an unsent synthetic video. Facebook three-permission review draft saved, not submitted. PR31 least-privilege Facebook change merged with required checks; hosting verification pending. Current cache-version follow-up has20 focused tests passing but is not yet deployed. Verify inbox review after rollout before requesting exact video-send approval. Restart stale Facebook consent without business_management before asking for Page grant. Native PR28 remains draft/disabled; shared fixes integrated through PR31, final checks pending. All79 gaps retained.

@@ -577,51 +577,56 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
     is_video = assets[0].mime_type.startswith("video/")
     if upload_as_draft and (not is_video or len(assets) != 1):
         raise RuntimeError('TikTok inbox delivery requires one video in this release.')
-    if is_video and not upload_as_draft:
-        duration = float(settings.get("video_duration_sec") or 0)
-        maximum = float(info.get("max_video_post_duration_sec") or 0)
-        if duration <= 0:
-            raise RuntimeError("TikTok video duration could not be verified. Remove and re-add the video.")
-        if maximum and duration > maximum:
-            raise RuntimeError(f"This TikTok account accepts videos up to {int(maximum)} seconds.")
+    if not upload_as_draft:
+        from .tiktok_policy import validate_direct
+        context = {**info, 'privacy_options': privacy_options, 'max_video_duration_sec': info.get('max_video_post_duration_sec')}
+        try:validate_direct(settings, context, posts, assets)
+        except ValueError as exc:raise RuntimeError(str(exc))
     description = posts[0]
     if link_url and link_url not in description:
         description = (description + " " + link_url).strip()
     if is_video:
-        video = get_bytes(assets[0].storage_key)
-        video_size = len(video)
-        if not video_size:
-            raise RuntimeError("The selected TikTok video is empty. Remove and re-add it.")
-        # Round down and merge trailing bytes into the final chunk, per TikTok.
-        chunk_size = min(32 * 1024 * 1024, video_size)
-        total_chunks = max(1, video_size // chunk_size)
-        if total_chunks > 1000:
-            raise RuntimeError('This video is too large for TikTok upload.')
-        source_info = {"source": "FILE_UPLOAD", "video_size": video_size, "chunk_size": chunk_size, "total_chunk_count": total_chunks}
+        source_info = {}
+        if upload_as_draft:
+            video = get_bytes(assets[0].storage_key)
+            video_size = len(video)
+            if not video_size:
+                raise RuntimeError("The selected TikTok video is empty. Remove and re-add it.")
+            # Round down and merge trailing bytes into the final chunk, per TikTok.
+            chunk_size = min(32 * 1024 * 1024, video_size)
+            total_chunks = max(1, video_size // chunk_size)
+            if total_chunks > 1000:
+                raise RuntimeError('This video is too large for TikTok upload.')
+            source_info = {"source": "FILE_UPLOAD", "video_size": video_size, "chunk_size": chunk_size, "total_chunk_count": total_chunks}
         if upload_as_draft:
             body = {"source_info": source_info}
             endpoint = "https://open.tiktokapis.com/v2/post/publish/inbox/video/init/"
         else:
             body = {
-                "post_info": {"title": description[:2200], "privacy_level": privacy, "disable_duet": not bool(settings.get("allow_duet")), "disable_comment": not bool(settings.get("allow_comment")), "disable_stitch": not bool(settings.get("allow_stitch")), "video_cover_timestamp_ms": 1000, "brand_content_toggle": bool(settings.get("brand_content")), "brand_organic_toggle": bool(settings.get("your_brand"))},
+                "post_info": {"title": description, "privacy_level": privacy, "disable_duet": not bool(settings.get("allow_duet")), "disable_comment": not bool(settings.get("allow_comment")), "disable_stitch": not bool(settings.get("allow_stitch")), "video_cover_timestamp_ms": 1000, "brand_content_toggle": bool(settings.get("brand_content")), "brand_organic_toggle": bool(settings.get("your_brand")), "is_aigc": bool(settings.get("is_aigc"))},
                 "source_info": source_info,
             }
             endpoint = "https://open.tiktokapis.com/v2/post/publish/video/init/"
     else:
         urls = [get_public_url(a.storage_key, a.public_url) for a in assets[:10]]
         body = {
-        "post_info": {"title": description[:90], "description": description[:4000], "privacy_level": privacy, "disable_comment": not bool(settings.get("allow_comment")), "auto_add_music": True, "brand_content_toggle": bool(settings.get("brand_content")), "brand_organic_toggle": bool(settings.get("your_brand"))},
+        "post_info": {"description": description, "privacy_level": privacy, "disable_comment": not bool(settings.get("allow_comment")), "auto_add_music": False, "brand_content_toggle": bool(settings.get("brand_content")), "brand_organic_toggle": bool(settings.get("your_brand"))},
         "source_info": {"source": "PULL_FROM_URL", "photo_cover_index": 0, "photo_images": urls},
         "post_mode": "DIRECT_POST",
         "media_type": "PHOTO",
+        "is_aigc": bool(settings.get("is_aigc")),
         }
         endpoint = "https://open.tiktokapis.com/v2/post/publish/content/init/"
+    if not upload_as_draft:
+        from .tiktok_policy import direct_media_url
+        if is_video:body['source_info'] = {'source': 'PULL_FROM_URL', 'video_url': direct_media_url(assets[0])}
+        else:body['source_info']['photo_images'] = [direct_media_url(a) for a in assets]
     r = httpx.post(endpoint, headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json; charset=UTF-8"}, json=body, timeout=45.0)
     if r.status_code >= 400 or (r.json().get("error") or {}).get("code") not in {None, "ok", 0}:
         raise RuntimeError(f"TikTok publish failed: {r.text}")
     response_data = r.json()["data"]
     publish_id = str(response_data["publish_id"])
-    if is_video:
+    if is_video and upload_as_draft:
         upload_url = response_data.get("upload_url")
         if not upload_url:
             raise RuntimeError("TikTok did not provide a video upload URL")
