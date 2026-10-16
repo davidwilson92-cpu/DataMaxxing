@@ -16,7 +16,7 @@
     "nova/ai.py": "96452aeb7e404355013b674438a07a6ab81363de311546b753ed9e8eb812b9fc",
     "nova/allowances.py": "a38edb8feb5de2ee5ce7ce676054bda6151e6f24ef048a7e62dcac2494c9a7de",
     "nova/analytics_view.py": "32a0b9b92c71c208e32eabdac6482d85c5ebfb13689de8b7e88696b5346f4cf7",
-    "nova/app.py": "4eb9f303dfd80effec8d29998cc2f788c90119f3086402ad61b22b7a6ed39618",
+    "nova/app.py": "bf6ee487fd1d2cb43579d7ea7bb2dc4729869d7dee99374a7285ec6da3162e6a",
     "nova/billing.py": "48292b7bcd7058c79f3206727f79117bbce368d809f6ef96da1878a5b1870b9c",
     "nova/body_limit.py": "ea064904d96710d659a22a44ba1aea1c2381a843ecf8b67a6a641e51919479c6",
     "nova/brands.py": "0dad138fc38b7c10f84aa2a0e8abf97a2b9f49a43dd9ae0986ead5b00fa28b6a",
