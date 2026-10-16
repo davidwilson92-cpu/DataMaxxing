@@ -25,7 +25,7 @@ log = logging.getLogger("nova.social")
 X_SCOPES = "tweet.read tweet.write users.read offline.access media.write"
 META_SCOPES = "pages_show_list,pages_read_engagement,business_management"
 INSTAGRAM_FACEBOOK_SCOPES = META_SCOPES + ",instagram_basic,instagram_content_publish"
-META_SCOPES += ",pages_manage_posts"  # Facebook only; keep Instagram scopes unchanged.
+META_SCOPES = "pages_show_list,pages_read_engagement,pages_manage_posts"  # Facebook only; keep Instagram scopes unchanged.
 INSTAGRAM_SCOPES = "instagram_business_basic,instagram_business_content_publish"
 TIKTOK_SCOPES = "user.info.basic,video.upload"
 

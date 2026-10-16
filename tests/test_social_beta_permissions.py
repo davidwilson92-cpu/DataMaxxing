@@ -8,7 +8,7 @@ from nova.publishing_workflow import capability_error
 
 def test_requested_permissions_do_not_change_instagram(monkeypatch):
     assert social.INSTAGRAM_FACEBOOK_SCOPES == 'pages_show_list,pages_read_engagement,business_management,instagram_basic,instagram_content_publish'
-    assert 'pages_manage_posts' in social.META_SCOPES
+    assert social.META_SCOPES == 'pages_show_list,pages_read_engagement,pages_manage_posts'
     assert 'media.write' in social.X_SCOPES.split()
     monkeypatch.setenv('TIKTOK_SEND_TO_INBOX', 'true')
     assert social.tiktok_scopes() == 'user.info.basic,video.upload'
