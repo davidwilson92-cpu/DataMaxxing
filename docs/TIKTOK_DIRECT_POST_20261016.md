@@ -1,3 +1,19 @@
+# TikTok recording sandbox ready for account connection - 16 October 2026
+
+Reused existing FREE Render service zova-tiktok-sandbox (srv-d9u4joad0e5s73afpu10). Discovered it previously shared the production PostgreSQL database; changed this test service ONLY to sqlite:////tmp/zova-tiktok-recording.db, verified saved. Production users/data/keys/service unchanged. This temporary database and local uploads may be lost on restart/spindown/redeploy. Do not promise durable staging; record in one session and keep external evidence. Auto-deploy is Off to avoid branch updates resetting recording state.
+
+Owner explicitly approved copying existing TikTok Sandbox client key/secret into this existing Render service. Configured those credentials, PUBLIC_BASE_URL and callback to https://zova-tiktok-sandbox.onrender.com, TIKTOK_SEND_TO_INBOX=false, SELF_ONLY default config (user must still explicitly select privacy), REQUIRE_SUBSCRIPTION=false, ZOVA_ENV=sandbox, and TIKTOK_VERIFIED_MEDIA_PREFIX=https://zova-tiktok-sandbox.onrender.com/media/raw/. Verified saved nonsecret values after deployment. No public post or new user grant sent.
+
+Sandbox7672854716816082965 under TikTok app7672846663509215253 already has Direct Post and video.publish. Existing target user davidwilson493. Updated sandbox website to recording host. TikTok verified https://zova-tiktok-sandbox.onrender.com/ URL prefix using downloaded signature file; screenshot social-proof/tiktok-sandbox-prefix-verified.png. Production TikTok draft/live settings were not changed in this increment.
+
+Dedicated branch codex/tiktok-recording-sandbox-20261016 pinned on test service, Live7fdec1573a004bd28d79ee0e54c0628461969247, deploy dep-db91mlcvk9tc73ea9df0. Only runtime change versus PR33 is static sandbox verification route. Initial CI caught CRLF digest mismatch; corrected normalised digest, CI38901929057 passes all required jobs:315 tests/1 skipped on SQLite AND PostgreSQL, restore/container/dependencies/guardrails. Local Direct Post tests16passed. Verification endpoint200 with exact signature; signup rendered and no subscription charge. Production remains cc093687 inbox-only; no broad native branch deployment.
+
+User has been asked to create a SEPARATE Zova login at https://zova-tiktok-sandbox.onrender.com/signup then connect registered TikTok tester davidwilson493, or identify another account to add as sandbox target. Do not share passwords. Real OAuth, creator restrictions, uploaded media fetch, final review and private Direct Post outcome remain pending their connection; no ready-to-record end-to-end claim yet. Before sending anything obtain exact post/account/privacy approval. Complete provider verification, then recording; do not submit old inbox recording as Direct Post evidence. No iOS device validation performed. All79 broader beta gaps retained.
+
+Rollback: keep test DB isolated; do not point sandbox back to production. Set only sandbox TIKTOK_SEND_TO_INBOX=true to disable Direct Post or suspend test service if requested. Keep production unchanged. Preserve any publish receipts before restarting disposable sandbox.
+
+---
+
 # TikTok Direct Post preparation - 16 October 2026
 
 ## Status and boundaries
