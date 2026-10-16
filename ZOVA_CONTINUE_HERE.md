@@ -1,3 +1,9 @@
+# Social beta integration work - 16 October 2026
+
+Read docs/SOCIAL_BETA_COMPLETION_20261016.md for evidence and rollback. Instagram preserved; X callback fixed with approval; Facebook Page review draft not submitted; TikTok inbox integration aligned with actual approved scopes.16 focused tests pass. Full release/provider validation pending. Native PR28 remains draft/disabled. All79 gaps retained.
+
+---
+
 # Next Move always-visible sections — 12 October 2026 (not deployed)
 
 Branch codex/next-move-open-sections-20261012 replaces the Details and Change this idea dropdowns with always-visible, labelled sections and bold16px headings. No collapse controls on either section. Source evidence retains its separate disclosure. See steps now focuses the visible Details heading. Existing draft/feedback behavior preserved. Node journey/onboarding suites and4 beta scope tests passed. Synthetic desktop1280x720 and mobile390x844 reviewed; feedback input directly accessible, no horizontal panel overflow. No provider, schema, account or billing changes; all79 gaps retained. Rollback live db9a4ff6daff2735b48ff989771c9ae8c91e866c. Hosting checks required before publication.
