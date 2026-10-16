@@ -1,3 +1,9 @@
+# TikTok final private review verified - 16 October 2026
+
+Owner explicitly approved accepting TikTok Music Usage Confirmation and opening final review only. Accepted agreement and generated server-owned final snapshot successfully for sandbox draft1, David Wilson @davidwilson493, six-second zova-beta-test.mp4, exact caption: Zova Direct Post integration test — checking our reviewed publishing flow. Final review displays SELF_ONLY; comments/Duet/Stitch off; own brand/partnership/AI-generated media no; video preview and processing notice. Confirm publish was NOT clicked. No provider publication outcome claimed. Evidence social-proof/tiktok-final-review-ready.png. Await exact separate private-test publication approval or owner recording; do not resend previous tests. Production unchanged. Cosmetic follow-ups: raw SELF_ONLY and opaque provider ID appear in review; mixed create + do-not-publish intent quirk remains.
+
+---
+
 # Live TikTok sandbox account and media verified - 16 October 2026
 
 Owner signed into sandbox in side browser. Account shows David Wilson connected; live publish context identifies @davidwilson493. Uploaded existing synthetic6-second ZOVA BETA TEST video into new draft1. Browser preview readyState4/duration6; unauthenticated media GET200 video/mp4 20834bytes under verified sandbox prefix. AI inspected8frames. Initial mixed create + Do not publish message stopped generation; simpler drafting request succeeded. Record that intent-handling defect; do not silently call resolved.
