@@ -27,15 +27,15 @@ The bounded web fix is live: PR29 merged as 0105751acd9ffb75dae94016548b8d25ba75
 | Shared native foundation | PR28 3ede54c: SQLite 305 passed/2 skipped, PostgreSQL 306 passed/1 skipped; local full run 305 passed/2 skipped | Tested, not deployed |
 | Native Instagram formats | Post and Story tests pass; final implementation acbad5b passed CI38875534070 with SQLite307/2 skipped and PostgreSQL308/1 skipped plus all required checks | Tested, not deployed |
 | Real Instagram login | Owner confirmed successful connection in normal Edge/Chrome on 16 October; earlier embedded-browser attempt looped before callback | User-confirmed success; app-role status and exact grants not independently inspected |
-| Real publishing | No reviewed live post approved or sent | Not verified |
+| Real publishing | Owner confirmed on 16 October that both Instagram Post and Story work; no posts sent by the agent | User-confirmed delivery for both; provider receipts not independently inspected |
 
 ## Platform matrix
 
 | Platform/path | Beta position |
 | --- | --- |
 | Instagram direct | Approved and published; owner confirms successful normal-browser connection; embedded-browser login compatibility remains unresolved |
-| Instagram Post/Reel | Shared reviewed publishing and duplicate guards tested with mocks; real post still needs explicit approval and verification |
-| Instagram Story | Separate saved/reviewed format; business-account eligibility check; shared web/native dispatch tests; real Story unverified |
+| Instagram Post/Reel | Shared reviewed publishing and duplicate guards tested with mocks; owner confirms successful live Post delivery on 16 October; individual media types not separately verified |
+| Instagram Story | Separate saved/reviewed format; business-account eligibility check; shared web/native dispatch tests; owner confirms successful live Story delivery on 16 October |
 | Instagram via Facebook | Existing route preserved; direct Instagram approval does not establish this route's separate permissions |
 | Facebook Page publishing | Current OAuth scope lacks pages_manage_posts and publishing guard rejects missing permission. This Meta review did not approve it; do not claim ready or expand scopes without verified access |
 | X | Existing integration preserved and regression tested; owner reports approval but no new dashboard/account/provider evidence this session |
@@ -54,7 +54,7 @@ Help copy still describes the old Next move recurring-drafts entry point; update
 
 Normal-browser connection is now user-confirmed. Treat the embedded-browser loop as a separate compatibility issue; its underlying cause is not established. For iOS, retain system-browser authentication and validate on a real device rather than relying on an embedded web view.
 
-Next: verify exact connected account and granted scopes; approve one concrete test Post and Story if live publishing evidence is wanted; verify X/TikTok approved modes and Facebook permissions independently. Retain all 79 broader known gaps. This update is limited beta activation, not commercial certification.
+Next: verify exact connected account and granted scopes; retain owner-confirmed Post/Story success and capture provider receipts during further beta testing; verify X/TikTok approved modes and Facebook permissions independently. Retain all 79 broader known gaps. This update is limited beta activation, not commercial certification.
 
 ## Provider reference
 
