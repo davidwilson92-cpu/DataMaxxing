@@ -1,3 +1,9 @@
+# Shared social review update - 16 October 2026
+
+Integrates main PR32 (8ef1230) cache-version and API context regression. PR31 is verified Live on Render dep-db8vpf49v7es739c6840; Facebook now requests only Page list/read/manage-posts. Final Page grant awaiting owner permission. X test verified at https://x.com/DataMaxxingUK/status/2111033940157055189 ; do not resend. TikTok draft27 remains unsent pending corrected live inbox review. PR32 required checks passed; deployment verification pending. Native branch remains draft, disabled and undeployed; required checks rerun for this merge. Previous native head ab65267 passed all checks in38887796720/38887804394. All79 gaps retained.
+
+---
+
 # Social beta integration update - 16 October 2026
 
 PR30 live as786183f05619d2706f71765cd2b86d56536a87d3 (Render dep-db8v84brjlhs73be54j0).299 tests pass on SQLite/PostgreSQL plus restore, container, dependency and guardrails. X callback fixed; owner authorised @DataMaxxingUK connection and exact test post. Real post verified at https://x.com/DataMaxxingUK/status/2111033940157055189. TikTok David Wilson connection confirmed with owner permission; inbox-video test preparation underway. Facebook required Page permission review draft saved with owner consent; not submitted or approved. PR31 removes unnecessary Facebook business-management scope; merged7cdb945f9e9927d52586d9584b1b3f65705b9f38, rollout verification pending. Instagram routes preserved. See docs/SOCIAL_BETA_COMPLETION_20261016.md.
