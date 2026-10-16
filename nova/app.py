@@ -169,14 +169,17 @@ def publish_legacy_creator(text: str, creator: Creator, db: Session) -> dict[str
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from .runtime import validate_runtime
+    mode = validate_runtime()
     bootstrap_legacy_account()
-    task = asyncio.create_task(scheduler_loop())
+    task = asyncio.create_task(scheduler_loop()) if mode == 'embedded' else None
     try:
         yield
     finally:
-        task.cancel()
-        try: await task
-        except asyncio.CancelledError: pass
+        if task is not None:
+            task.cancel()
+            try: await task
+            except asyncio.CancelledError: pass
 
 
 app = FastAPI(title="Zova Social Publishing", version="5.1.0", lifespan=lifespan)
@@ -806,12 +809,8 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
 
 
 # ---------- API models ----------
-class GenerateRequest(BaseModel):
-    media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
-    brief:str=Field(min_length=1,max_length=12000); instruction:str=Field(default="",max_length=5000); platforms:list[str]; thread_length:int=1; link_url:str=""; draft_id:int|None=None
-    @field_validator("thread_length")
-    @classmethod
-    def valid_thread(cls,v:int): return v if v in {1,3,5} else 1
+from .client_schemas import GenerateRequest
+
 class RewriteRequest(BaseModel):
     media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     platform:str; posts:list[str]; action:str=""; instruction:str=Field(default="",max_length=1000)
@@ -940,7 +939,7 @@ async def upload_media(request:Request,files:list[UploadFile]=File(...),db:Sessi
         stored=save_bytes(data,file.filename or 'media',mime,base_url())
         row=MediaAsset(user_id=user.id,filename=(file.filename or 'media')[:260],mime_type=mime,storage_key=stored.storage_key,public_url=stored.public_url,size_bytes=len(data))
         db.add(row); db.flush()
-        result.append({'id':row.id,'filename':row.filename,'kind':'video' if mime in VIDEO_TYPES else 'image','mime_type':mime,'url':stored.public_url or f'/media/preview/{row.id}'})
+        result.append({'id':row.id,'filename':row.filename,'kind':'video' if mime in VIDEO_TYPES else 'image','mime_type':mime,'url':f'/api/v1/media/{row.id}' if request.url.path.startswith('/api/v1/') else (stored.public_url or f'/media/preview/{row.id}')})
     db.commit()
     return {'assets':result}
 
@@ -952,13 +951,19 @@ def local_media(filename:str):
 
 @app.post("/api/ai/generate")
 def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)):
-    with allowances.ai_action(db,current_user(request).id):
+    return generate_draft(body,current_user(request),db)
+
+
+def generate_draft(body:GenerateRequest,user:User,db:Session):
+    with allowances.ai_action(db,user.id):
         from .workspace import EDITABLE
-        user=current_user(request); subscription_guard(user); platforms=_validate_platforms(body.platforms); prefs=get_preferences(db,user.id)
+        subscription_guard(user); platforms=_validate_platforms(body.platforms); prefs=get_preferences(db,user.id)
         row=db.get(Draft,body.draft_id) if body.draft_id else None
         if body.draft_id and (not row or row.user_id!=user.id):raise HTTPException(404,'Draft not found')
         if row and row.status not in EDITABLE:raise HTTPException(409,'This draft is already submitted.')
         revision=row.revision if row else 0
+        if row and body.revision is not None and body.revision!=revision:
+            raise HTTPException(409,'This draft changed on another device. Open the latest version.')
         from .media_inspection import inspect_assets, context as media_context
         inspected=inspect_assets(db,user.id,body.media_asset_ids)
         try:variants=ai.generate_variants(brief=body.brief,instruction=body.instruction+strategy_context(db,user.id)+media_context(inspected),platforms=platforms,thread_length=body.thread_length,preferences=prefs,link_url=body.link_url)
@@ -1211,3 +1216,7 @@ def media_preview(asset_id:int,request:Request,db:Session=Depends(get_db)):
 
 from .connection_review import router as connection_review_router
 app.include_router(connection_review_router)
+
+# Explicit versioned client surface; registered after existing route definitions.
+from .api_v1 import install as install_mobile_api
+install_mobile_api(app)

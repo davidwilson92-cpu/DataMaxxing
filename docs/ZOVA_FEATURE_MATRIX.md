@@ -11,7 +11,20 @@
 
 Candidate d844afa passed CI38882996566: SQLite299 passed/1 skipped; PostgreSQL299 passed/1 skipped, restore/container/dependency and exact beta scope checks pass. Owner-approved X and TikTok connections saved; exact approved X text test published once. PR30/31/32 required checks passed and deployment verified; no Facebook or TikTok post sent. See [social evidence and rollback](SOCIAL_BETA_COMPLETION_20261016.md). All79 broader gaps retained; no commercial certification.
 
+
 ---
+
+# Social beta integration update - 16 October 2026
+
+PR30 live as786183f05619d2706f71765cd2b86d56536a87d3 (Render dep-db8v84brjlhs73be54j0).299 tests pass on SQLite/PostgreSQL plus restore, container, dependency and guardrails. X callback fixed; owner authorised @DataMaxxingUK connection and exact test post. Real post verified at https://x.com/DataMaxxingUK/status/2111033940157055189. TikTok David Wilson connection confirmed with owner permission; inbox-video test preparation underway. Facebook required Page permission review draft saved with owner consent; not submitted or approved. PR31 removes unnecessary Facebook business-management scope; merged7cdb945f9e9927d52586d9584b1b3f65705b9f38, rollout verification pending. Instagram routes preserved. See docs/SOCIAL_BETA_COMPLETION_20261016.md.
+
+This native foundation branch integrates those server fixes but remains draft, undeployed, native flags disabled; rerun contract/release checks. No native TikTok registration/approval exists. All79 broader gaps retained.
+
+---
+
+## Meta activation update 16 October 2026
+
+Direct Instagram basic/content publishing approval and Meta publication verified. Focused token lifecycle fix is live in PR29. Owner confirms successful Instagram connection in normal Edge/Chrome on 16 October. Earlier embedded-browser login loop remains a compatibility issue; owner also confirms successful live Post and Story delivery on 16 October (provider receipts not independently inspected). Facebook Page publishing, separate Instagram Facebook route, advanced insights and TikTok direct/inbox permissions are not established by this approval. Shared iOS Post/Story tests pass locally; PR28 remains undeployed and native access disabled. See [activation evidence](META_BETA_ACTIVATION_20261016.md).
 
 # Focused UX release — 8 October 2026
 
@@ -98,3 +111,17 @@ Current production baseline: main `78d9924` (21 September Instagram reauthentica
 See `COMMERCIAL_OPERATIONS_20260920.md`, `CUSTOMER_VALIDATION_20260920.md` and `COMMERCIAL_READINESS_EVIDENCE_20260920.md`. Provider approval is never inferred from code, old credentials, a connected status or a mock.
 
 Next move simplification: automatically fills empty/stale recommendations; post-first card with one draft action; compact alternatives/context/settings; linked draft title and explicit platform saved. Browser synthetic goal-to-draft/reload and failure/late-navigation harnesses validated. Live model relevance remains a separate check. See NEXT_MOVE_SIMPLE_20261010.md.
+
+
+## Shared web/iOS foundation candidate — 12 October 2026
+
+| Capability | Implementation | Validation / availability |
+| --- | --- | --- |
+| Native account handoff and rotating sessions | Implemented; disabled by default | Synthetic PKCE/replay/revocation/ownership tests; device callback unverified |
+| Shared v1 API and owned workspaces | Implemented; explicit route allowlist | Existing web handlers reused; no native interface yet |
+| Retry-safe drafts and revision conflicts | Implemented | Concurrent create and cross-device stale edit tests |
+| Durable background generation | Implemented; disabled until worker provisioned | Disconnect, cancellation, stale revision, interruption and account-revocation tests |
+| Separate publishing/generation workers | Entrypoints and PostgreSQL locks implemented | No production workers provisioned; hosted PostgreSQL check required |
+| Portable scaling controls | Pool bounds, schema mode, replica preconditions | Does not certify actual capacity or infrastructure privacy |
+
+Full limits and rollback: SHARED_WEB_IOS_ARCHITECTURE_20261012.md. No native billing, push, complete offline sync or public iOS release is claimed. All broader beta gaps remain open.

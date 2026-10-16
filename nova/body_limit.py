@@ -9,7 +9,7 @@ class BodyLimitMiddleware:
     async def __call__(self, scope, receive, send):
         if scope['type']!='http' or scope['method'] in {'GET','HEAD','OPTIONS'}:
             return await self.app(scope,receive,send)
-        maximum=160*1024*1024 if scope['path']=='/api/media' else 1024*1024
+        maximum=160*1024*1024 if scope['path'] in {'/api/media','/api/v1/media'} else 1024*1024
         # Spool to disk above 1 MB instead of buffering a complete video in RAM.
         from tempfile import SpooledTemporaryFile
         with SpooledTemporaryFile(max_size=1024*1024) as body:

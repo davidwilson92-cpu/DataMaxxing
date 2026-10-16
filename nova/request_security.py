@@ -10,6 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 from .db import SessionLocal, RequestLimit, utcnow
 from .security import user_from_session
+from fastapi import HTTPException
 
 
 def allowed_request(key, maximum, seconds):
@@ -37,6 +38,11 @@ def allowed_request(key, maximum, seconds):
 class SecurityMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         path = request.url.path
+        native = path.startswith('/api/v1/')
+        native_auth = path.startswith('/api/v1/auth/')
+        if native: path = '/api/' + path[len('/api/v1/'):]
+        limited = (request.method not in {'GET','HEAD','OPTIONS'} or request.url.path == '/mobile/authorize'
+                   or (native and path != '/api/config'))
         external_callback = path in {'/billing/webhook','/data-deletion/callback','/auth/apple/callback'}
         unsafe = request.method not in {'GET','HEAD','OPTIONS'}
         response = None
@@ -51,14 +57,23 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             maximum = 160*1024*1024 if path == '/api/media' else 1024*1024
             if size.isdigit() and int(size) > maximum:
                 response = JSONResponse({'detail':'Request too large.'},413)
-        if unsafe and not external_callback and response is None:
+        if limited and not external_callback and response is None:
             from starlette.concurrency import run_in_threadpool
-            user = await run_in_threadpool(user_from_session, request.cookies.get('nova_session'))
+            if native and not native_auth:
+                from .mobile_auth import native_user
+                try:
+                    user = await run_in_threadpool(native_user, request)
+                except HTTPException as exc:
+                    user = None
+                    response = JSONResponse({'detail':exc.detail},exc.status_code,headers=exc.headers)
+            else:
+                user = None if native else await run_in_threadpool(user_from_session, request.cookies.get('nova_session'))
             identity = f'user:{user.id}' if user else f'ip:{request.client.host if request.client else "unknown"}'
             maximum, seconds = (30,300) if path in {'/login','/signup','/forgot-password','/reset-password'} else (120,60)
             if path.startswith('/billing/'):maximum,seconds=10,60
-            ai_request=path.startswith('/api/ai/') or path.startswith('/api/voice/') or path=='/api/conversation/plan' or path.startswith('/api/strategy/') or (path.startswith('/api/series/occurrences/') and path.endswith('/draft'))
+            ai_request=unsafe and (path.startswith('/api/generation-jobs') or path.startswith('/api/ai/') or path.startswith('/api/voice/') or path=='/api/conversation/plan' or path.startswith('/api/strategy/') or (path.startswith('/api/series/occurrences/') and path.endswith('/draft')))
             if ai_request:maximum,seconds=20,60
+            if native_auth or request.url.path.startswith('/mobile/authorize'): maximum,seconds=30,300
             maximum *= max(1,int(os.environ.get('RATE_LIMIT_SCALE','1')))
             if not await run_in_threadpool(allowed_request, f'{identity}:{"auth" if path in {"/login","/signup","/forgot-password","/reset-password"} else "ai" if ai_request else "mutations"}', maximum, seconds):
                 response = JSONResponse({'detail':'Too many requests. Please wait before trying again.'},429,headers={'Retry-After':str(seconds)})
@@ -70,6 +85,9 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             if request.state.brand_id and location.startswith('/') and not location.startswith('//'):
                 parts=urlsplit(location);query=dict(parse_qsl(parts.query));query['workspace']=str(request.state.brand_id)
                 response.headers['location']=urlunsplit(('', '', parts.path, urlencode(query), parts.fragment))
+        import uuid
+        response.headers.setdefault('X-Request-ID',uuid.uuid4().hex)
+        if native: response.headers.setdefault('X-Zova-API-Version','1')
         response.headers.setdefault('X-Content-Type-Options','nosniff')
         response.headers.setdefault('X-Frame-Options','DENY')
         response.headers.setdefault('Referrer-Policy','same-origin')

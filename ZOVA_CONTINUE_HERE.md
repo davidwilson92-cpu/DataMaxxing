@@ -1,34 +1,50 @@
-# TikTok Direct Post preparation - 16 October 2026
+# Shared Direct Post preparation - 16 October 2026
 
-See docs/TIKTOK_DIRECT_POST_20261016.md. Production remains inbox-only. TikTok draft revision saved with video.publish and Direct Post; not submitted. Existing URL prefix https://zova-social.com/ verified. Separate audit form at Supporting documents, not submitted, browser answers may be ephemeral. New real Direct Post recording and provider validation required. Local implementation includes consent/disclosure/fresh creator/duration/verified-media controls and tests; no live Direct Post or native rollout claimed. All79 gaps retained.
-
----
-
-# Facebook live publication verified - 16 October 2026
-
-Owner explicitly approved the exact single public text-only Facebook test. Published once through draft28 immutable final review to Zova Social Page1232370066628887. Zova returned Published and receipt122119807485439972. Independently opened Facebook and verified the exact text, Zova Social author and Public audience at https://www.facebook.com/61593199172836/posts/122119807485439972/ . Leave the post in place; do not resend or remove without owner request. Screenshot social-proof/facebook-provider-verified.png is local evidence.
-
-Facebook app-role connection and text publication now verified. General customer access remains blocked on the separate unsubmitted Meta Page-permission review; do not equate this test with approval. X text test verified; TikTok inbox received per owner, not publicly published. Instagram unchanged. Image/thread/scheduling and native device validation are not established by these live text/inbox tests. All79 broader gaps retained.
+Integrates PR33 implementation5d8cdc5 into disabled native foundation. Consent/disclosure, current creator restrictions, verified URL delivery and server video-duration validation are shared by web and native reviewed-publication APIs. TikTok draft revision saved; real direct evidence/audit approval still pending. No production or native enablement. Required checks must pass for this merge. See docs/TIKTOK_DIRECT_POST_20261016.md.
 
 ---
 
-# Provider validation update - 16 October 2026
+# Shared social review update - 16 October 2026
 
-Owner explicitly approved the narrowed Facebook grant and six-second TikTok inbox test. Saved Meta grant for Zova Social Page1232370066628887 only, then confirmed the exact Page in david1@gmail.com / My brand. Zova Account shows Connected. No Facebook post sent yet; draft28 is being prepared for separate exact publication approval.
-
-Submitted synthetic video from reviewed TikTok draft27 once. Zova returned pending/complete in TikTok, without error. Owner independently confirmed "Video received in TikTok" on16 October2026. This verifies inbox delivery, not public publication. Do not resend. UI still says Waiting for platform processing even after confirmed inbox receipt; improve delivered-to-inbox labelling as a follow-up without marking it publicly published. Instagram unchanged. Facebook public-customer permissions review remains unsubmitted/unapproved. Shared native integration head93af22c passed all required CI38888696671/38888702089, remains disabled/undeployed.
+Integrates main PR32 (8ef1230) cache-version and API context regression. PR31 is verified Live on Render dep-db8vpf49v7es739c6840; Facebook now requests only Page list/read/manage-posts. Final Page grant awaiting owner permission. X test verified at https://x.com/DataMaxxingUK/status/2111033940157055189 ; do not resend. TikTok draft27 remains unsent pending corrected live inbox review. PR32 required checks passed; deployment verification pending. Native branch remains draft, disabled and undeployed; required checks rerun for this merge. Previous native head ab65267 passed all checks in38887796720/38887804394. All79 gaps retained.
 
 ---
 
-# Live social review fix - 16 October 2026
+# Social beta integration update - 16 October 2026
 
-PR32 is Live (8ef1230, Render dep-db8vtgjrjlhs73betts0); all required checks passed; health200 and real TikTok draft27 final inbox review verified. X approved test already published once: https://x.com/DataMaxxingUK/status/2111033940157055189 . Do not resend. Pending owner answers: final narrowed Facebook grant for Zova Social only; exact six-second synthetic TikTok inbox send. Do not treat elapsed time as approval. No Facebook/TT delivery receipt yet. Shared native branch93af22c integrates all fixes, remains disabled/undeployed. See docs/SOCIAL_BETA_COMPLETION_20261016.md and feature matrix.
+PR30 live as786183f05619d2706f71765cd2b86d56536a87d3 (Render dep-db8v84brjlhs73be54j0).299 tests pass on SQLite/PostgreSQL plus restore, container, dependency and guardrails. X callback fixed; owner authorised @DataMaxxingUK connection and exact test post. Real post verified at https://x.com/DataMaxxingUK/status/2111033940157055189. TikTok David Wilson connection confirmed with owner permission; inbox-video test preparation underway. Facebook required Page permission review draft saved with owner consent; not submitted or approved. PR31 removes unnecessary Facebook business-management scope; merged7cdb945f9e9927d52586d9584b1b3f65705b9f38, rollout verification pending. Instagram routes preserved. See docs/SOCIAL_BETA_COMPLETION_20261016.md.
+
+This native foundation branch integrates those server fixes but remains draft, undeployed, native flags disabled; rerun contract/release checks. No native TikTok registration/approval exists. All79 broader gaps retained.
 
 ---
 
-# Social beta integration work - 16 October 2026
+# Meta approved and published with focused beta fix live — 16 October 2026
 
-Read docs/SOCIAL_BETA_COMPLETION_20261016.md for evidence and rollback. Instagram preserved. PR30 live; X authorised test published once and verified: https://x.com/DataMaxxingUK/status/2111033940157055189 . Do not resend. TikTok connected; draft27 holds an unsent synthetic video. Facebook three-permission review draft saved, not submitted. PR31 least-privilege Facebook change merged with required checks; hosting verification pending. Current cache-version follow-up has20 focused tests passing but is not yet deployed. Verify inbox review after rollout before requesting exact video-send approval. Restart stale Facebook consent without business_management before asking for Page grant. Native PR28 remains draft/disabled; shared fixes integrated through PR31, final checks pending. All79 gaps retained.
+Meta direct Instagram basic/content publishing approved and app published. PR29 live as 0105751acd9ffb75dae94016548b8d25ba751ed3, Render dep-db8th5h7lnhs73aj2e20. Fixes token envelope, actual grants and eligible refresh with concurrent-disconnect preservation. No schema/paid services/grant expansion or agent-sent real posts. PR28 shares fixes but remains draft and undeployed, native flags off. Owner confirmed on 16 October that Instagram connects successfully in their normal Edge/Chrome browser. The earlier embedded-browser verification loop remains a compatibility issue, not a blocker for this normal-browser connection. Owner subsequently confirmed both live Instagram Post and Story publishing work on 16 October. These delivery checks are user-confirmed, not independently inspected provider receipts. Facebook publishing scope and TikTok posting mode remain unresolved, despite owner-reported general approvals. Final shared implementation acbad5b passed CI38875534070: SQLite307/2 skipped, PostgreSQL308/1 skipped and all required checks. Read docs/META_BETA_ACTIVATION_20261016.md for evidence, platform matrix and rollback. All79 broader gaps retained. Do not claim full commercial readiness.
+
+---
+
+# Shared web/iOS foundations validated — 12 October 2026 (not deployed)
+
+Draft PR28: https://github.com/davidwilson92-cpu/DataMaxxing/pull/28. Implementation head0e019e35b71b44da208062dcbf0ca6e12e3c7b65 passed all required checks in PR38253467424 and push38253460927, including PostgreSQL/advisory-lock/concurrency tests, synthetic restore, container smoke test, dependency audit, Node behavior suites and exact beta scope. The first PostgreSQL run exposed a test-only SQLite assumption; corrected with an explicit test configuration and rerun successfully. Native/mobile access and AI jobs remain disabled; production, billing, social grants and hosting costs are unchanged. Owner preference is minimum beta hosting cost: retain Render and provision no paid workers yet. No real device/provider/capacity or production-recovery certification. All79 broader beta gaps remain open. Architecture/cost comparison/rollout/rollback: docs/SHARED_WEB_IOS_ARCHITECTURE_20261012.md. This documentation update does not alter the validated runtime. Previous live rollback target remains f1c7c12ed3076990b1262e7cefbd614c699f95bd, preserving all data and secrets. The Studio placeholder change is included but not live.
+
+---
+
+# Shared web/iOS foundations — 12 October 2026 (not deployed)
+
+Branch codex/shared-mobile-foundations-20261012. Native access and durable AI queue are disabled by default; existing web/scheduler defaults preserved. Implements shared v1 API, browser-confirmed S256 handoff, hashed rotating native sessions, ownership/revision/idempotency guards, private native media paths, durable generation jobs, separate worker roles, pool controls, optional offline schema preparation/read-only verification and worker diagnostics. Owner preference: keep beta hosting costs minimal; stay on Render and do not provision paid resources. Architecture/cost comparison, rollout limitations and rollback: docs/SHARED_WEB_IOS_ARCHITECTURE_20261012.md. Native API contract: docs/api/mobile-v1.openapi.json. Full local regression295passed/2skipped; expanded mobile/contract/beta checks26passed/1skipped and Node suites passed. Final hosted PostgreSQL/restore/image validation pending. All79 broader gaps retained; no data/grant/billing/deployment changes. Existing placeholder change is included.
+
+---
+
+# Studio composer wording — 12 October 2026 (not deployed)
+
+Changed the composer placeholder and matching accessible label from Message Zova to Start drafting your next post. Template-only wording change; reviewed diff and exact beta scope validation passed. No behavior change. All 79 broader beta gaps remain open. Await publication request.
+
+---
+
+# Next Move visible sections are live — 12 October 2026
+
+PR27 merged as f1c7c12ed3076990b1262e7cefbd614c699f95bd. Render dep-db6cpk2vcj2c73fgrcng confirmed Live. Final head624ff5f passed all required checks in PR38246492944 and push38246487073. Health200; exact strategy.js and studio-design.css matches verified after a transient startup HTTP error recovered. Signed-in live Next Move shows Details and Change this idea as always-visible sections with bold headings and no dropdown toggles. Keyboard access to feedback verified without entering or submitting data. Screenshot local only: docs/validation/next-move-open-sections-live.jpg. No real posts, account/grant/billing changes or schema migration. All79 broader beta gaps remain open. Rollback db9a4ff6daff2735b48ff989771c9ae8c91e866c preserves data and connections.
 
 ---
 

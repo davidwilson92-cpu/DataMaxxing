@@ -1,0 +1,3046 @@
+{
+  "components": {
+    "schemas": {
+      "Body_apple_callback_auth_apple_callback_post": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "id_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id Token"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "user": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User"
+          }
+        },
+        "title": "Body_apple_callback_auth_apple_callback_post",
+        "type": "object"
+      },
+      "Body_billing_checkout_billing_checkout_post": {
+        "properties": {
+          "plan": {
+            "default": "monthly",
+            "title": "Plan",
+            "type": "string"
+          }
+        },
+        "title": "Body_billing_checkout_billing_checkout_post",
+        "type": "object"
+      },
+      "Body_change_password_account_password_post": {
+        "properties": {
+          "current_password": {
+            "title": "Current Password",
+            "type": "string"
+          },
+          "new_password": {
+            "title": "New Password",
+            "type": "string"
+          },
+          "new_password_confirmation": {
+            "title": "New Password Confirmation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "current_password",
+          "new_password",
+          "new_password_confirmation"
+        ],
+        "title": "Body_change_password_account_password_post",
+        "type": "object"
+      },
+      "Body_confirm_connections_review__code__post": {
+        "properties": {
+          "action": {
+            "default": "connect",
+            "title": "Action",
+            "type": "string"
+          },
+          "choice": {
+            "title": "Choice",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "choice"
+        ],
+        "title": "Body_confirm_connections_review__code__post",
+        "type": "object"
+      },
+      "Body_confirm_verify_email_post": {
+        "properties": {
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "Body_confirm_verify_email_post",
+        "type": "object"
+      },
+      "Body_create_brand_brands_post": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Body_create_brand_brands_post",
+        "type": "object"
+      },
+      "Body_forgot_forgot_password_post": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "Body_forgot_forgot_password_post",
+        "type": "object"
+      },
+      "Body_login_login_post": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "next": {
+            "default": "/studio",
+            "title": "Next",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "Body_login_login_post",
+        "type": "object"
+      },
+      "Body_rename_brand_brands__brand_id__name_post": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Body_rename_brand_brands__brand_id__name_post",
+        "type": "object"
+      },
+      "Body_rename_draft_drafts__draft_id__title_post": {
+        "properties": {
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "revision"
+        ],
+        "title": "Body_rename_draft_drafts__draft_id__title_post",
+        "type": "object"
+      },
+      "Body_reset_reset_password_post": {
+        "properties": {
+          "confirmation": {
+            "title": "Confirmation",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "password",
+          "confirmation"
+        ],
+        "title": "Body_reset_reset_password_post",
+        "type": "object"
+      },
+      "Body_save_preferences_account_preferences_post": {
+        "properties": {
+          "audience": {
+            "default": "",
+            "title": "Audience",
+            "type": "string"
+          },
+          "example_posts": {
+            "default": "",
+            "title": "Example Posts",
+            "type": "string"
+          },
+          "next": {
+            "default": "",
+            "title": "Next",
+            "type": "string"
+          },
+          "preferred_post_length": {
+            "default": 220,
+            "title": "Preferred Post Length",
+            "type": "integer"
+          },
+          "things_to_avoid": {
+            "default": "",
+            "title": "Things To Avoid",
+            "type": "string"
+          },
+          "timezone": {
+            "default": "Europe/London",
+            "title": "Timezone",
+            "type": "string"
+          },
+          "topics": {
+            "default": "",
+            "title": "Topics",
+            "type": "string"
+          },
+          "writing_tone": {
+            "default": "",
+            "title": "Writing Tone",
+            "type": "string"
+          }
+        },
+        "title": "Body_save_preferences_account_preferences_post",
+        "type": "object"
+      },
+      "Body_signup_signup_post": {
+        "properties": {
+          "accept_terms": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accept Terms"
+          },
+          "country": {
+            "default": "",
+            "title": "Country",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "marketing_consent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marketing Consent"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "password_confirmation": {
+            "title": "Password Confirmation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "password",
+          "password_confirmation"
+        ],
+        "title": "Body_signup_signup_post",
+        "type": "object"
+      },
+      "Body_switch_brand_brands_switch_post": {
+        "properties": {
+          "brand_id": {
+            "title": "Brand Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "brand_id"
+        ],
+        "title": "Body_switch_brand_brands_switch_post",
+        "type": "object"
+      },
+      "Body_update_profile_account_profile_post": {
+        "properties": {
+          "display_name": {
+            "default": "",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "guidance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guidance"
+          },
+          "next": {
+            "default": "",
+            "title": "Next",
+            "type": "string"
+          }
+        },
+        "title": "Body_update_profile_account_profile_post",
+        "type": "object"
+      },
+      "Body_upload_media_api_media_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_upload_media_api_media_post",
+        "type": "object"
+      },
+      "Body_v1_upload_media_api_v1_media_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_v1_upload_media_api_v1_media_post",
+        "type": "object"
+      },
+      "CancelOccurrence": {
+        "properties": {
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision"
+        ],
+        "title": "CancelOccurrence",
+        "type": "object"
+      },
+      "CodeExchange": {
+        "properties": {
+          "client_id": {
+            "maxLength": 40,
+            "title": "Client Id",
+            "type": "string"
+          },
+          "code": {
+            "maxLength": 100,
+            "minLength": 40,
+            "title": "Code",
+            "type": "string"
+          },
+          "code_verifier": {
+            "pattern": "^[A-Za-z0-9._~-]{43,128}$",
+            "title": "Code Verifier",
+            "type": "string"
+          },
+          "redirect_uri": {
+            "maxLength": 500,
+            "title": "Redirect Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "client_id",
+          "redirect_uri",
+          "code",
+          "code_verifier"
+        ],
+        "title": "CodeExchange",
+        "type": "object"
+      },
+      "Confirm": {
+        "properties": {
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "strategy": {
+            "$ref": "#/components/schemas/StrategyText"
+          }
+        },
+        "required": [
+          "strategy",
+          "revision"
+        ],
+        "title": "Confirm",
+        "type": "object"
+      },
+      "ConversationRequest": {
+        "properties": {
+          "active_platform": {
+            "default": "x",
+            "title": "Active Platform",
+            "type": "string"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "media_asset_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 10,
+            "title": "Media Asset Ids",
+            "type": "array"
+          },
+          "message": {
+            "maxLength": 12000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "recent_messages": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "maxItems": 12,
+            "title": "Recent Messages",
+            "type": "array"
+          },
+          "selected_platforms": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Selected Platforms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ConversationRequest",
+        "type": "object"
+      },
+      "DraftSaveRequest": {
+        "properties": {
+          "brief": {
+            "default": "",
+            "maxLength": 12000,
+            "title": "Brief",
+            "type": "string"
+          },
+          "instruction": {
+            "default": "",
+            "maxLength": 5000,
+            "title": "Instruction",
+            "type": "string"
+          },
+          "platforms": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Platforms",
+            "type": "array"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "thread_length": {
+            "default": 1,
+            "title": "Thread Length",
+            "type": "integer"
+          },
+          "variants": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Variants",
+            "type": "object"
+          },
+          "workspace": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace"
+          }
+        },
+        "title": "DraftSaveRequest",
+        "type": "object"
+      },
+      "Feedback": {
+        "properties": {
+          "reason": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Reason",
+            "type": "string"
+          },
+          "remind_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remind At"
+          },
+          "status": {
+            "enum": [
+              "complete",
+              "dismissed",
+              "snoozed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "Feedback",
+        "type": "object"
+      },
+      "GenerateRequest": {
+        "properties": {
+          "brief": {
+            "maxLength": 12000,
+            "minLength": 1,
+            "title": "Brief",
+            "type": "string"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "instruction": {
+            "default": "",
+            "maxLength": 5000,
+            "title": "Instruction",
+            "type": "string"
+          },
+          "link_url": {
+            "default": "",
+            "title": "Link Url",
+            "type": "string"
+          },
+          "media_asset_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 10,
+            "title": "Media Asset Ids",
+            "type": "array"
+          },
+          "platforms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Platforms",
+            "type": "array"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "thread_length": {
+            "default": 1,
+            "title": "Thread Length",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "brief",
+          "platforms"
+        ],
+        "title": "GenerateRequest",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "InsightRequest": {
+        "properties": {
+          "question": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "InsightRequest",
+        "type": "object"
+      },
+      "LegacyPostRequest": {
+        "properties": {
+          "approved": {
+            "default": false,
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "text": {
+            "maxLength": 280,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "LegacyPostRequest",
+        "type": "object"
+      },
+      "OccurrenceEdit": {
+        "properties": {
+          "local_time": {
+            "title": "Local Time",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "scope": {
+            "default": "one",
+            "enum": [
+              "one",
+              "future"
+            ],
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "local_time",
+          "revision"
+        ],
+        "title": "OccurrenceEdit",
+        "type": "object"
+      },
+      "PreviewRequest": {
+        "properties": {
+          "connection_ids": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "default": {},
+            "title": "Connection Ids",
+            "type": "object"
+          },
+          "platforms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Platforms",
+            "type": "array"
+          },
+          "variants": {
+            "additionalProperties": true,
+            "title": "Variants",
+            "type": "object"
+          }
+        },
+        "required": [
+          "platforms",
+          "variants"
+        ],
+        "title": "PreviewRequest",
+        "type": "object"
+      },
+      "Proposal": {
+        "properties": {
+          "brief": {
+            "maxLength": 20000,
+            "minLength": 3,
+            "title": "Brief",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "brief",
+          "revision"
+        ],
+        "title": "Proposal",
+        "type": "object"
+      },
+      "PublishRequest": {
+        "properties": {
+          "connection_ids": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "default": {},
+            "title": "Connection Ids",
+            "type": "object"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "link_url": {
+            "default": "",
+            "title": "Link Url",
+            "type": "string"
+          },
+          "media_asset_ids": {
+            "default": [],
+            "items": {
+              "type": "integer"
+            },
+            "title": "Media Asset Ids",
+            "type": "array"
+          },
+          "platforms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Platforms",
+            "type": "array"
+          },
+          "publish_options": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Publish Options",
+            "type": "object"
+          },
+          "review_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Token"
+          },
+          "variants": {
+            "additionalProperties": true,
+            "title": "Variants",
+            "type": "object"
+          }
+        },
+        "required": [
+          "platforms",
+          "variants"
+        ],
+        "title": "PublishRequest",
+        "type": "object"
+      },
+      "RefreshRequest": {
+        "properties": {
+          "refresh_token": {
+            "maxLength": 100,
+            "minLength": 40,
+            "title": "Refresh Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshRequest",
+        "type": "object"
+      },
+      "RepeatConfirm": {
+        "properties": {
+          "token": {
+            "maxLength": 80,
+            "minLength": 20,
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "RepeatConfirm",
+        "type": "object"
+      },
+      "RepeatReview": {
+        "properties": {
+          "connection_ids": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Connection Ids",
+            "type": "object"
+          },
+          "publish_options": {
+            "additionalProperties": true,
+            "title": "Publish Options",
+            "type": "object"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision"
+        ],
+        "title": "RepeatReview",
+        "type": "object"
+      },
+      "Reschedule": {
+        "properties": {
+          "scheduled_local": {
+            "title": "Scheduled Local",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scheduled_local"
+        ],
+        "title": "Reschedule",
+        "type": "object"
+      },
+      "ReviewRequest": {
+        "properties": {
+          "connection_ids": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "default": {},
+            "title": "Connection Ids",
+            "type": "object"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "link_url": {
+            "default": "",
+            "title": "Link Url",
+            "type": "string"
+          },
+          "media_asset_ids": {
+            "default": [],
+            "items": {
+              "type": "integer"
+            },
+            "title": "Media Asset Ids",
+            "type": "array"
+          },
+          "platforms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Platforms",
+            "type": "array"
+          },
+          "publish_options": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Publish Options",
+            "type": "object"
+          },
+          "review_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Token"
+          },
+          "scheduled_local": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Local"
+          },
+          "variants": {
+            "additionalProperties": true,
+            "title": "Variants",
+            "type": "object"
+          }
+        },
+        "required": [
+          "platforms",
+          "variants"
+        ],
+        "title": "ReviewRequest",
+        "type": "object"
+      },
+      "RewriteRequest": {
+        "properties": {
+          "action": {
+            "default": "",
+            "title": "Action",
+            "type": "string"
+          },
+          "instruction": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Instruction",
+            "type": "string"
+          },
+          "media_asset_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 10,
+            "title": "Media Asset Ids",
+            "type": "array"
+          },
+          "platform": {
+            "title": "Platform",
+            "type": "string"
+          },
+          "posts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Posts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "platform",
+          "posts"
+        ],
+        "title": "RewriteRequest",
+        "type": "object"
+      },
+      "ScheduleRequest": {
+        "properties": {
+          "connection_ids": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "default": {},
+            "title": "Connection Ids",
+            "type": "object"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "link_url": {
+            "default": "",
+            "title": "Link Url",
+            "type": "string"
+          },
+          "media_asset_ids": {
+            "default": [],
+            "items": {
+              "type": "integer"
+            },
+            "title": "Media Asset Ids",
+            "type": "array"
+          },
+          "platforms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Platforms",
+            "type": "array"
+          },
+          "publish_options": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Publish Options",
+            "type": "object"
+          },
+          "review_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Token"
+          },
+          "scheduled_local": {
+            "title": "Scheduled Local",
+            "type": "string"
+          },
+          "variants": {
+            "additionalProperties": true,
+            "title": "Variants",
+            "type": "object"
+          }
+        },
+        "required": [
+          "platforms",
+          "variants",
+          "scheduled_local"
+        ],
+        "title": "ScheduleRequest",
+        "type": "object"
+      },
+      "ScheduleSuggestRequest": {
+        "properties": {
+          "context": {
+            "default": "",
+            "title": "Context",
+            "type": "string"
+          },
+          "platforms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Platforms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "platforms"
+        ],
+        "title": "ScheduleSuggestRequest",
+        "type": "object"
+      },
+      "SeriesChange": {
+        "properties": {
+          "action": {
+            "enum": [
+              "pause",
+              "resume",
+              "cancel"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "action",
+          "revision"
+        ],
+        "title": "SeriesChange",
+        "type": "object"
+      },
+      "SeriesSpec": {
+        "properties": {
+          "count": {
+            "default": 4,
+            "maximum": 26.0,
+            "minimum": 1.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "integer"
+          },
+          "frequency": {
+            "default": "weekly",
+            "enum": [
+              "daily",
+              "weekly"
+            ],
+            "title": "Frequency",
+            "type": "string"
+          },
+          "mode": {
+            "default": "fresh",
+            "enum": [
+              "fresh",
+              "repeat"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "request_key": {
+            "maxLength": 80,
+            "minLength": 8,
+            "title": "Request Key",
+            "type": "string"
+          },
+          "start": {
+            "title": "Start",
+            "type": "string"
+          },
+          "timezone": {
+            "maxLength": 80,
+            "title": "Timezone",
+            "type": "string"
+          },
+          "weekdays": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 7,
+            "title": "Weekdays",
+            "type": "array"
+          }
+        },
+        "required": [
+          "draft_id",
+          "request_key",
+          "start",
+          "timezone"
+        ],
+        "title": "SeriesSpec",
+        "type": "object"
+      },
+      "StrategyText": {
+        "properties": {
+          "audience": {
+            "default": "",
+            "maxLength": 1500,
+            "title": "Audience",
+            "type": "string"
+          },
+          "avoid": {
+            "default": "",
+            "maxLength": 1500,
+            "title": "Avoid",
+            "type": "string"
+          },
+          "goal": {
+            "default": "",
+            "maxLength": 1500,
+            "title": "Goal",
+            "type": "string"
+          },
+          "offer": {
+            "default": "",
+            "maxLength": 1500,
+            "title": "Offer",
+            "type": "string"
+          },
+          "platforms": {
+            "items": {
+              "enum": [
+                "x",
+                "instagram",
+                "facebook",
+                "tiktok"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Platforms",
+            "type": "array"
+          },
+          "resources": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Resources",
+            "type": "string"
+          },
+          "rhythm": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Rhythm",
+            "type": "string"
+          },
+          "themes": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Themes",
+            "type": "string"
+          },
+          "voice": {
+            "default": "",
+            "maxLength": 1500,
+            "title": "Voice",
+            "type": "string"
+          }
+        },
+        "title": "StrategyText",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VoiceLearnRequest": {
+        "properties": {
+          "content": {
+            "maxLength": 30000,
+            "minLength": 80,
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "VoiceLearnRequest",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "nativeBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "Zova first-party mobile API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/ai/generate": {
+      "post": {
+        "operationId": "v1_api_generate_api_v1_ai_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Generate",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/ai/rewrite": {
+      "post": {
+        "operationId": "v1_api_rewrite_api_v1_ai_rewrite_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RewriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Rewrite",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/ai/schedule": {
+      "post": {
+        "operationId": "v1_api_schedule_suggest_api_v1_ai_schedule_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleSuggestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Schedule Suggest",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/analytics/dashboard": {
+      "get": {
+        "operationId": "v1_api_analytics_dashboard_api_v1_analytics_dashboard_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Analytics Dashboard",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "Logout"
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "refresh_api_v1_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh"
+      }
+    },
+    "/api/v1/auth/sessions": {
+      "get": {
+        "operationId": "sessions_api_v1_auth_sessions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "Sessions"
+      }
+    },
+    "/api/v1/auth/sessions/{session_id}": {
+      "delete": {
+        "operationId": "revoke_api_v1_auth_sessions__session_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "Revoke"
+      }
+    },
+    "/api/v1/auth/token": {
+      "post": {
+        "operationId": "exchange_api_v1_auth_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeExchange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exchange"
+      }
+    },
+    "/api/v1/config": {
+      "get": {
+        "operationId": "config_api_v1_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Config"
+      }
+    },
+    "/api/v1/conversation/plan": {
+      "post": {
+        "operationId": "v1_conversation_plan_api_v1_conversation_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Conversation Plan",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/drafts": {
+      "get": {
+        "operationId": "drafts_api_v1_drafts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "before_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "Drafts"
+      },
+      "post": {
+        "operationId": "create_draft_api_v1_drafts_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "Create Draft"
+      }
+    },
+    "/api/v1/drafts/{draft_id}": {
+      "delete": {
+        "operationId": "v1_api_delete_draft_api_v1_drafts__draft_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Delete Draft",
+        "tags": [
+          "Mobile v1"
+        ]
+      },
+      "get": {
+        "operationId": "v1_api_draft_api_v1_drafts__draft_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Draft",
+        "tags": [
+          "Mobile v1"
+        ]
+      },
+      "patch": {
+        "operationId": "v1_api_save_draft_api_v1_drafts__draft_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftSaveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Save Draft",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/generation-jobs": {
+      "post": {
+        "operationId": "submit_api_v1_generation_jobs_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "Submit"
+      }
+    },
+    "/api/v1/generation-jobs/{job_id}": {
+      "get": {
+        "operationId": "get_api_v1_generation_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "Get"
+      }
+    },
+    "/api/v1/generation-jobs/{job_id}/cancel": {
+      "post": {
+        "operationId": "cancel_api_v1_generation_jobs__job_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "Cancel"
+      }
+    },
+    "/api/v1/insights": {
+      "post": {
+        "operationId": "v1_api_insights_api_v1_insights_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsightRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Insights",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "me_api_v1_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "Me"
+      }
+    },
+    "/api/v1/media": {
+      "post": {
+        "operationId": "v1_upload_media_api_v1_media_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_v1_upload_media_api_v1_media_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Upload Media",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/media/{asset_id}": {
+      "get": {
+        "operationId": "media_api_v1_media__asset_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "title": "Asset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "Media"
+      }
+    },
+    "/api/v1/preview": {
+      "post": {
+        "operationId": "v1_api_preview_api_v1_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Preview",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/publications/{draft_id}": {
+      "get": {
+        "operationId": "v1_publication_results_api_v1_publications__draft_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Publication Results",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/publish": {
+      "post": {
+        "operationId": "v1_api_publish_api_v1_publish_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Publish",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/publish-context": {
+      "post": {
+        "operationId": "v1_api_publish_context_api_v1_publish_context_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Publish Context",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/publish-review": {
+      "post": {
+        "operationId": "v1_api_publish_review_api_v1_publish_review_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Publish Review",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/recent-posts": {
+      "get": {
+        "operationId": "v1_api_recent_posts_api_v1_recent_posts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Recent Posts",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/schedule": {
+      "post": {
+        "operationId": "v1_api_schedule_api_v1_schedule_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Api Schedule",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/schedules": {
+      "get": {
+        "operationId": "v1_schedules_api_v1_schedules_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Schedules",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/schedules/{schedule_id}/cancel": {
+      "post": {
+        "operationId": "v1_cancel_api_v1_schedules__schedule_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "title": "Schedule Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Cancel",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/schedules/{schedule_id}/reschedule": {
+      "post": {
+        "operationId": "v1_reschedule_api_v1_schedules__schedule_id__reschedule_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "title": "Schedule Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reschedule"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Reschedule",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/strategy": {
+      "get": {
+        "operationId": "v1_read_strategy_api_v1_strategy_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Read Strategy",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/strategy/actions": {
+      "get": {
+        "operationId": "v1_actions_api_v1_strategy_actions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Actions",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/strategy/actions/{action_id}/draft": {
+      "post": {
+        "operationId": "v1_action_draft_api_v1_strategy_actions__action_id__draft_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "action_id",
+            "required": true,
+            "schema": {
+              "title": "Action Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Action Draft",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/strategy/actions/{action_id}/feedback": {
+      "post": {
+        "operationId": "v1_feedback_api_v1_strategy_actions__action_id__feedback_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "action_id",
+            "required": true,
+            "schema": {
+              "title": "Action Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Feedback"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Feedback",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/strategy/confirm": {
+      "post": {
+        "operationId": "v1_confirm_api_v1_strategy_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Confirm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Confirm",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/strategy/propose": {
+      "post": {
+        "operationId": "v1_propose_api_v1_strategy_propose_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Proposal"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Propose",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    },
+    "/api/v1/strategy/recommend": {
+      "post": {
+        "operationId": "v1_recommend_api_v1_strategy_recommend_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "nativeBearer": []
+          }
+        ],
+        "summary": "V1 Recommend",
+        "tags": [
+          "Mobile v1"
+        ]
+      }
+    }
+  }
+}

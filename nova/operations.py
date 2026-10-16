@@ -9,6 +9,30 @@ from .readiness import spend_summary, cohort_report
 
 router=APIRouter()
 
+
+@router.get('/internal/runtime')
+def runtime(authorization: str | None = Header(default=None)):
+    secret=os.environ.get('SCHEDULER_SECRET') or os.environ.get('ADMIN_API_KEY')
+    if not secret or not hmac.compare_digest((authorization or '').removeprefix('Bearer '),secret):
+        raise HTTPException(401,'Invalid operations credential')
+    from .db import WorkerHeartbeat,GenerationJob
+    from .runtime import scheduler_mode,integer
+    from .mobile_auth import enabled
+    from datetime import timezone
+    workers={}
+    with SessionLocal() as db:
+        for row in db.scalars(select(WorkerHeartbeat)).all():
+            stamp=row.started_at.replace(tzinfo=row.started_at.tzinfo or timezone.utc)
+            allowance=900 if row.status=='running' else max(120,integer('SCHEDULER_INTERVAL_SECONDS',60,30,3600)*3)
+            workers[row.role]={'status':row.status if utcnow()-stamp<timedelta(seconds=allowance) else 'stale',
+                'started_at':stamp.isoformat(),'completed_at':row.completed_at.isoformat() if row.completed_at else None}
+        queued=db.scalar(select(func.count()).select_from(GenerationJob).where(GenerationJob.status=='queued'))
+        interrupted=db.scalar(select(func.count()).select_from(GenerationJob).where(GenerationJob.status=='interrupted'))
+    return {'scheduler_mode':scheduler_mode(),'mobile_enabled':enabled(),
+            'schema_mode':os.environ.get('ZOVA_SCHEMA_MODE','initialize'),
+            'workers':workers,'queued_generation_jobs':queued,'interrupted_generation_jobs':interrupted,
+            'capacity_validated':False}
+
 @router.get('/internal/ready')
 def ready(authorization: str | None = Header(default=None)):
     """Dependency readiness, separate from public process liveness.
