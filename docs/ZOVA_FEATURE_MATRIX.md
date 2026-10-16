@@ -1,10 +1,5 @@
-# Social beta integration update - 16 October 2026
+# Social beta validation - 16 October 2026
 
-<<<<<<< HEAD
-PR30 live as786183f05619d2706f71765cd2b86d56536a87d3 (Render dep-db8v84brjlhs73be54j0).299 tests pass on SQLite/PostgreSQL plus restore, container, dependency and guardrails. X callback fixed; owner authorised @DataMaxxingUK connection and exact test post. Real post verified at https://x.com/DataMaxxingUK/status/2111033940157055189. TikTok David Wilson connection confirmed with owner permission; inbox-video test preparation underway. Facebook required Page permission review draft saved with owner consent; not submitted or approved. PR31 removes unnecessary Facebook business-management scope; merged7cdb945f9e9927d52586d9584b1b3f65705b9f38, rollout verification pending. Instagram routes preserved. See docs/SOCIAL_BETA_COMPLETION_20261016.md.
-
-This native foundation branch integrates those server fixes but remains draft, undeployed, native flags disabled; rerun contract/release checks. No native TikTok registration/approval exists. All79 broader gaps retained.
-=======
 | Capability | Implementation and tests | Live provider / deployment evidence |
 |---|---|---|
 | Instagram Post / Story | Existing routes/scopes preserved; regressions pass | Owner-confirmed working; Instagram routes and scopes preserved through PR32 |
@@ -15,7 +10,15 @@ This native foundation branch integrates those server fixes but remains draft, u
 | Shared iOS | Shared API foundation remains draft PR28, flags off | Native registration/device/provider tests and deployment outstanding |
 
 Candidate d844afa passed CI38882996566: SQLite299 passed/1 skipped; PostgreSQL299 passed/1 skipped, restore/container/dependency and exact beta scope checks pass. Owner-approved X and TikTok connections saved; exact approved X text test published once. PR30/31/32 required checks passed and deployment verified; no Facebook or TikTok post sent. See [social evidence and rollback](SOCIAL_BETA_COMPLETION_20261016.md). All79 broader gaps retained; no commercial certification.
->>>>>>> github/codex/tiktok-direct-post-20261016
+
+
+---
+
+# Social beta integration update - 16 October 2026
+
+PR30 live as786183f05619d2706f71765cd2b86d56536a87d3 (Render dep-db8v84brjlhs73be54j0).299 tests pass on SQLite/PostgreSQL plus restore, container, dependency and guardrails. X callback fixed; owner authorised @DataMaxxingUK connection and exact test post. Real post verified at https://x.com/DataMaxxingUK/status/2111033940157055189. TikTok David Wilson connection confirmed with owner permission; inbox-video test preparation underway. Facebook required Page permission review draft saved with owner consent; not submitted or approved. PR31 removes unnecessary Facebook business-management scope; merged7cdb945f9e9927d52586d9584b1b3f65705b9f38, rollout verification pending. Instagram routes preserved. See docs/SOCIAL_BETA_COMPLETION_20261016.md.
+
+This native foundation branch integrates those server fixes but remains draft, undeployed, native flags disabled; rerun contract/release checks. No native TikTok registration/approval exists. All79 broader gaps retained.
 
 ---
 
