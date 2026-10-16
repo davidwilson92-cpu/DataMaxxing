@@ -23,9 +23,9 @@ The bounded web fix is live: PR29 merged as 0105751acd9ffb75dae94016548b8d25ba75
 | Public routes | Health, login, signup, privacy, terms, deletion return HTTP 200 | Verified live |
 | Account isolation and testing access | Signed-in fresh account shows no connections or drafts; free beta/no automatic charge | Verified visually |
 | Studio, drafts and analytics | Fresh-account screens load; missing performance data prompts connection rather than inventing results | Verified visually |
-| OAuth, media, publishing, scheduling and security regressions | Required synthetic, PostgreSQL, restore, image smoke and exact-scope CI checks pass on PR29 c1c70d9 | Mocked/synthetic provider evidence |
+| OAuth, media, publishing, scheduling and security regressions | 283 passed/1 skipped on both SQLite and PostgreSQL; restore, image smoke and exact-scope CI checks pass on PR29 c1c70d9 | Mocked/synthetic provider evidence |
 | Shared native foundation | PR28 3ede54c: SQLite 305 passed/2 skipped, PostgreSQL 306 passed/1 skipped; local full run 305 passed/2 skipped | Tested, not deployed |
-| Native Instagram formats | Two additional local tests pass for Post and Story; initial test expected Post instead of the actual Post / feed label, corrected | Tested; hosted rerun pending |
+| Native Instagram formats | Post and Story tests pass; final implementation acbad5b passed CI38875534070 with SQLite307/2 skipped and PostgreSQL308/1 skipped plus all required checks | Tested, not deployed |
 | Real non-role Instagram login | User encounters robot verification then Instagram login chooser at instagram.com/?e=1348020, before Zova callback | Blocked; normal-browser comparison requested |
 | Real publishing | No reviewed live post approved or sent | Not verified |
 
@@ -49,6 +49,8 @@ PR28 remains a draft, undeployed. Native access and queued AI stay disabled. The
 ## Rollback and next evidence
 
 For the focused web release, redeploy f1c7c12ed3076990b1262e7cefbd614c699f95bd without restoring or deleting customer data. Retain session/encryption secrets and publication records. Never resend unknown outcomes. Meta publication is separate from code deployment; unpublishing would restrict beta access and requires a deliberate operator decision.
+
+Help copy still describes the old Next move recurring-drafts entry point; update it to Post options in the next UX change. Signed-in Help and Security pages load; anonymous Help requires authentication.
 
 Next: resolve the Instagram login loop in a normal browser; verify exact connected account and granted scopes; approve one concrete test Post and Story if live publishing evidence is wanted; verify X/TikTok approved modes and Facebook permissions independently. Retain all 79 broader known gaps. This update is limited beta activation, not commercial certification.
 
