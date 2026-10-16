@@ -103,6 +103,9 @@ def test_inbox_review_upload_status_and_duplicate_protection(monkeypatch):
         conn.scope='user.info.basic,video.upload'
         asset=MediaAsset(user_id=uid,filename='test.mp4',mime_type='video/mp4',storage_key='synthetic',size_bytes=100)
         db.add(asset);db.commit();body['media_asset_ids']=[asset.id]
+    context=client.post('/api/publish-context',json={'platforms':['tiktok'],'variants':body['variants']})
+    assert context.status_code==200
+    assert context.json()['platforms']['tiktok']['posting_mode']=='inbox'
     body['publish_options']={'tiktok':{'posting_mode':'inbox'}}
     saved=client.patch(f"/api/drafts/{body['draft_id']}",json={'platforms':['tiktok'],'variants':body['variants'],'workspace':{'media_asset_ids':body['media_asset_ids']}})
     assert saved.status_code==200
