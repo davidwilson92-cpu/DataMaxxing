@@ -1,3 +1,11 @@
+# Live TikTok sandbox account and media verified - 16 October 2026
+
+Owner signed into sandbox in side browser. Account shows David Wilson connected; live publish context identifies @davidwilson493. Uploaded existing synthetic6-second ZOVA BETA TEST video into new draft1. Browser preview readyState4/duration6; unauthenticated media GET200 video/mp4 20834bytes under verified sandbox prefix. AI inspected8frames. Initial mixed create + Do not publish message stopped generation; simpler drafting request succeeded. Record that intent-handling defect; do not silently call resolved.
+
+Edited exact caption: Zova Direct Post integration test — checking our reviewed publishing flow. Live privacy options Followers/Friends/Only me, no default; comments unchecked; Duet/Stitch disabled by provider. Selected Only me. Agreement checkbox remains UNTICKED and Review final post disabled. Asked owner at-action permission to accept TikTok Music Usage Confirmation and open final review ONLY. No TikTok post sent, no final snapshot/provider outcome yet. Screenshot social-proof/tiktok-live-private-review.png. Next: await agreement answer, open final review, obtain exact separate private publication approval before sending. Sandbox ephemeral; avoid restarts. Production unchanged.
+
+---
+
 # TikTok recording sandbox ready for account connection - 16 October 2026
 
 Reused existing FREE Render service zova-tiktok-sandbox (srv-d9u4joad0e5s73afpu10). Discovered it previously shared the production PostgreSQL database; changed this test service ONLY to sqlite:////tmp/zova-tiktok-recording.db, verified saved. Production users/data/keys/service unchanged. This temporary database and local uploads may be lost on restart/spindown/redeploy. Do not promise durable staging; record in one session and keep external evidence. Auto-deploy is Off to avoid branch updates resetting recording state.
