@@ -610,10 +610,11 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
     else:
         urls = [get_public_url(a.storage_key, a.public_url) for a in assets[:10]]
         body = {
-        "post_info": {"description": description, "privacy_level": privacy, "disable_comment": not bool(settings.get("allow_comment")), "auto_add_music": False, "brand_content_toggle": bool(settings.get("brand_content")), "brand_organic_toggle": bool(settings.get("your_brand")), "is_aigc": bool(settings.get("is_aigc"))},
+        "post_info": {"description": description, "privacy_level": privacy, "disable_comment": not bool(settings.get("allow_comment")), "auto_add_music": False, "brand_content_toggle": bool(settings.get("brand_content")), "brand_organic_toggle": bool(settings.get("your_brand"))},
         "source_info": {"source": "PULL_FROM_URL", "photo_cover_index": 0, "photo_images": urls},
         "post_mode": "DIRECT_POST",
         "media_type": "PHOTO",
+        "is_aigc": bool(settings.get("is_aigc")),
         }
         endpoint = "https://open.tiktokapis.com/v2/post/publish/content/init/"
     if not upload_as_draft:

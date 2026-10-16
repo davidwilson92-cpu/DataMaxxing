@@ -66,12 +66,13 @@ def test_server_duration_and_utf16_limit(monkeypatch):
 
 
 def test_photo_disables_video_interactions_and_automatic_music(monkeypatch):
-    asset,options,context,_=setup(monkeypatch);asset.mime_type='image/jpeg'
+    asset,options,context,_=setup(monkeypatch);asset.mime_type='image/jpeg';options['is_aigc']=True
     with pytest.raises(ValueError,match='interaction'):policy.validate_direct({**options,'allow_duet':True},context,['photo'],[asset])
     calls=[]
     monkeypatch.setattr(social.httpx,'post',lambda url,**kw:(calls.append(kw['json']) or httpx.Response(200,json={'data':{'publish_id':'photo'}})))
     social.publish_tiktok(None,None,['photo'],[asset],options=options)
     assert calls[0]['post_mode']=='DIRECT_POST' and not calls[0]['post_info']['auto_add_music']
+    assert calls[0]['is_aigc'] and 'is_aigc' not in calls[0]['post_info']
 
 
 def test_direct_api_review_is_immutable_and_checks_creator_again(monkeypatch):
