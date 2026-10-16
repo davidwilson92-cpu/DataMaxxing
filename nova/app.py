@@ -229,6 +229,10 @@ def health() -> dict[str, str]: return {"status":"ok","version":"5.1.0","brand":
 def tiktok_site_verification():
     return HTMLResponse("tiktok-developers-site-verification=H8OfSOj6UphrBG5ccohezZ2qB7ZV5Oig", media_type="text/plain")
 
+@app.get("/tiktokLhw6i0tawgVTxG8CrhbsX1BM6xPj2hzj.txt", response_class=HTMLResponse)
+def tiktok_sandbox_site_verification():
+    return HTMLResponse("tiktok-developers-site-verification=Lhw6i0tawgVTxG8CrhbsX1BM6xPj2hzj", media_type="text/plain")
+
 @app.get("/", response_class=HTMLResponse)
 def landing(request: Request):
     try: user = current_user(request)
