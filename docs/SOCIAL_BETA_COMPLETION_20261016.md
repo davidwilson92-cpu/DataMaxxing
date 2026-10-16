@@ -1,3 +1,11 @@
+# Latest verified status - 16 October 2026
+
+PR31 is Live as7cdb945 on Render dep-db8vpf49v7es739c6840. New Facebook consent verified with only Page list/read/manage-posts for Zova Social; final Save awaits owner permission. PR32 merged8ef1230b61fb67895dd2a2adf2446f5d5434d9cc and is Live on Render dep-db8vtgjrjlhs73betts0; health200. Required CI38888393661/38888419196 passed. Reloaded real draft27 now shows correct inbox-only TikTok settings and final Send to TikTok review, resolving observed stale frontend controls. Exact synthetic six-second video send awaits owner approval; nothing delivered yet. Shared native draft PR28 integrates main at93af22c, flags still disabled;20 focused tests pass. No native deployment.
+
+Rollback this cache-only increment to7cdb945 without database restoration if required; older browser controls may return, so avoid TikTok submission until review mode is correct.
+
+---
+
 # Social beta integration evidence - 16 October 2026
 
 Provider state:
