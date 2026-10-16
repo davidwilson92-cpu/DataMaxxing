@@ -1,6 +1,6 @@
 # Social beta integration work - 16 October 2026
 
-Read docs/SOCIAL_BETA_COMPLETION_20261016.md for evidence and rollback. Instagram preserved; X callback fixed with approval; Facebook Page review draft not submitted; TikTok inbox integration aligned with actual approved scopes.16 focused tests pass. Full release/provider validation pending. Native PR28 remains draft/disabled. All79 gaps retained.
+Read docs/SOCIAL_BETA_COMPLETION_20261016.md for evidence and rollback. Instagram preserved. PR30 live; X authorised test published once and verified: https://x.com/DataMaxxingUK/status/2111033940157055189 . Do not resend. TikTok connected; draft27 holds an unsent synthetic video. Facebook three-permission review draft saved, not submitted. PR31 least-privilege Facebook change merged with required checks; hosting verification pending. Current cache-version follow-up has20 focused tests passing but is not yet deployed. Verify inbox review after rollout before requesting exact video-send approval. Restart stale Facebook consent without business_management before asking for Page grant. Native PR28 remains draft/disabled; shared fixes integrated through PR31, final checks pending. All79 gaps retained.
 
 ---
 

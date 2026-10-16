@@ -108,7 +108,7 @@
     "nova/templates/security.html": "29102a9face975a1381aaf3c2a23409e40f5cf27e4d1806bcad3401aad2a4cbd",
     "nova/templates/social_icon.html": "e2156c8c67826954afa49908faa22628f0784a9cbe15d4f4e3fda03656924013",
     "nova/templates/strategy_panel.html": "3cc86776c136124eef9f09acfcf37ca26583af07baa9b50368a0d76a357428da",
-    "nova/templates/studio.html": "b79cb463c6978a01aa9d88dd2b600c672f29407aa4e814f06b568858d2108a09",
+    "nova/templates/studio.html": "15fbb1f966e23e8f2bb26942b399cbce0197c07c5552f9248f5203bfc7b7d331",
     "nova/templates/studio_history.html": "a3ba1105280a2eacc0a9d35c83c8a14cbf1fe9c79ee289aec4c654bd561fe5d3",
     "nova/templates/studio_nav_rail.html": "8633a903786cf96f23f0fbc68154639c616062fc70b58616f4afcf7a37a6372a",
     "nova/templates/subscribe.html": "d98e5ccca42135855b3e50f31cc05b756eb75b640d790b37c911f7ecdce721d3",
@@ -161,7 +161,7 @@
     "tests/test_schedule_windows.py": "9c3ab9646ea4730e321276c88df6165e3adbf88b4609a53f93c68edcce2271c8",
     "tests/test_security_controls.py": "f25aa16644f7d1248e999842872fcfaa22681517fbdf7e43ea2c4f6f91bd2b4e",
     "tests/test_signup_recovery_ux.py": "8c6a682e569addea81a9400a17365364602c74ae321301bdc40f58d1ecaac327",
-    "tests/test_social_beta_permissions.py": "5f84a7ec805d842a5bda439da8f8053404a2323341c2b7596c0658107edbde38",
+    "tests/test_social_beta_permissions.py": "beae3d636c94fd622421306b917b01d78d141884afce545682cfb6c84c2421ee",
     "tests/test_social_login_routes.py": "6879fb69865fc63c4f6e7ddc7db7e12d75a6414cf730d22ee7d61c34780105e3",
     "tests/test_strategy_series.py": "72eb954f7b95edf14e5e870eee18ae2b8a8be2753d159480e8335ab5d2e5b34f",
     "tests/test_stripe_billing.py": "fc8fc032ac23654404b7a8bb82ddd952ca6b4137c2eee99aecd0acec377c1984",
@@ -172,6 +172,6 @@
     "tests/test_workspace_persistence.py": "8cce3a676c81c504d65424b90a14ca719d88407b4b8033ef8afa0490f2ccde61"
   },
   "release_class": "limited-beta",
-  "reviewed_update": "2026-10-16: remove unnecessary business_management from Facebook-only login, preserving Instagram-linked scope string. Social beta fixes from PR30 retained.",
-  "source_candidate": "786183f05619d2706f71765cd2b86d56536a87d3"
+  "reviewed_update": "2026-10-16: invalidate cached Studio review script after social publishing changes; verify inbox context over application API. No provider or data changes.",
+  "source_candidate": "7cdb945f9e9927d52586d9584b1b3f65705b9f38"
 }
