@@ -769,6 +769,14 @@
       },
       "PreviewRequest": {
         "properties": {
+          "connection_ids": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "default": {},
+            "title": "Connection Ids",
+            "type": "object"
+          },
           "platforms": {
             "items": {
               "type": "string"
