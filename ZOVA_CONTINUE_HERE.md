@@ -1,3 +1,11 @@
+# Sandbox release verified — 16 October 2026
+
+Owner requested publish. Deployed exact89e7cf716d82f358d52515b58313862f0258c7eb to existing Free TikTok sandbox only. Render dep-db9819ff3r2c73afr1p0 reports Deploy succeeded|Live. CI38957921987 passed all gates:319passed/1skipped each on SQLite/PostgreSQL, synthetic backup restore, image build/smoke, dependency audit and exact beta scope. Public health/login200; deployed studio-publish.js, studio-state.js, readiness.js, studio-design.css and studio.js match local candidate byte-for-byte after newline normalization. Evidence social-proof/sandbox-release-89e7cf7.png.
+
+Production zova-social.com unchanged and inbox-only. No real social post, new grant, billing change, or native deployment. Owner may need fresh sandbox login/TikTok connection because SQLite/uploads are ephemeral. Never resend previously published draft1. Sandbox rollback is7fdec1573a004bd28d79ee0e54c0628461969247, without restoring production data or replaying posts. Next: owner can record the cleaner caption/review flow, verify the actual private TikTok post, then prepare truthful approval evidence. Public Direct Post approval still pending;79 wider beta gaps remain.
+
+---
+
 # Studio clarity and TikTok result refresh — 16 October 2026
 
 Current local changes address the owner's recording feedback: caption-first creation/rewrite without media-observation narration, explicit Edit caption (Story retains Edit planning notes), compact composer and collapsed composer during review, readable TikTok privacy labels, automatic read-only publication checks every15seconds for up to10minutes, and public TikTok links when the provider returns a real public post ID. Private sandbox posts accurately show Published without manufacturing a public link. Polls are draft/workspace-bound, terminal results stop polling, and background checks do not move focus. Backend GET and worker share throttled receipt reconciliation; unknown outcomes are never resent. Existing Instagram logic is unchanged.
