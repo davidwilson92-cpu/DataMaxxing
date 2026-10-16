@@ -130,11 +130,15 @@ def test_inbox_review_upload_status_and_duplicate_protection(monkeypatch):
     client.post('/api/publish',json=approved)
     assert len(calls)==1
     import nova.scheduler as worker
-    monkeypatch.setattr(worker,'resolve_tiktok_post',lambda *a:{'status':'SEND_TO_USER_INBOX'})
+    import nova.tiktok_status as status
+    monkeypatch.setattr(status,'resolve_tiktok_post',lambda *a:{'status':'SEND_TO_USER_INBOX'})
     worker.process_due()
     result=client.get(f"/api/publications/{body['draft_id']}").json()['results']['tiktok']
     assert result['status']=='pending' and result['delivered_to_inbox']
-    monkeypatch.setattr(worker,'resolve_tiktok_post',lambda *a:{'status':'PUBLISH_COMPLETE','public_ids':['public-test-id']})
+    from datetime import timedelta
+    now=status.utcnow()
+    monkeypatch.setattr(status,'utcnow',lambda:now+timedelta(seconds=16))
+    monkeypatch.setattr(status,'resolve_tiktok_post',lambda *a:{'status':'PUBLISH_COMPLETE','public_ids':['1234567890123456789']})
     worker.process_due()
     result=client.get(f"/api/publications/{body['draft_id']}").json()['results']['tiktok']
     assert result['status']=='published' and not result['requires_tiktok_completion']

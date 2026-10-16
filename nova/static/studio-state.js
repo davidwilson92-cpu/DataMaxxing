@@ -16,7 +16,7 @@ function setAutosaveStatus(text){
   document.querySelectorAll('[data-save-status],#autosaveStatus').forEach(node=>node.textContent=text);
 }
 let reviewEpoch=0;
-function invalidateReview(){reviewEpoch++;pendingReview=null;document.querySelectorAll('.chat-confirmation').forEach(node=>node.remove());}
+function invalidateReview(){document.body?.classList.remove('review-active');reviewEpoch++;pendingReview=null;document.querySelectorAll('.chat-confirmation').forEach(node=>node.remove());}
 function addAssistantMessage(text,extra=''){
   const follow=stickToLatest;
   conversation.push({role:'assistant',content:text});
@@ -113,7 +113,7 @@ async function sendMessage(){
         if(epoch!==workspaceEpoch)return;
         changed[p]={posts:result.posts};
       }
-      rememberTextRevision();Object.assign(variants,changed);currentPlatform=targets[0];removeThinking();addAssistantMessage(`Here’s the revised ${targets.map(platformName).join(' and ')} ${targets.length===1?'version':'copy'}.`,draftWorkspace());
+      rememberTextRevision();Object.assign(variants,changed);currentPlatform=targets[0];removeThinking();editingDraft=false;renderCanvas(draftWorkspace());scrollChat(true);
     }else{
       const platforms=plan.platforms.length?plan.platforms:selectedPlatforms();
       const creationBrief=plan.brief||[lastBrief,...conversation.filter(m=>m.role==='user').slice(-4).map(m=>m.content)].filter(Boolean).join('\n').slice(-12000);
@@ -130,7 +130,7 @@ async function sendMessage(){
       history.replaceState({},'',window.zovaWorkspaceUrl(`/studio?draft=${result.draft_id}`));
       variants=result.variants;currentDraftId=result.draft_id;draftRevision=result.revision;lastBrief=plan.action==='add_platforms'?lastBrief:creationBrief;currentPlatform=targets[0];currentDraftStatus='draft';
       currentDraftTitle=result.display_title||result.title||currentDraftTitle;
-      removeThinking();addAssistantMessage(plan.action==='add_platforms'?`I’ve added ${targets.map(platformName).join(' and ')}. Your other versions are still here.`:'Here’s a first draft. What would make it sound more like you?',draftWorkspace());
+      removeThinking();editingDraft=false;renderCanvas(draftWorkspace());scrollChat(true);
     }
     if(epoch!==workspaceEpoch)return;
     responseApplied=true;changeSerial++;await saveDraftNow();

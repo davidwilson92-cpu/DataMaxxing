@@ -1,3 +1,13 @@
+# Studio clarity and TikTok result refresh — 16 October 2026
+
+Current local changes address the owner's recording feedback: caption-first creation/rewrite without media-observation narration, explicit Edit caption (Story retains Edit planning notes), compact composer and collapsed composer during review, readable TikTok privacy labels, automatic read-only publication checks every15seconds for up to10minutes, and public TikTok links when the provider returns a real public post ID. Private sandbox posts accurately show Published without manufacturing a public link. Polls are draft/workspace-bound, terminal results stop polling, and background checks do not move focus. Backend GET and worker share throttled receipt reconciliation; unknown outcomes are never resent. Existing Instagram logic is unchanged.
+
+Validation: full local SQLite suite319passed/1skipped; Node lifecycle/polling/media-summary checks passed; exact beta scope verified. PostgreSQL/remote release gates not run for this candidate. Validated synthetic desktop1280x720 and phone390x844: no horizontal overflow; caption edit/save/final snapshot verified; review composer56px and phone review feed627px. Normal composer252px desktop/291px phone with a video attachment; no-attachment composer is smaller. Local screenshot social-proof/studio-caption-20261016.png. No real post, grant, or production change. NOT DEPLOYED. Before deployment rerun required remote PostgreSQL/restore/container/dependency gates on exact candidate; sandbox is ephemeral and redeploy may require reconnecting. Broad79 gaps remain open; no commercial certification.
+
+Rollback: revert this bounded change set; no schema migration. Reconciliation adds optional status_checked_at/url fields only to existing result JSON; old code tolerates these. Preserve publication receipts and never resend earlier tests. Production TikTok remains inbox-only pending approval. Prior sandbox publication must not be repeated.
+
+---
+
 # Saved stopping point - 16 October 2026
 
 Owner will return tonight; no scheduled reminder or background posting requested. TikTok Direct Post works in the isolated sandbox: draft1 returned Published after refreshing provider status, for @davidwilson493 with Only me visibility. Do not resend this draft. Independent viewing of the private video in TikTok remains unconfirmed.

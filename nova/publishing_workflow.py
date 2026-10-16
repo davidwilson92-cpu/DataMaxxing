@@ -142,11 +142,14 @@ def prepare_review(db,uid,body):
     return {'review_token':row.code,'snapshot':payload,'expires_in':900}
 
 
-def results_for(db,uid,draft_id):
+def results_for(db,uid,draft_id,refresh=False):
     draft=owned_draft(db,uid,draft_id)
     rows=db.scalars(select(Publication).where(Publication.user_id==uid,Publication.draft_id==draft_id)).all()
     for row in rows:
         reconcile_instagram(db,row)
+        if refresh:
+            from .tiktok_status import reconcile
+            reconcile(db,row)
     db.refresh(draft)
     results={r.platform:{**json.loads(r.result_json or '{}'),'status':r.status} for r in rows}
     draft=owned_draft(db,uid,draft_id)
