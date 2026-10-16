@@ -4,9 +4,19 @@
 
 Production remains on the approved inbox path (TIKTOK_SEND_TO_INBOX=true). Its live delivery was confirmed by the owner. No Direct Post grant, public-access audit approval, direct feed delivery or native iOS approval is claimed. No new real post was sent in this increment. Existing Instagram, Facebook and X connections remain unchanged. All79 broader beta findings remain open.
 
-TikTok app7672846663509215253: created and saved a Production draft revision with Direct Post enabled and video.publish added; user.info.basic and video.upload retained. The live version still has inbox-only approval. Saved draft notes explicitly say implementation/evidence are pending and the old recording demonstrates inbox only. URL properties already verifies https://zova-social.com/ as a URL prefix; the separate bare-domain entry is unverified and unnecessary for that prefix.
+TikTok app7672846663509215253: created and saved a Production draft revision with Direct Post enabled and video.publish added; user.info.basic and video.upload retained. The live version still has inbox-only approval. Saved draft notes explicitly say implementation is deployed but real Direct Post evidence is pending and the old recording demonstrates inbox only. URL properties already verifies https://zova-social.com/ as a URL prefix; the separate bare-domain entry is unverified and unnecessary for that prefix.
 
 The separate audit form at https://developers.tiktok.com/application/content-posting-api has organisation/purpose/data-field answers entered in the browser, with Building a new application selected instead of inventing a usage estimate. It is at Supporting documents, not submitted; these in-browser answers are not confirmed durable. Requires a genuine new recording of authorisation, review controls, confirmation and provider outcome. Never present synthetic tests as live provider evidence.
+
+# Direct Post deployment evidence - 16 October 2026
+
+PR33 is merged as cc093687bc92f5600283918d330ef70691e4216e and verified Live on Render dep-db91bkvavr4c739qd50g. Public /health and versioned Studio publishing script return200; the script contains the new Direct Post controls and policy declaration. Required hosted checks passed:315 tests /1 skipped on SQLite and PostgreSQL plus restore, container, dependency and release checks.
+
+Production remains inbox-only. Direct Post is NOT enabled or provider-validated. TikTok production draft contains video.publish and Direct Post. Updated notes were entered and Save clicked; subsequent reload and Manage apps navigation returned Request aborted, so persistence of the latest notes could not be reverified. Earlier draft save was verified. Separate audit at Supporting documents is unsubmitted. Verified URL prefix is https://zova-social.com/; TIKTOK_VERIFIED_MEDIA_PREFIX still needs configuring and validating against hosted storage before direct testing. Do not change delivery mode or resend previous test posts.
+
+Native PR28 includes the same server implementation. Its contract was regenerated for the additive connection_ids field (05e2c93);40 focused tests pass /1 skipped. All required hosted native checks passed in38900036915 and38900044596. Native remains disabled and undeployed. Desktop synthetic UI inspected; attempted mobile viewport override did not take effect, so mobile visual validation is still outstanding.
+
+Remaining: isolated real Direct Post authorisation and exact-approved private test, new provider recording, reviewer access check, app revision plus public-access audit submission and approval, then reconnect for video.publish and controlled feed rollout. Existing inbox recording is insufficient. All79 broader beta gaps retained. Rollback and recording script: docs/TIKTOK_DIRECT_POST_20261016.md.
 
 ## Implementation
 
