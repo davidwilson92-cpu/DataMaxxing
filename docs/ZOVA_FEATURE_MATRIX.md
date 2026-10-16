@@ -1,3 +1,11 @@
+# Social beta integration update - 16 October 2026
+
+PR30 live as786183f05619d2706f71765cd2b86d56536a87d3 (Render dep-db8v84brjlhs73be54j0).299 tests pass on SQLite/PostgreSQL plus restore, container, dependency and guardrails. X callback fixed; owner authorised @DataMaxxingUK connection and exact test post. Real post verified at https://x.com/DataMaxxingUK/status/2111033940157055189. TikTok David Wilson connection confirmed with owner permission; inbox-video test preparation underway. Facebook required Page permission review draft saved with owner consent; not submitted or approved. PR31 removes unnecessary Facebook business-management scope; merged7cdb945f9e9927d52586d9584b1b3f65705b9f38, rollout verification pending. Instagram routes preserved. See docs/SOCIAL_BETA_COMPLETION_20261016.md.
+
+This native foundation branch integrates those server fixes but remains draft, undeployed, native flags disabled; rerun contract/release checks. No native TikTok registration/approval exists. All79 broader gaps retained.
+
+---
+
 ## Meta activation update 16 October 2026
 
 Direct Instagram basic/content publishing approval and Meta publication verified. Focused token lifecycle fix is live in PR29. Owner confirms successful Instagram connection in normal Edge/Chrome on 16 October. Earlier embedded-browser login loop remains a compatibility issue; owner also confirms successful live Post and Story delivery on 16 October (provider receipts not independently inspected). Facebook Page publishing, separate Instagram Facebook route, advanced insights and TikTok direct/inbox permissions are not established by this approval. Shared iOS Post/Story tests pass locally; PR28 remains undeployed and native access disabled. See [activation evidence](META_BETA_ACTIVATION_20261016.md).

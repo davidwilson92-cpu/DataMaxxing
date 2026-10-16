@@ -727,7 +727,7 @@ def oauth_x_callback(request:Request,code:str|None=None,state:str|None=None,erro
     try:token,user_info=x_exchange(code,verifier)
     except (RuntimeError, httpx.HTTPError):return connection_return(request,"x","connection_failed")
     from .connection_review import stage
-    return stage(db,request,row,'x',[dict(platform="x",account_id=str(user_info["id"]),username=user_info.get("username","") or "",display_name=user_info.get("name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",X_SCOPES),metadata={"profile_image_url":user_info.get("profile_image_url")})])
+    return stage(db,request,row,'x',[dict(platform="x",account_id=str(user_info["id"]),username=user_info.get("username","") or "",display_name=user_info.get("name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope", ""),metadata={"profile_image_url":user_info.get("profile_image_url")})])
 
 @app.get("/oauth/meta/start")
 def oauth_meta_start(request:Request,db:Session=Depends(get_db)):
@@ -765,7 +765,7 @@ def oauth_meta_callback(request:Request,code:str|None=None,state:str|None=None,e
             ig=page['instagram_business_account']
             candidates.append(dict(platform='instagram',account_id=str(ig['id']),username=ig.get('username','') or '',display_name=ig.get('name','') or ig.get('username','') or '',access=page['access_token'],scope=INSTAGRAM_FACEBOOK_SCOPES,metadata={'auth_provider':'facebook_login','facebook_page_id':str(page['id']),'profile_picture_url':ig.get('profile_picture_url')}))
         else:
-            candidates.append(dict(platform='facebook',account_id=str(page['id']),username='',display_name=page.get('name',''),access=page['access_token'],scope=META_SCOPES,metadata={'tasks':page.get('tasks',[])}))
+            candidates.append(dict(platform='facebook',account_id=str(page['id']),username='',display_name=page.get('name',''),access=page['access_token'],scope=page.get("granted_scope",""),metadata={'tasks':page.get('tasks',[])}))
     from .connection_review import stage
     if not candidates:return connection_return(request,target,'no_pages')
     return stage(db,request,row,target,candidates)
@@ -805,7 +805,7 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
     try:token,info=tiktok_exchange(code)
     except (RuntimeError, httpx.HTTPError):return connection_return(request,"tiktok","connection_failed")
     from .connection_review import stage
-    return stage(db,request,row,'tiktok',[dict(platform="tiktok",account_id=str(info.get("open_id")),username="",display_name=info.get("display_name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope",TIKTOK_SCOPES),metadata={"avatar_url":info.get("avatar_url")})])
+    return stage(db,request,row,'tiktok',[dict(platform="tiktok",account_id=str(info.get("open_id")),username="",display_name=info.get("display_name","") or "",access=token["access_token"],refresh=token.get("refresh_token"),expires_in=token.get("expires_in"),scope=token.get("scope", ""),metadata={"avatar_url":info.get("avatar_url")})])
 
 
 # ---------- API models ----------

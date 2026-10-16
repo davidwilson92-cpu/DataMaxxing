@@ -1,3 +1,11 @@
+# Social beta integration update - 16 October 2026
+
+PR30 live as786183f05619d2706f71765cd2b86d56536a87d3 (Render dep-db8v84brjlhs73be54j0).299 tests pass on SQLite/PostgreSQL plus restore, container, dependency and guardrails. X callback fixed; owner authorised @DataMaxxingUK connection and exact test post. Real post verified at https://x.com/DataMaxxingUK/status/2111033940157055189. TikTok David Wilson connection confirmed with owner permission; inbox-video test preparation underway. Facebook required Page permission review draft saved with owner consent; not submitted or approved. PR31 removes unnecessary Facebook business-management scope; merged7cdb945f9e9927d52586d9584b1b3f65705b9f38, rollout verification pending. Instagram routes preserved. See docs/SOCIAL_BETA_COMPLETION_20261016.md.
+
+This native foundation branch integrates those server fixes but remains draft, undeployed, native flags disabled; rerun contract/release checks. No native TikTok registration/approval exists. All79 broader gaps retained.
+
+---
+
 # Meta approved and published with focused beta fix live — 16 October 2026
 
 Meta direct Instagram basic/content publishing approved and app published. PR29 live as 0105751acd9ffb75dae94016548b8d25ba751ed3, Render dep-db8th5h7lnhs73aj2e20. Fixes token envelope, actual grants and eligible refresh with concurrent-disconnect preservation. No schema/paid services/grant expansion or agent-sent real posts. PR28 shares fixes but remains draft and undeployed, native flags off. Owner confirmed on 16 October that Instagram connects successfully in their normal Edge/Chrome browser. The earlier embedded-browser verification loop remains a compatibility issue, not a blocker for this normal-browser connection. Owner subsequently confirmed both live Instagram Post and Story publishing work on 16 October. These delivery checks are user-confirmed, not independently inspected provider receipts. Facebook publishing scope and TikTok posting mode remain unresolved, despite owner-reported general approvals. Final shared implementation acbad5b passed CI38875534070: SQLite307/2 skipped, PostgreSQL308/1 skipped and all required checks. Read docs/META_BETA_ACTIVATION_20261016.md for evidence, platform matrix and rollback. All79 broader gaps retained. Do not claim full commercial readiness.

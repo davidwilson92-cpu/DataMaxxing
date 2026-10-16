@@ -22,11 +22,20 @@ from .storage import get_bytes, get_public_url
 
 log = logging.getLogger("nova.social")
 
-X_SCOPES = "tweet.read tweet.write users.read offline.access"
+X_SCOPES = "tweet.read tweet.write users.read offline.access media.write"
 META_SCOPES = "pages_show_list,pages_read_engagement,business_management"
 INSTAGRAM_FACEBOOK_SCOPES = META_SCOPES + ",instagram_basic,instagram_content_publish"
+META_SCOPES = "pages_show_list,pages_read_engagement,pages_manage_posts"  # Facebook only; keep Instagram scopes unchanged.
 INSTAGRAM_SCOPES = "instagram_business_basic,instagram_business_content_publish"
-TIKTOK_SCOPES = "user.info.basic,user.info.stats,video.list,video.upload"
+TIKTOK_SCOPES = "user.info.basic,video.upload"
+
+
+def tiktok_inbox() -> bool:
+    return os.environ.get('TIKTOK_SEND_TO_INBOX', 'false').lower() in {'1', 'true', 'yes'}
+
+
+def tiktok_scopes() -> str:
+    return TIKTOK_SCOPES if tiktok_inbox() else TIKTOK_SCOPES.replace('video.upload', 'video.publish')
 
 
 def json_meta(conn: SocialConnection) -> dict[str, Any]:
@@ -147,7 +156,17 @@ def meta_exchange(code: str, *, include_instagram: bool = False) -> list[dict[st
     )
     if pages_r.status_code >= 400:
         raise RuntimeError(f"Could not read managed Facebook Pages: {pages_r.text}")
-    return pages_r.json().get("data", [])
+    pages = pages_r.json().get("data", [])
+    if not include_instagram:
+        granted = httpx.get(f'https://graph.facebook.com/{version}/me/permissions',
+            params={'access_token': user_token}, timeout=30.0)
+        if granted.status_code >= 400:
+            raise RuntimeError('Could not verify Facebook permissions. Reconnect Facebook.')
+        scope = ','.join(p['permission'] for p in granted.json().get('data', [])
+                         if p.get('status') == 'granted' and isinstance(p.get('permission'), str))
+        for page in pages:
+            page['granted_scope'] = scope
+    return pages
 
 
 # ---------- Instagram OAuth (direct Instagram Login) ----------
@@ -231,7 +250,7 @@ def tiktok_authorize_url(state: str) -> str:
     if not key:
         raise RuntimeError("TikTok OAuth is not configured")
     redirect = os.environ.get("TIKTOK_REDIRECT_URI") or f"{public_base()}/oauth/tiktok/callback"
-    params = {"client_key": key, "scope": TIKTOK_SCOPES, "response_type": "code", "redirect_uri": redirect, "state": state}
+    params = {"client_key": key, "scope": tiktok_scopes(), "response_type": "code", "redirect_uri": redirect, "state": state}
     return "https://www.tiktok.com/v2/auth/authorize/?" + urlencode(params)
 
 
@@ -369,7 +388,7 @@ def upsert_connection(
     if expires_in:
         conn.expires_at = utcnow() + timedelta(seconds=max(int(expires_in) - 60, 60))
     # Reconnection must not retain permissions the new direct token did not grant.
-    conn.scope = scope if (metadata or {}).get('auth_provider') == 'instagram_login' else (scope or conn.scope)
+    conn.scope = scope if conn.platform in {'x', 'facebook', 'tiktok'} or (metadata or {}).get('auth_provider') == 'instagram_login' else (scope or conn.scope)
     conn.active = True
     if metadata is not None:
         save_meta(conn, metadata)
@@ -437,7 +456,10 @@ def publish_facebook(db: Session, conn: SocialConnection, posts: list[str], asse
         r = httpx.post(f"https://graph.facebook.com/{version}/{conn.account_id}/feed", data=data, timeout=30.0)
     if r.status_code >= 400:
         raise RuntimeError(f"Facebook publish failed: {r.text}")
-    post_id = str(r.json().get("post_id") or r.json().get("id"))
+    post_id = r.json().get("post_id") or r.json().get("id")
+    if not post_id:
+        raise RuntimeError('Facebook did not confirm the post identifier. Check the destination before retrying.')
+    post_id = str(post_id)
     return {"post_id": post_id, "post_ids": [post_id], "url": f"https://www.facebook.com/{post_id.replace('_', '/posts/')}"}
 
 
@@ -511,8 +533,8 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
 
 def _tiktok_creator_info(token: str) -> dict[str, Any]:
     r = httpx.post("https://open.tiktokapis.com/v2/post/publish/creator_info/query/", headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, json={}, timeout=30.0)
-    if r.status_code >= 400:
-        raise RuntimeError(f"TikTok creator info failed: {r.text}")
+    if r.status_code >= 400 or (r.json().get('error') or {}).get('code') not in {None, 'ok', 0}:
+        raise RuntimeError('TikTok publishing settings are unavailable. Check permissions and reconnect TikTok.')
     return r.json().get("data", {})
 
 
@@ -520,12 +542,16 @@ def publishing_context(db: Session, user_id: int, platform: str, connection_id: 
     conn = selected_connection(db,user_id,platform,connection_id)
     result = {"platform": platform, "connection_id":conn.id,"account_id":conn.account_id,"scope":conn.scope,"username": conn.username, "display_name": conn.display_name or conn.username or conn.account_id}
     if platform == "tiktok":
+        result['posting_mode'] = 'inbox' if tiktok_inbox() else 'direct'
+        if tiktok_inbox():
+            result['requires_tiktok_completion'] = True
+            return result
         info = _tiktok_creator_info(access_token(conn, db))
         result.update({
             "username": info.get("creator_username") or result["username"],
             "display_name": info.get("creator_nickname") or result["display_name"],
             "avatar_url": info.get("creator_avatar_url") or "",
-            "privacy_options": info.get("privacy_level_options") or ["SELF_ONLY"],
+            "privacy_options": info.get("privacy_level_options") or [],
             "max_video_duration_sec": int(info.get("max_video_post_duration_sec") or 0),
             "comment_disabled": bool(info.get("comment_disabled")),
             "duet_disabled": bool(info.get("duet_disabled")),
@@ -538,17 +564,20 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
     if not assets:
         raise RuntimeError("TikTok publishing requires visual media in this Zova build")
     token = access_token(conn, db)
-    upload_as_draft = os.environ.get("TIKTOK_SEND_TO_INBOX", "false").lower() in {"1", "true", "yes"}
-    info = _tiktok_creator_info(token)
+    upload_as_draft = tiktok_inbox()
+    info = {} if upload_as_draft else _tiktok_creator_info(token)
     settings = options or {}
-    privacy_options = info.get("privacy_level_options") or ["SELF_ONLY"]
-    forced_privacy = str(os.environ.get("TIKTOK_DEFAULT_PRIVACY") or "").strip()
+    if settings.get('posting_mode', 'direct') != ('inbox' if upload_as_draft else 'direct'):
+        raise RuntimeError('TikTok delivery mode changed. Review this post again.')
+    privacy_options = info.get("privacy_level_options") or []
     requested_privacy = str(settings.get("privacy_level") or "")
-    if requested_privacy not in privacy_options:
+    if not upload_as_draft and requested_privacy not in privacy_options:
         raise RuntimeError("The selected TikTok privacy setting is no longer available. Review the post again.")
     privacy = requested_privacy
     is_video = assets[0].mime_type.startswith("video/")
-    if is_video:
+    if upload_as_draft and (not is_video or len(assets) != 1):
+        raise RuntimeError('TikTok inbox delivery requires one video in this release.')
+    if is_video and not upload_as_draft:
         duration = float(settings.get("video_duration_sec") or 0)
         maximum = float(info.get("max_video_post_duration_sec") or 0)
         if duration <= 0:
@@ -563,13 +592,11 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
         video_size = len(video)
         if not video_size:
             raise RuntimeError("The selected TikTok video is empty. Remove and re-add it.")
-        # TikTok accepts chunks between 5 MiB and 64 MiB (the final chunk may
-        # be smaller), with no more than 1,000 chunks per upload.
-        min_chunk = 5 * 1024 * 1024
-        max_chunk = 64 * 1024 * 1024
-        chunk_size = min(max_chunk, max(min_chunk, (video_size + 999) // 1000))
-        chunk_size = min(chunk_size, video_size)
-        total_chunks = (video_size + chunk_size - 1) // chunk_size
+        # Round down and merge trailing bytes into the final chunk, per TikTok.
+        chunk_size = min(32 * 1024 * 1024, video_size)
+        total_chunks = max(1, video_size // chunk_size)
+        if total_chunks > 1000:
+            raise RuntimeError('This video is too large for TikTok upload.')
         source_info = {"source": "FILE_UPLOAD", "video_size": video_size, "chunk_size": chunk_size, "total_chunk_count": total_chunks}
         if upload_as_draft:
             body = {"source_info": source_info}
@@ -600,7 +627,7 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
             raise RuntimeError("TikTok did not provide a video upload URL")
         for index in range(total_chunks):
             start = index * chunk_size
-            chunk = video[start : start + chunk_size]
+            chunk = video[start : video_size if index == total_chunks-1 else start + chunk_size]
             end = start + len(chunk) - 1
             upload = httpx.put(
                 upload_url,
@@ -694,6 +721,8 @@ def analytics_facebook(db: Session, conn: SocialConnection, ids: list[str]) -> d
 
 
 def analytics_tiktok(db: Session, conn: SocialConnection, ids: list[str]) -> dict[str, Any]:
+    if "video.list" not in (conn.scope or "").replace(" ", ",").split(","):
+        raise RuntimeError("TikTok analytics require separately approved video.list access.")
     # Activities may initially hold publish_ids; resolve them to public post IDs first.
     public_ids: list[str] = []
     for value in ids[:10]:
@@ -729,6 +758,7 @@ def follower_count(db: Session, conn: SocialConnection) -> int | None:
         data = r.json()
         value = data.get("followers_count", data.get("fan_count"))
     elif conn.platform == "tiktok":
+        if "user.info.stats" not in (conn.scope or "").replace(" ", ",").split(","): return None
         r = httpx.get("https://open.tiktokapis.com/v2/user/info/", headers={"Authorization": f"Bearer {token}"}, params={"fields": "follower_count"}, timeout=20.0)
         if r.status_code >= 400: return None
         value = ((r.json().get("data") or {}).get("user") or {}).get("follower_count")
@@ -793,6 +823,8 @@ def recent_posts_for_user(db: Session, user_id: int, limit: int = 12) -> dict[st
                 if response.status_code >= 400: raise RuntimeError("Facebook feed unavailable")
                 for item in response.json().get("data", []):posts.append({"platform":"facebook","id":str(item.get("id")),"text":item.get("message") or "","created_at":item.get("created_time") or "","url":item.get("permalink_url") or "","image_url":item.get("full_picture") or "","likes":((item.get("reactions") or {}).get("summary") or {}).get("total_count"),"comments":((item.get("comments") or {}).get("summary") or {}).get("total_count"),"shares":(item.get("shares") or {}).get("count"),"views":None})
             else:
+                if "video.list" not in (conn.scope or "").replace(" ", ",").split(","):
+                    raise RuntimeError("TikTok feed access is not approved")
                 response = httpx.post("https://open.tiktokapis.com/v2/video/list/", headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"}, params={"fields":"id,title,video_description,cover_image_url,share_url,create_time,like_count,comment_count,share_count,view_count"}, json={"max_count":10}, timeout=30.0)
                 if response.status_code >= 400: raise RuntimeError("TikTok feed unavailable")
                 for item in response.json().get("data", {}).get("videos", []):
@@ -824,6 +856,7 @@ def recent_content_for_connection(db: Session, conn: SocialConnection, limit: in
         key = "caption" if conn.platform == "instagram" else "message"
         return [str(x.get(key, "")).strip() for x in r.json().get("data", []) if x.get(key)]
     if conn.platform == "tiktok":
+        if "video.list" not in (conn.scope or "").replace(" ", ",").split(","): return []
         r = httpx.post("https://open.tiktokapis.com/v2/video/list/", headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, params={"fields": "id,title,video_description,create_time"}, json={"max_count": min(limit, 20)}, timeout=30.0)
         if r.status_code >= 400: raise RuntimeError("TikTok recent posts are unavailable")
         videos = (r.json().get("data") or {}).get("videos", [])
