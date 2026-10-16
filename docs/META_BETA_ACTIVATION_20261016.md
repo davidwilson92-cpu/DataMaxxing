@@ -26,14 +26,14 @@ The bounded web fix is live: PR29 merged as 0105751acd9ffb75dae94016548b8d25ba75
 | OAuth, media, publishing, scheduling and security regressions | 283 passed/1 skipped on both SQLite and PostgreSQL; restore, image smoke and exact-scope CI checks pass on PR29 c1c70d9 | Mocked/synthetic provider evidence |
 | Shared native foundation | PR28 3ede54c: SQLite 305 passed/2 skipped, PostgreSQL 306 passed/1 skipped; local full run 305 passed/2 skipped | Tested, not deployed |
 | Native Instagram formats | Post and Story tests pass; final implementation acbad5b passed CI38875534070 with SQLite307/2 skipped and PostgreSQL308/1 skipped plus all required checks | Tested, not deployed |
-| Real non-role Instagram login | User encounters robot verification then Instagram login chooser at instagram.com/?e=1348020, before Zova callback | Blocked; normal-browser comparison requested |
+| Real Instagram login | Owner confirmed successful connection in normal Edge/Chrome on 16 October; earlier embedded-browser attempt looped before callback | User-confirmed success; app-role status and exact grants not independently inspected |
 | Real publishing | No reviewed live post approved or sent | Not verified |
 
 ## Platform matrix
 
 | Platform/path | Beta position |
 | --- | --- |
-| Instagram direct | Approved and published; account-level OAuth completion blocked by the observed Instagram login loop |
+| Instagram direct | Approved and published; owner confirms successful normal-browser connection; embedded-browser login compatibility remains unresolved |
 | Instagram Post/Reel | Shared reviewed publishing and duplicate guards tested with mocks; real post still needs explicit approval and verification |
 | Instagram Story | Separate saved/reviewed format; business-account eligibility check; shared web/native dispatch tests; real Story unverified |
 | Instagram via Facebook | Existing route preserved; direct Instagram approval does not establish this route's separate permissions |
@@ -52,7 +52,9 @@ For the focused web release, redeploy f1c7c12ed3076990b1262e7cefbd614c699f95bd w
 
 Help copy still describes the old Next move recurring-drafts entry point; update it to Post options in the next UX change. Signed-in Help and Security pages load; anonymous Help requires authentication.
 
-Next: resolve the Instagram login loop in a normal browser; verify exact connected account and granted scopes; approve one concrete test Post and Story if live publishing evidence is wanted; verify X/TikTok approved modes and Facebook permissions independently. Retain all 79 broader known gaps. This update is limited beta activation, not commercial certification.
+Normal-browser connection is now user-confirmed. Treat the embedded-browser loop as a separate compatibility issue; its underlying cause is not established. For iOS, retain system-browser authentication and validate on a real device rather than relying on an embedded web view.
+
+Next: verify exact connected account and granted scopes; approve one concrete test Post and Story if live publishing evidence is wanted; verify X/TikTok approved modes and Facebook permissions independently. Retain all 79 broader known gaps. This update is limited beta activation, not commercial certification.
 
 ## Provider reference
 
