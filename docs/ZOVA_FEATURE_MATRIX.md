@@ -7,7 +7,7 @@
 | TikTok result accuracy | Safe rejection reasons, durable receipts, status/worker race protection and no automatic resend | Existing publication-1 error evidence lost in old version; must remain unknown |
 | Commercial disclosure | Own brand vs third-party partnership retained; sandbox private-only limit shown and enforced; paid visibility Everyone/Friends only | TikTok public-access audit still required; no live paid partnership validation |
 
-See current handoff for complete test evidence, release scope and rollback. All79 wider beta findings remain open.
+Runtime1bd3b9486ea79c82413978c07e7d82a4c26ef52c passed hosted CI39161889443:440 passed/1 skipped on each database, restore/container/dependency/frontend and exact beta gates. Providers mocked; attachment desktop/mobile visually checked; live first-caption dead-end observed, new first-caption path API/client tested. No deployment or real post. See current handoff for evidence and rollback. All79 wider beta findings remain open.
 
 ---
 
