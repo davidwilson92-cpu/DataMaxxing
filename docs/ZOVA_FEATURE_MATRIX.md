@@ -100,11 +100,13 @@ See `COMMERCIAL_OPERATIONS_20260920.md`, `CUSTOMER_VALIDATION_20260920.md` and `
 
 Next move simplification: automatically fills empty/stale recommendations; post-first card with one draft action; compact alternatives/context/settings; linked draft title and explicit platform saved. Browser synthetic goal-to-draft/reload and failure/late-navigation harnesses validated. Live model relevance remains a separate check. See NEXT_MOVE_SIMPLE_20261010.md.
 
-## 18 October 2026 — focused draft recovery candidate (not deployed)
+## 18 October 2026 — focused draft recovery (deployed to TikTok sandbox only)
+
+Exact runtime 2fa13f72009fa4629129070c14b8e15fa9f73631 is Live on Render dep-dbai30rrjlhs73akkom0. CI39146945668 passed all release gates (359 passed / 1 skipped each on SQLite/PostgreSQL); public health/login and exact deployed assets verified. Browser needs fresh sign-in; live account/provider path was not repeated. Production unchanged. See the current handoff for rollback and ephemeral sandbox restrictions.
 
 | Capability | Implementation/evidence | Remaining boundary |
 |---|---|---|
-| Sent-message composer | Sent idea moves to conversation; empty composer persists; separate recoverable retry | Synthetic desktop/mobile only; release checks tracked in handoff |
+| Sent-message composer | Sent idea moves to conversation; empty composer persists; separate recoverable retry | Synthetic desktop/mobile/reload/keyboard/fork tests passed; exact sandbox assets verified; signed-in live retest pending |
 | TikTok sponsor captions | Selection-bound planning; first caption generated instead of missing X rewrite | Mocked model coverage; no real paid post |
 | TikTok disclosure | Own/paid flags, labels, consent reset, privacy restrictions and immutable review tested | Sandbox private-only; public-access audit needed for paid partnership delivery |
 

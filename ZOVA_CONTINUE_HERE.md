@@ -1,4 +1,16 @@
-# Studio sent-message and TikTok drafting correction — 18 October 2026 (not deployed)
+# Sandbox release verified — 18 October 2026
+
+Owner requested publish. Deployed exact runtime 2fa13f72009fa4629129070c14b8e15fa9f73631 to the existing Free TikTok sandbox only. Render deployment dep-dbai30rrjlhs73akkom0 reports Deploy succeeded | Live (18 October, 20:44 BST). Required hosted CI39146945668 passed on that exact commit: 359 passed / 1 skipped each on SQLite and PostgreSQL, synthetic restore, container build/smoke, dependency audit and exact beta scope. Independent release review confirmed the bounded change set and all 79 known gaps retained.
+
+Post-deploy checks: /health and /login return 200; versioned studio-state.js and studio-design.css match the tested candidate after newline normalization. Browser /studio correctly redirects to sign-in with no active sandbox session; the signed-in/provider path was not repeated after deployment. Pre-release synthetic desktop/mobile/reload/retry/keyboard/fork checks remain the functional evidence. Local evidence: social-proof/sandbox-release-2fa13f7.png and sandbox-release-2fa13f7-checks.json.
+
+Production zova-social.com remains unchanged and TikTok inbox-only. No real social post, grant, billing change or native rollout. Sandbox remains isolated and ephemeral, auto-deploy Off; it may need a fresh Zova login and TikTok connection. Public Direct Post approval/audit remains pending; private sandbox cannot publish a paid partnership. Do not resend old test drafts. Next: owner signs into the sandbox and retries the paid-partnership caption/review demonstration with a new draft; acceptance/public posting restrictions remain in place.
+
+Rollback: manually redeploy sandbox 89e7cf716d82f358d52515b58313862f0258c7eb. No schema migration; older code ignores pending_message metadata. Preserve any receipts/evidence before a restart, never point sandbox at production storage or replay posts. Source branch is codex/studio-send-recovery-20261018; the Render configured branch remains codex/tiktok-recording-sandbox-20261016 with auto-deploy Off, so future releases must select the intended exact tested commit.
+
+---
+
+# Studio sent-message and TikTok drafting correction — 18 October 2026 (pre-deployment evidence)
 
 Branch codex/studio-send-recovery-20261018 addresses two owner-reported defects: sent ideas remaining in the composer and TikTok-only sponsor/paid-partnership drafting incorrectly demanding an X version. Planner targets now follow the actual selected/active caption and create a first version when no caption exists; sponsor URLs are content, not destination changes. Sent text moves into the conversation before planning; failed requests have a separate Retry message control, retain attachments and unsent new input, survive reload, and do not duplicate the user turn. Initial save failure keeps input in place. Late replies remain workspace-bound. Pending-message metadata is additive; no schema migration.
 
