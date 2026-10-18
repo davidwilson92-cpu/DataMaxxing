@@ -1,13 +1,13 @@
-# 18 October 2026 — sent-media and TikTok outcome candidate (not deployed)
+# 18 October 2026 — sent-media and TikTok outcome update (sandbox deployed)
 
 | Capability | Implementation / evidence | Remaining boundary |
 |---|---|---|
-| Sent image/video message | Playable attachment moves into conversation; survives reload; removal changes active post only; ownership/brand/forged URL/failure tests and desktop/mobile preview | Synthetic UI/provider tests; deployed sandbox remains previous2fa13f7 |
-| First-caption creation | “Post this shlop” with video/TikTok becomes an editable caption proposal; no review or publication is implied; API and client regressions | Live dead-end reproduced on draft2; new behavior not deployed |
+| Sent image/video message | Playable attachment moves into conversation; survives reload; removal changes active post only; ownership/brand/forged URL/failure tests and desktop/mobile preview | Synthetic UI/provider tests; deployed sandbox1bd3b94 assets verified; fresh signed-in run pending |
+| First-caption creation | “Post this shlop” with video/TikTok becomes an editable caption proposal; no review or publication is implied; API and client regressions | Old live dead-end reproduced on draft2; fix deployed1bd3b94; fresh signed-in check pending |
 | TikTok result accuracy | Safe rejection reasons, durable receipts, status/worker race protection and no automatic resend | Existing publication-1 error evidence lost in old version; must remain unknown |
 | Commercial disclosure | Own brand vs third-party partnership retained; sandbox private-only limit shown and enforced; paid visibility Everyone/Friends only | TikTok public-access audit still required; no live paid partnership validation |
 
-Runtime1bd3b9486ea79c82413978c07e7d82a4c26ef52c passed hosted CI39161889443:440 passed/1 skipped on each database, restore/container/dependency/frontend and exact beta gates. Providers mocked; attachment desktop/mobile visually checked; live first-caption dead-end observed, new first-caption path API/client tested. No deployment or real post. See current handoff for evidence and rollback. All79 wider beta findings remain open.
+Runtime1bd3b9486ea79c82413978c07e7d82a4c26ef52c passed hosted CI39161889443:440 passed/1 skipped on each database, restore/container/dependency/frontend and exact beta gates. Providers mocked; attachment desktop/mobile visually checked; live first-caption dead-end observed, new first-caption path API/client tested. Sandbox deployment dep-dbaiictg1s2s73c85sf0 verified Live; health/login200 and all four changed Studio assets match candidate. Browser refresh returned sign-in. No new real-provider post or production deployment. See current handoff for evidence and rollback2fa13f7. All79 wider beta findings remain open.
 
 ---
 

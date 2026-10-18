@@ -1,4 +1,18 @@
-# Sent media, first-caption creation and TikTok outcome repair — 18 October 2026 (not deployed)
+# Sandbox publication verified — 18 October 2026, 21:17 BST
+
+Owner requested “Publish updates”. Deployed exact tested runtime 1bd3b9486ea79c82413978c07e7d82a4c26ef52c to zova-tiktok-sandbox only (srv-d9u4joad0e5s73afpu10). Render deployment dep-dbaiictg1s2s73c85sf0 reports Deploy succeeded | Live, duration37.6s. Independent release preflight confirmed exact-commit CI39161889443 green, documentation-only HEAD and all79 known gaps retained. No production deployment, real social post, grant, billing change or native rollout.
+
+Before restart, saved read-only draft1/publication-1 UI text and screenshot under social-proof/sandbox-publication-1-before-1bd3b94.{txt,png}. It still showed Outcome unconfirmed; no authoritative receipt was recoverable from this UI. This preserves visible evidence, not a database/uploads backup. Do not resend or reinterpret that submission. Sandbox SQLite/uploads remain ephemeral.
+
+Post-deploy checks: /health and /login return200; all four versioned Studio assets (studio.js, studio-state.js, studio-publish.js, studio-design.css?v=20261018-media) match the exact tested candidate after newline normalization. Browser refresh of sandbox Studio returns the sign-in screen, so no new signed-in/model/provider result is claimed. Prior tests:440 passed/1 skipped each SQLite/PostgreSQL plus restore/container/dependency/frontend and scope gates; synthetic desktop/mobile attachment evidence retained. Local release evidence: social-proof/sandbox-release-1bd3b94.png and sandbox-release-1bd3b94-checks.json.
+
+Next: owner signs in again and tests a fresh caption/video draft; sent video should appear on the user conversation turn with an empty composer. Sandbox permits private Only me testing; third-party paid partnerships remain unavailable pending TikTok approval. Do not resend old unknown publication1. Keep production inbox-only unchanged. Operational callback-query log redaction and all79 wider gaps remain tracked.
+
+Rollback: manually deploy exact2fa13f72009fa4629129070c14b8e15fa9f73631 to this sandbox only. No schema rollback; older code ignores additive message/retry metadata. Preserve durable receipts and unknown outcomes; never replay submissions. A sandbox restart can reset temporary users/uploads/connections again.
+
+---
+
+# Sent media, first-caption creation and TikTok outcome repair — 18 October 2026 (pre-release evidence)
 
 Branch codex/studio-media-tiktok-results-20261018 builds on deployed sandbox 2fa13f7. Owner reported publication-1 unconfirmed after commercial disclosure and video remaining in composer. Live sandbox draft1 remains needs_review/unconfirmed; the old adapter discarded the underlying exception and receipt details, so its exact cause cannot be recovered from the existing result. Never reclassify it as failed or resend without authoritative evidence. No provider post was sent during this work. Owner subsequently signed in: live draft2 showed “Post this shlop” followed by “Create a draft first…”, reproduced and now handled by proposing a first caption (never implicit publication or agreement).
 
@@ -10,7 +24,7 @@ ZOVA_ENV=sandbox now makes its private-only restriction explicit in settings and
 
 Runtime candidate 1bd3b9486ea79c82413978c07e7d82a4c26ef52c is pushed. Hosted CI39161889443 passed all required jobs:440 passed/1 skipped each on SQLite and PostgreSQL, synthetic backup restore, container build/smoke, frontend planning/lifecycle checks, dependency audit (no known vulnerabilities) and exact beta scope. Independent review caught and closed three publication concurrency races; their interleaving regressions pass. The exact “Post this shlop” owned-video API/client case creates a caption with zero review/publication/schedule records. A final extra browser screenshot for that phrase was unavailable because CUA returned no browsers; the earlier attachment desktop/mobile visual evidence remains valid. No new live-model/provider result is claimed.
 
-Deployment remains sandbox2fa13f7 / production unchanged. Before any deployment preserve current test evidence because sandbox SQLite/uploads are ephemeral. Rollback for this candidate is exact2fa13f72009fa4629129070c14b8e15fa9f73631; older code ignores additive message-media and retry snapshot JSON. Preserve receipts and never replay unknown submissions.
+At validation time sandbox remained2fa13f7 / production unchanged; see the release record above for deployment. Sandbox SQLite/uploads are ephemeral. Rollback for this candidate is exact2fa13f72009fa4629129070c14b8e15fa9f73631; older code ignores additive message-media and retry snapshot JSON. Preserve receipts and never replay unknown submissions.
 
 ---
 
