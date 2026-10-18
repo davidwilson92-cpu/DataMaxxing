@@ -120,6 +120,11 @@ paid.checked=true;change('review_brand_content');assert.equal(consent.checked,fa
 consent.checked=true;commercial.checked=false;change('review_commercial_content');assert.equal(consent.checked,false);assert.equal(own.checked,false);assert.equal(paid.checked,false);assert.equal(get('tiktokDisclosure').hidden,true);assert.equal(privacy.options[0].disabled,false);
 commercial.checked=true;change('review_commercial_content');privacy.value='SELF_ONLY';change('reviewPrivacy');assert.equal(paid.disabled,true);assert.match(get('tiktokPrivacyNote').textContent,/cannot use Only me/);
 own.checked=true;change('review_your_brand');consent.checked=true;assert.equal(run('updateTikTokControls()'),true);
+run("tiktokDirectControls({display_name:'Test creator',private_test_mode:true,privacy_options:['SELF_ONLY','PUBLIC_TO_EVERYONE']})");
+privacy.value='PUBLIC_TO_EVERYONE';consent.checked=true;assert.equal(run('updateTikTokControls()'),false);assert.equal(privacy.options[1].disabled,true);assert.match(get('tiktokPrivacyNote').textContent,/private account.*Only me.*TikTok approval/);
+privacy.value='SELF_ONLY';assert.equal(run('updateTikTokControls()'),true,'own-brand private test remains available');assert.equal(privacy.options[0].disabled,false);
+privacy.value='';paid.checked=true;assert.equal(run('updateTikTokControls()'),false,'partnership controls may be demonstrated but cannot submit from sandbox');assert.match(get('tiktokDisclosureLabel').textContent,/Paid partnership/);
+run("tiktokDirectControls({display_name:'Audited creator',privacy_options:['SELF_ONLY','PUBLIC_TO_EVERYONE']})");privacy.value='PUBLIC_TO_EVERYONE';assert.equal(run('updateTikTokControls()'),true,'sandbox restriction must not leak into another review');assert.equal(privacy.options[1].disabled,false);
 console.log('Commercial selection, consent resets, labels, private restriction and own-brand private review verified');
 """
     source = Path(__file__).resolve().parents[1] / "nova/static/studio-publish.js"

@@ -15,6 +15,29 @@ from .publishing_workflow import dispatch,update_draft_status
 log = logging.getLogger("nova.scheduler")
 
 
+def recover_stale_publication(db, item, stale):
+    """Recover only the exact stale attempt observed; never race a new checkpoint."""
+    previous=item.result_json
+    evidence=json.loads(previous or '{}')
+    from .tiktok_outcomes import recover_evidence
+    recovered=recover_evidence(evidence) if item.platform=='tiktok' else None
+    status=recovered or 'unknown'
+    if not recovered:evidence['error']='Worker interrupted; check the destination before retrying.'
+    claimed=db.execute(update(Publication).where(
+        Publication.id==item.id,Publication.status==item.status,
+        Publication.status.in_(['publishing','queued']),Publication.review_code==item.review_code,
+        Publication.result_json==previous,Publication.updated_at==item.updated_at,
+        Publication.updated_at<stale,
+    ).values(status=status,result_json=json.dumps(evidence),updated_at=utcnow()).execution_options(synchronize_session=False))
+    if claimed.rowcount!=1:
+        db.rollback();db.refresh(item);return False
+    if status=='failed':
+        from .allowances import finish
+        finish(db,f'publication:{item.id}',False)
+    db.commit();db.refresh(item)
+    return True
+
+
 def process_due(limit: int = 25) -> dict[str, int]:
     published = failed = 0
     with SessionLocal() as db:
@@ -23,13 +46,33 @@ def process_due(limit: int = 25) -> dict[str, int]:
         db.execute(delete(PendingConnection).where(PendingConnection.expires_at<utcnow()))
         # Never automatically resend an uncertain request after a crash.
         stale=utcnow()-timedelta(minutes=15)
-        stuck=db.scalars(select(Publication).where(Publication.status.in_(['publishing','queued']),Publication.updated_at<stale)).all()
-        for item in stuck:
-            item.status='unknown';item.result_json=json.dumps({'error':'Worker interrupted; check the destination before retrying.'})
-        db.execute(update(ScheduledPost).where(ScheduledPost.status=='publishing',ScheduledPost.updated_at<stale).values(status='unknown',error='Worker interrupted; verify destination.'))
+        candidates=db.scalars(select(Publication).where(Publication.status.in_(['publishing','queued']),Publication.updated_at<stale)).all()
+        stuck=[item for item in candidates if recover_stale_publication(db,item,stale)]
+        for job in db.scalars(select(ScheduledPost).where(ScheduledPost.status=='publishing',ScheduledPost.updated_at<stale)).all():
+            content=json.loads(job.content_json or '{}')
+            item=db.get(Publication,content.get('publication_id')) if content.get('publication_id') else None
+            if (item and item.user_id==job.user_id and item.draft_id==job.draft_id
+                    and item.platform==job.platform and item.connection_id==job.connection_id
+                    and item.review_code==content.get('review_code')
+                    and item.status in {'pending','published','failed','unknown'}):
+                evidence=json.loads(item.result_json or '{}')
+                values={'status':item.status,'error':evidence.get('error'),'platform_post_id':evidence.get('post_id'),'post_url':evidence.get('url')}
+            else:
+                values={'status':'unknown','error':'Worker interrupted; verify destination.'}
+            db.execute(update(ScheduledPost).where(
+                ScheduledPost.id==job.id,ScheduledPost.status=='publishing',
+                ScheduledPost.updated_at==job.updated_at,ScheduledPost.content_json==job.content_json,
+            ).values(**values).execution_options(synchronize_session=False))
         db.commit()
         for item in stuck:update_draft_status(db,item.draft_id)
-        pending=db.scalars(select(Publication).where(Publication.platform=='tiktok',Publication.status=='pending').limit(limit)).all()
+        # Prioritise pending jobs; old unknown rows without receipts cannot be checked.
+        pending=db.scalars(select(Publication).where(Publication.platform=='tiktok',Publication.status=='pending').order_by(Publication.updated_at,Publication.id).limit(limit)).all()
+        uncertain=db.scalars(select(Publication).where(
+            Publication.platform=='tiktok',Publication.status=='unknown',
+            Publication.result_json.contains('"post_id": "'),
+            ~Publication.result_json.contains('"post_id": ""'),
+        ).order_by(Publication.updated_at,Publication.id).limit(limit)).all()
+        pending+=uncertain
         for item in pending:
             try:
                 from .tiktok_status import reconcile

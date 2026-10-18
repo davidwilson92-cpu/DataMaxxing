@@ -1,3 +1,16 @@
+# 18 October 2026 — sent-media and TikTok outcome candidate (not deployed)
+
+| Capability | Implementation / evidence | Remaining boundary |
+|---|---|---|
+| Sent image/video message | Playable attachment moves into conversation; survives reload; removal changes active post only; ownership/brand/forged URL/failure tests and desktop/mobile preview | Synthetic UI/provider tests; deployed sandbox remains previous2fa13f7 |
+| First-caption creation | “Post this shlop” with video/TikTok becomes an editable caption proposal; no review or publication is implied; API and client regressions | Live dead-end reproduced on draft2; new behavior not deployed |
+| TikTok result accuracy | Safe rejection reasons, durable receipts, status/worker race protection and no automatic resend | Existing publication-1 error evidence lost in old version; must remain unknown |
+| Commercial disclosure | Own brand vs third-party partnership retained; sandbox private-only limit shown and enforced; paid visibility Everyone/Friends only | TikTok public-access audit still required; no live paid partnership validation |
+
+See current handoff for complete test evidence, release scope and rollback. All79 wider beta findings remain open.
+
+---
+
 # Social beta validation - 16 October 2026
 
 | Capability | Implementation and tests | Live provider / deployment evidence |

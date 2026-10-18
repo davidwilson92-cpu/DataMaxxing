@@ -1,12 +1,12 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const root=require('node:path').resolve(__dirname,'..');
-function fixture(){
- const nodes=new Map();const node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',innerHTML:'',style:{},addEventListener(){},focus(){},setSelectionRange(){},insertAdjacentHTML(){},scrollTo(){},close(){},remove(){}});return nodes.get(id);};
+function fixture(attachments=false){
+ const nodes=new Map();const node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',innerHTML:'',style:{},classList:{toggle(){}},addEventListener(){},focus(){},setSelectionRange(){},insertAdjacentHTML(_,html){this.innerHTML+=html;},scrollTo(){},close(){},remove(){}});return nodes.get(id);};
  const inputs=['x','instagram','facebook','tiktok'].map(value=>({value,checked:false,closest:()=>({classList:{toggle(){}}}),addEventListener(){}}));
  const document={getElementById:node,querySelector:()=>null,querySelectorAll:selector=>selector.includes('platform-check input:checked')?inputs.filter(n=>n.checked):selector.includes('.platform-check input')||selector==='.composer-platforms input'?inputs:[]};
  const ctx=vm.createContext({document,console,URLSearchParams,setTimeout:()=>0,clearTimeout(){},requestAnimationFrame:f=>f(),location:{search:'?draft=1',href:''},history:{replaceState(){}},window:{zovaPlatformLabel:p=>p,zovaInstagramIcon:()=>'<span>Instagram</span>',addEventListener(){},matchMedia:()=>({matches:false}),zovaWorkspaceUrl:url=>url+(url.includes('?')?'&':'?')+'workspace=7'},messages:[],inputs});
  for(const name of ['studio.js','studio-state.js','studio-publish.js'])vm.runInContext(fs.readFileSync(root+'/nova/static/'+name,'utf8'),ctx);
- vm.runInContext(`renderReadiness=()=>{};renderAttachments=()=>{};renderRecentPosts=()=>{};renderCanvas=()=>{};sizeComposer=()=>{};refreshPublicationResults=async()=>{};rememberSavedPost=()=>{};instagramFormat=()=> 'post';editingDraft=false;textHistory=[];publicationStates={};showMediaInspection=()=>{};addThinking=()=>{};removeThinking=()=>{};scrollChat=()=>{};addAssistantMessage=text=>messages.push(text);addUserMessage=text=>conversation.push({role:'user',content:text});`,ctx);
+ vm.runInContext(`renderReadiness=()=>{};${attachments?'':'renderAttachments=()=>{};'}renderCanvasPreview=()=>{};renderRecentPosts=()=>{};renderCanvas=()=>{};sizeComposer=()=>{};refreshPublicationResults=async()=>{};rememberSavedPost=()=>{};instagramFormat=()=> 'post';editingDraft=false;textHistory=[];publicationStates={};showMediaInspection=()=>{};addThinking=()=>{};removeThinking=()=>{};scrollChat=()=>{};addAssistantMessage=text=>messages.push(text);`,ctx);
  return {ctx,node,inputs,run:s=>vm.runInContext(s,ctx)};
 }
 (async()=>{
@@ -41,5 +41,62 @@ function fixture(){
  const poll=fixture();let timer;poll.ctx.setTimeout=fn=>{timer=fn;return 1};poll.run("currentDraftId=12;workspaceEpoch=2;refreshPublicationResults=()=>messages.push('checked')");poll.ctx.pending={results:{tiktok:{status:'pending'}}};poll.run('schedulePublicationRefresh(pending)');assert.equal(typeof timer,'function');timer();assert.deepEqual([...poll.ctx.messages],['checked']);poll.run('workspaceEpoch++;currentDraftId=13');timer();assert.equal(poll.ctx.messages.length,1,'old timer must not refresh another workspace');
  const delivery=fixture();let nextCheck=null;delivery.ctx.setTimeout=fn=>{nextCheck=fn;return 1};delivery.ctx.clearTimeout=()=>{nextCheck=null};delivery.ctx.markup='';delivery.ctx.opens=0;delivery.run("currentDraftId=9;workspaceEpoch=1;publicationStatus=s=>s;reviewHost=()=>({insertAdjacentHTML:(_,html)=>markup=html});openReview=()=>opens++;refreshDraft=()=>{};api=async()=>({draft_status:'published',results:{tiktok:{status:'published',url:'https://www.tiktok.com/@demo/video/123'}}})");delivery.run(publication.split('\n').find(line=>line.startsWith('async function refreshPublicationResults(')));delivery.run("showPublicationResults({results:{tiktok:{status:'pending'}}})");assert.equal(delivery.ctx.opens,1);await delivery.run('refreshPublicationResults(true)');assert.match(delivery.ctx.markup,/View on TikTok/);assert.equal(delivery.ctx.opens,1,'background result must not steal focus');assert.equal(nextCheck,null,'terminal status stops polling');
  const inspection=fixture();const readiness=fs.readFileSync(root+'/nova/static/readiness.js','utf8');inspection.run('let mediaInspectionKey=null;'+readiness.slice(readiness.indexOf('function showMediaInspection(')));inspection.ctx.inspected=[{status:'inspected',coverage:'frames',observations:'Long internal description'}];inspection.run('showMediaInspection(inspected)');assert.equal(inspection.ctx.messages.length,0);assert.equal(inspection.node('groundingNotice').hidden,true);inspection.ctx.inspected[0].status='failed';inspection.run('showMediaInspection(inspected)');assert.equal(inspection.node('groundingNotice').hidden,false);
- console.log('Studio hydration, conditional controls, stale replies, retries, failed save and workspace copy passed');
+ // Sending moves the upload into the message while retaining the active media for AI/review.
+ const media=fixture(true);media.node('brief').value='A sponsored video';media.inputs[3].checked=true;
+ media.run("studioLoading=false;currentDraftId=42;uploadedMedia=[{id:9,filename:'clip.mp4',url:'/media/preview/9',kind:'video'}];uploadedMediaIds=[9];uploadedMediaKind='video';uploadedVideoDuration=6;saveDraftNow=async()=>{};api=async()=>{throw Error('temporary generation failure')};renderAttachments()");
+ assert.match(media.node('attachmentTray').innerHTML,/clip.mp4/);
+ await media.run('sendMessage()');
+ assert.equal(media.node('attachmentTray').innerHTML,'','sent media clears the composer');
+ assert.match(media.node('chatFeed').innerHTML,/<video[^>]*controls[^>]*playsinline/,'sent video has usable playback controls');
+ assert.match(media.node('chatFeed').innerHTML,/\/media\/preview\/9\?workspace=7/);
+ assert.equal(media.run('uploadedMediaIds[0]'),9,'sending must preserve final-publish media');
+ assert.equal(media.run('draftPayload().workspace.conversation[0].media_asset_ids[0]'),9);
+ assert.equal(media.run('composerAttachments().length'),0,'failed generation leaves upload with the sent message');
+ media.ctx.row={id:42,revision:3,status:'draft',variants:{},workspace:JSON.parse(media.run('JSON.stringify(draftPayload().workspace)'))};
+ media.ctx.row.workspace.media=[{id:9,filename:'clip.mp4',url:'/media/preview/9',kind:'video'}];media.ctx.row.workspace.media_kind='video';
+ media.run('api=async()=>row');await media.run('loadRequestedDraft()');
+ assert.equal(media.node('attachmentTray').innerHTML,'','reload does not move sent upload back to composer');
+ assert.match(media.node('chatFeed').innerHTML,/clip.mp4/);
+ media.node('brief').value='My next unsent thought';
+ media.run("uploadedMedia=[{id:10,filename:'next.mp4',url:'/media/preview/10',kind:'video'}];uploadedMediaIds=[10];api=async()=>({action:'answer',reply:'A caption'});renderAttachments()");
+ assert.match(media.node('attachmentTray').innerHTML,/next.mp4/,'new upload belongs to the next unsent message');
+ assert.match(media.run('messageMediaMarkup(conversation[0])'),/Not in current post/,'replaced sent upload remains visibly historical');
+ await media.run('retryMessage()');
+ assert.equal(media.run('conversation.filter(m=>m.role==="user").length'),1,'retry cannot duplicate media turn');
+ assert.match(media.node('chatFeed').innerHTML,/media or source link changed/,'changed media explains why a new turn is needed');
+ assert.match(media.node('attachmentTray').innerHTML,/next.mp4/,'retry does not attach new unsent media to the old turn');
+ assert.equal(media.node('brief').value,'My next unsent thought');
+ await media.run('sendMessage()');
+ assert.equal(media.node('attachmentTray').innerHTML,'');
+ assert.equal(media.run('conversation[1].media_asset_ids[0]'),10);
+ const previousReview=media.run('reviewEpoch');media.run('removeSentAttachment(10)');
+ assert.equal(media.run('uploadedMediaIds.length'),0);assert.equal(media.run('conversation[1].media[0].id'),10,'remove from post retains historical preview');
+ assert.equal(media.run('reviewEpoch'),previousReview+1,'removing sent media invalidates prior final review');
+ assert.match(media.run('messageMediaMarkup(conversation[1])'),/Not in current post/);
+ media.run("uploadedMedia=[{id:11,filename:'retained.mp4',url:'/media/preview/11',kind:'video'}];uploadedMediaIds=[11];saveDraftNow=async()=>{throw Error('save failed')};renderAttachments()");
+ media.node('brief').value='Do not lose this';await media.run('sendMessage()');
+ assert.match(media.node('attachmentTray').innerHTML,/retained.mp4/,'initial save failure retains unsent media');
+ assert.equal(media.node('brief').value,'Do not lose this');
+ assert.equal(media.run('conversation.length'),2);
+ const legacyMedia=fixture(true);legacyMedia.ctx.row={id:7,status:'draft',variants:{},workspace:{conversation:[{role:'user',content:'A legacy message'}],media:[{id:12,filename:'legacy.jpg',url:'/media/preview/12',kind:'image'}],media_asset_ids:[12]}};legacyMedia.run('api=async()=>row');await legacyMedia.run('loadRequestedDraft()');
+ assert.match(legacyMedia.node('attachmentTray').innerHTML,/legacy.jpg/,'legacy media stays available until explicitly sent');
+ assert.match(legacyMedia.run("messageMediaMarkup({media:[{id:99,filename:'Attachment unavailable',url:'',kind:'file'}]})"),/Preview unavailable/);
+ const linkRetry=fixture(true);linkRetry.node('brief').value='Make a caption';linkRetry.node('linkUrl').value='https://example.test/original';linkRetry.run("studioLoading=false;currentDraftId=6;saveDraftNow=async()=>{};api=async()=>{throw Error('temporary failure')}");await linkRetry.run('sendMessage()');
+ linkRetry.node('linkUrl').value='https://example.test/new';linkRetry.run("api=async()=>{throw Error('retry must not execute for changed context')}");await linkRetry.run('retryMessage()');
+ assert.equal(linkRetry.run('draftPayload().workspace.pending_link_url'),'https://example.test/original');assert.match(linkRetry.node('chatFeed').innerHTML,/media or source link changed/);
+ const upload=fixture(true);upload.ctx.FormData=class{append(){}};upload.node('mediaInput').files=[{type:'image/png',name:'new.png'}];upload.run("studioLoading=false;uploadedMedia=[{id:31,filename:'original.jpg',url:'/media/preview/31',kind:'image'}];uploadedMediaIds=[31];api=async()=>{throw Error('upload outage')}");await upload.run('uploadMedia()');
+ assert.equal(upload.run('uploadedMediaIds[0]'),31,'failed upload retains original selected media');assert.match(upload.node('mediaStatus').textContent,/Upload failed/);assert.match(upload.node('attachmentTray').innerHTML,/original.jpg/);
+ let finishUpload;upload.ctx.uploadWait=new Promise(r=>finishUpload=r);upload.run('api=()=>uploadWait');const lateUpload=upload.run('uploadMedia()');await Promise.resolve();upload.run('mediaUploadVersion++;uploadedMedia=[];uploadedMediaIds=[]');finishUpload({assets:[{id:32,filename:'late.png',url:'/media/preview/32',kind:'image'}]});await lateUpload;
+ assert.equal(upload.run('uploadedMediaIds.length'),0,'old upload cannot attach to another workspace');
+ for(const action of ['publish','schedule']){
+  const first=fixture(true);first.node('brief').value='Post this shlop';first.inputs[3].checked=true;first.ctx.requests=[];
+  first.run(`studioLoading=false;currentDraftId=77;uploadedMedia=[{id:5,filename:'video.mp4',url:'/media/preview/5',kind:'video'}];uploadedMediaIds=[5];uploadedMediaKind='video';saveDraftNow=async()=>{};instagramInstruction=()=>'';draftWorkspace=()=>'';requestPublishConfirmation=()=>{throw Error('must not open publication review before drafting')};suggestSchedule=()=>{throw Error('must not schedule before drafting')};api=async(url,options)=>{requests.push({url,body:JSON.parse(options.body)});if(url.endsWith('/plan'))return {action:'${action}',platforms:['x'],brief:''};if(!url.endsWith('/generate'))throw Error('must only generate a caption');return {draft_id:77,revision:2,variants:{tiktok:{posts:['A first caption to refine']}}}}`);
+  await first.run('sendMessage()');
+  assert.equal(first.ctx.requests.length,2);assert.equal(first.ctx.requests[1].url,'/api/ai/generate');
+  assert.equal(first.ctx.requests[1].body.brief,'Post this shlop');assert.deepEqual([...first.ctx.requests[1].body.platforms],['tiktok']);assert.deepEqual([...first.ctx.requests[1].body.media_asset_ids],[5]);
+  assert.equal(first.run('variants.tiktok.posts[0]'),'A first caption to refine');assert.equal(first.run('currentDraftStatus'),'draft');
+  assert.equal(first.node('attachmentTray').innerHTML,'');assert.equal(first.node('brief').value,'');
+  assert.equal(first.ctx.messages.length,0,'first post request must not return a create-draft-first dead end');
+ }
+ console.log('Studio hydration, conditional controls, stale replies, retries, attachment handoff, first-post drafting, failed save and workspace copy passed');
 })().catch(error=>{console.error(error);process.exitCode=1});

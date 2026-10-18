@@ -73,7 +73,25 @@ let stickToLatest=true;
 function scrollChat(force=false){const feed=document.getElementById('chatFeed');if(force||stickToLatest){requestAnimationFrame(()=>feed.scrollTo({top:feed.scrollHeight,behavior:'smooth'}));document.getElementById('latestMessage').hidden=true;}else document.getElementById('latestMessage').hidden=false;}
 document.getElementById('chatFeed').addEventListener('scroll',()=>{const feed=document.getElementById('chatFeed');stickToLatest=feed.scrollHeight-feed.scrollTop-feed.clientHeight<100;if(stickToLatest)document.getElementById('latestMessage').hidden=true;});
 
-function addUserMessage(text){document.querySelector('.welcome-message')?.remove();conversation.push({role:"user",content:text});document.getElementById("chatFeed").insertAdjacentHTML("beforeend",`<article class="chat-message user-message"><div class="message-content">${esc(text)}</div></article>`);scrollChat();}
+function composerAttachments(){
+  const sent=new Set(conversation.filter(message=>message.role==='user').flatMap(message=>message.media_asset_ids||[]));
+  return uploadedMedia.filter(asset=>!sent.has(asset.id));
+}
+function messageMediaMarkup(message){
+  return (message.media||[]).map(asset=>{
+    const active=uploadedMediaIds.includes(asset.id),canRemove=active&&editableDraft();
+    const action=canRemove?`<button class="message-attachment-action" type="button" onclick="removeSentAttachment(${asset.id})" ${mediaUploading||sendingMessage?'disabled':''} aria-label="Remove ${esc(asset.filename)} from this post">Remove from post</button>`:`<span class="sent-attachment-status">${active?'Attached to post':'Not in current post'}</span>`;
+    return `<figure class="sent-attachment">${attachmentPreview(asset)}<figcaption><span title="${esc(asset.filename)}">${esc(asset.filename)}</span>${action}</figcaption></figure>`;
+  }).join('');
+}
+function addUserMessage(text,media=[]){
+  document.querySelector('.welcome-message')?.remove();
+  const message={role:'user',content:text};
+  if(media.length){message.media_asset_ids=media.map(asset=>asset.id);message.media=media.map(asset=>({...asset}));}
+  const index=conversation.push(message)-1;
+  document.getElementById('chatFeed').insertAdjacentHTML('beforeend',`<article class="chat-message user-message"><div class="message-content"><div data-message-media="${index}" class="sent-attachments">${messageMediaMarkup(message)}</div><div>${esc(text)}</div></div></article>`);
+  scrollChat();
+}
 
 function addThinking(){document.getElementById("chatFeed").insertAdjacentHTML("beforeend",'<article id="thinking" class="chat-message assistant-message"><div class="assistant-avatar">Z</div><div class="message-content"><div class="thinking" role="status" aria-label="Zova is thinking"><i></i><i></i><i></i></div></div></article>');scrollChat();}
 
@@ -100,17 +118,29 @@ function saveEditors(){return saveDraftNow();}
 
 function updateCount(){}
 
+function attachmentPreview(asset){
+  if(!asset.url)return '<div class="attachment-placeholder">Preview unavailable</div>';
+  return asset.kind==='video'?`<video src="${esc(mediaPreviewUrl(asset.url))}" controls playsinline preload="metadata" aria-label="Preview of ${esc(asset.filename)}"></video>`:`<img src="${esc(mediaPreviewUrl(asset.url))}" alt="Preview of ${esc(asset.filename)}">`;
+}
 function renderAttachments(){
   if(typeof renderReadiness==='function'){renderReadiness();renderCanvasPreview();}
 
   const tray=document.getElementById("attachmentTray");
 
-  tray.classList.toggle("hidden",!uploadedMedia.length);
+  const pending=composerAttachments();
+  tray.classList.toggle("hidden",!pending.length);
 
-  tray.innerHTML=uploadedMedia.map((asset,index)=>`<div class="attachment-card">${!asset.url?'<div class="attachment-placeholder">Preview unavailable</div>':asset.kind==="video"?`<video src="${esc(mediaPreviewUrl(asset.url))}" controls preload="metadata" aria-label="Preview of ${esc(asset.filename)}"></video>`:`<img src="${esc(mediaPreviewUrl(asset.url))}" alt="Preview of ${esc(asset.filename)}">`}<div class="attachment-details"><span title="${esc(asset.filename)}">${esc(asset.filename)}</span><button type="button" onclick="removeAttachment(${index})" ${mediaUploading?"disabled":""} aria-label="Remove ${esc(asset.filename)}">Remove</button></div></div>`).join("");
+  tray.innerHTML=pending.map(asset=>`<div class="attachment-card">${attachmentPreview(asset)}<div class="attachment-details"><span title="${esc(asset.filename)}">${esc(asset.filename)}</span><button type="button" onclick="removeSentAttachment(${asset.id})" ${mediaUploading||sendingMessage?"disabled":""} aria-label="Remove ${esc(asset.filename)}">Remove</button></div></div>`).join("");
+  document.querySelectorAll('[data-message-media]').forEach(node=>{node.innerHTML=messageMediaMarkup(conversation[Number(node.dataset.messageMedia)]||{});});
 
   document.getElementById("mediaStatus").textContent="";
+  if(typeof renderMessageRetry==='function')renderMessageRetry();
 
+}
+
+function removeSentAttachment(id){
+  const index=uploadedMedia.findIndex(asset=>asset.id===id);
+  if(index>=0)removeAttachment(index);
 }
 
 function removeAttachment(index){

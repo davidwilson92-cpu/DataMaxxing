@@ -6,6 +6,11 @@ from urllib.parse import urlsplit
 from .storage import get_bytes, get_public_url
 
 
+def private_test_mode():
+    """The isolated recording sandbox is not approved for public Direct Post."""
+    return os.environ.get('ZOVA_ENV', '').strip().lower() == 'sandbox'
+
+
 def direct_media_url(asset):
     url = get_public_url(asset.storage_key, asset.public_url)
     prefix = os.environ.get('TIKTOK_VERIFIED_MEDIA_PREFIX', '').strip()
@@ -45,8 +50,13 @@ def validate_direct(settings, context, posts, assets):
     own, paid = settings.get('your_brand', False), settings.get('brand_content', False)
     if commercial != bool(own or paid):
         raise ValueError('Select Your brand or Branded content when disclosing commercial content.')
-    if paid and settings.get('privacy_level') == 'SELF_ONLY':
-        raise ValueError('Branded content cannot use Only me privacy.')
+    if private_test_mode():
+        if paid:
+            raise ValueError('Paid partnerships cannot be published from this TikTok test app. TikTok approval is required; keep this as a draft.')
+        if settings.get('privacy_level') != 'SELF_ONLY':
+            raise ValueError('This TikTok test app can publish with Only me visibility only. Choose Only me and review again.')
+    if paid and settings.get('privacy_level') not in {'PUBLIC_TO_EVERYONE','MUTUAL_FOLLOW_FRIENDS'}:
+        raise ValueError('Branded content cannot use Only me or Followers privacy. Choose Everyone or Friends.')
     if not assets or len(posts) != 1:
         raise ValueError('TikTok requires media and one caption.')
     video = assets[0].mime_type.startswith('video/')

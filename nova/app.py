@@ -985,6 +985,7 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
             existing=json.loads(row.variants_json or '{}');existing.update(variants);variants=existing
             all_platforms=list(dict.fromkeys(json.loads(row.platforms_json or '[]')+platforms))
             workspace=json.loads(row.workspace_json or '{}');workspace['pending_message']=''
+            workspace.pop('pending_media_asset_ids',None);workspace.pop('pending_link_url',None)
             claimed=db.execute(update(Draft).where(Draft.id==row.id,Draft.revision==revision,Draft.status.in_(EDITABLE)).values(brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(all_platforms),variants_json=json.dumps(variants,ensure_ascii=False),workspace_json=json.dumps(workspace,ensure_ascii=False),thread_length=body.thread_length,revision=Draft.revision+1,updated_at=utcnow()).execution_options(synchronize_session=False))
             if claimed.rowcount!=1:db.rollback();raise HTTPException(409,'This draft changed while generating. Open the latest saved version.')
             db.commit();db.refresh(row)
@@ -995,8 +996,9 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
                 # the new draft. Preserve every other saved workspace field.
                 workspace=json.loads(source.workspace_json or '{}')
                 workspace['pending_message']=''
+                workspace.pop('pending_media_asset_ids',None);workspace.pop('pending_link_url',None)
                 target_workspace=clean_workspace({**workspace,'selected_platforms':platforms,
-                    'active_platform':platforms[0],'text_history':[]},db,user.id)
+                    'active_platform':platforms[0],'text_history':[]},db,user.id,previous_workspace=workspace)
                 claimed=db.execute(update(Draft).where(Draft.id==source.id,Draft.user_id==user.id,
                     Draft.revision==body.source_revision,Draft.status.in_(EDITABLE)).values(
                     workspace_json=json.dumps(workspace,ensure_ascii=False),revision=Draft.revision+1,
@@ -1098,7 +1100,9 @@ def api_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
     user=current_user(request); row=db.get(Draft,draft_id)
     if not row or row.user_id!=user.id:raise HTTPException(404,"Draft not found")
     from .series import planned_context
-    return {"title":row.title,"display_title":draft_title(row),"planned":planned_context(db,row.id),"id":row.id,"brief":row.brief,"instruction":row.instruction,"revision":row.revision,"workspace":json.loads(row.workspace_json or "{}"),"platforms":json.loads(row.platforms_json or "[]"),"variants":json.loads(row.variants_json or "{}"),"thread_length":row.thread_length,"status":row.status,"created_at":row.created_at.isoformat(),"updated_at":row.updated_at.isoformat()}
+    from .workspace import hydrate_workspace_media
+    workspace=hydrate_workspace_media(json.loads(row.workspace_json or "{}"),db,user.id)
+    return {"title":row.title,"display_title":draft_title(row),"planned":planned_context(db,row.id),"id":row.id,"brief":row.brief,"instruction":row.instruction,"revision":row.revision,"workspace":workspace,"platforms":json.loads(row.platforms_json or "[]"),"variants":json.loads(row.variants_json or "{}"),"thread_length":row.thread_length,"status":row.status,"created_at":row.created_at.isoformat(),"updated_at":row.updated_at.isoformat()}
 
 @app.patch("/api/drafts/{draft_id}")
 def api_save_draft(draft_id:int,body:DraftSaveRequest,request:Request,db:Session=Depends(get_db)):

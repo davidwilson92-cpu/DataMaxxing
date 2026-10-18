@@ -15,6 +15,10 @@ from . import allowances
 TERMINAL={'published','pending','publishing','unknown','scheduled','queued'}
 
 
+class PublicationAttemptLost(RuntimeError):
+    """A recovered or replaced attempt must stop before further provider work."""
+
+
 def owned_draft(db,uid,draft_id):
     row=db.get(Draft,draft_id) if draft_id else None
     if not row or row.user_id!=uid:raise HTTPException(404,'Draft not found')
@@ -191,9 +195,16 @@ def update_draft_status(db,draft_id):
 
 def dispatch(db,publication,payload,publisher=publish_platform):
     target=payload['targets'][publication.platform]
-    claimed=db.execute(update(Publication).where(Publication.id==publication.id,Publication.status.in_(['queued','scheduled'])).values(status='publishing',updated_at=utcnow()).execution_options(synchronize_session=False))
+    attempt_review=publication.review_code
+    claimed=db.execute(update(Publication).where(Publication.id==publication.id,Publication.review_code==attempt_review,Publication.status.in_(['queued','scheduled'])).values(status='publishing',updated_at=utcnow()).execution_options(synchronize_session=False))
     if claimed.rowcount!=1:db.rollback();return
     db.commit();db.refresh(publication)
+    attempt_result=publication.result_json
+    def save_attempt(status,result):
+        return db.execute(update(Publication).where(
+            Publication.id==publication.id,Publication.review_code==attempt_review,
+            Publication.status=='publishing',Publication.result_json==attempt_result,
+        ).values(status=status,result_json=json.dumps(result),updated_at=utcnow()).execution_options(synchronize_session=False)).rowcount==1
     # Fail before the provider call if the exact reviewed connection/media no longer exists.
     try:
         conn=selected_connection(db,publication.user_id,publication.platform,target['connection_id'])
@@ -202,37 +213,51 @@ def dispatch(db,publication,payload,publisher=publish_platform):
         if any(not a or a.user_id!=publication.user_id for a in media):raise RuntimeError('Media unavailable')
         if capability_error(conn,media):raise RuntimeError('Permission changed')
     except RuntimeError:
-        publication.status='failed';publication.result_json=json.dumps({'error':'The reviewed account, media or permissions are unavailable. Reconnect/review before retrying.'});allowances.finish(db,f'publication:{publication.id}',False);db.commit();return
+        if not save_attempt('failed',{'error':'The reviewed account, media or permissions are unavailable. Reconnect/review before retrying.'}):db.rollback();return
+        allowances.finish(db,f'publication:{publication.id}',False);db.commit();db.refresh(publication);return
     from .publication_evidence import recorder
     def record(evidence):
-        previous=json.loads(publication.result_json or '{}')
+        nonlocal attempt_result
+        previous=json.loads(attempt_result or '{}')
         previous.update(evidence)
-        publication.result_json=json.dumps(previous)
-        publication.updated_at=utcnow()
+        if not save_attempt('publishing',previous):
+            db.rollback()
+            raise PublicationAttemptLost('The publication attempt was recovered or replaced.')
         db.commit()
+        attempt_result=json.dumps(previous)
     evidence_token=recorder.set(record)
     try:
         result=publisher(db,user_id=publication.user_id,platform=publication.platform,posts=target['posts'],assets=media,link_url=target.get('link',''),options=payload['publish_options'].get(publication.platform,{}),connection_id=target['connection_id'])
-        publication.status='pending' if result.get('pending') else 'published';publication.result_json=json.dumps({**json.loads(publication.result_json or '{}'),**result})
+        next_status='pending' if result.get('pending') else 'published'
+        result={**json.loads(attempt_result or '{}'),**result}
+    except PublicationAttemptLost:
+        db.rollback();return
     except Exception:
         db.rollback();db.refresh(publication)
-        evidence=json.loads(publication.result_json or '{}')
-        if evidence.get('phase')=='published' and evidence.get('post_id'):
-            publication.status='published'
+        if publication.status!='publishing' or publication.review_code!=attempt_review or publication.result_json!=attempt_result:
+            return
+        evidence=json.loads(attempt_result or '{}')
+        from .tiktok_outcomes import recover_evidence
+        tiktok_status=recover_evidence(evidence) if publication.platform=='tiktok' else None
+        if tiktok_status:
+            next_status=tiktok_status
+        elif evidence.get('phase')=='published' and evidence.get('post_id'):
+            next_status='published'
         elif evidence.get('phase') in {'validating','container_created'}:
-            publication.status='failed'
+            next_status='failed'
             evidence['error']='Instagram did not reach the publishing step. Check the media and connection, then review again.'
         else:
-            publication.status='unknown'
+            next_status='unknown'
             evidence['error']='The provider outcome is unconfirmed. Check your social account before retrying; Zova will not resend automatically.'
         evidence['support_reference']='publication-'+str(publication.id)
-        publication.result_json=json.dumps(evidence)
+        result=evidence
     finally:
         recorder.reset(evidence_token)
-    result=json.loads(publication.result_json)
-    allowances.finish(db,f'publication:{publication.id}')
-    db.add(Activity(user_id=publication.user_id,brand_id=publication.brand_id,draft_id=publication.draft_id,platform=publication.platform,action='publish',status=publication.status,text='\n\n'.join(target['posts']),platform_post_id=result.get('post_id'),url=result.get('url'),error=result.get('error')))
+    if not save_attempt(next_status,result):db.rollback();db.refresh(publication);return
+    allowances.finish(db,f'publication:{publication.id}',next_status!='failed')
+    db.add(Activity(user_id=publication.user_id,brand_id=publication.brand_id,draft_id=publication.draft_id,platform=publication.platform,action='publish',status=next_status,text='\n\n'.join(target['posts']),platform_post_id=result.get('post_id'),url=result.get('url'),error=result.get('error')))
     db.commit()
+    db.refresh(publication)
 
 
 def confirm_review(db,uid,body,mode,publisher=publish_platform):

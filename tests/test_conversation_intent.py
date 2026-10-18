@@ -177,3 +177,80 @@ def test_sponsorship_plan_and_generation_remain_drafts_without_publication_or_co
     with SessionLocal() as db:
         for model in (PublishReview, Publication, ScheduledPost):
             assert db.scalar(select(model).where(model.user_id == uid)) is None
+
+
+@pytest.mark.parametrize('message',['Post this shlop','Please post this video','Publish this to TikTok','Schedule this for tomorrow'])
+def test_first_post_request_proposes_caption_without_requiring_user_to_write_one(message,monkeypatch):
+    import nova.conversation as module
+    monkeypatch.setattr(module.ai,'_responses',lambda *a,**k:pytest.fail('Direct first-post intent is deterministic'))
+    result=plan_message(message,{'selected_platforms':['tiktok'],'active_platform':'x','variants':{},
+        'attachment_observations':[{'status':'inspected','observations':'A humorous video about adulting'}]})
+    assert result.action=='create' and result.platforms==['tiktok']
+    assert result.brief==message
+
+
+@pytest.mark.parametrize('action',['publish','schedule'])
+@pytest.mark.parametrize('variants',[{}, {'tiktok':{'posts':[]}}, {'tiktok':{'posts':[' ','']}}])
+def test_model_publication_plan_without_caption_is_normalized_to_drafting(action,variants,monkeypatch):
+    import json
+    import nova.conversation as module
+    monkeypatch.setattr(module.ai,'_responses',lambda *a,**k:json.dumps({'action':action,'platforms':['x']}))
+    result=plan_message('Ready to share it now',{'selected_platforms':['tiktok'],'variants':variants,
+        'brief':'A funny moment on camera'})
+    assert result.action=='create' and result.platforms==['tiktok']
+    assert 'A funny moment on camera' in result.brief and 'Ready to share it now' in result.brief
+
+
+@pytest.mark.parametrize('action',['answer','insight'])
+def test_general_questions_without_caption_are_not_forced_into_drafting(action,monkeypatch):
+    import json
+    import nova.conversation as module
+    monkeypatch.setattr(module.ai,'_responses',lambda *a,**k:json.dumps({'action':action,'reply':'Useful answer'}))
+    assert plan_message('What time should I post?',{'selected_platforms':['tiktok'],'variants':{}}).action==action
+
+
+def test_first_post_fix_preserves_negation_existing_caption_and_selection(monkeypatch):
+    import nova.conversation as module
+    monkeypatch.setattr(module.ai,'_responses',lambda *a,**k:'{"action":"publish","platforms":["tiktok"]}')
+    assert plan_message('Post this video but do not publish yet',{'selected_platforms':['tiktok']}).action=='answer'
+    result=plan_message('Post this shlop',{'selected_platforms':['tiktok'],'variants':{'tiktok':{'posts':['Reviewed caption']}}})
+    assert result.action=='publish'
+    assert plan_message('Post this shlop',{'selected_platforms':[],'variants':{}}).action=='answer'
+
+
+def test_exact_uploaded_video_request_generates_caption_and_no_delivery_records(monkeypatch):
+    import nova.app as app_module
+    import nova.conversation as module
+    import nova.media_inspection as inspection
+    from sqlalchemy import select
+    from nova.db import SessionLocal,MediaAsset,PublishReview,Publication,ScheduledPost
+    client,uid,*_=account()
+    with SessionLocal() as db:
+        asset=MediaAsset(user_id=uid,filename='synthetic.mp4',mime_type='video/mp4',storage_key='synthetic',public_url='https://example.test/video.mp4',size_bytes=20)
+        db.add(asset);db.commit();asset_id=asset.id
+    draft=client.post('/api/drafts',json={}).json()
+    observed=[]
+    def inspect(db,owner,ids):
+        assert owner==uid and ids==[asset_id]
+        observed.append(ids)
+        return [{'status':'inspected','kind':'video','coverage':'frames','observations':'A humorous video about adulting'}]
+    monkeypatch.setattr(inspection,'inspect_assets',inspect)
+    monkeypatch.setattr(module.ai,'_responses',lambda *a,**k:pytest.fail('No planner model needed'))
+    def generate(**kwargs):
+        assert kwargs['brief']=='Post this shlop'
+        assert kwargs['platforms']==['tiktok']
+        assert 'humorous video about adulting' in kwargs['instruction']
+        return {'tiktok':{'posts':['Adulting: attempt number two.']}}
+    monkeypatch.setattr(module.ai,'generate_variants',generate)
+    monkeypatch.setattr(app_module,'publish_platform',lambda *a,**k:pytest.fail('Drafting cannot publish'))
+    planned=client.post('/api/conversation/plan',json={'draft_id':draft['id'],'message':'Post this shlop','selected_platforms':['tiktok'],'media_asset_ids':[asset_id]})
+    assert planned.status_code==200,planned.text
+    plan=planned.json();assert plan['action']=='create'
+    generated=client.post('/api/ai/generate',json={'draft_id':draft['id'],'brief':plan['brief'],'platforms':plan['platforms'],'media_asset_ids':[asset_id]})
+    assert generated.status_code==200,generated.text
+    assert generated.json()['variants']['tiktok']['posts']==['Adulting: attempt number two.']
+    assert len(observed)==2
+    assert client.get(f"/api/drafts/{draft['id']}").json()['status']=='draft'
+    with SessionLocal() as db:
+        for model in (PublishReview,Publication,ScheduledPost):
+            assert db.scalar(select(model).where(model.user_id==uid)) is None

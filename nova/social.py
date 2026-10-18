@@ -547,7 +547,9 @@ def publishing_context(db: Session, user_id: int, platform: str, connection_id: 
             result['requires_tiktok_completion'] = True
             return result
         info = _tiktok_creator_info(access_token(conn, db))
+        from .tiktok_policy import private_test_mode
         result.update({
+            "private_test_mode": private_test_mode(),
             "username": info.get("creator_username") or result["username"],
             "display_name": info.get("creator_nickname") or result["display_name"],
             "avatar_url": info.get("creator_avatar_url") or "",
@@ -561,6 +563,9 @@ def publishing_context(db: Session, user_id: int, platform: str, connection_id: 
 
 
 def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets: list[MediaAsset], link_url: str = "", options: dict[str, Any] | None = None) -> dict[str, Any]:
+    from .publication_evidence import checkpoint
+    from .tiktok_outcomes import init_rejection
+    checkpoint('tiktok_validating')
     if not assets:
         raise RuntimeError("TikTok publishing requires visual media in this Zova build")
     token = access_token(conn, db)
@@ -621,11 +626,21 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
         from .tiktok_policy import direct_media_url
         if is_video:body['source_info'] = {'source': 'PULL_FROM_URL', 'video_url': direct_media_url(assets[0])}
         else:body['source_info']['photo_images'] = [direct_media_url(a) for a in assets]
+    checkpoint('tiktok_publish_requested', privacy_level=privacy, posting_mode='inbox' if upload_as_draft else 'direct')
     r = httpx.post(endpoint, headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json; charset=UTF-8"}, json=body, timeout=45.0)
-    if r.status_code >= 400 or (r.json().get("error") or {}).get("code") not in {None, "ok", 0}:
-        raise RuntimeError(f"TikTok publish failed: {r.text}")
-    response_data = r.json()["data"]
-    publish_id = str(response_data["publish_id"])
+    payload = r.json()
+    rejected = init_rejection(r.status_code, payload)
+    if rejected:
+        checkpoint('tiktok_rejected', **rejected)
+        raise RuntimeError('TikTok rejected the publishing request.')
+    if r.status_code >= 400 or (payload.get("error") or {}).get("code") not in {None, "ok", 0}:
+        raise RuntimeError('TikTok publishing response could not be confirmed.')
+    response_data = payload["data"]
+    publish_id = response_data.get("publish_id")
+    if not isinstance(publish_id, str) or not publish_id.strip() or len(publish_id) > 64:
+        raise RuntimeError('TikTok publishing receipt could not be confirmed.')
+    # Persist the receipt before uploads or later work, so recovery only polls it.
+    checkpoint('tiktok_accepted', post_id=publish_id)
     if is_video and upload_as_draft:
         upload_url = response_data.get("upload_url")
         if not upload_url:
@@ -645,7 +660,7 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
                 timeout=120.0,
             )
             if upload.status_code >= 400:
-                raise RuntimeError(f"TikTok video upload failed ({upload.status_code}): {upload.text}")
+                raise RuntimeError('TikTok video upload could not be confirmed. Check the recorded publishing status.')
     return {"post_id": publish_id, "post_ids": [publish_id], "url": None, "pending": True, "privacy_level": privacy, "requires_tiktok_completion": bool(is_video and upload_as_draft)}
 
 
@@ -654,7 +669,10 @@ def resolve_tiktok_post(db: Session, conn: SocialConnection, publish_id: str) ->
     r = httpx.post("https://open.tiktokapis.com/v2/post/publish/status/fetch/", headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, json={"publish_id": publish_id}, timeout=30.0)
     if r.status_code >= 400:
         return {"status": "unknown"}
-    data = r.json().get("data", {})
+    payload = r.json()
+    if (payload.get('error') or {}).get('code') not in {None, 'ok', 0}:
+        return {"status": "unknown"}
+    data = payload.get("data", {})
     post_ids = data.get("publicaly_available_post_id") or []
     return {"status": data.get("status", "unknown"), "public_ids": [str(x) for x in post_ids], "fail_reason": data.get("fail_reason")}
 

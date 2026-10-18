@@ -1,6 +1,8 @@
 
 function tiktokDeclaration(paid){return `<p>By posting, you agree to TikTok’s ${paid?'<a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noopener">Branded Content Policy</a> and ':''}<a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener">Music Usage Confirmation</a>.</p>`;}
+let tiktokPrivateTestMode=false;
 function tiktokDirectControls(c){
+ tiktokPrivateTestMode=c.private_test_mode===true;
  const video=uploadedMediaKind==='video';
  const interactions=[['allow_comment','Allow comments','comment_disabled'],...(video?[['allow_duet','Allow Duet','duet_disabled'],['allow_stitch','Allow Stitch','stitch_disabled']]:[])];
  return `<div id="tiktokDirectSettings"><p>Posting to ${esc(c.display_name)}${c.username?' @'+esc(c.username):''}</p><label>Who can see this post?<select id="reviewPrivacy" onchange="resetTikTokConsent();updateTikTokControls()" required><option value="">Choose privacy</option>${(c.privacy_options||[]).map(v=>`<option value="${esc(v)}">${esc(({PUBLIC_TO_EVERYONE:'Everyone',MUTUAL_FOLLOW_FRIENDS:'Friends',FOLLOWER_OF_CREATOR:'Followers',SELF_ONLY:'Only me'})[v]||v)}</option>`).join('')}</select></label>${interactions.map(([key,label,disabled])=>`<label><input id="review_${key}" type="checkbox" ${c[disabled]?'disabled':''}> ${label}${c[disabled]?' (unavailable for this account)':''}</label>`).join('')}<label><input id="review_is_aigc" type="checkbox"> This media is AI-generated</label><label><input id="review_commercial_content" type="checkbox" onchange="resetTikTokConsent();updateTikTokControls()"> This post promotes a brand, product or service</label><div id="tiktokDisclosure" hidden><label><input id="review_your_brand" type="checkbox" onchange="resetTikTokConsent();updateTikTokControls()"> Your brand</label><label><input id="review_brand_content" type="checkbox" onchange="resetTikTokConsent();updateTikTokControls()"> Branded content (paid partnership)</label><p id="tiktokDisclosureLabel" aria-live="polite"></p></div><p id="tiktokPrivacyNote" aria-live="polite"></p><div id="tiktokDeclaration">${tiktokDeclaration(false)}</div><label><input id="review_consent" type="checkbox" onchange="updateTikTokControls()"> I agree and want to post this content to TikTok</label><p>${video?'Video duration is checked against your account limit. ':''}You can edit the caption and preview your media before final confirmation.</p></div>`;
@@ -13,13 +15,14 @@ function updateTikTokControls(){
  if(!commercial){own.checked=false;paid.checked=false;}
  node('tiktokDisclosure').hidden=!commercial;
  const privatePost=privacy.value==='SELF_ONLY';
- if(privatePost)paid.checked=false;
- paid.disabled=privatePost;
- for(const option of privacy.options||[])if(option.value==='SELF_ONLY')option.disabled=!!paid.checked;
- node('tiktokPrivacyNote').textContent=privatePost?'Branded content cannot use Only me privacy.':'';
+ const paidPrivacyUnavailable=privatePost||privacy.value==='FOLLOWER_OF_CREATOR';
+ if(paidPrivacyUnavailable)paid.checked=false;
+ paid.disabled=paidPrivacyUnavailable;
+ for(const option of privacy.options||[])option.disabled=!!option.value&&((tiktokPrivateTestMode&&option.value!=='SELF_ONLY')||(paid.checked&&!['PUBLIC_TO_EVERYONE','MUTUAL_FOLLOW_FRIENDS'].includes(option.value)));
+ node('tiktokPrivacyNote').textContent=tiktokPrivateTestMode?'TikTok testing requires a private account and Only me visibility. Paid partnerships need TikTok approval.':paidPrivacyUnavailable?'Branded content cannot use Only me or Followers privacy. Choose Everyone or Friends.':'';
  node('tiktokDisclosureLabel').textContent=paid.checked?'Your post will be labelled Paid partnership.':own.checked?'Your post will be labelled Promotional content.':'Choose Your brand, Branded content, or both.';
  node('tiktokDeclaration').innerHTML=tiktokDeclaration(paid.checked);
- const ready=!!privacy.value&&(!commercial||own.checked||paid.checked)&&!!node('review_consent')?.checked;
+ const ready=!!privacy.value&&(!commercial||own.checked||paid.checked)&&!!node('review_consent')?.checked&&(!tiktokPrivateTestMode||(privatePost&&!paid.checked));
  const button=document.getElementById('reviewFinalPost');if(button){button.disabled=!ready;button.title=commercial&&!own.checked&&!paid.checked?'Choose what your content promotes.':'';}
  return ready;
 }
