@@ -49,6 +49,9 @@ def clean_workspace(value, db, user_id):
     messages=value.get('conversation',[])
     if not isinstance(messages,list) or len(messages)>200: raise HTTPException(400,'Conversation is too long; start a new chat.')
     messages=[{'role':m['role'],'content':str(m.get('content',''))[:12000]} for m in messages if isinstance(m,dict) and m.get('role') in {'assistant','user'}]
+    pending=str(value.get('pending_message') or '')[:12000]
+    if pending and not any(m['role']=='user' and m['content']==pending for m in messages):
+        raise HTTPException(400,'Retry message must belong to this conversation.')
     link=str(value.get('link_url',''))[:2048]
     if link and not link.startswith(('https://','http://')): raise HTTPException(400,'Use an http or https source link.')
     selected=value.get('selected_platforms',[])
@@ -61,7 +64,7 @@ def clean_workspace(value, db, user_id):
     return {'media_asset_ids':[a['id'] for a in assets],'media':assets,'media_kind':('video' if any(a['kind']=='video' for a in assets) else 'image') if assets else None,
             'instagram_format':instagram_format, 'video_duration':max(0,min(duration,36000)), 'link_url':link,'conversation':messages,
             'text_history':clean_text_history(value.get('text_history',[])), 'composer':str(value.get('composer',''))[:12000], 'selected_platforms':[p for p in selected if p in PLATFORMS][:4],
-            'platform_selection_explicit':explicit,
+            'platform_selection_explicit':explicit, 'pending_message':pending,
             'active_platform':value.get('active_platform') if value.get('active_platform') in PLATFORMS else 'x'}
 
 

@@ -24,7 +24,7 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import Response, FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
@@ -813,9 +813,18 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
 class GenerateRequest(BaseModel):
     media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     brief:str=Field(min_length=1,max_length=12000); instruction:str=Field(default="",max_length=5000); platforms:list[str]; thread_length:int=1; link_url:str=""; draft_id:int|None=None
+    source_draft_id:int|None=Field(default=None,gt=0)
+    source_revision:int|None=Field(default=None,ge=0)
     @field_validator("thread_length")
     @classmethod
     def valid_thread(cls,v:int): return v if v in {1,3,5} else 1
+    @model_validator(mode='after')
+    def valid_source(self):
+        if (self.source_draft_id is None) != (self.source_revision is None):
+            raise ValueError('A source draft requires its saved revision.')
+        if self.source_draft_id is not None and self.draft_id is not None:
+            raise ValueError('A source draft is only valid when creating a new draft.')
+        return self
 class RewriteRequest(BaseModel):
     media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     platform:str; posts:list[str]; action:str=""; instruction:str=Field(default="",max_length=1000)
@@ -957,11 +966,16 @@ def local_media(filename:str):
 @app.post("/api/ai/generate")
 def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)):
     with allowances.ai_action(db,current_user(request).id):
-        from .workspace import EDITABLE
+        from .workspace import EDITABLE, clean_workspace
         user=current_user(request); subscription_guard(user); platforms=_validate_platforms(body.platforms); prefs=get_preferences(db,user.id)
         row=db.get(Draft,body.draft_id) if body.draft_id else None
         if body.draft_id and (not row or row.user_id!=user.id):raise HTTPException(404,'Draft not found')
         if row and row.status not in EDITABLE:raise HTTPException(409,'This draft is already submitted.')
+        source=db.get(Draft,body.source_draft_id) if body.source_draft_id is not None else None
+        if body.source_draft_id is not None:
+            if not source or source.user_id!=user.id:raise HTTPException(404,'Source draft not found')
+            if source.status not in EDITABLE:raise HTTPException(409,'This source draft is already submitted.')
+            if source.revision!=body.source_revision:raise HTTPException(409,'The source draft changed. Open the latest saved version before retrying.')
         revision=row.revision if row else 0
         from .media_inspection import inspect_assets, context as media_context
         inspected=inspect_assets(db,user.id,body.media_asset_ids)
@@ -970,11 +984,26 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
         if row:
             existing=json.loads(row.variants_json or '{}');existing.update(variants);variants=existing
             all_platforms=list(dict.fromkeys(json.loads(row.platforms_json or '[]')+platforms))
-            claimed=db.execute(update(Draft).where(Draft.id==row.id,Draft.revision==revision,Draft.status.in_(EDITABLE)).values(brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(all_platforms),variants_json=json.dumps(variants,ensure_ascii=False),thread_length=body.thread_length,revision=Draft.revision+1,updated_at=utcnow()).execution_options(synchronize_session=False))
+            workspace=json.loads(row.workspace_json or '{}');workspace['pending_message']=''
+            claimed=db.execute(update(Draft).where(Draft.id==row.id,Draft.revision==revision,Draft.status.in_(EDITABLE)).values(brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(all_platforms),variants_json=json.dumps(variants,ensure_ascii=False),workspace_json=json.dumps(workspace,ensure_ascii=False),thread_length=body.thread_length,revision=Draft.revision+1,updated_at=utcnow()).execution_options(synchronize_session=False))
             if claimed.rowcount!=1:db.rollback();raise HTTPException(409,'This draft changed while generating. Open the latest saved version.')
             db.commit();db.refresh(row)
         else:
-            row=Draft(user_id=user.id,brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(platforms),variants_json=json.dumps(variants,ensure_ascii=False),thread_length=body.thread_length)
+            target_workspace={}
+            if source:
+                # Consume the persisted retry marker in the same transaction as
+                # the new draft. Preserve every other saved workspace field.
+                workspace=json.loads(source.workspace_json or '{}')
+                workspace['pending_message']=''
+                target_workspace=clean_workspace({**workspace,'selected_platforms':platforms,
+                    'active_platform':platforms[0],'text_history':[]},db,user.id)
+                claimed=db.execute(update(Draft).where(Draft.id==source.id,Draft.user_id==user.id,
+                    Draft.revision==body.source_revision,Draft.status.in_(EDITABLE)).values(
+                    workspace_json=json.dumps(workspace,ensure_ascii=False),revision=Draft.revision+1,
+                    updated_at=utcnow()).execution_options(synchronize_session=False))
+                if claimed.rowcount!=1:
+                    db.rollback();raise HTTPException(409,'The source draft changed while generating. Open the latest saved version before retrying.')
+            row=Draft(user_id=user.id,brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(platforms),variants_json=json.dumps(variants,ensure_ascii=False),workspace_json=json.dumps(target_workspace,ensure_ascii=False),thread_length=body.thread_length)
             db.add(row);db.commit();db.refresh(row)
         readiness.event(user.id,'generated',row.id)
         return {'draft_id':row.id,'variants':variants,'saved':True,'revision':row.revision}

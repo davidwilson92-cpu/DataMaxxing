@@ -1,3 +1,15 @@
+# Studio sent-message and TikTok drafting correction — 18 October 2026 (not deployed)
+
+Branch codex/studio-send-recovery-20261018 addresses two owner-reported defects: sent ideas remaining in the composer and TikTok-only sponsor/paid-partnership drafting incorrectly demanding an X version. Planner targets now follow the actual selected/active caption and create a first version when no caption exists; sponsor URLs are content, not destination changes. Sent text moves into the conversation before planning; failed requests have a separate Retry message control, retain attachments and unsent new input, survive reload, and do not duplicate the user turn. Initial save failure keeps input in place. Late replies remain workspace-bound. Pending-message metadata is additive; no schema migration.
+
+Synthetic browser checks: exact screenshot request produced a TikTok caption, empty composer persisted after reload; 390px mobile failed generation/reload/keyboard retry succeeded with one user turn, no horizontal overflow. Evidence locally under social-proof/studio-sent-tiktok-20261018.png and studio-retry-mobile-20261018.png. Model/providers mocked; no real post, grant, charge or production data changed. Additional atomic-generation recovery and hosted checks are being validated; do not deploy before the final evidence below.
+
+Commercial-disclosure tests verify existing own-brand/paid selection, label/declaration changes, consent reset, private-paid rejection and immutable options. Sandbox remains unaudited/Only me; an actual paid-partnership post cannot use Only me. Demonstrate controls without publishing; public-access audit approval remains required. Production stays inbox-only, Instagram unchanged, native branch not deployed. All 79 broader beta findings retained.
+
+Rollback: revert this bounded candidate or redeploy sandbox runtime 89e7cf716d82f358d52515b58313862f0258c7eb. Preserve data, uploads, sessions, connections and publication receipts; never resend prior tests. Old code ignores pending_message JSON. Free sandbox storage remains ephemeral; no deployment was requested in this update.
+
+---
+
 # Sandbox release verified — 16 October 2026
 
 Owner requested publish. Deployed exact89e7cf716d82f358d52515b58313862f0258c7eb to existing Free TikTok sandbox only. Render dep-db9819ff3r2c73afr1p0 reports Deploy succeeded|Live. CI38957921987 passed all gates:319passed/1skipped each on SQLite/PostgreSQL, synthetic backup restore, image build/smoke, dependency audit and exact beta scope. Public health/login200; deployed studio-publish.js, studio-state.js, readiness.js, studio-design.css and studio.js match local candidate byte-for-byte after newline normalization. Evidence social-proof/sandbox-release-89e7cf7.png.

@@ -99,3 +99,13 @@ Current production baseline: main `78d9924` (21 September Instagram reauthentica
 See `COMMERCIAL_OPERATIONS_20260920.md`, `CUSTOMER_VALIDATION_20260920.md` and `COMMERCIAL_READINESS_EVIDENCE_20260920.md`. Provider approval is never inferred from code, old credentials, a connected status or a mock.
 
 Next move simplification: automatically fills empty/stale recommendations; post-first card with one draft action; compact alternatives/context/settings; linked draft title and explicit platform saved. Browser synthetic goal-to-draft/reload and failure/late-navigation harnesses validated. Live model relevance remains a separate check. See NEXT_MOVE_SIMPLE_20261010.md.
+
+## 18 October 2026 — focused draft recovery candidate (not deployed)
+
+| Capability | Implementation/evidence | Remaining boundary |
+|---|---|---|
+| Sent-message composer | Sent idea moves to conversation; empty composer persists; separate recoverable retry | Synthetic desktop/mobile only; release checks tracked in handoff |
+| TikTok sponsor captions | Selection-bound planning; first caption generated instead of missing X rewrite | Mocked model coverage; no real paid post |
+| TikTok disclosure | Own/paid flags, labels, consent reset, privacy restrictions and immutable review tested | Sandbox private-only; public-access audit needed for paid partnership delivery |
+
+Existing users/data/auth/social integrations and all 79 broader beta findings remain preserved.

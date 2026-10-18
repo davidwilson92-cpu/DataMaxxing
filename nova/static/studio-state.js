@@ -27,7 +27,7 @@ function addAssistantMessage(text,extra=''){
 function draftPayload(){
   return {brief:lastBrief,instruction:'',platforms:Object.keys(variants),variants,revision:draftRevision,thread_length:+document.getElementById('threadLength').value,
     workspace:{instagram_format:instagramFormat(),media_asset_ids:uploadedMediaIds,video_duration:uploadedVideoDuration,link_url:document.getElementById('linkUrl').value,
-      conversation,text_history:textHistory,composer:document.getElementById('brief').value,selected_platforms:selectedPlatforms(),platform_selection_explicit:platformSelectionExplicit,active_platform:currentPlatform}};
+      conversation,text_history:textHistory,composer:document.getElementById('brief').value,pending_message:retryTurn?.text||'',selected_platforms:selectedPlatforms(),platform_selection_explicit:platformSelectionExplicit,active_platform:currentPlatform}};
 }
 function scheduleAutosave(){
   if(studioLoading || !editableDraft())return;
@@ -82,22 +82,40 @@ function studioBusy(active){
   document.getElementById('newChatBtn').disabled=active;
   document.querySelectorAll('#variantEditor textarea').forEach(node=>node.readOnly=active||!editableDraft());
   document.querySelectorAll('.platform-check input,[name=instagramFormatChoice],#threadLength,#instagramFormat,#linkUrl,#mediaInput,.attachment-details button').forEach(node=>node.disabled=active||!editableDraft());
+  renderMessageRetry();
 }
-async function sendMessage(){
-  const input=document.getElementById('brief'),text=input.value.trim();
+function renderMessageRetry(){
+  document.getElementById('messageRetry')?.remove();
+  if(!retryTurn||sendingMessage||!editableDraft())return;
+  document.getElementById('chatFeed').insertAdjacentHTML('beforeend','<div id="messageRetry" class="message-retry"><p>Your message is kept above.</p><button class="button ghost" type="button" onclick="retryMessage()">Retry message</button></div>');
+}
+async function retryMessage(){
+  if(retryTurn?.draftId!==currentDraftId)return;
+  await sendMessage(retryTurn.text);
+}
+async function sendMessage(retryText=null){
+  const input=document.getElementById('brief'),text=(retryText??input.value).trim();
   if(!text||sendingMessage||studioLoading||mediaUploading||!editableDraft())return;
   studioBusy(true);invalidateReview();
   const epoch=workspaceEpoch;let responseApplied=false,turnAdded=false;
   try{
     await saveDraftNow();
     if(epoch!==workspaceEpoch)return;
+    const recentMessages=conversation.slice(-12);
+    stickToLatest=true;
+    if(!(retryTurn?.draftId===currentDraftId&&retryTurn.text===text))addUserMessage(text);
+    turnAdded=true;retryTurn={draftId:currentDraftId,text};
+    if(retryText===null)input.value='';
+    sizeComposer();scrollChat(true);changeSerial++;
     addThinking();
-    const plan=await api('/api/conversation/plan',{method:'POST',headers,body:JSON.stringify({message:text,draft_id:currentDraftId,selected_platforms:selectedPlatforms(),platform_selection_explicit:platformSelectionExplicit,active_platform:currentPlatform,recent_messages:conversation.slice(-12),media_asset_ids:uploadedMediaIds})});
+    await saveDraftNow();
+    if(epoch!==workspaceEpoch)return;
+    const selected=selectedPlatforms();
+    const active=selected.includes(currentPlatform)?currentPlatform:selected[0]||currentPlatform;
+    const plan=await api('/api/conversation/plan',{method:'POST',headers,body:JSON.stringify({message:text,draft_id:currentDraftId,selected_platforms:selected,platform_selection_explicit:platformSelectionExplicit,active_platform:active,recent_messages:recentMessages,media_asset_ids:uploadedMediaIds})});
     if(epoch!==workspaceEpoch)return;
     removeThinking();stickToLatest=true;
-    if(!(retryTurn?.draftId===currentDraftId&&retryTurn.text===text))addUserMessage(text);
-    turnAdded=true;retryTurn=null;
-    if(plan.media_inspection?.length)showMediaInspection(plan.media_inspection);scrollChat(true);input.value='';sizeComposer();changeSerial++;addThinking();
+    if(plan.media_inspection?.length)showMediaInspection(plan.media_inspection);scrollChat(true);addThinking();
     if(plan.action==='answer'){removeThinking();addAssistantMessage(plan.reply||'What would you like to create or change?');}
     else if(plan.action==='insight'){
       const result=await api('/api/insights',{method:'POST',headers,body:JSON.stringify({question:text})});if(epoch!==workspaceEpoch)return;removeThinking();addAssistantMessage(result.answer);
@@ -123,7 +141,7 @@ async function sendMessage(){
       if(newDraft)await saveDraftNow();
       const targets=plan.action==='add_platforms'?platforms.filter(p=>!variants[p]):platforms;
       if(!targets.length)throw new Error('Those versions already exist. Tell me what to change in them.');
-      const result=await api('/api/ai/generate',{method:'POST',headers,body:JSON.stringify({media_asset_ids:uploadedMediaIds,brief:plan.action==='add_platforms'?(lastBrief||text):creationBrief,instruction:instagramInstruction(targets.includes('instagram')?'instagram':'',plan.action==='add_platforms'?text:''),platforms:targets,thread_length:+document.getElementById('threadLength').value,link_url:document.getElementById('linkUrl').value,draft_id:newDraft?null:currentDraftId})});
+      const result=await api('/api/ai/generate',{method:'POST',headers,body:JSON.stringify({media_asset_ids:uploadedMediaIds,brief:plan.action==='add_platforms'?(lastBrief||text):creationBrief,instruction:instagramInstruction(targets.includes('instagram')?'instagram':'',plan.action==='add_platforms'?text:''),platforms:targets,thread_length:+document.getElementById('threadLength').value,link_url:document.getElementById('linkUrl').value,draft_id:newDraft?null:currentDraftId,...(newDraft?{source_draft_id:currentDraftId,source_revision:draftRevision}:{})})});
       if(epoch!==workspaceEpoch)return;
       if(newDraft){textHistory=[];publicationStates={};currentDraftTitle='';}
       selectStudioPlatforms(plan.action==='add_platforms'?[...new Set([...selectedPlatforms(),...targets])]:targets);
@@ -133,12 +151,12 @@ async function sendMessage(){
       removeThinking();editingDraft=false;renderCanvas(draftWorkspace());scrollChat(true);
     }
     if(epoch!==workspaceEpoch)return;
-    responseApplied=true;changeSerial++;await saveDraftNow();
+    responseApplied=true;retryTurn=null;changeSerial++;await saveDraftNow();
   }catch(error){
     if(epoch!==workspaceEpoch)return;
     removeThinking();
     if(responseApplied){setAutosaveStatus('Save failed — retry');document.getElementById('undoStatus').textContent='Your response is ready here, but it has not saved. Use Retry save to keep it.';}
-    else{input.value=text;retryTurn=turnAdded?{draftId:currentDraftId,text}:null;changeSerial++;addAssistantMessage(error.message||'I couldn’t finish that yet. Your message is ready to try again.');try{await saveDraftNow();}catch{setAutosaveStatus('Unsaved changes — retry');}}
+    else{retryTurn=turnAdded?{draftId:currentDraftId,text}:retryTurn;changeSerial++;addAssistantMessage(error.message||'I couldn’t finish that yet. Please retry.');try{await saveDraftNow();}catch{setAutosaveStatus('Unsaved changes — retry');}}
   }
   finally{if(epoch===workspaceEpoch){studioBusy(false);renderReadiness();sizeComposer();if(window.matchMedia('(min-width: 761px)').matches)input.focus();}}
 }
@@ -160,6 +178,7 @@ async function loadRequestedDraft(){
     const selected=savedPlatformSelection(row);document.querySelectorAll('.platform-check input').forEach(node=>node.checked=selected.includes(node.value));
     conversation=[];document.getElementById('chatFeed').innerHTML='';
     for(const message of ws.conversation||[]){if(message.role==='user')addUserMessage(message.content);else addAssistantMessage(message.content);}
+    if(ws.pending_message&&conversation.some(m=>m.role==='user'&&m.content===ws.pending_message))retryTurn={draftId:row.id,text:ws.pending_message};
     if(Object.keys(variants).length)renderCanvas(draftWorkspace());
     if(!conversation.length&&!Object.keys(variants).length)addAssistantMessage('Your saved workspace is ready.');
     renderAttachments();setAutosaveStatus(editableDraft()?'Saved':currentDraftStatus);

@@ -158,4 +158,6 @@
  .simple-chat .composer-footnote{font-size:11px}
 }
 .simple-chat .composer-toolbar{grid-row:auto;grid-column:2}
+.simple-chat .message-retry{margin:8px 0 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.simple-chat .message-retry p{margin:0;color:#61566e;font-size:14px}
 @media(max-width:760px){.simple-chat .composer-toolbar{grid-column:1/-1}}
