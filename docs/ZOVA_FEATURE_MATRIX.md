@@ -1,3 +1,9 @@
+# TikTok approval status — 18 October 2026
+
+App revision with video.publish and merged 3m51s demonstration: **submitted, In review** (portal verified). Separate public-access audit: **prepared, not submitted**; awaiting owner acceptance of final legal declarations. Recording demonstrates private Direct Post, actual TikTok result, editable caption, privacy/consent and disclosure controls. It does not prove public paid-partnership publishing, native iOS readiness or unrestricted reviewer access. Production remains inbox-only. See current handoff for evidence and continuation.
+
+---
+
 # 18 October 2026 — sent-media and TikTok outcome update (sandbox deployed)
 
 | Capability | Implementation / evidence | Remaining boundary |
