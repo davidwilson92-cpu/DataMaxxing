@@ -1,3 +1,11 @@
+# TikTok public-access audit submitted — 18 October 2026
+
+Owner approved the final Direct Post audit declarations. Accepted the three displayed declarations and submitted the prepared audit for app7672846663509215253 with the reviewed3m51s/4.65MB merged video. TikTok explicitly confirmed: “Your Application to request access to Content Posting API has been submitted!” It states an expected response in2-4weeks and directs checking Manage apps for status. Evidence: social-proof/tiktok-final-1810/audit-submitted.png and audit-submitted.txt. This is submission confirmation, not approval.
+
+Both outstanding requests are now submitted: app revision/video.publish is In review; separate Content Posting API public-access audit is submitted. Await TikTok decisions. Production remains inbox-only; do not activate Direct Post or infer scope upgrade from submission. After both required approvals, verify live permissions, reconnect for video.publish with the account owner's consent, and run a specifically authorised public publishing test before controlled rollout. No real post, production deployment, grant change, billing or iOS rollout occurred in this submission step. All79 broader gaps retained.
+
+---
+
 # TikTok review package and app submission — 18 October 2026
 
 Owner authorised merging/trimming/compressing the main v2 recording and the commercial-content addendum, final review, and submission. Final video: C:/Users/david/Videos/Zova TikTok Direct Post - review package 1810.mp4; 231.37 seconds, 4,648,050 bytes, 1920x960 at15fps, AAC audio retained. SHA256 eb082a3f43bcf0338a8ed96f379acd979af713e822f2aacd798c9c5ca2097a72. Full video/audio decoding passed; key scenes and boundaries visually reviewed. Kept main0-112s,123-190s,202-221.166633s;4s labelled supplement transition; addendum49-78.207979s. Cuts remove waiting/repeated drafting; no fabricated provider outcome. New recording supplement starts3:22. Local evidence/manifest under social-proof/tiktok-final-1810/.
