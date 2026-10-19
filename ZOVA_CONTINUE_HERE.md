@@ -1,3 +1,13 @@
+# Browser confirmation recovery live — 19 October 2026,15:39 BST
+
+Server8846cbc3ef9aa389dabded81e07936e3e021a714 is Live on Render dep-dbb2mmfbtjjs7394qmi0, started15:38:17 BST,50.4s. Public health/login/native-config200. Application39270163640 succeeded490/1 skipped each SQLite/PostgreSQL plus dependency/restore/container/exact-scope checks. New repeated-form/device-isolation regressions passed. Native code is unchanged from shipped8; PR native39270163584 also SUCCEEDED. Recovery HTML visually inspected using a loopback-only disposable-account preview; no production auth bypass or test data installed.
+
+Verified public callback settings on live instance using only whitelisted nonsecret environment reads: Instagram redirect is https://zova-social.com/oauth/instagram/callback, client configured, scopes default. No credentials accessed or changed. Rejected repeat-submit matches owner Safari screenshot and production303→403→401 sequence. Recovery removes raw JSON for these browser requests without issuing new cookies or reviving authority. Owner asked for a fresh attempt on8 and whether Instagram shows Allow/permissions versus only its feed. Provider return and final account confirmation remain UNVERIFIED; last inspected hour has no direct Instagram callback. Do not claim the Instagram integration is fully repaired from the browser-recovery tests alone. No new TestFlight build required.
+
+Rollback to39d0d17 / dep-dbb28fc9v7es73aec6sg preserves the browser-only weblink marker but restores the repeat-form expiry defect. No schema/data/connection changes; do not erase records or replay posts. All79 wider gaps retained.
+
+---
+
 # Browser confirmation replay reproduced; recovery candidate — 19 October 2026
 
 Owner reports progress: can sign into Instagram but stays there; returning/retrying shows Safari raw JSON Browser confirmation expired (15:27 screenshot). Production last-hour logs show native browser POST303 at15:26:22, then POST403 and GET401 at15:26:23. Instagram start302 at15:25:39 but NO Instagram callback in the inspected hour. Do not conflate the proved Zova resubmission defect with an already-solved provider return; no final grant acceptance observed. Asked owner whether Allow/permissions or exact-account Zova review appeared; answer pending.
