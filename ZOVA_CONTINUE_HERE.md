@@ -1,3 +1,25 @@
+# Native9 accepted by Apple; App Store Connect sign-in required — 19 October2026,16:25 BST
+
+Codemagic6ad634947550aed810902dd4 FINISHED3m29s. Apple upload succeeded16:25:19 BST, delivery/build UUID e309aeb4-126e-48bb-a4eb-fc4a4d1a21d2, Zova0.1.0(9), com.zovasocial.app, source419d452. Existing signing profile/certificate/workflow only. Server419d452 is already LIVE (Render dep-dbb3804s728c73a8jaug); application513/1 skipped each database and native16 unit/1 UI/release checks passed. Shared Studio/Account inspected live, screenshots saved below. User-facing update already explains shared UI is live.
+
+Refreshing App Store Connect tab38 redirected to Apple login authResult=FAILED. This is an expired browser session, not a rejected build. Asked owner to sign in to existing App Store Connect tab, including verification, and tell us when in; answer pending. Do not enter/ask for passwords or codes. Apple processing, build9 What to Test notes and assignment to existing Zova Social Internal Beta group a74d0ba7-0d28-4f11-bfb3-c77e75986ba8 remain TO DO. Do not claim9 can be installed until status Testing/group confirmed. Existing8 remains delivered fallback; avoid duplicate signed builds. Native phone automatic dismissal remains unverified until owner updates and accepts profile in a fresh flow. No real social posts or grant changes authorised/tested here.
+
+Next: after owner signs in, refresh/read /apps/6824416979/testflight/ios, find9 (UUID above), wait for processing if needed, set concise notes covering all four social returns after final profile confirmation/cancel plus slim header/Account rows/no raw IDs, add existing internal group and verify Testing/1 tester. No new app, identifier, key, certificate, tester or public release. Then tell owner update0.1.0(9), fully close/reopen, retry one connection without deleting existing ones and report whether browser dismisses. Keep all79 wider gaps, existing identity/data/attachments/connections, explicit publishing approvals, unknown-outcome protection and disabled charges. Rollback server8846cbc/native8; no stale data restore/resend.
+
+Browser handoffs: Codemagic tab37 (new build receipt) and Apple tab38 (login) marked for continuation; browserID2. Temporary local preview31502 STOPPED; preview/live-review/Render tabs closed. User's pre-existing Studio7 and provider tabs left unchanged. Local visual proofs retained under ignored social-proof; do not recreate a test service in production.
+
+---
+
+# Shared slimmer UI live; native9 uploading — 19 October2026,16:23 BST
+
+Runtime419d4520fb76a357f007a6c95c274f78c26625d1 is LIVE on Render dep-dbb3804s728c73a8jaug, started16:15:12 BST,1m17s; service live16:16:29. Public health/login/native-config200; public studio-layout.css, zova-night.css and studio-publish.js hash-match reviewed source. Existing signed-in browser Studio/Account inspected without submitting posts/settings; Studio weekly summary absent, plain Account rows present. Evidence social-proof/studio-slim-live-20261019.png and account-rows-live-20261019.png. No provider grants or customer data changed.
+
+Exact candidate application39275914996 SUCCEEDED513/1 skipped each SQLite/PostgreSQL, dependencies/restore/container/exact-scope guards. Native39275915374 SUCCEEDED16 unit tests,1 UI test and iPhone release compilation. First application attempt had two obsolete tests expecting the weekly summary in Studio; moved assertions to Drafts and assert absence in Studio, preserving pending/overdue visibility there. Older duplicate/outdated checks cancelled to avoid needless work; no failed gate waived.
+
+Codemagic6ad634947550aed810902dd4 is PUBLISHING Zova0.1.0(9), com.zovasocial.app, exact source419d452, correct branch codex/ios-beta-20261019, index8, existing workflow/profile/certificate. Machine started16:21 BST. No new signing permissions, credentials, billing or other-app changes. Apple upload acceptance/processing/internal-group availability still pending; do NOT yet tell owner9 can be installed. Build8 remains latest delivered. Hold runtime changes; finish this delivery before new work. All79 wider gaps retained; rollback server8846cbc and native8 without restoring stale data or replaying uncertain posts.
+
+---
+
 # Social return and slimmer UI candidate — 19 October 2026
 
 Owner confirms Instagram CONNECTS on the iPhone after converting to an eligible professional account. This supersedes earlier pending connection acceptance; no real publishing acceptance is inferred. New request: return to app after every social connection, fewer steps, aligned slim header, remove Studio weekly summary, hide raw account IDs, plain Account rows.

@@ -1,3 +1,17 @@
+### Build9 delivery checkpoint — 19 October2026,16:25 BST
+
+Apple accepted0.1.0(9) from419d452 at16:25:19 BST, UUID e309aeb4-126e-48bb-a4eb-fc4a4d1a21d2. Codemagic6ad634947550aed810902dd4 completed3m29s. App Store Connect browser session expired on refresh; owner asked to sign back in. Processing, What to Test notes and existing internal-group assignment remain pending; do not claim installed/available or physical return acceptance. Server419d452 is Live. No duplicate signing or production billing/publishing changes.
+
+## 19 October follow-up: slimmer UI and social return
+
+Owner confirmed Instagram connects on the physical iPhone after its professional-account eligibility step. Separate from publishing: no new real post test was run. Updated app is now intended to dismiss the secure system browser after final profile confirmation for Instagram (both routes), Facebook, X and TikTok; connected/cancelled/error outcomes are navigation signals only. A hashed per-attempt state and exact platform/host/path/query are validated by the native client, while the server requires a signed, short-lived receipt and matching active device cookie. Provider tokens never enter native callback URLs. Account mismatch cancellation, final profile confirmation, one-use grants, workspace ownership and reviewed publishing remain enforced.
+
+Native transfer screen now combines account identity and provider choice, saving one screen/tap. Default Instagram uses direct login; Facebook-linked alternative remains available. Personal-account restriction is explained before leaving Zova. Existing build8 remains compatible but needs a new binary for automatic dismissal. Physical return behavior for all providers still needs owner acceptance; synthetic provider tests do not establish it.
+
+Visual review:393px mobile preview shows Zova, +New post and Next move aligned at44px; Studio weekly summary removed, Drafts summary retained. Account is a flat list with icons and disclosure chevrons; expansion and typing focus inspected. Shared core screens remain light and Account/bridges dark. Destination IDs remain in server-reviewed immutable snapshots but not customer labels. Evidence: social-proof/studio-header-slim-20261019.png and account-rows-20261019.png (synthetic local account only).
+
+Application39275914996 at419d452 passed513 tests/1 skipped on each SQLite and PostgreSQL, dependency audit, container smoke, backup restoration and exact beta scope. Previous run failed two old assertions expecting the weekly summary in Studio; updated assertions verify it in Drafts and its absence in Studio. No safeguard weakened. Native39275915374 SUCCEEDED16 unit tests,1 UI test and release compilation. Server419d452 is Live at dep-dbb3804s728c73a8jaug (16:15:12 BST,1m17s). Codemagic6ad634947550aed810902dd4 is uploading0.1.0(9), com.zovasocial.app, from exact419d452; Apple acceptance/internal group still pending. Rollback server8846cbc, native8; retain current customer data and publication ledgers, do not replay uncertain posts. All79 wider deferred commercial gaps remain.
+
 # Zova Social iPhone beta — 19 October 2026
 
 ## Latest delivered beta:0.1.0(8)
