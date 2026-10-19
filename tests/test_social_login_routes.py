@@ -37,12 +37,15 @@ def state_from(response):
     return parse_qs(urlsplit(response.headers["location"]).query)["state"][0]
 
 
-def test_instagram_uses_only_instagram(signed_in):
+@pytest.mark.parametrize('agent', ['Mozilla/5.0 (iPhone; CPU iPhone OS 27_0_1 like Mac OS X)', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'])
+def test_instagram_uses_only_instagram(signed_in, agent):
     client, _ = signed_in
-    response = client.get("/oauth/instagram/start", follow_redirects=False)
+    response = client.get("/oauth/instagram/start", headers={'user-agent': agent}, follow_redirects=False)
     parsed = urlsplit(response.headers["location"])
     assert parsed.hostname == "www.instagram.com"
+    assert parsed.fragment == 'weblink'
     query = parse_qs(parsed.query)
+    assert 'weblink' not in query
     assert query["scope"] == ["instagram_business_basic,instagram_business_content_publish"]
     assert query["enable_fb_login"] == ["false"]
     assert query["force_reauth"] == ["true"]

@@ -1,3 +1,13 @@
+# Build8 phone failure confirmed; Instagram web-link correction in validation — 19 October 2026
+
+Owner confirms updated8 still launches Instagram with the error. Mark normal-browser-only remedy unsuccessful for the actual phone; do not repeat it as a proved fix. Asked whether Safari shows the Zova confirmation/connect page before the app opens; answer pending. No new signup request.
+
+Primary evidence from https://www.instagram.com/.well-known/apple-app-site-association (captured social-proof/instagram-aasa-20261019.json): Instagram's modern components first excludes fragment weblink. OAuth /oauth/authorize/* is excluded but exact no-slash /oauth/authorize is not in that modern list; legacy paths separately exclude the exact path. Current Zova URL lacks fragment. Hypothesis: app-link resolution can send exact OAuth URL to Instagram's broken native page. This is evidence for a targeted correction, not proof of every redirect on the phone.
+
+Candidate adds only #weblink to Instagram's existing authorization URL, preserving endpoint, scope, reauthentication, state and callback. Fragment is separate from HTTP query; no grants changed. iPhone/desktop route tests verify fragment and unchanged permissions/callback; existing mocked callback, ownership, confirmation and native handoff tests retained. No new iPhone binary should be needed for this server URL correction. Full required application gates and deployment must pass; owner device/provider retest remains required. No phone-success claim before acceptance. Previous0cb83b2 is rollback, with the known failing app handoff.
+
+---
+
 # Replacement iPhone beta8 released — 19 October 2026,14:39 BST
 
 Zova Social0.1.0(8) is now **Testing** in the existing Zova Social Internal Beta group with1 tester. Apple build4c7fd194-4007-4da5-b766-b23639c4375f. Signed source0cb83b2; Codemagic6ad61b167550aed81090246d finished3m21s, upload accepted14:36:31 BST. Apple processing completed and group assigned around14:39 BST. Focused What to Test notes saved for browser Instagram return, exact Zova email, account switching, light core/dark Account and typing layout. Owner told to update to8 and retry Instagram. **Physical Instagram acceptance is still pending**; do not claim the provider loop is fixed on the phone merely because build8 is available.

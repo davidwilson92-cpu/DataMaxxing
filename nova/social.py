@@ -188,7 +188,11 @@ def instagram_authorize_url(state: str) -> str:
         # Reauthenticate even when this browser already has an Instagram session.
         "force_reauth": "true",
     }
-    return "https://www.instagram.com/oauth/authorize?" + urlencode(params)
+    # Instagram's published apple-app-site-association excludes #weblink from
+    # app links. Keep OAuth in the browser rather than its failing native page.
+    # The fragment is not sent in the HTTP query; state/scopes/callback stay intact.
+    # Source: https://www.instagram.com/.well-known/apple-app-site-association
+    return "https://www.instagram.com/oauth/authorize?" + urlencode(params) + "#weblink"
 
 
 def instagram_exchange(code: str) -> dict[str, Any]:
