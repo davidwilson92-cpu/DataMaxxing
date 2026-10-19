@@ -1,0 +1,86 @@
+name: Zova
+options:
+  bundleIdPrefix: com.zovasocial
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: "$(ZOVA_TEAM_ID)"
+    ZOVA_SERVER_URL: "https://zova-social.com"
+    ZOVA_BUNDLE_ID: "com.zovasocial.app"
+    ZOVA_TEAM_ID: "7B4W8RN6GX"
+targets:
+  Zova:
+    type: application
+    platform: iOS
+    sources:
+      - path: Zova
+        excludes: [Info.plist, Zova.entitlements, PrivacyInfo.xcprivacy]
+      - path: Zova/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    info:
+      path: Zova/Info.plist
+      properties:
+        CFBundleDisplayName: Zova
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        ZovaServerURL: "$(ZOVA_SERVER_URL)"
+        ITSAppUsesNonExemptEncryption: false
+        LSRequiresIPhoneOS: true
+        UIApplicationSupportsIndirectInputEvents: true
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        NSCameraUsageDescription: Take a photo or record a video to attach to a post you choose to create.
+        NSMicrophoneUsageDescription: Record sound when you choose to capture a video for your post.
+        NSPhotoLibraryUsageDescription: Choose photos and videos to attach to your Zova posts.
+    entitlements:
+      path: Zova/Zova.entitlements
+      properties:
+        com.apple.developer.associated-domains:
+          - applinks:zova-social.com
+          - webcredentials:zova-social.com
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: "$(ZOVA_BUNDLE_ID)"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_EMIT_LOC_STRINGS: YES
+        GENERATE_INFOPLIST_FILE: NO
+  ZovaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [ZovaTests]
+    dependencies:
+      - target: Zova
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.zovasocial.app.tests
+  ZovaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [ZovaUITests]
+    dependencies:
+      - target: Zova
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.zovasocial.app.uitests
+schemes:
+  Zova:
+    build:
+      targets:
+        Zova: all
+    test:
+      targets: [ZovaTests, ZovaUITests]
+      gatherCoverageData: true
+    archive:
+      config: Release

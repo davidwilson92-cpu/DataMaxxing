@@ -461,6 +461,49 @@ class SeriesApproval(BrandScoped, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class MobileGrant(Base):
+    __tablename__ = 'zova_mobile_grants'
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    client_id: Mapped[str] = mapped_column(String(40))
+    redirect_uri: Mapped[str] = mapped_column(String(500))
+    challenge: Mapped[str] = mapped_column(String(43))
+    state: Mapped[str] = mapped_column(String(128))
+    user_id: Mapped[int | None] = mapped_column(ForeignKey('nova_users.id'), nullable=True)
+    auth_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    code_hash: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class MobileSession(Base):
+    __tablename__ = 'zova_mobile_sessions'
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    auth_version: Mapped[int] = mapped_column(Integer)
+    access_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    access_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MobileRefresh(Base):
+    __tablename__ = 'zova_mobile_refresh_tokens'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    session_id: Mapped[str] = mapped_column(ForeignKey('zova_mobile_sessions.id'), index=True)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class MobileHandoff(Base):
+    __tablename__ = 'zova_mobile_handoffs'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    session_id: Mapped[str] = mapped_column(ForeignKey('zova_mobile_sessions.id'), index=True)
+    destination: Mapped[str] = mapped_column(String(500))
+    purpose: Mapped[str] = mapped_column(String(20))
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
 Base.metadata.create_all(bind=engine)
 from .migrations import run_migrations
 run_migrations(engine)

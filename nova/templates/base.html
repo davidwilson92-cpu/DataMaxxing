@@ -17,8 +17,9 @@
 <link rel="stylesheet" href="/static/commercial-polish.css?v=20261008">
 <link rel="stylesheet" href="/static/social-brand.css?v=20261012-design"><script src="/static/social-brand.js?v=20261012-focus"></script>
 {% block head %}{% endblock %}
+{% if native_shell %}<link rel="stylesheet" href="/static/ios-shell.css?v=20261019"><script defer src="/static/ios-shell.js?v=20261019"></script>{% endif %}
 </head>
-<body class="{% block body_class %}{% endblock %}">
+<body class="{% block body_class %}{% endblock %}{% if native_shell %} ios-shell{% endif %}">
 {% block site_header %}
 <header class="site-header">
 <a class="brand" href="/">{% include "logo_mark.html" %}<span>Zova</span></a>

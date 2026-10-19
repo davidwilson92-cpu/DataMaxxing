@@ -7,3 +7,13 @@ __pycache__/
 uploads/
 
 .validation-tmp*/
+*.p8
+*.p12
+*.mobileprovision
+*.xcarchive/
+ios/*.xcodeproj/
+ios/Zova/Info.plist
+ios/Zova/Zova.entitlements
+ios-build/
+*.xcresult/
+social-proof/

@@ -7,3 +7,5 @@ uploads/
 __pycache__/
 .pytest_cache/
 docs/validation/
+ios/
+social-proof/

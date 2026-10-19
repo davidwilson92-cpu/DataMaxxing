@@ -68,7 +68,8 @@ def template_context(request: Request, user: User | None = None, **kwargs: Any) 
     if user and not hasattr(request.state,'brand_id'):
         with SessionLocal() as context_db:brands.bind_request(context_db,request)
     brand = brands.context(user, getattr(request.state, 'brand_id', 0)) if user else None
-    return {"request": request, "user": user, "brand": brand, "connections": connection_options(), **customer_service.context(), **kwargs}
+    native_shell = request.cookies.get('nova_session', '').startswith('ios.')
+    return {"request": request, "user": user, "brand": brand, "native_shell": native_shell, "connections": connection_options(), **customer_service.context(), **kwargs}
 
 
 def set_user_cookie(response: RedirectResponse | JSONResponse, user: User) -> None:
@@ -1248,3 +1249,12 @@ def media_preview(asset_id:int,request:Request,db:Session=Depends(get_db)):
 
 from .connection_review import router as connection_review_router
 app.include_router(connection_review_router)
+
+# Native authority is disabled by default; the existing Studio stays shared.
+from .mobile_auth import router as mobile_auth_router
+from .mobile_shell import router as mobile_shell_router, MobileContinuationMiddleware
+from .access_logging import install as redact_access_logs
+redact_access_logs()
+app.include_router(mobile_auth_router)
+app.include_router(mobile_shell_router)
+app.add_middleware(MobileContinuationMiddleware)
