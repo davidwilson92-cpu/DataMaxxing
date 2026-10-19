@@ -11,6 +11,22 @@ final class NativeProtocolTests: XCTestCase {
     func testS256StandardVector() {
         XCTAssertEqual(NativeProof.challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"), "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
     }
+    func testCancellationRequiresTheSameOwnedCallbackAndState() throws {
+        let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
+        let state = String(repeating: "s", count: 43)
+        do {
+            _ = try NativeProof.code(from: URL(string: "https://zova-social.com/mobile/callback?error=access_denied&state=\(state)")!, configuration: configuration, state: state)
+            XCTFail("Expected cancellation")
+        } catch ZovaFailure.cancelled { }
+        for value in [
+            "https://zova-social.com/mobile/callback?error=access_denied&state=wrong",
+            "https://evil.test/mobile/callback?error=access_denied&state=\(state)",
+            "https://zova-social.com/mobile/callback?error=other&state=\(state)"
+        ] {
+            do { _ = try NativeProof.code(from: URL(string: value)!, configuration: configuration, state: state); XCTFail("Expected invalid callback") }
+            catch ZovaFailure.invalidCallback { }
+        }
+    }
     func testCallbackChecksStateHostPathAndDuplicates() throws {
         let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
         let code = String(repeating: "c", count: 43), state = String(repeating: "s", count: 43)

@@ -80,9 +80,13 @@ enum NativeProof {
     static func code(from url: URL, configuration: ZovaConfiguration, state: String) throws -> String {
         guard configuration.owns(url), url.path == configuration.callback.path, url.fragment == nil,
               let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
-              items.count == 2, Set(items.map(\.name)) == Set(["code", "state"]),
+              items.count == 2,
               let returnedState = items.first(where: { $0.name == "state" })?.value,
-              equal(state, returnedState), let code = items.first(where: { $0.name == "code" })?.value,
+              equal(state, returnedState) else { throw ZovaFailure.invalidCallback }
+        if Set(items.map(\.name)) == Set(["error", "state"]), items.first(where: { $0.name == "error" })?.value == "access_denied" {
+            throw ZovaFailure.cancelled
+        }
+        guard Set(items.map(\.name)) == Set(["code", "state"]), let code = items.first(where: { $0.name == "code" })?.value,
               (40...100).contains(code.count), code.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == "-") })
         else { throw ZovaFailure.invalidCallback }
         return code

@@ -98,22 +98,32 @@ def consent(grant_id: str, request: Request):
     <p>Your drafts, strategy and connected accounts will be available in the app. Posting still needs your approval.</p>
     <form method="post"><input type="hidden" name="proof" value="{proof}"><button type="submit">Continue to the app</button></form>
     <p><a href="/login?next=/mobile/authorize/{html.escape(grant_id)}">Use a different account</a></p>
-    <a href="/studio">Cancel</a></main></body></html>''')
+    <form method="post"><input type="hidden" name="proof" value="{proof}"><button type="submit" name="decision" value="cancel">Cancel sign-in</button></form></main></body></html>''')
 
 
 @router.post('/mobile/authorize/{grant_id}', include_in_schema=False)
-def approve(grant_id: str, request: Request, proof: str = Form(...)):
+def approve(grant_id: str, request: Request, proof: str = Form(...), decision: str = Form('approve')):
     require_enabled()
     token = request.cookies.get('nova_session', '')
     user = user_from_session(token)
     if not user or not hmac.compare_digest(proof, consent_proof(grant_id, token)):
         raise HTTPException(403, 'Sign-in confirmation expired')
+    if decision not in {'approve', 'cancel'}:
+        raise HTTPException(400, 'Invalid sign-in decision')
     code = secrets.token_urlsafe(32)
     with SessionLocal() as db:
         row = db.get(MobileGrant, grant_id)
         if not row:
             raise HTTPException(400, 'Sign-in request expired')
         validate_client(row.client_id, row.redirect_uri)
+        if decision == 'cancel':
+            changed = db.execute(update(MobileGrant).where(MobileGrant.id==grant_id, MobileGrant.code_hash.is_(None), MobileGrant.expires_at>utcnow()).values(expires_at=utcnow()).execution_options(synchronize_session=False))
+            if changed.rowcount != 1:
+                raise HTTPException(409, 'Sign-in request already completed or expired')
+            db.commit()
+            response = RedirectResponse(row.redirect_uri+'?'+urlencode({'error':'access_denied','state':row.state}),303)
+            response.delete_cookie('zova_mobile_grant')
+            return response
         claimed = db.execute(update(MobileGrant).where(MobileGrant.id==grant_id, MobileGrant.code_hash.is_(None), MobileGrant.expires_at>utcnow()).values(
             user_id=user.id, auth_version=user.auth_version, code_hash=hash_api_key(code), expires_at=utcnow()+timedelta(seconds=90)).execution_options(synchronize_session=False))
         if claimed.rowcount != 1:

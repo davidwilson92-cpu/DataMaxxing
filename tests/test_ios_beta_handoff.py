@@ -114,6 +114,25 @@ def test_new_signin_cleans_expired_native_authority_without_touching_live_work()
     assert browser.get('/api/drafts').status_code == 200
 
 
+def test_signin_cancel_is_bound_expires_grant_and_does_not_loop_to_consent():
+    web, uid, _, _ = account()
+    verifier, state = secrets.token_urlsafe(48), secrets.token_urlsafe(32)
+    response = web.get('/mobile/authorize', params={'client_id': 'zova-ios', 'redirect_uri': CALLBACK, 'code_challenge': challenge_for(verifier), 'state': state}, follow_redirects=False)
+    target = response.headers['location']
+    page = web.get(target)
+    assert 'Cancel sign-in' in page.text
+    proof = re.search(r'name="proof" value="([a-f0-9]+)"', page.text)[1]
+    assert web.post(target, data={'proof': 'wrong', 'decision': 'cancel'}).status_code == 403
+    cancelled = web.post(target, data={'proof': proof, 'decision': 'cancel'}, follow_redirects=False)
+    assert cancelled.status_code == 303
+    assert parse_qs(urlsplit(cancelled.headers['location']).query) == {'error': ['access_denied'], 'state': [state]}
+    assert 'zova_mobile_grant=' in cancelled.headers['set-cookie'] and 'Max-Age=0' in cancelled.headers['set-cookie']
+    assert web.get('/studio', follow_redirects=False).status_code == 200
+    assert web.post(target, data={'proof': proof}, follow_redirects=False).status_code == 409
+    with SessionLocal() as db:
+        assert db.scalar(select(MobileSession).where(MobileSession.user_id == uid)) is None
+
+
 def test_cookie_is_owned_revocable_and_does_not_expose_native_tokens():
     native, _, uid, pair, _ = sign_in()
     browser = shell(native)

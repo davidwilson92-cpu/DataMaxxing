@@ -19,7 +19,8 @@ final class NativeSignIn: NSObject, ASWebAuthenticationPresentationContextProvid
                 Task { @MainActor in
                     guard let self else { return }
                     if let url { self.finish(.success(url)) }
-                    else { self.finish(.failure(error ?? ZovaFailure.cancelled)) }
+                    else if (error as? ASWebAuthenticationSessionError)?.code == .canceledLogin { self.finish(.failure(ZovaFailure.cancelled)) }
+                    else { self.finish(.failure(ZovaFailure.unavailable)) }
                 }
             }
             flow.presentationContextProvider = self
