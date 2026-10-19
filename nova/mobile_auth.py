@@ -66,6 +66,7 @@ def begin(request: Request, client_id: str, redirect_uri: str, code_challenge: s
     maximum = 20 * max(1, int(os.environ.get('RATE_LIMIT_SCALE', '1')))
     if not allowed_request('native-signin:' + identity, maximum, 300):
         raise HTTPException(429, 'Wait a moment before signing in again', headers={'Retry-After': '300'})
+    remove_expired_sessions()
     # GET creates only a short-lived pending request, never a session or grant.
     with SessionLocal() as db:
         grant = MobileGrant(id=secrets.token_urlsafe(32), client_id=client_id, redirect_uri=redirect_uri,

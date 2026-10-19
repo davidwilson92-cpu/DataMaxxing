@@ -97,6 +97,23 @@ def test_existing_browser_auth_stays_separate_and_native_is_gated(monkeypatch):
     assert web.get('/api/v1/native-config').json()['enabled'] is False
 
 
+def test_new_signin_cleans_expired_native_authority_without_touching_live_work():
+    first, _, uid, pair, _ = sign_in()
+    ticket = handoff(first)
+    with SessionLocal() as db:
+        db.get(MobileSession, pair['session_id']).expires_at = utcnow() - timedelta(seconds=1)
+        db.commit()
+    current, browser, current_uid, current_pair, _ = sign_in()
+    assert current_uid != uid
+    with SessionLocal() as db:
+        assert db.get(MobileSession, pair['session_id']) is None
+        assert db.get(MobileHandoff, hash_api_key(ticket)) is None
+        assert db.get(User, uid).active
+        assert db.get(MobileSession, current_pair['session_id']) is not None
+    assert current.get('/api/v1/native-profile').status_code == 200
+    assert browser.get('/api/drafts').status_code == 200
+
+
 def test_cookie_is_owned_revocable_and_does_not_expose_native_tokens():
     native, _, uid, pair, _ = sign_in()
     browser = shell(native)
