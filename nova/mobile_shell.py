@@ -85,7 +85,8 @@ def accept_handoff(ticket, purpose, request, native=False):
         response.set_cookie('nova_session', session_cookie(session),
                             max_age=max(0, int((session.expires_at.replace(tzinfo=session.expires_at.tzinfo or utcnow().tzinfo) - utcnow()).total_seconds())),
                             httponly=True, secure=os.environ.get('PUBLIC_BASE_URL', '').startswith('https://'), samesite='lax')
-        response.delete_cookie('zova_brand')
+        if not native:
+            response.delete_cookie('zova_brand')
         return response
 
 

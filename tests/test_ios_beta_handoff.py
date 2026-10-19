@@ -406,6 +406,7 @@ def test_native_cookie_bootstrap_requires_bearer_and_owns_ticket():
     result = first.post('/api/v1/native-web-session',json=body,follow_redirects=False)
     assert result.status_code == 200
     assert result.json() == {'destination':'/studio'}
+    assert len(result.headers.get_list('set-cookie')) == 1
     assert 'location' not in result.headers
     cookie = result.cookies.get('nova_session')
     assert user_from_session(cookie).id == uid
