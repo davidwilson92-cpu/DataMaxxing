@@ -38,6 +38,7 @@ final class WebKitHandoffTests: XCTestCase {
         await fulfillment(of: [exchanged, opened], timeout: 60)
         // Keep WebKit alive until its redirect completes.
         XCTAssertNotNil(view.url)
+        withExtendedLifetime(navigation) { }
     }
 
     nonisolated private static func read(_ connection: NWConnection, buffered: Data,
@@ -51,14 +52,15 @@ final class WebKitHandoffTests: XCTestCase {
             }
             let head = String(text[..<split.lowerBound]).lowercased()
             let body = String(text[split.upperBound...])
+            print("Synthetic WebKit loopback headers: " + head)
             if head.hasPrefix("post /mobile/web-session ") {
-                if !body.contains("ticket=synthetic-one-use-ticket") {
-                    if !head.contains("content-length: 30") {
-                        XCTFail("WebKit dropped the synthetic POST body: " + head)
-                        connection.cancel(); return
-                    }
+                let declared = head.components(separatedBy: "\r\n")
+                    .first(where: { $0.hasPrefix("content-length:") })
+                    .flatMap { Int($0.dropFirst("content-length:".count).trimmingCharacters(in: .whitespaces)) } ?? 0
+                if body.utf8.count < declared {
                     read(connection, buffered: data, exchanged: exchanged, opened: opened); return
                 }
+                XCTAssertEqual(body, "ticket=synthetic-one-use-ticket")
                 XCTAssertTrue(head.contains("x-zova-native-handoff: 1"))
                 XCTAssertTrue(head.contains("content-type: application/x-www-form-urlencoded"))
                 exchanged.fulfill()
