@@ -1,3 +1,13 @@
+# Instagram browser-only authorization link live — 19 October 2026,15:08 BST
+
+Server39d0d17bac09261764ff08e04003d13ddc37f666 is Live: Render dep-dbb28fc9v7es73aec6sg, started15:07:57 BST,53.0s, service live15:08:50. Public health/login/native-config200. Application39265783737 succeeded488/1 skipped each SQLite/PostgreSQL plus restore/container/dependency/scope gates. Focused73 tests passed. No new native binary: use installed8 and start a FRESH connection after closing old Instagram/browser attempt.
+
+Only runtime change adds #weblink to the existing direct Instagram authorize URL. Both Instagram's primary AASA and Apple's cached association explicitly exclude this fragment from app launch; captured ignored social-proof/instagram-aasa-20261019.json and instagram-aasa-apple-cache-20261019.json. State, scopes, reauthentication, callback, final exact-account confirmation and both login routes preserved. No account/grant/upload/data/billing changes. Owner says the remaining provider message is “unable to log in, unexpected error occurred”; whether Safari appeared first was not established. Fresh phone/provider acceptance requested and still pending. Do not claim end-to-end success until owner confirms.
+
+Later docs-only native CI39262180007 failed waiting5s for synthetic loopback listener readiness (Cookie listener ready), despite shipped8's earlier39259002240 success. Investigated log; not waived or described as passing. Fresh unchanged-native validation39265906012 SUCCEEDED, including simulator tests and release compilation. No Swift runtime/tests modified in this server correction. Intermittent listener readiness remains a test-harness follow-up; do not claim it was repaired by a rerun. Native8 is already Testing; avoid another signed build solely for this server change. Rollback server to0cb83b2 / dep-dbb1h0ss728c73a2t3m0 preserves all data but removes the browser-only marker.
+
+---
+
 # Build8 phone failure confirmed; Instagram web-link correction in validation — 19 October 2026
 
 Owner confirms updated8 still launches Instagram with the error. Mark normal-browser-only remedy unsuccessful for the actual phone; do not repeat it as a proved fix. Asked whether Safari shows the Zova confirmation/connect page before the app opens; answer pending. No new signup request.
