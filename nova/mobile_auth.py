@@ -173,7 +173,11 @@ def remove_expired_sessions():
     with SessionLocal() as db:
         expired=select(MobileSession.id).where(MobileSession.expires_at<=utcnow())
         db.execute(delete(MobileHandoff).where(MobileHandoff.session_id.in_(expired)))
-        db.execute(delete(MobileHandoff).where(MobileHandoff.expires_at<=utcnow()))
+        # Consumed browser tickets are navigation receipts for the social return,
+        # never redeemable authority. Retain briefly while the provider is open.
+        db.execute(delete(MobileHandoff).where(MobileHandoff.expires_at<=utcnow(),
+            (MobileHandoff.purpose != 'browser') | MobileHandoff.used.is_(False) |
+            (MobileHandoff.expires_at <= utcnow() - timedelta(minutes=20))))
         db.execute(delete(MobileRefresh).where(MobileRefresh.session_id.in_(expired)))
         db.execute(delete(MobileSession).where(MobileSession.expires_at<=utcnow()))
         db.execute(delete(MobileGrant).where(MobileGrant.expires_at<=utcnow()))

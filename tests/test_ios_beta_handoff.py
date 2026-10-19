@@ -200,7 +200,7 @@ def test_browser_transfer_requires_explicit_cookie_bound_confirmation():
     ticket = handoff(native, '/connect/tiktok?workspace=0', 'browser')
     path = '/mobile/browser/' + ticket
     page = other.get(path)
-    assert page.status_code == 200 and 'Continue to your account' in page.text
+    assert page.status_code == 200 and 'Connect TikTok' in page.text
     assert user_from_session(other.cookies.get('nova_session')).id == other_id
     proof = re.search(r'name="proof" value="([a-f0-9]+)"', page.text)[1]
     stranger = TestClient(app)

@@ -725,6 +725,9 @@ def connect_platform(platform: str, request: Request):
 
 
 def connection_return(request: Request, platform: str, outcome: str = "connected"):
+    from .mobile_shell import social_return
+    if response := social_return(request, platform, outcome):
+        return response
     destination = "/onboarding/socials" if request.cookies.get("zova_onboarding")==str(current_user(request).id) else "/account"
     return RedirectResponse(f"{destination}?{outcome}={platform}", 303)
 

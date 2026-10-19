@@ -83,11 +83,13 @@
 .simple-chat.composer-keyboard-open .studio-watermark{display:none}
 /* Account is a short index first, with existing forms intact inside each group. */
 .account-flow-body .account-flow{max-width:960px;padding-top:24px}
-.account-group{border:1px solid #3a3048;border-radius:16px;background:#15111d;margin-bottom:12px;overflow:hidden}
-.account-group>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;padding:20px 22px;min-height:72px;box-sizing:border-box}
+.account-group{border:0;border-bottom:1px solid #3a3048;border-radius:0;background:transparent;margin:0;overflow:hidden}
+.account-group>summary{list-style:none;display:flex;align-items:center;gap:14px;cursor:pointer;padding:18px 0;min-height:64px;box-sizing:border-box}
 .account-group>summary::-webkit-details-marker{display:none}
-.account-group>summary::after{content:'+';font-size:24px;color:#ba94ef;flex:none}
-.account-group[open]>summary::after{content:'−'}
+.account-group>summary::after{content:none}
+.account-option-icon{width:22px;height:22px;flex:none;color:#bba4d5}
+.account-expand{margin-left:auto;font-size:22px;color:#bba4d5;line-height:1}
+.account-group[open] .account-expand{transform:rotate(180deg)}
 .account-group>summary strong{display:block;font-size:17px;font-weight:650}
 .account-group>summary small{display:block;color:#b7adca;font-size:13px;margin-top:4px;line-height:1.45}
 .account-group[open]>summary{border-bottom:1px solid #3a3048}
@@ -117,7 +119,7 @@
  .account-flow-body .app-topbar{padding:20px 18px 10px;background:#08060f}
  .account-flow-body .app-topbar h1{font-size:28px}
  .account-flow-body .app-topbar>a{display:none}
- .account-group>summary{padding:17px 18px}
+ .account-group>summary{padding:18px 0}
  .account-group .account-section{padding:20px 18px}
  .account-group .voice-edit{padding:0 18px 20px}
 }

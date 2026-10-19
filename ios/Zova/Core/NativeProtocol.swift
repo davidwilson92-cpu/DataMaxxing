@@ -43,13 +43,6 @@ struct ZovaConfiguration {
               let url = URL(string: path, relativeTo: base)?.absoluteURL, owns(url) else { throw ZovaFailure.unsafeURL }
         return url
     }
-    func usesSystemBrowser(for destination: String) -> Bool {
-        // Instagram sign-in has failed before callback in the embedded browser.
-        // Keep the same bounded native handoff, but use the normal browser.
-        guard let parts = URLComponents(string: destination), parts.scheme == nil,
-              parts.host == nil else { return false }
-        return parts.path == "/connect/instagram"
-    }
     func browserDestination(_ url: URL) -> String? {
         guard owns(url) else { return nil }
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
@@ -70,6 +63,19 @@ struct ZovaConfiguration {
 }
 
 enum NativeProof {
+    static func ticketState(_ ticket: String) -> String {
+        SHA256.hash(data: Data(ticket.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+    static func socialOutcome(from url: URL, configuration: ZovaConfiguration, state: String, platform: String) throws -> String {
+        guard configuration.owns(url), url.path == configuration.callback.path, url.fragment == nil,
+              let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+              items.count == 3, Set(items.map(\.name)) == Set(["social", "platform", "state"]),
+              items.first(where: { $0.name == "platform" })?.value == platform,
+              equal(items.first(where: { $0.name == "state" })?.value ?? "", state),
+              let result = items.first(where: { $0.name == "social" })?.value,
+              ["connected", "cancelled", "connection_failed", "no_pages"].contains(result) else { throw ZovaFailure.invalidCallback }
+        return result
+    }
     static func random(_ count: Int = 32) throws -> String {
         var bytes = [UInt8](repeating: 0, count: count)
         guard SecRandomCopyBytes(kSecRandomDefault, count, &bytes) == errSecSuccess else { throw ZovaFailure.secureStorage }

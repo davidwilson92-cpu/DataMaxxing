@@ -156,6 +156,39 @@ def browser_proof(ticket, cookie):
     return hmac.new(session_secret().encode(), f'native-browser:{hash_api_key(ticket)}:{hash_api_key(cookie)}'.encode(), hashlib.sha256).hexdigest()
 
 
+def social_return_cookie(ticket):
+    payload = f'{hash_api_key(ticket)}.{int((utcnow() + timedelta(minutes=20)).timestamp())}'
+    return payload + '.' + hmac.new(session_secret().encode(), ('social-return:' + payload).encode(), hashlib.sha256).hexdigest()
+
+
+def social_return(request, platform, outcome):
+    """Return navigation only; the app refreshes authoritative connection data.
+
+    A consumed native ticket and the exact active device cookie must agree.
+    No provider token, login credential or account identifier enters the URL.
+    """
+    parts = request.cookies.get('zova_social_return', '').split('.')
+    cookie = request.cookies.get('nova_session', '')
+    session_parts = cookie.split('.')
+    if (len(parts) != 3 or not parts[1].isdigit() or len(session_parts) != 7
+            or session_parts[0] != 'ios' or not user_from_session(cookie)):
+        return None
+    payload = '.'.join(parts[:2])
+    signature = hmac.new(session_secret().encode(), ('social-return:' + payload).encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(signature, parts[2]) or int(parts[1]) <= utcnow().timestamp():
+        return None
+    if platform not in {'instagram', 'facebook', 'x', 'tiktok'} or outcome not in {'connected', 'cancelled', 'connection_failed', 'no_pages'}:
+        return None
+    with SessionLocal() as db:
+        row = db.get(MobileHandoff, parts[0])
+        if (not row or not row.used or row.purpose != 'browser' or row.session_id != session_parts[4]
+                or urlsplit(row.destination).path != '/connect/' + platform):
+            return None
+    response = RedirectResponse('/mobile/callback?' + urlencode({'social': outcome, 'platform': platform, 'state': parts[0]}), 303)
+    response.delete_cookie('zova_social_return')
+    return response
+
+
 def resume_browser(ticket, request):
     """Back/refresh may revisit the form after its cookie was replaced.
 
@@ -198,11 +231,30 @@ def browser_prompt(ticket: str, request: Request):
         if row.purpose != 'browser':
             raise HTTPException(401, 'Invalid browser handoff')
         proof = browser_proof(ticket, request.cookies.get('nova_session', ''))
+        platform = urlsplit(row.destination).path.removeprefix('/connect/')
+        from .connections import connection_options
+        options = connection_options()
+        if platform in options:
+            option = options[platform]
+            def button(label, method='direct'):
+                return f'<form method="post"><input type="hidden" name="proof" value="{proof}"><button name="method" value="{method}">{label}</button></form>'
+            choices = ''
+            if platform == 'instagram':
+                choices = '<p>Requires a public Instagram Creator or Business account.</p>'
+                if option['direct_ready']:
+                    choices += button('Continue to Instagram')
+                if option['facebook_ready']:
+                    choices += '<details><summary>Connect through Facebook instead</summary><p>For Instagram linked to a Facebook Page.</p>' + button('Continue with Facebook', 'facebook') + '</details>'
+            elif option['ready']:
+                choices = button('Continue to ' + option['name'])
+            if not choices or not option['ready']:
+                choices += '<p>Connection setup is not available yet. Your saved work is unchanged.</p>'
+            return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Connect {option['name']} | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Connect {option['name']}</h1><p>Zova account: {html.escape(user.email)}</p>{choices}<p>Sign in, check the profile, then confirm. Nothing publishes during setup.</p><form method="post"><input type="hidden" name="proof" value="{proof}"><button name="decision" value="cancel">This isn’t my Zova account</button></form></main></body></html>''')
         return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Continue in your browser | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Continue as {html.escape(user.display_name or 'you')}</h1><p>{html.escape(user.email)}</p><p>This opens the account from your iPhone app. Only continue if this is your Zova email. Your Instagram login is separate.</p><form method="post"><input type="hidden" name="proof" value="{proof}"><button>Continue to your account</button></form><p>When finished, close this browser and return to Zova to refresh your connections.</p><form method="post"><input type="hidden" name="proof" value="{proof}"><button name="decision" value="cancel">This isn’t my Zova account</button></form></main></body></html>''')
 
 
 @router.post('/mobile/browser/{ticket}', include_in_schema=False)
-def browser_accept(ticket: str, request: Request, proof: str = Form(...), decision: Literal['continue', 'cancel'] = Form('continue')):
+def browser_accept(ticket: str, request: Request, proof: str = Form(...), decision: Literal['continue', 'cancel'] = Form('continue'), method: Literal['direct', 'facebook'] | None = Form(None)):
     require_enabled()
     if decision == 'continue' and (resumed := resume_browser(ticket, request)):
         return resumed
@@ -222,13 +274,28 @@ def browser_accept(ticket: str, request: Request, proof: str = Form(...), decisi
             db.commit()
         return HTMLResponse('''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Switch Zova account</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Switch your Zova account</h1><p>No social account was connected.</p><p>Close this browser. In the Zova app, open Account and select Sign out. Then sign in with your own Zova email before connecting Instagram.</p><p>Your existing drafts and connections stay with their original account.</p></main></body></html>''')
     try:
-        return accept_handoff(ticket, 'browser', request)
+        response = accept_handoff(ticket, 'browser', request)
+        target = urlsplit(response.headers['location'])
+        platform = target.path.removeprefix('/connect/')
+        from .connections import connection_options
+        options = connection_options()
+        if platform in options:
+            if request.query_params.get('return_to_app') == '1':
+                response.set_cookie('zova_social_return', social_return_cookie(ticket), max_age=1200,
+                                    httponly=True, secure=os.environ.get('PUBLIC_BASE_URL', '').startswith('https://'), samesite='lax')
+            start = ('/oauth/instagram/facebook/start' if method == 'facebook' and platform == 'instagram'
+                     else options[platform]['start'])
+            if method and options[platform]['ready']:
+                response.headers['location'] = start + ('?' + target.query if target.query else '')
+        return response
     except HTTPException:
         return browser_recovery()
 
 
 @router.get('/mobile/callback', include_in_schema=False)
-def callback():
+def callback(request: Request):
+    if request.query_params.get('social') in {'connected', 'cancelled', 'connection_failed', 'no_pages'}:
+        return HTMLResponse('<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Return to Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Return to Zova</h1><p>Your connection flow has finished. If the app did not reopen, close this browser and open Zova. Your connection status refreshes automatically.</p></main></body></html>')
     return HTMLResponse('<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Return to Zova</title><p>Return to the Zova app to finish signing in. If this page stays open, cancel and start sign-in again from the app.</p></html>')
 
 

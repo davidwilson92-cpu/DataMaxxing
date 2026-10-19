@@ -87,6 +87,7 @@ struct ZovaRoot: View {
     @State private var exported: LinkSheet?
     @State private var exportToRemove: URL?
     @State private var browserBusy = false
+    @State private var socialSignIn = NativeSignIn()
     private let titles = ["Studio", "Drafts", "Performance", "Account"]
     private let icons = ["square.and.pencil", "doc.on.doc", "chart.bar", "person.crop.circle"]
     private let purple = Color(red: 0.486, green: 0.227, blue: 0.929)
@@ -108,8 +109,8 @@ struct ZovaRoot: View {
         }
         .task { await model.start() }
         .preferredColorScheme(darkScreen ? .dark : .light)
-        .onOpenURL { model.signIn.received($0) }
-        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { model.signIn.received(url) } }
+        .onOpenURL { receiveReturn($0) }
+        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { receiveReturn(url) } }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active && model.cookieReady { model.pages.forEach { $0.refreshConnections() } }
         }
@@ -197,14 +198,19 @@ struct ZovaRoot: View {
         do {
             let request = try await model.api.handoff(destination: destination, browser: true)
             if let url = request.url {
-                if model.configuration.usesSystemBrowser(for: destination) {
-                    if !(await UIApplication.shared.open(url)) {
-                        model.pages[selected].failure = "Couldn’t open your browser. Try connecting Instagram again."
-                    }
-                } else { browser = LinkSheet(url: url) }
+                let outcome = try await socialSignIn.connect(url: url, destination: destination, configuration: model.configuration)
+                model.pages.forEach { $0.refreshConnections() }
+                if outcome == "connection_failed" || outcome == "no_pages" {
+                    model.pages[selected].failure = outcome == "no_pages" ? "No eligible account was returned. Check your platform permissions and try again." : "The connection didn’t finish. Please try again."
+                }
             }
         }
+        catch ZovaFailure.cancelled { model.pages.forEach { $0.refreshConnections() } }
         catch { model.pages[selected].failure = error.localizedDescription }
+    }
+    private func receiveReturn(_ url: URL) {
+        if socialSignIn.isActive { socialSignIn.received(url) }
+        else { model.signIn.received(url) }
     }
     private func clearExport() {
         // Export files live in a per-download temporary directory; never delete user uploads.

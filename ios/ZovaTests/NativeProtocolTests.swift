@@ -2,11 +2,18 @@ import XCTest
 @testable import Zova
 
 final class NativeProtocolTests: XCTestCase {
-    func testInstagramUsesNormalBrowserWithoutChangingOtherProviderRoutes() throws {
+    func testSocialReturnChecksAttemptPlatformHostAndOutcome() throws {
         let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
-        XCTAssertTrue(configuration.usesSystemBrowser(for: "/connect/instagram?workspace=8"))
-        for value in ["/connect/facebook", "/connect/tiktok", "/connect/x", "/connect/instagram/other", "https://evil.test/connect/instagram", "//evil.test/connect/instagram"] {
-            XCTAssertFalse(configuration.usesSystemBrowser(for: value))
+        let state = NativeProof.ticketState("synthetic-ticket")
+        XCTAssertEqual(state.count, 64)
+        for platform in ["instagram", "facebook", "x", "tiktok"] {
+            let valid = "https://zova-social.com/mobile/callback?social=connected&platform=\(platform)&state=\(state)"
+            XCTAssertEqual(try NativeProof.socialOutcome(from: URL(string: valid)!, configuration: configuration, state: state, platform: platform), "connected")
+            for invalid in [valid + "&social=connected", valid + "#extra", valid.replacingOccurrences(of: state, with: "wrong"), valid.replacingOccurrences(of: "zova-social.com", with: "evil.test"), valid.replacingOccurrences(of: "social=connected", with: "social=other")] {
+                XCTAssertThrowsError(try NativeProof.socialOutcome(from: URL(string: invalid)!, configuration: configuration, state: state, platform: platform))
+            }
+            XCTAssertThrowsError(try NativeProof.socialOutcome(from: URL(string: valid)!, configuration: configuration, state: state, platform: "other"))
+            XCTAssertThrowsError(try NativeProof.code(from: URL(string: valid)!, configuration: configuration, state: state))
         }
         let link = URL(string: "https://zova-social.com/oauth/instagram/facebook/start?workspace=8")!
         XCTAssertEqual(configuration.browserDestination(link), "/connect/instagram?workspace=8")
