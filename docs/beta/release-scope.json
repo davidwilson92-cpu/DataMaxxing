@@ -91,7 +91,7 @@
     "nova/static/social-brand.css": "d3e9dee19aee388347312938a4a88b00e9fca0f755d0238beb2520ae2abe93ff",
     "nova/static/social-brand.js": "78d9700caddba4a165694a11bf432be8deda196f6106a793497dbaefd9d54802",
     "nova/static/strategy.css": "89b2c53546e1fa0a65a54c76c42f777b3647cdcb8a9026d38231b5b0c92aec7d",
-    "nova/static/strategy.js": "023c3df344ce57b1b6ff2403be3b56d3492b64e511d2dc1ad6f638e064e09dd4",
+    "nova/static/strategy.js": "0bdfd001d9c2f093faa76e36eee938dc037f5f4c2f902224287e685614cc9a7b",
     "nova/static/studio-attachments.css": "5d5310e460fda5e5abe2d3a0cbd4c172f83a772c3658cf53906f3b72cdb4272a",
     "nova/static/studio-design.css": "b6e7656067a204f782949653012325ccb40c0b1b33d0225e53b998b731f2f45c",
     "nova/static/studio-experience.css": "3c9de5ab34945ed51af8bb85ed6966c2da87d69774dc62194418d657b6b38ca9",
@@ -142,7 +142,7 @@
     "nova/templates/security.html": "29102a9face975a1381aaf3c2a23409e40f5cf27e4d1806bcad3401aad2a4cbd",
     "nova/templates/social_icon.html": "e2156c8c67826954afa49908faa22628f0784a9cbe15d4f4e3fda03656924013",
     "nova/templates/strategy_panel.html": "3cc86776c136124eef9f09acfcf37ca26583af07baa9b50368a0d76a357428da",
-    "nova/templates/studio.html": "9def211f3896932f925b48fcb85b7752a1f27753e46e97304c63d37e0608e76b",
+    "nova/templates/studio.html": "7f4945f1d991c8ce7962b1bef6393d1f814e5163162ee28b5e6891fa4713276d",
     "nova/templates/studio_history.html": "a3ba1105280a2eacc0a9d35c83c8a14cbf1fe9c79ee289aec4c654bd561fe5d3",
     "nova/templates/studio_nav_rail.html": "8633a903786cf96f23f0fbc68154639c616062fc70b58616f4afcf7a37a6372a",
     "nova/templates/subscribe.html": "d98e5ccca42135855b3e50f31cc05b756eb75b640d790b37c911f7ecdce721d3",
@@ -175,7 +175,7 @@
     "tests/analytics_commercial.test.cjs": "816ce50c86dc6c8dfbc5196be0d6b9733e4b566fa79c0daea1f278e4d8460dcb",
     "tests/conftest.py": "ed5bbf2bf532db64936114ceabe7e30149b4d7837155311db1bf68b2bdf4a301",
     "tests/ios_shell_client.cjs": "10771d42cb409464cfe3bab8228c1ad28682282b62aa59620f90c1b68d0ab82f",
-    "tests/next_move_journey.test.cjs": "b93be1364d7f50d3b5c96fc7e958f4a3944ac4b7dac01b3719b88d0af40d377e",
+    "tests/next_move_journey.test.cjs": "507be9921bc61df52715d846676f9631edd118ad65d59573d69b77d595e006d5",
     "tests/schedule_agenda.test.cjs": "8ee7c2a86d578f7c54339794d35a37773cb4d04b9f527b5e89faf6e774875f03",
     "tests/strategy_onboarding.test.cjs": "063143ca822dbaa0f10b004ffd1daa505ea21bb2994b03254c6973820db9f9d5",
     "tests/strategy_preview.py": "2b09e5fca5ac0f9dbbe6657fdec2c51815b67bf76bcda70b2eb12b06d15fb2a3",
@@ -230,6 +230,6 @@
     "tests/test_workspace_persistence.py": "8cce3a676c81c504d65424b90a14ca719d88407b4b8033ef8afa0490f2ccde61"
   },
   "release_class": "limited-beta",
-  "reviewed_update": "2026-10-19: commercial-readiness increment; explicit AI sharing, Performance correctness/clarity, safe diagnostics and dormant portable worker; no commercial certification or cloud activation",
+  "reviewed_update": "2026-10-19: commercial-readiness increment; explicit AI sharing, Performance correctness/clarity, safe diagnostics and dormant portable worker; no commercial certification or cloud activation; final saved-draft navigation avoids generation/AI prompt while preserving failed-save and workspace-switch guards",
   "source_candidate": "db7fc42"
 }
