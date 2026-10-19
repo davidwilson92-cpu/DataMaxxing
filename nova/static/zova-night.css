@@ -54,6 +54,8 @@
 .simple-chat .quiet-button:hover{background:#2a1c39}
 .simple-chat .composer-platforms .platform-check label{background:#251c31;border-color:transparent}
 .simple-chat .composer-platforms .platform-check.is-selected label{background:#3a2252;border-color:#b184ee;box-shadow:inset 0 0 0 1px #b184ee}
+.simple-chat .composer-format select,.simple-chat .instagram-format-choices label{background:#21182e;color:#e3d7f1;border-color:#4a3b5c}
+.simple-chat .instagram-format-choices label:has(input:checked){background:#3a2252;color:#fff;border-color:#b184ee}
 .simple-chat .user-message .message-content{background:#261b35;color:#f5f2fa}
 .simple-chat .creator-welcome h1{color:#f5f2fa}
 .simple-chat .creator-welcome h1 span{color:#b58af6}
