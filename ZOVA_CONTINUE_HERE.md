@@ -1,4 +1,4 @@
-# Commercial readiness increment under validation — 19 October 2026
+# Commercial candidate validated; TestFlight9 available — 19 October 2026,21:49 BST
 
 Latest owner request: assess commercial readiness across product/design/iOS/engineering/security; iteratively improve and then pursue credit-supported cloud migration. Current work is a bounded candidate, not a commercial launch. Baseline db7fc42 / live server419d452 is preserved. Read docs/COMMERCIAL_READINESS_20261019.md (13 dimensions, 5.6→6.3 judgement), docs/architecture/CLOUD_MIGRATION_20261019.md and docs/beta/current-reconciliation-20261019.json. All79 original areas retained; historical RLS/service claims are not assumed active.
 
@@ -12,6 +12,8 @@ Do not cut over to a cloud, claim credits awarded or enable paid plans. Start wi
 
 
 Final recovery iteration: scripts/synthetic_recovery.py seeds only a loopback CI database before pg_dump, then checks passwords, token decryption/wrong key rejection, live and revoked sessions, unknown publication, withdrawn AI permission and checksum-verified media restoration after pg_restore. New local guard/corruption tests6 passed. Await final exact-candidate hosted receipt; never claim cloud/production restore or RPO/RTO from this synthetic drill. All operator decisions and commercial gates remain open.
+
+Final implementation45d4d3b passed required PR application39321607637: SQLite547 passed/2 PostgreSQL-only skips; PostgreSQL548 passed/1 separate SQLite-backup skip;13 Node tests/groups and Studio harness; dependencies0 reported vulnerabilities; synthetic restore/recovery, container smoke and exact beta scope passed. Native39321607625 passed16 unit/1 UI tests plus release compilation. Final structured receipt: social-proof/commercial-validation-20261019.json; CI artifacts and PR34 carry remote evidence. The two owned loopback preview services8793/8794 are stopped and temporary review tabs closed; Apple38 is retained as a deliverable. These commercial changes are NOT deployed; live419d452 and delivered native9 remain separate. Final documentation receipts do not change the validated runtime.
 
 ---
 
