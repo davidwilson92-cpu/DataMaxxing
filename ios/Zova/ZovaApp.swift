@@ -115,6 +115,11 @@ struct ZovaRoot: View {
         }
         .sheet(item: $exported, onDismiss: clearExport) { link in ExportSheet(file: link.url) }
     }
+    private var betaLabel: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+        return "Beta \(version) (\(build)) • No purchases"
+    }
     private var welcome: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -138,7 +143,7 @@ struct ZovaRoot: View {
                     Button("Terms") { openLegal("/terms-of-service") }
                     Button("Help") { openLegal("/help") }
                 }.font(.subheadline).tint(purple).frame(minHeight: 44)
-                Text("Beta " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") + " (" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "") + ") • No purchases").font(.footnote).foregroundStyle(readableSecondary)
+                Text(betaLabel).font(.footnote).foregroundStyle(readableSecondary)
             }.padding(28).frame(maxWidth: 560)
         }
     }
