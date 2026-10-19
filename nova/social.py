@@ -90,7 +90,7 @@ def _x_token(data: dict[str, str]) -> dict[str, Any]:
         data["client_id"] = client_id
     r = httpx.post("https://api.x.com/2/oauth2/token", data=data, auth=auth, timeout=30.0)
     if r.status_code >= 400:
-        raise RuntimeError(f"X OAuth token exchange failed: {r.text}")
+        raise RuntimeError("X OAuth token exchange failed. Try again or reconnect the account.")
     return r.json()
 
 
@@ -103,7 +103,7 @@ def x_exchange(code: str, verifier: str) -> tuple[dict[str, Any], dict[str, Any]
     })
     r = httpx.get("https://api.x.com/2/users/me", headers={"Authorization": f"Bearer {payload['access_token']}"}, params={"user.fields": "name,username,profile_image_url"}, timeout=30.0)
     if r.status_code >= 400:
-        raise RuntimeError(f"X user lookup failed: {r.text}")
+        raise RuntimeError("X user lookup failed. Try again or reconnect the account.")
     return payload, r.json()["data"]
 
 
@@ -139,7 +139,7 @@ def meta_exchange(code: str, *, include_instagram: bool = False) -> list[dict[st
     params = {"client_id": os.environ.get("META_APP_ID"), "client_secret": os.environ.get("META_APP_SECRET"), "redirect_uri": redirect, "code": code}
     r = httpx.get(f"https://graph.facebook.com/{version}/oauth/access_token", params=params, timeout=30.0)
     if r.status_code >= 400:
-        raise RuntimeError(f"Meta token exchange failed: {r.text}")
+        raise RuntimeError("Meta token exchange failed. Try again or reconnect the account.")
     user_token = r.json()["access_token"]
     # Prefer a long-lived user token when the app supports the exchange.
     long_r = httpx.get(
@@ -155,7 +155,7 @@ def meta_exchange(code: str, *, include_instagram: bool = False) -> list[dict[st
         timeout=30.0,
     )
     if pages_r.status_code >= 400:
-        raise RuntimeError(f"Could not read managed Facebook Pages: {pages_r.text}")
+        raise RuntimeError("Could not read managed Facebook Pages. Try again or reconnect the account.")
     pages = pages_r.json().get("data", [])
     if not include_instagram:
         granted = httpx.get(f'https://graph.facebook.com/{version}/me/permissions',
@@ -207,7 +207,7 @@ def instagram_exchange(code: str) -> dict[str, Any]:
         timeout=30.0,
     )
     if token_r.status_code >= 400:
-        raise RuntimeError(f"Instagram token exchange failed: {token_r.text}")
+        raise RuntimeError("Instagram token exchange failed. Try again or reconnect the account.")
     short = token_r.json()
     # Meta documents a data envelope; retain compatibility with flat responses.
     if isinstance(short, dict) and isinstance(short.get('data'), list):
@@ -230,7 +230,7 @@ def instagram_exchange(code: str) -> dict[str, Any]:
         timeout=30.0,
     )
     if profile_r.status_code >= 400:
-        raise RuntimeError(f"Could not read the Instagram profile: {profile_r.text}")
+        raise RuntimeError("Could not read the Instagram profile. Try again or reconnect the account.")
     profile = profile_r.json()
     account_id = str(profile.get("user_id") or profile.get("id") or short.get("user_id") or "")
     if not account_id:
@@ -262,10 +262,10 @@ def _tiktok_token(data: dict[str, str]) -> dict[str, Any]:
     data = {**data, "client_key": os.environ.get("TIKTOK_CLIENT_KEY", ""), "client_secret": os.environ.get("TIKTOK_CLIENT_SECRET", "")}
     r = httpx.post("https://open.tiktokapis.com/v2/oauth/token/", data=data, headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=30.0)
     if r.status_code >= 400:
-        raise RuntimeError(f"TikTok token request failed: {r.text}")
+        raise RuntimeError("TikTok token request failed. Try again or reconnect the account.")
     payload = r.json()
     if payload.get("error") and not payload.get("access_token"):
-        raise RuntimeError(f"TikTok OAuth error: {payload}")
+        raise RuntimeError("TikTok could not authorise the connection. Try again from Account.")
     return payload
 
 
@@ -279,7 +279,7 @@ def tiktok_exchange(code: str) -> tuple[dict[str, Any], dict[str, Any]]:
         timeout=30.0,
     )
     if r.status_code >= 400:
-        raise RuntimeError(f"TikTok user lookup failed: {r.text}")
+        raise RuntimeError("TikTok user lookup failed. Try again or reconnect the account.")
     return payload, r.json()["data"]["user"]
 
 
@@ -413,7 +413,7 @@ def _x_upload_image(token: str, asset: MediaAsset) -> str:
         timeout=60.0,
     )
     if r.status_code >= 400:
-        raise RuntimeError(f"X media upload failed: {r.text}")
+        raise RuntimeError("X media upload failed. Try again or reconnect the account.")
     return str(r.json()["data"]["id"])
 
 
@@ -439,7 +439,7 @@ def publish_x(db: Session, conn: SocialConnection, posts: list[str], assets: lis
             token = _x_refresh(conn, db)
             r = httpx.post("https://api.x.com/2/tweets", headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, json=body, timeout=30.0)
         if r.status_code >= 400:
-            raise RuntimeError(f"X publish failed: {r.text}")
+            raise RuntimeError("X could not confirm the post. Check the destination before retrying.")
         previous = str(r.json()["data"]["id"])
         ids.append(previous)
         urls.append(f"https://x.com/{conn.username or 'i'}/status/{previous}")
@@ -459,7 +459,7 @@ def publish_facebook(db: Session, conn: SocialConnection, posts: list[str], asse
             data["link"] = link_url
         r = httpx.post(f"https://graph.facebook.com/{version}/{conn.account_id}/feed", data=data, timeout=30.0)
     if r.status_code >= 400:
-        raise RuntimeError(f"Facebook publish failed: {r.text}")
+        raise RuntimeError("Facebook could not confirm the post. Check the destination before retrying.")
     post_id = r.json().get("post_id") or r.json().get("id")
     if not post_id:
         raise RuntimeError('Facebook did not confirm the post identifier. Check the destination before retrying.')
@@ -500,7 +500,7 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
         create_data["image_url"] = media_url
     create = httpx.post(f"{graph}/{conn.account_id}/media", data=create_data, timeout=45.0)
     if create.status_code >= 400:
-        raise RuntimeError(f"Instagram media container failed: {create.text}")
+        raise RuntimeError("Instagram could not prepare this media. Check the file and connection.")
     creation_id = str(create.json()["id"])
     checkpoint('container_created', container_id=creation_id)
     # Instagram creates an asynchronous media container for both images and
@@ -510,19 +510,19 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
     for _ in range(attempts):
         status = httpx.get(f"{graph}/{creation_id}", params={"fields": "status_code,status", "access_token": token}, timeout=20.0)
         if status.status_code >= 400:
-            raise RuntimeError(f"Instagram media processing failed: {status.text}")
+            raise RuntimeError("Instagram media processing is unavailable. Check the destination before retrying.")
         status_code = status.json().get("status_code")
         if status_code == "FINISHED":
             break
         if status_code in {"ERROR", "EXPIRED"}:
-            raise RuntimeError(f"Instagram could not process this media: {status.json().get('status') or status_code}")
+            raise RuntimeError("Instagram could not process this media. Check its format and try another file.")
         time.sleep(2)
     else:
         raise RuntimeError("Instagram is still processing the media. Try publishing again shortly.")
     checkpoint('publish_requested', container_id=creation_id)
     publish = httpx.post(f"{graph}/{conn.account_id}/media_publish", data={"creation_id": creation_id, "access_token": token}, timeout=45.0)
     if publish.status_code >= 400:
-        raise RuntimeError(f"Instagram publish failed: {publish.text}")
+        raise RuntimeError("Instagram could not confirm the post. Check the destination before retrying.")
     post_id = str(publish.json()["id"])
     checkpoint('published', container_id=creation_id, post_id=post_id)
     # Publishing is confirmed by the media ID; a missing link cannot undo it.
@@ -896,5 +896,5 @@ def recent_content_for_user(db: Session, user_id: int) -> list[str]:
     content: list[str] = []
     for conn in rows:
         try: content.extend(recent_content_for_connection(db, conn))
-        except Exception as exc: log.warning("%s voice scan failed: %s", conn.platform, exc)
+        except Exception: log.warning("%s voice scan failed", conn.platform)
     return content[:60]

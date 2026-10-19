@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {% if metrics_enabled %}<meta name="zova-product-metrics" content="enabled">{% endif %}
 {% if brand %}<meta name="zova-workspace" content="{{ brand.id }}"><script src="/static/brand-context.js?v=2"></script>{% endif %}
+{% if user %}<script src="/static/ai-privacy.js?v=20261019-choice"></script>{% endif %}
 <link rel="stylesheet" href="/static/brand-context.css?v=1">
 <meta name="facebook-domain-verification" content="gc093o7nv5q19ykf4y2sxm82ujegg9">
 <title>{% block title %}Zova{% endblock %}</title>
@@ -14,7 +15,7 @@
 <link rel="stylesheet" href="/static/connections.css?v=1">
 <link rel="stylesheet" href="/static/workspace-ui.css?v=20260922-media-stories">
 <script defer src="/static/workspace-ui.js?v=20260922-media-stories"></script>
-<link rel="stylesheet" href="/static/commercial-polish.css?v=20261008">
+<link rel="stylesheet" href="/static/commercial-polish.css?v=20261019-commercial-final">
 <link rel="stylesheet" href="/static/social-brand.css?v=20261012-design"><script src="/static/social-brand.js?v=20261012-focus"></script>
 {% block head %}{% endblock %}
 {% if native_shell %}<link rel="stylesheet" href="/static/ios-shell.css?v=20261019"><script defer src="/static/ios-shell.js?v=20261019"></script>{% endif %}
@@ -23,8 +24,10 @@
 {% else %}
 <link rel="stylesheet" href="/static/zova-night.css?v=20261019-rows">
 {% endif %}
+{% if user %}<link rel="stylesheet" href="/static/ai-privacy.css?v=20261019-contrast">{% endif %}
 </head>
 <body class="{% block body_class %}{% endblock %}{% if native_shell %} ios-shell{% endif %}{% if user %} zova-product{% endif %}">
+{% if user %}{% include "ai_privacy.html" %}{% endif %}
 {% block site_header %}
 <header class="site-header">
 <a class="brand" href="/">{% include "logo_mark.html" %}<span>Zova</span></a>

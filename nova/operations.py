@@ -9,6 +9,19 @@ from .readiness import spend_summary, cohort_report
 
 router=APIRouter()
 
+
+def worker_status(db):
+    from .runtime import scheduler_mode, integer
+    from .db import WorkerHeartbeat
+    mode=scheduler_mode()
+    if mode!='external':return {'mode':mode,'status':'disabled' if mode=='disabled' else 'not_independently_monitored'}
+    row=db.get(WorkerHeartbeat,'publishing')
+    threshold=utcnow()-timedelta(seconds=max(integer('SCHEDULER_INTERVAL_SECONDS',60,30,3600)*3,300))
+    # Compare timestamps in the database so SQLite's naive datetimes do not
+    # accidentally make the PostgreSQL check behave differently.
+    recent=db.scalar(select(WorkerHeartbeat.role).where(WorkerHeartbeat.role=='publishing',WorkerHeartbeat.started_at>=threshold))
+    return {'mode':mode,'status':'missing' if row is None else 'stale' if not recent else row.status}
+
 @router.get('/internal/ready')
 def ready(authorization: str | None = Header(default=None)):
     """Dependency readiness, separate from public process liveness.
@@ -20,10 +33,10 @@ def ready(authorization: str | None = Header(default=None)):
     if not secret or not hmac.compare_digest((authorization or '').removeprefix('Bearer '),secret):
         raise HTTPException(401,'Invalid operations credential')
     try:
-        from .db import User, Draft, PerformanceSnapshot
+        from .db import User, Draft, PerformanceSnapshot, AIConsent, WorkerHeartbeat
         with SessionLocal() as db:
             db.execute(text('SELECT 1'))
-            for model in (User, Draft, Publication, ScheduledPost, PerformanceSnapshot):
+            for model in (User, Draft, Publication, ScheduledPost, PerformanceSnapshot, AIConsent, WorkerHeartbeat):
                 db.execute(select(model).limit(1)).first()
     except Exception:
         # Do not expose database URLs, credentials, schema or driver errors.
@@ -39,6 +52,7 @@ def status(authorization: str | None = Header(default=None)):
         raise HTTPException(401,'Invalid operations credential')
     with SessionLocal() as db:
         db.execute(text('SELECT 1'))
+        worker=worker_status(db)
         overdue=db.scalar(select(func.count()).select_from(ScheduledPost).where(ScheduledPost.status=='scheduled',ScheduledPost.scheduled_at<utcnow()-timedelta(minutes=5)))
         uncertain=db.scalar(select(func.count()).select_from(Publication).where(Publication.status=='unknown'))
         stuck=db.scalar(select(func.count()).select_from(Publication).where(Publication.status.in_(['publishing','queued']),Publication.updated_at<utcnow()-timedelta(minutes=15)))
@@ -49,10 +63,10 @@ def status(authorization: str | None = Header(default=None)):
         mail_failures=db.scalar(select(func.count()).select_from(MailDelivery).where(MailDelivery.status=='failed',MailDelivery.created_at>utcnow()-timedelta(days=1)))
         mail_stuck=db.scalar(select(func.count()).select_from(MailDelivery).where(MailDelivery.status=='sending',MailDelivery.created_at<utcnow()-timedelta(minutes=5)))
         ai_failures=db.scalar(select(func.count()).select_from(AICall).where(AICall.status!='returned',AICall.created_at>utcnow()-timedelta(days=1)))
-        attention=bool(ai_failures or overdue or uncertain or stuck or spend['threshold_exceeded'] or spend['unpriced_calls'] or stale_billing or mail_failures or mail_stuck)
+        attention=bool(ai_failures or overdue or uncertain or stuck or spend['threshold_exceeded'] or spend['unpriced_calls'] or stale_billing or mail_failures or mail_stuck or worker['status'] in {'missing','stale','error'})
         return {'status':'attention' if attention else 'ok','database':'reachable','overdue_jobs':overdue,'uncertain_publications':uncertain,'stuck_publications':stuck,
                 'stale_billing_accounts':stale_billing,'last_billing_event':latest.isoformat() if latest else None,
-                'ai_failures_24h':ai_failures,'old_usage_reservations':reservations,'mail_failures_24h':mail_failures,'stuck_mail':mail_stuck,'ai_spend':spend,'checked_at':utcnow().isoformat()}
+                'ai_failures_24h':ai_failures,'old_usage_reservations':reservations,'mail_failures_24h':mail_failures,'stuck_mail':mail_stuck,'ai_spend':spend,'worker':worker,'checked_at':utcnow().isoformat()}
 
 
 @router.get('/internal/cohorts')

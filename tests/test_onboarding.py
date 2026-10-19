@@ -104,7 +104,7 @@ def test_studio_answers_account_questions_without_external_ai():
     signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     response = client.post("/api/insights", cookies=signup.cookies, json={"question": "What is working?"})
     assert response.status_code == 200
-    assert "account data" in response.json()["answer"]
+    assert "Connect an account" in response.json()["answer"]
 
 
 def test_drafts_are_saved_reopened_and_listed():
@@ -131,8 +131,8 @@ def test_separate_analytics_workspace_and_dashboard():
     signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     page = client.get("/analytics", cookies=signup.cookies)
     assert page.status_code == 200
-    assert "CROSS-PLATFORM ANALYTICS" in page.text
-    assert "Analyse my accounts" in page.text
+    assert "Performance" in page.text
+    assert "Ask about your results" in page.text
     dashboard = client.get("/api/analytics/dashboard", cookies=signup.cookies)
     assert dashboard.status_code == 200
     assert dashboard.json()["period"] == "Posts published in the last 7 days"

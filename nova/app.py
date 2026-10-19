@@ -155,30 +155,34 @@ def publish_legacy_creator(text: str, creator: Creator, db: Session) -> dict[str
         if oauth:
             token = _legacy_x_token(oauth, db)
             r = httpx.post("https://api.x.com/2/tweets", headers={"Authorization": f"Bearer {token}", "Content-Type":"application/json"}, json={"text": text}, timeout=30.0)
-            if r.status_code >= 400: raise RuntimeError(r.text)
+            if r.status_code >= 400: raise RuntimeError('X rejected the publishing request')
             pid = str(r.json()["data"]["id"])
         else:
             signer = OAuth1Client(decrypt(creator.encrypted_x_api_key), client_secret=decrypt(creator.encrypted_x_api_secret), resource_owner_key=decrypt(creator.encrypted_x_access_token), resource_owner_secret=decrypt(creator.encrypted_x_access_token_secret))
             url, headers, payload = signer.sign('https://api.x.com/2/tweets', http_method='POST', body=json.dumps({'text':text}), headers={'Content-Type':'application/json'})
             r = httpx.post(url, headers=headers, content=payload, timeout=30.0)
-            if r.status_code >= 400: raise RuntimeError(r.text)
+            if r.status_code >= 400: raise RuntimeError('X rejected the publishing request')
             pid = str(r.json()['data']['id'])
         row.status="published"; row.x_post_id=pid; db.commit()
         return {"post_id": pid, "url": f"https://x.com/{creator.x_username}/status/{pid}"}
     except Exception as exc:
-        row.status="failed"; row.error=str(exc); db.commit(); raise HTTPException(502, f"X API error: {exc}") from exc
+        row.status="failed"; row.error="X could not confirm this request. Check the destination before retrying."; db.commit()
+        raise HTTPException(502,row.error) from None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from .runtime import validate_runtime
+    mode = validate_runtime()
     bootstrap_legacy_account()
-    task = asyncio.create_task(scheduler_loop())
+    task = asyncio.create_task(scheduler_loop()) if mode == 'embedded' else None
     try:
         yield
     finally:
-        task.cancel()
-        try: await task
-        except asyncio.CancelledError: pass
+        if task is not None:
+            task.cancel()
+            try: await task
+            except asyncio.CancelledError: pass
 
 
 app = FastAPI(title="Zova Social Publishing", version="5.1.0", lifespan=lifespan)
@@ -187,6 +191,8 @@ from .recovery import router as recovery_router
 from .body_limit import BodyLimitMiddleware
 app.add_middleware(BodyLimitMiddleware)
 app.include_router(recovery_router)
+from .ai_consent import router as ai_consent_router
+app.include_router(ai_consent_router)
 from .schedule_routes import router as schedule_router
 app.include_router(schedule_router)
 from .strategy import router as strategy_router, strategy_context
@@ -703,7 +709,11 @@ def change_password(request: Request, current_password: Annotated[str, Form()], 
 def scan_social_voice(request: Request, db: Session = Depends(get_db)):
     user = current_user(request)
     try: profile = learn_voice_from_socials(db, user.id)
-    except Exception as exc: log.exception("Social voice scan failed"); raise HTTPException(502, f"Zova could not scan recent posts: {exc}") from exc
+    except HTTPException:
+        raise
+    except Exception:
+        log.warning("Social voice scan failed")
+        raise HTTPException(502, "Zova could not scan recent posts. Your saved voice is unchanged. Try again.") from None
     if not profile: return {"status": "waiting", "message": "Connect a social account so Zova can learn from recent posts."}
     return {"status": "learned", **profile}
 
@@ -866,7 +876,15 @@ class RewriteRequest(BaseModel):
     media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     platform:str; posts:list[str]; action:str=""; instruction:str=Field(default="",max_length=1000)
 class ScheduleSuggestRequest(BaseModel): platforms:list[str]; context:str=""
-class InsightRequest(BaseModel): question:str=Field(min_length=1,max_length=2000)
+class InsightRequest(BaseModel):
+    question:str=Field(min_length=1,max_length=2000)
+    days:int=Field(default=7)
+
+    @field_validator("days")
+    @classmethod
+    def valid_window(cls, value):
+        if value not in (7,30):raise ValueError("Choose a 7 or 30 day post window")
+        return value
 class ConversationRequest(BaseModel):
     media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     message:str=Field(min_length=1,max_length=12000)
@@ -936,9 +954,9 @@ def learn_voice(payload: VoiceLearnRequest, request: Request, db: Session = Depe
         user = current_user(request)
         try:
             profile = ai.infer_voice_profile(payload.content)
-        except Exception as exc:
-            log.exception("Voice learning failed")
-            raise HTTPException(502, f"Zova could not analyse that sample: {exc}") from exc
+        except Exception:
+            log.warning("Voice learning failed")
+            raise HTTPException(502, "Zova could not analyse that sample. Your saved voice is unchanged. Try again.") from None
         prefs = get_preferences(db, user.id)
         prefs.writing_tone = profile["writing_tone"][:5000]
         prefs.audience = profile["audience"][:5000]
@@ -1198,49 +1216,30 @@ def api_analytics_dashboard(request:Request,days:int=Query(7),db:Session=Depends
     from sqlalchemy.exc import SQLAlchemyError
     try:
         record(db,user.id,view)
+        view['recommendation_history_saved']=True
     except SQLAlchemyError:
         db.rollback()
         log.warning('Performance evidence could not be saved for recommendations')
         view['note']+=' These results could not be saved for Next move; refresh to try again.'
+        view['recommendation_history_saved']=False
     return view
 
 @app.post("/api/insights")
 def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db)):
-    user=current_user(request); data=analytics_for_user(db,user.id); feed=recent_posts_for_user(db,user.id); dashboard=_analytics_dashboard(data,feed); summary=dashboard.get("summary") or {}; question=body.question.lower()
-    connected=[(name,value) for name,value in dashboard["platforms"].items() if name!="_summary" and isinstance(value,dict) and value.get("connected")]
-    score=lambda value:int(value.get("likes") or value.get("reactions") or 0)+int(value.get("comments") or value.get("replies") or 0)+int(value.get("shares") or value.get("reposts") or 0)
-    leader=max((item for item in connected if score(item[1])>0),key=lambda item:score(item[1]),default=None)
-    posts=dashboard.get("top_posts") or []
-    top=max(posts,key=lambda item:int(item.get("likes") or 0)+int(item.get("comments") or 0)+int(item.get("shares") or 0),default=None)
-    def number(key:str)->str:return "unavailable" if summary.get(key) is None else f"{int(summary[key]):,}"
-    if not connected:
-        answer="I don't have enough account data yet. Connect a social account and Zova will start reading the available performance signals."
-    elif any(word in question for word in ("trend","working","best","perform","improve","strategy")):
-        lead=f"{leader[0].title()} has the strongest engagement signal in the available data" if leader else "There is not yet a clear platform leader"
-        detail=f" Your strongest recent post is on {str(top.get('platform') or '').title()} with {int(top.get('likes') or 0):,} likes, {int(top.get('comments') or 0):,} comments and {int(top.get('shares') or 0):,} shares." if top else " Publish a few more posts so I can compare formats and topics."
-        answer=lead+"."+detail
-    elif "impression" in question or "view" in question:
-        answer=f"Your connected accounts recorded {number('impressions')} impressions in the available sample of posts published in the last seven days."
-    elif "like" in question:
-        answer=f"Your connected accounts recorded {number('likes')} likes in the available sample of posts published in the last seven days."
-    elif "comment" in question or "reply" in question:
-        answer=f"Your connected accounts recorded {number('comments')} comments or replies in the available sample of posts published in the last seven days."
-    elif "share" in question or "repost" in question:
-        answer=f"Your connected accounts recorded {number('shares')} shares or reposts in the available sample of posts published in the last seven days."
-    elif "follower" in question:
-        answer=f"Your connected accounts currently report {number('followers')} followers in total."
-    elif "recent" in question or "last post" in question:
-        answer=(f"Your latest available post was on {str(posts[0].get('platform') or '').title()}: “{str(posts[0].get('text') or 'Media post')[:180]}”" if posts else "No recent connected-account posts are available yet.")
-    else:
-        lead=f" {leader[0].title()} currently has the strongest engagement signal." if leader else ""
-        answer=f"In the available sample of posts published in the last seven days: {number('impressions')} impressions, {number('likes')} likes, {number('comments')} comments and {number('shares')} shares or reposts.{lead}"
-    answer += " " + dashboard["note"]
+    from .analytics_view import insight_fallback
+    user=current_user(request)
+    data=analytics_for_user(db,user.id)
+    feed=recent_posts_for_user(db,user.id,limit=30)
+    dashboard=_analytics_dashboard(data,feed,window_days=body.days)
+    summary=dashboard.get('summary') or {}
+    connected=any(value.get('connected') for value in dashboard['platforms'].values())
+    answer=insight_fallback(dashboard,body.question,body.days)
     if connected and os.environ.get("OPENAI_API_KEY"):
         try:
             with allowances.ai_action(db,user.id):
                 answer=ai.analyse_performance(question=body.question,dashboard=dashboard,preferences=get_preferences(db,user.id))
         except HTTPException:raise
-        except Exception as exc:log.warning("AI performance analysis failed; using account-data fallback: %s",exc)
+        except Exception:log.warning("AI performance analysis failed; using account-data fallback")
     return {"answer":answer,"summary":summary,"has_signal":bool(connected),"recommendations":dashboard.get("recommendations") or []}
 
 @app.get("/api/recent-posts")
@@ -1252,6 +1251,9 @@ def run_due(authorization:Annotated[str|None,Header()]=None):
     secret=os.environ.get("SCHEDULER_SECRET") or os.environ.get("ADMIN_API_KEY")
     token=bearer_token(authorization)
     if not secret or not hmac.compare_digest(token,secret):raise HTTPException(401,"Invalid scheduler secret")
+    from .runtime import scheduler_mode
+    if scheduler_mode() == 'external':
+        raise HTTPException(409,'The dedicated worker manages scheduled delivery')
     return process_due()
 
 
@@ -1295,3 +1297,5 @@ app.include_router(mobile_auth_router)
 app.include_router(mobile_shell_router)
 app.add_middleware(NativeBillingMiddleware)
 app.add_middleware(SecurityMiddleware)
+from .observability import RequestDiagnostics
+app.add_middleware(RequestDiagnostics)

@@ -22,7 +22,7 @@ jobs:
         run: |
           node --test tests/strategy_onboarding.test.cjs tests/schedule_agenda.test.cjs tests/next_move_journey.test.cjs
           node tests/studio_clarity_client.cjs
-          node --test tests/ios_shell_client.cjs
+          node --test tests/ios_shell_client.cjs tests/analytics_commercial.test.cjs tests/ai_privacy_client.test.cjs
           for file in strategy analytics drafts; do node --check "nova/static/$file.js"; done
       - run: python -m pip_audit --format json -o dependency-audit.json
       - uses: actions/upload-artifact@v4

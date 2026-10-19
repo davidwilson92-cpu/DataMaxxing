@@ -1,5 +1,9 @@
 # Beta known gaps and required follow-up
 
+## Current commercial review — 19 October 2026
+
+The owner now requests commercial-readiness assessment and improvement, followed by a credit-supported cloud migration. The current candidate adds explicit AI permission, correct/failure-safe Performance, simpler Account/Drafts/help, safer error diagnostics and dormant separate-worker controls. See `../COMMERCIAL_READINESS_20261019.md`, `../architecture/CLOUD_MIGRATION_20261019.md` and `current-reconciliation-20261019.json`. These bounded fixes do not close entire historical sections. All79 remain retained; no broad RLS/service migration, charges or cloud cutover is activated. Existing older release/rollback hashes below are historical: use the latest handoff for the active candidate. A rollback must preserve the new AI permission boundary or pause AI processing.
+
 On 10 October 2026 the owner authorised a limited beta for personal testing, deferring the broader commercial-readiness work until later. This is not a certification or a finding that any security issue is fixed.
 
 ## Release boundary

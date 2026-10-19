@@ -39,6 +39,9 @@ def recover_stale_publication(db, item, stale):
 
 
 def process_due(limit: int = 25) -> dict[str, int]:
+    from .runtime import scheduler_mode
+    if scheduler_mode() == 'disabled':
+        return {'published':0, 'failed':0}
     published = failed = 0
     with SessionLocal() as db:
         from .db import PendingConnection
@@ -118,7 +121,7 @@ def process_due(limit: int = 25) -> dict[str, int]:
                 db.add(Activity(user_id=row.user_id, brand_id=row.brand_id, draft_id=row.draft_id, platform=row.platform, action="scheduled_publish", status=row.status, text="\n\n".join(posts), platform_post_id=row.platform_post_id, url=row.post_url))
                 published += 1
             except Exception as exc:
-                log.exception("Scheduled %s post %s failed", row.platform, row.id)
+                log.error("Scheduled %s post %s outcome unconfirmed", row.platform, row.id)
                 row.status = "unknown"; row.error = "Publication outcome is unconfirmed. Check the destination before retrying."
                 db.add(Activity(user_id=row.user_id, brand_id=row.brand_id, draft_id=row.draft_id, platform=row.platform, action="scheduled_publish", status="unknown", text=row.content_json[:2000], error="Publication could not be confirmed"))
                 failed += 1
@@ -132,5 +135,5 @@ async def loop() -> None:
         try:
             await asyncio.to_thread(process_due)
         except Exception:
-            log.exception("Scheduler loop failed")
+            log.error("Scheduler loop failed")
         await asyncio.sleep(interval)

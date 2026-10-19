@@ -13,6 +13,7 @@ if os.environ.get('ZOVA_TEST_POSTGRES'):
     if parsed.hostname not in {'localhost','127.0.0.1'} or not parsed.path.startswith('/zova_test_'):
         raise RuntimeError('PostgreSQL tests require an explicitly isolated loopback zova_test_ database')
 os.environ.update(DATABASE_URL=test_database,
+                  ZOVA_AI_CONSENT_REQUIRED="false",  # Provider/flow suites use synthetic data; explicit permission suite enables the production default.
                   UPLOAD_DIR=str(TEST_ROOT / "uploads"), REQUIRE_SUBSCRIPTION="false",
                   PUBLIC_BASE_URL="http://testserver", SESSION_SECRET="test-session-secret",
                   CREDENTIAL_ENCRYPTION_KEY="eV7ZGbkgONCU5t6fVtxgBMvCKx6-4UlAHWVHN2LoflE=")

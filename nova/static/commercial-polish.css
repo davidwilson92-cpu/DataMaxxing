@@ -63,3 +63,26 @@
 @media(max-width:900px){.auth-flow{display:block;min-height:100vh}.auth-story{display:none}.auth-brand{top:22px;left:24px}.auth-form-zone{padding:90px 24px 32px;min-height:100vh;border:0}.auth-form-zone h1{font-size:32px}.auth-form-zone .eyebrow{margin-bottom:12px}}
 
 .auth-form-zone .quiet-button{background:transparent;color:#ded4ed;border:1px solid #746484;border-radius:8px;min-height:40px;padding:8px 12px;margin:6px 0 14px;font:inherit;font-size:14px;cursor:pointer}
+
+.help-guide{box-sizing:border-box;max-width:820px;padding:32px;line-height:1.6}.help-guide h1{font-size:32px;letter-spacing:-.03em}.help-steps{padding-left:24px}.help-steps li{padding:0 0 18px 8px}.help-guide details{border-top:1px solid #554666;padding:8px 0}.help-guide summary{min-height:44px;align-content:center;cursor:pointer;font-weight:650}.help-guide details p{font-size:15px}.help-guide summary:focus-visible,.metric-method summary:focus-visible{outline:2px solid #ad7cf5;outline-offset:3px}.metric-method{margin-bottom:20px;font-size:14px;color:#5c5068}.metric-method summary{min-height:44px;align-content:center;cursor:pointer}.metric-method p{max-width:720px;line-height:1.6}.account-flow .account-section{grid-template-columns:minmax(0,1fr) minmax(0,1.5fr)}
+@media(max-width:760px){.help-guide{padding:20px}.account-flow .account-section{grid-template-columns:1fr}.metric-method{margin-bottom:12px}}
+/* Results stay close to their controls, including when a provider has no data. */
+.analytics-dashboard{align-content:start}
+.analytics-dashboard #analyticsNote{margin:0;font-size:14px;line-height:1.5;color:#62556f}
+.analytics-dashboard .metric-method{margin:0}
+.analytics-kpis>.analytics-empty-summary{grid-column:1/-1;margin:0;font-size:14px;line-height:1.5;color:#62556f}
+.analytics-period-control label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.platform-performance-main>div:first-child{flex-wrap:wrap;gap:4px 8px}
+.platform-performance-main>div:first-child strong{font-size:15px}
+.platform-performance-main>div:first-child span{font-size:13px;color:#62556f;overflow-wrap:anywhere}
+.platform-performance-main dl{display:flex;gap:16px;flex-wrap:wrap;margin:14px 0 0}
+.platform-performance-main dl dt{font-size:12px;color:#62556f}
+.platform-performance-main dl dd{font-size:18px;font-weight:650;margin:4px 0 0}
+.platform-performance-main .metric-note{font-size:13px;line-height:1.5;color:#62556f}
+.analytics-platform-mark.x,.analytics-platform-mark.facebook,.analytics-platform-mark.tiktok{background:#f3eff8}
+.analytics-platform-mark .platform-brand-icon{width:26px;height:26px}
+.analytics-post-art.x,.analytics-post-art.facebook,.analytics-post-art.tiktok{background:#f3eff8}
+.analytics-post dt{font-size:12px;color:#62556f}.analytics-post dd{font-size:15px}
+.recommendation-item h3{font-size:16px;line-height:1.35}.recommendation-item p{font-size:14px;line-height:1.6}
+.analytics-post p{font-size:14px;line-height:1.5}.analytics-post .post-channel{font-size:12px}
+@media(max-width:760px){.analytics-topbar{gap:12px;padding:16px}.analytics-dashboard{padding-top:16px;gap:12px}.analytics-topbar h1{margin:0}.analytics-period-control select{flex:1}.analytics-period-control .button{flex:0 0 auto}}

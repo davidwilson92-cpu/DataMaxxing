@@ -63,13 +63,16 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         if unsafe and not external_callback and response is None:
             from starlette.concurrency import run_in_threadpool
             user = await run_in_threadpool(user_from_session, request.cookies.get('nova_session'))
+            from .ai_consent import required, uses_ai, permitted
+            if user and required() and uses_ai(path) and not await run_in_threadpool(permitted, user.id):
+                response = JSONResponse({'detail':'Choose whether to use AI before sending content. Your content has not been sent to AI.', 'code':'ai_permission_required'},403)
             identity = f'user:{user.id}' if user else f'ip:{request.client.host if request.client else "unknown"}'
             maximum, seconds = (30,300) if path in {'/login','/signup','/forgot-password','/reset-password','/api/v1/auth/token','/api/v1/auth/refresh'} else (120,60)
             if path.startswith('/billing/'):maximum,seconds=10,60
             ai_request=path.startswith('/api/ai/') or path.startswith('/api/voice/') or path=='/api/conversation/plan' or path.startswith('/api/strategy/') or (path.startswith('/api/series/occurrences/') and path.endswith('/draft'))
             if ai_request:maximum,seconds=20,60
             maximum *= max(1,int(os.environ.get('RATE_LIMIT_SCALE','1')))
-            if not await run_in_threadpool(allowed_request, f'{identity}:{"auth" if path in {"/login","/signup","/forgot-password","/reset-password"} else "ai" if ai_request else "mutations"}', maximum, seconds):
+            if response is None and not await run_in_threadpool(allowed_request, f'{identity}:{"auth" if path in {"/login","/signup","/forgot-password","/reset-password"} else "ai" if ai_request else "mutations"}', maximum, seconds):
                 response = JSONResponse({'detail':'Too many requests. Please wait before trying again.'},429,headers={'Retry-After':str(seconds)})
         if response is None:
             response = await call_next(request)

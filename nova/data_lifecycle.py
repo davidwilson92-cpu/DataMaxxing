@@ -31,6 +31,7 @@ EXPORT = {
     models.BillingAccount: ['mode','status','price_id','period_end','cancel_at_period_end'],
     models.UsageEntry: ['kind','period','amount','state'],
     models.ProductEvent: ['kind','created_at'],
+    models.AIConsent: ['version','allowed','updated_at'],
     models.AICall: ['model','status','input_tokens','cached_tokens','output_tokens','estimated_gbp','rate_date'],
 }
 
@@ -112,7 +113,7 @@ def erase_local_account(db, uid, verified_case, *, writes_paused=False):
             for name in names:setattr(row,name,'{}' if name.endswith('_json') else '')
             if cls is models.SocialConnection:row.active=False
             if cls is models.PublishReview:row.status='erased'
-    for cls in [models.SeriesApproval,models.SeriesOccurrence,models.ContentSeries,models.StrategyAction,models.Strategy,models.PerformanceSnapshot,models.AuthIdentity,models.RecoveryToken,models.EmailVerification,models.OAuthState,models.PendingConnection,models.ProductEvent]:
+    for cls in [models.AIConsent,models.SeriesApproval,models.SeriesOccurrence,models.ContentSeries,models.StrategyAction,models.Strategy,models.PerformanceSnapshot,models.AuthIdentity,models.RecoveryToken,models.EmailVerification,models.OAuthState,models.PendingConnection,models.ProductEvent]:
         db.execute(delete(cls).where(cls.user_id==uid))
     device_ids=select(models.MobileSession.id).where(models.MobileSession.user_id==uid)
     db.execute(delete(models.MobileHandoff).where(models.MobileHandoff.session_id.in_(device_ids)))

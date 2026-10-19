@@ -1,4 +1,21 @@
-# 19 October 2026 — phone feedback and dark product styling
+# 19 October 2026 — commercial-readiness candidate (supersedes older status below)
+
+| Capability | Implemented / tested boundary | External or release boundary |
+|---|---|---|
+| Studio / Drafts / Performance / Account | Core screens remain light; Account and bridges dark. Slim Studio header, no weekly card in Studio, flat Account categories. Current candidate simplifies headings/help and makes Performance metrics legible. | Shared runtime deployment status is in the latest handoff; browser previews are synthetic, not physical iPhone acceptance. |
+| AI sharing choice | Default-off, versioned account permission, server gate, cancel/failure protection, export/erasure inclusion and Account revocation; dedicated server/client tests | Existing synthetic AI fixtures explicitly bypass this gate. Approval is not a complete privacy/retention programme. |
+| Performance | Correct selected window for questions; missing data not zero; no stale panels/late answers or invented platform winner; safe links | Limited provider samples and differing counters remain labelled. Actual data coverage is provider-dependent. |
+| Diagnostics | Safe failure reference/header, route-template logs, provider payload removal and review-URL redaction | No external alerts configured or independent security audit completed. |
+| Cloud portability | Embedded/external/disabled scheduling, single-worker PostgreSQL lease, heartbeat, bounded pools and offline schema preparation | External mode inactive. No cloud resources, private-media migration, production restore or cutover. |
+| iOS beta | Earlier server419d452 live; native0.1.0(9) Apple upload accepted; all-provider automatic return implemented | Apple login/processing/group verification and owner phone acceptance remain pending. No new Swift change in this candidate. |
+| Social publishing | Existing confirmation/ownership/uncertain-result protections preserved | Historical provider tests do not establish every format/customer approval. Owner reports Direct Post approval; current production settings and public paid-content validation require separate verification. |
+| Commercial access | Existing free-beta offer and disabled charges retained | Paid plans, iOS purchase policy, operating/privacy gates and real acceptance remain open. |
+
+See [current scores, evidence and commercial gates](COMMERCIAL_READINESS_20261019.md) and [cloud plan](architecture/CLOUD_MIGRATION_20261019.md). All79 historical sections remain tracked; earlier branch evidence is not presumed active.
+
+---
+
+# Historical snapshot: 19 October 2026 — phone feedback and dark product styling
 
 | Capability | Implementation / tests | Release and evidence boundary |
 |---|---|---|

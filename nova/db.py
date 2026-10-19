@@ -12,7 +12,10 @@ if DATABASE_URL.startswith('postgres://'):
 elif DATABASE_URL.startswith('postgresql://'):
     DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg://', 1)
 connect_args = {'check_same_thread': False} if DATABASE_URL.startswith('sqlite') else {}
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args)
+from .runtime import database_options, validate_runtime
+# Reject unsafe multi-service configuration before opening a database or running DDL.
+validate_runtime()
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args, **database_options(DATABASE_URL))
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 
@@ -461,6 +464,14 @@ class SeriesApproval(BrandScoped, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class AIConsent(Base):
+    __tablename__ = 'zova_ai_consent'
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), primary_key=True)
+    version: Mapped[str] = mapped_column(String(40), default='')
+    allowed: Mapped[bool] = mapped_column(Boolean, default=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class MobileGrant(Base):
     __tablename__ = 'zova_mobile_grants'
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -504,9 +515,16 @@ class MobileHandoff(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
 
-Base.metadata.create_all(bind=engine)
-from .migrations import run_migrations
-run_migrations(engine)
+class WorkerHeartbeat(Base):
+    __tablename__ = 'zova_worker_heartbeats'
+    role: Mapped[str] = mapped_column(String(30), primary_key=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20))
+
+
+from .runtime import prepare_schema
+prepare_schema(Base.metadata, engine)
 
 
 def get_db(request: Request):

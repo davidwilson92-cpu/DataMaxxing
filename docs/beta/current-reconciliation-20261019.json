@@ -1,0 +1,706 @@
+{
+  "assessed_on": "2026-10-19",
+  "active_baseline": "db7fc42",
+  "live_runtime_at_start": "419d4520fb76a357f007a6c95c274f78c26625d1",
+  "commercial_ready": false,
+  "interpretation": "All original IDs retained. Historical evidence can describe another worktree. New candidate evidence is partial; no whole section is closed. Untouched entries require current-branch reconciliation, not an assumed deployment.",
+  "sections": [
+    {
+      "id": 1,
+      "title": "CORE ENGINEERING PRINCIPLES",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Define one action-risk policy and enforce its confirmation and audit rules across every mutation."
+    },
+    {
+      "id": 2,
+      "title": "MULTI-TENANCY",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Complete billing/usage operation ownership and dedicated account lifecycle/service routing with exact grants before runtime RLS activation; finish worker/legacy routing, independent/operational evidence and verified rollout."
+    },
+    {
+      "id": 3,
+      "title": "AUTHENTICATION",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Validate PostgreSQL/restore and browser journeys, obtain security review, establish verified recovery operations and privileged MFA rollout; add maintained compromised-password screening."
+    },
+    {
+      "id": 4,
+      "title": "AUTHORIZATION",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Add immutable workspace references and lifecycle constraints, complete shared-member route/worker authorization, and enforce restricted-role PostgreSQL RLS before rollout."
+    },
+    {
+      "id": 5,
+      "title": "SOCIAL PLATFORM CONNECTION SECURITY",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Implement provider-specific revocation and transactional local cancellation; test expired state, wrong scope, disconnect races and secret masking."
+    },
+    {
+      "id": 6,
+      "title": "PUBLISHING ARCHITECTURE",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Validate the new legacy action contract and additive migration in isolated staging when the deferral ends; finish canonical tenant mapping, provider-specific recovery and operational assurance."
+    },
+    {
+      "id": 7,
+      "title": "CONCURRENCY",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Extend versioned writes and concurrency tests to account, schedule, strategy, connection and billing boundaries."
+    },
+    {
+      "id": 8,
+      "title": "QUEUES AND WORKERS",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/worker.py",
+        "tests/test_portable_runtime.py"
+      ],
+      "next_action": "Introduce recoverable claim/lease, retry classification and inspect/retry/cancel tooling without replaying ambiguous external actions."
+    },
+    {
+      "id": 9,
+      "title": "RATE LIMITING",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Add endpoint/resource budgets and per-provider quota backpressure with concurrent boundary tests."
+    },
+    {
+      "id": 10,
+      "title": "DATABASE DESIGN",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Review canonical relational constraints and migrate ownership with reconciliation and rollback evidence."
+    },
+    {
+      "id": 11,
+      "title": "DATABASE SECURITY",
+      "historical_status": "unverified",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Supply deployment configuration evidence and separate migration/application/worker identities with least privilege."
+    },
+    {
+      "id": 12,
+      "title": "DATABASE BACKUPS",
+      "historical_status": "unverified",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Run an approved isolated recovery drill and record restore time, data-loss bound, backup lifecycle and alert ownership."
+    },
+    {
+      "id": 13,
+      "title": "PRIVACY BY DESIGN",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/ai_consent.py",
+        "tests/test_ai_privacy.py"
+      ],
+      "next_action": "Document collection purposes, recipients, access and retention for every stored field and review additions against it."
+    },
+    {
+      "id": 14,
+      "title": "DATA CLASSIFICATION",
+      "historical_status": "gap",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Classify each table, object bucket, telemetry field and export, then map access/encryption/retention controls."
+    },
+    {
+      "id": 15,
+      "title": "DATA RETENTION",
+      "historical_status": "gap",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Approve retention periods and implement bounded, observable purge jobs including backup expiry."
+    },
+    {
+      "id": 16,
+      "title": "ACCOUNT DELETION",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/data_lifecycle.py"
+      ],
+      "next_action": "Build authenticated owner-confirmed deletion with durable provider, billing, storage and secondary-store reconciliation."
+    },
+    {
+      "id": 17,
+      "title": "DATA EXPORT",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/data_lifecycle.py"
+      ],
+      "next_action": "Add owner-authorized export jobs, tenant-bound expiring access and a media archive with deletion lifecycle."
+    },
+    {
+      "id": 18,
+      "title": "ENCRYPTION",
+      "historical_status": "unverified",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Verify managed encryption and TLS settings and plan application-key rotation with tested recovery."
+    },
+    {
+      "id": 19,
+      "title": "SECRET MANAGEMENT",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/access_logging.py",
+        "nova/observability.py"
+      ],
+      "next_action": "Inventory secret consumers and establish rotation/revocation procedures and a secret scanner."
+    },
+    {
+      "id": 20,
+      "title": "MEDIA UPLOAD SECURITY",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Implement private storage delivery, metadata handling and a documented scan/quarantine policy; verify hostile-media tests."
+    },
+    {
+      "id": 21,
+      "title": "API SECURITY",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Inventory routes and enforce strict schemas, response allowlists and budgets, with object-level attack tests."
+    },
+    {
+      "id": 22,
+      "title": "WEBHOOK SECURITY",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Document every callback, verify signatures/time/schema, and queue idempotent processing with duplicate-event tests."
+    },
+    {
+      "id": 23,
+      "title": "SSRF",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Inventory remaining server egress and constrain provider upload URLs, DNS resolution, redirects, response size and timeouts."
+    },
+    {
+      "id": 24,
+      "title": "FRONTEND SECURITY",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/static/analytics.js",
+        "tests/analytics_commercial.test.cjs"
+      ],
+      "next_action": "Move executable inline code to controlled assets/nonces and test CSRF, XSS and browser policy across critical flows."
+    },
+    {
+      "id": 25,
+      "title": "CONTENT PREVIEW",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Exercise every supported format/account/timezone on staging, including unsupported-field warnings and wrong-account prevention."
+    },
+    {
+      "id": 26,
+      "title": "HIGH-RISK ACTION UX",
+      "historical_status": "gap",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Add server-enforced confirmation and consequence copy for every high-impact action, with keyboard and screen-reader verification."
+    },
+    {
+      "id": 27,
+      "title": "UNSAVED CHANGES",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Test offline save, refresh, navigation, concurrent edits and recovery for each editor; expose clear save state."
+    },
+    {
+      "id": 28,
+      "title": "UX PERFORMANCE",
+      "historical_status": "unverified",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/static/commercial-polish.css"
+      ],
+      "next_action": "Measure desktop/mobile p95 reads/writes and LCP/INP/CLS under realistic load, then address bottlenecks."
+    },
+    {
+      "id": 29,
+      "title": "LOADING STATES",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/static/analytics.js"
+      ],
+      "next_action": "Inventory asynchronous actions and test busy, repeated click, timeout, success and retry states."
+    },
+    {
+      "id": 30,
+      "title": "ERROR HANDLING",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/observability.py",
+        "nova/social.py",
+        "tests/test_request_diagnostics.py"
+      ],
+      "next_action": "Test all error responses for secrets, outcome clarity, retry policy and recovery action."
+    },
+    {
+      "id": 31,
+      "title": "ACCESSIBILITY",
+      "historical_status": "unverified",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/templates/ai_privacy.html",
+        "nova/static/ai-privacy.css"
+      ],
+      "next_action": "Add automated accessibility checks and manual keyboard/screen-reader/contrast review for critical journeys."
+    },
+    {
+      "id": 32,
+      "title": "RESPONSIVE DESIGN",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/static/commercial-polish.css"
+      ],
+      "next_action": "Verify editing, review, publishing, errors and analytics at representative mobile widths and input modes."
+    },
+    {
+      "id": 33,
+      "title": "DESIGN SYSTEM",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/static/commercial-polish.css"
+      ],
+      "next_action": "Inventory and consolidate critical shared controls while preserving Zova branding and tested behavior."
+    },
+    {
+      "id": 34,
+      "title": "EMPTY STATES",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/static/analytics.js"
+      ],
+      "next_action": "Verify every empty state explains purpose, absence and a usable next action."
+    },
+    {
+      "id": 35,
+      "title": "AI SYSTEM ARCHITECTURE",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Bind every AI action to authenticated workspace capabilities and explicit authority; test bypass attempts."
+    },
+    {
+      "id": 36,
+      "title": "STRUCTURED AI OUTPUT",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Apply versioned strict schemas and reject extra or invalid action fields before any mutation."
+    },
+    {
+      "id": 37,
+      "title": "AI TENANT ISOLATION",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Test cross-tenant IDs/context/attachments/strategy and enforce isolation below application queries."
+    },
+    {
+      "id": 38,
+      "title": "PROMPT INJECTION",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Test hostile source/media/tool data against deterministic authority controls and ensure secrets cannot enter model context."
+    },
+    {
+      "id": 39,
+      "title": "AI DATA MINIMISATION",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/ai_consent.py"
+      ],
+      "next_action": "Capture synthetic outbound payloads and assert minimum approved fields and absence of tokens/billing/other tenants."
+    },
+    {
+      "id": 40,
+      "title": "AI ACTION APPROVAL",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Validate approval identity, scope, expiry and content binding for every AI-proposed external action."
+    },
+    {
+      "id": 41,
+      "title": "AUDIT LOGGING",
+      "historical_status": "gap",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Add append-only structured audit records for all critical actions with retention, access controls and tamper detection."
+    },
+    {
+      "id": 42,
+      "title": "SECURITY LOGGING",
+      "historical_status": "gap",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/access_logging.py",
+        "nova/observability.py"
+      ],
+      "next_action": "Add minimal security event telemetry and actionable alerts for failed login, denial, privilege and unusual-volume events."
+    },
+    {
+      "id": 43,
+      "title": "OBSERVABILITY",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/operations.py",
+        "nova/observability.py"
+      ],
+      "next_action": "Implement safe structured telemetry, metrics, trace propagation and alert-delivery tests."
+    },
+    {
+      "id": 44,
+      "title": "CORRELATION IDs",
+      "historical_status": "gap",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/observability.py",
+        "tests/test_request_diagnostics.py"
+      ],
+      "next_action": "Create and propagate server-generated request/job IDs through responses, durable jobs, audit events and telemetry."
+    },
+    {
+      "id": 45,
+      "title": "RELIABILITY TARGETS",
+      "historical_status": "unverified",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Define eligible outcomes and provider-outage accounting; instrument and review SLO/error-budget reporting."
+    },
+    {
+      "id": 46,
+      "title": "THIRD-PARTY FAILURE",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Exercise outages, latency, quota exhaustion and malformed responses per adapter with bounded recovery."
+    },
+    {
+      "id": 47,
+      "title": "PROVIDER ABSTRACTION",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Split adapters behind a stable interface and add provider contract fixtures without changing public behavior."
+    },
+    {
+      "id": 48,
+      "title": "INTERNAL CANONICAL MODEL",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Reconcile legacy paths into one canonical publishing contract and versioned payload model."
+    },
+    {
+      "id": 49,
+      "title": "SCALE ARCHITECTURE",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/runtime.py",
+        "nova/worker.py"
+      ],
+      "next_action": "Deploy and exercise the independent worker and private object storage after infrastructure approval; prove restart and multi-instance behavior."
+    },
+    {
+      "id": 50,
+      "title": "CONNECTION POOLING",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/runtime.py"
+      ],
+      "next_action": "Set per-service pool budgets from the actual database capacity and validate saturation/backpressure under load."
+    },
+    {
+      "id": 51,
+      "title": "CACHE DESIGN",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Inventory all caches and verify tenant prefixes, expiry, invalidation and absence of secret payloads."
+    },
+    {
+      "id": 52,
+      "title": "BILLING SECURITY",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Validate test/live separation, subscription races, duplicate/out-of-order events and current payment setup."
+    },
+    {
+      "id": 53,
+      "title": "ENTITLEMENTS",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Define canonical entitlements independent of display plans and test concurrent limit enforcement and changes."
+    },
+    {
+      "id": 54,
+      "title": "ADMINISTRATION",
+      "historical_status": "gap",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Put privileged operations behind verified staff identity, mandatory MFA and least-privilege audited actions; do not force existing customer enrollment."
+    },
+    {
+      "id": 55,
+      "title": "ENVIRONMENT SEPARATION",
+      "historical_status": "gap",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Owner paused staging until app approval on 28 September 2026. After the owner confirms approval, revisit STAGING_PLAN.md and obtain cost approval before provisioning; verify distinct data, secrets, storage and credentials before migrations. Continue local work; do not repurpose the shared-database sandbox."
+    },
+    {
+      "id": 56,
+      "title": "CI/CD",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        ".github/workflows/validate.yml"
+      ],
+      "next_action": "Require Production guardrails plus validation checks in branch protection and hosting; add incremental lint/type/security checks."
+    },
+    {
+      "id": 57,
+      "title": "DEPENDENCY SECURITY",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Produce a reproducible complete dependency lock and validate current vulnerability scans with an update/remediation process."
+    },
+    {
+      "id": 58,
+      "title": "SUPPLY CHAIN SECURITY",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Keep the active required checks; establish independent review, finish dependency/image pinning and verify least-privilege cloud/registry access. Optional MFA is authorised; privileged MFA and independent review remain unresolved."
+    },
+    {
+      "id": 59,
+      "title": "TESTING PYRAMID",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "tests/test_ai_privacy.py",
+        "tests/analytics_commercial.test.cjs"
+      ],
+      "next_action": "Map critical journeys to each test level and add missing provider/browser security regressions."
+    },
+    {
+      "id": 60,
+      "title": "MANDATORY TENANT ISOLATION TESTS",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Build a complete object/operation attack matrix and run it under restricted PostgreSQL identities with RLS."
+    },
+    {
+      "id": 61,
+      "title": "MANDATORY PUBLISHING TESTS",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Cover every mandatory scenario against all publish entry points with deterministic persisted outcomes."
+    },
+    {
+      "id": 62,
+      "title": "LOAD TESTING",
+      "historical_status": "unverified",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Run isolated staged load scenarios and verify graceful overload with no duplicate sends or corruption."
+    },
+    {
+      "id": 63,
+      "title": "SECURITY TESTING",
+      "historical_status": "unverified",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Scope and complete independent security testing after architectural remediation, recording unresolved findings as blockers."
+    },
+    {
+      "id": 64,
+      "title": "INCIDENT RESPONSE",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Run an incident tabletop covering detection through postmortem, preserving evidence and customer impact analysis."
+    },
+    {
+      "id": 65,
+      "title": "OAUTH COMPROMISE RUNBOOK",
+      "historical_status": "gap",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Implement the emergency control path and exercise provider revocation/key rotation/affected-account identification."
+    },
+    {
+      "id": 66,
+      "title": "DISASTER RECOVERY",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "scripts/check_synthetic_restore.py"
+      ],
+      "next_action": "Document and rehearse database corruption/deletion, region outage, credential compromise and provider failure recovery."
+    },
+    {
+      "id": 67,
+      "title": "GDPR ACCOUNTABILITY",
+      "historical_status": "unverified",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Obtain accountable privacy review and operational evidence; do not infer legal compliance from code tests."
+    },
+    {
+      "id": 68,
+      "title": "ANALYTICS PRIVACY",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Test telemetry allowlists against synthetic credentials, draft text, emails and secret-bearing URLs."
+    },
+    {
+      "id": 69,
+      "title": "SUPPORT DATA ACCESS",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Gate elevated content access with explicit reason, verified support role and immutable audit."
+    },
+    {
+      "id": 70,
+      "title": "PRODUCT TRUST",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/templates/help.html"
+      ],
+      "next_action": "Expose accurate connection permissions/access and action provenance with clear automation status."
+    },
+    {
+      "id": 71,
+      "title": "AUTOMATION GUARDRAILS",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Define and display a versioned automation policy enforced by workers and approvals."
+    },
+    {
+      "id": 72,
+      "title": "AUTOMATION KILL SWITCH",
+      "historical_status": "gap",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/runtime.py",
+        "nova/scheduler.py"
+      ],
+      "next_action": "Add durable owner and operations switches enforced immediately before new dispatch, with audited changes and in-flight caveats."
+    },
+    {
+      "id": 73,
+      "title": "SAFE DEFAULTS",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Verify private storage policies, explicit opt-in automation and privileged MFA defaults without forcing customer enrollment."
+    },
+    {
+      "id": 74,
+      "title": "USER CONTROL",
+      "historical_status": "gap",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "nova/ai_consent.py"
+      ],
+      "next_action": "Implement accessible authenticated self-service lifecycle/team/automation controls with recovery and audit."
+    },
+    {
+      "id": 75,
+      "title": "RELEASE SEVERITY MODEL",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Assign accountable owners and verify release policy is required in repository and hosting controls."
+    },
+    {
+      "id": 76,
+      "title": "PRODUCTION RELEASE GATE",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Verify the actual production hosting gate, preserve mandatory repository checks and close every applicable domain requirement. Keep remediation on the unmerged draft PR."
+    },
+    {
+      "id": 77,
+      "title": "ZOVA'S TEN NON-NEGOTIABLES",
+      "historical_status": "gap",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Close underlying blockers with independently reviewable evidence; do not waive them based on a successful build."
+    },
+    {
+      "id": 78,
+      "title": "TARGET PRODUCTION ARCHITECTURE",
+      "historical_status": "partial",
+      "current_review": "partial_increment",
+      "candidate_evidence": [
+        "docs/architecture/CLOUD_MIGRATION_20261019.md"
+      ],
+      "next_action": "Migrate incrementally to the target architecture with compatibility, recovery and failure tests at each stage."
+    },
+    {
+      "id": 79,
+      "title": "ENGINEERING DEFINITION OF DONE",
+      "historical_status": "partial",
+      "current_review": "retained_requires_current_branch_review",
+      "candidate_evidence": [],
+      "next_action": "Require evidence-backed closure, repeat the full release gate on the exact candidate and archive approved release evidence."
+    }
+  ]
+}
