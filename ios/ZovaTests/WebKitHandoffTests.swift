@@ -31,8 +31,11 @@ final class WebKitHandoffTests: XCTestCase {
         request.httpBody = Data("ticket=synthetic-one-use-ticket".utf8)
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.setValue("1", forHTTPHeaderField: "X-Zova-Native-Handoff")
+        let navigation = WebKitProbeNavigation()
+        view.navigationDelegate = navigation
         view.load(request)
-        await fulfillment(of: [exchanged, opened], timeout: 15)
+        // A cold CI simulator may need over20s to launch WebKit's processes.
+        await fulfillment(of: [exchanged, opened], timeout: 60)
         // Keep WebKit alive until its redirect completes.
         XCTAssertNotNil(view.url)
     }
@@ -50,6 +53,10 @@ final class WebKitHandoffTests: XCTestCase {
             let body = String(text[split.upperBound...])
             if head.hasPrefix("post /mobile/web-session ") {
                 if !body.contains("ticket=synthetic-one-use-ticket") {
+                    if !head.contains("content-length: 30") {
+                        XCTFail("WebKit dropped the synthetic POST body: " + head)
+                        connection.cancel(); return
+                    }
                     read(connection, buffered: data, exchanged: exchanged, opened: opened); return
                 }
                 XCTAssertTrue(head.contains("x-zova-native-handoff: 1"))
@@ -67,5 +74,12 @@ final class WebKitHandoffTests: XCTestCase {
     }
     nonisolated private static func send(_ connection: NWConnection, _ text: String) {
         connection.send(content: Data(text.utf8), completion: .contentProcessed { _ in connection.cancel() })
+    }
+}
+
+@MainActor
+private final class WebKitProbeNavigation: NSObject, WKNavigationDelegate {
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        XCTFail("WebKit loopback navigation failed: " + error.localizedDescription)
     }
 }
