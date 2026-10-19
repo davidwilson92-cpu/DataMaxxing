@@ -31,6 +31,8 @@ workflows:
         script: |
           set -eu
           xcode-project build-ipa --project ios/Zova.xcodeproj --scheme Zova --archive-xcargs "CURRENT_PROJECT_VERSION=$((BUILD_NUMBER + 1)) ZOVA_SERVER_URL=$ZOVA_SERVER_URL"
+      - name: Verify exported iPhone metadata before upload
+        script: python3 scripts/check_ios_archive.py build/ios/ipa/Zova.ipa
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log

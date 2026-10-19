@@ -10,6 +10,7 @@ uploads/
 *.p8
 *.p12
 *.mobileprovision
+*.ipa
 *.xcarchive/
 ios/*.xcodeproj/
 ios/Zova/Info.plist

@@ -80,6 +80,7 @@ struct ZovaRoot: View {
     private let titles = ["Studio", "Drafts", "Performance", "Account"]
     private let icons = ["square.and.pencil", "doc.on.doc", "chart.bar", "person.crop.circle"]
     private let purple = Color(red: 0.486, green: 0.227, blue: 0.929)
+    private let readableSecondary = Color(red: 0.36, green: 0.34, blue: 0.40)
     var body: some View {
         ZStack {
             Color.white.ignoresSafeArea()
@@ -114,20 +115,20 @@ struct ZovaRoot: View {
                 Text("Your AI social manager.").font(.headline).foregroundStyle(purple)
                 Text("Your ideas.\nStill you.").font(.system(size: 48, weight: .bold, design: .rounded)).minimumScaleFactor(0.65)
                 Text("Shape your next post, plan your socials and share in your voice.")
-                    .font(.title3).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    .font(.title3).foregroundStyle(readableSecondary).fixedSize(horizontal: false, vertical: true)
                 Button { Task { await model.login() } } label: {
                     HStack { Spacer(); if model.working { ProgressView().tint(.white) }; Text(model.working ? "Opening sign-in…" : "Continue to Zova").fontWeight(.semibold); Spacer() }
                         .padding(18).background(LinearGradient(colors: [purple, Color(red: 0.36, green: 0.13, blue: 0.71)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 18)).foregroundStyle(.white)
                 }.disabled(model.working).accessibilityIdentifier("continue-zova")
-                Text("Use your existing Zova account, or create one in the secure sign-in window.").font(.subheadline).foregroundStyle(.secondary)
-                Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isn’t analysed.").font(.footnote).foregroundStyle(.secondary)
+                Text("Use your existing Zova account, or create one in the secure sign-in window.").font(.subheadline).foregroundStyle(readableSecondary)
+                Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isn’t analysed.").font(.footnote).foregroundStyle(readableSecondary)
                 if let message = model.message { Text(message).font(.callout).foregroundStyle(.primary).accessibilityAddTraits(.updatesFrequently) }
                 HStack(spacing: 24) {
                     Button("Privacy") { openLegal("/privacy-policy") }
                     Button("Terms") { openLegal("/terms-of-service") }
                     Button("Help") { openLegal("/help") }
                 }.font(.subheadline).tint(purple).frame(minHeight: 44)
-                Text("Beta access • No purchases in this app").font(.footnote).foregroundStyle(.secondary)
+                Text("Beta access • No purchases in this app").font(.footnote).foregroundStyle(readableSecondary)
             }.padding(28).frame(maxWidth: 560)
         }
     }
