@@ -33,7 +33,9 @@ final class NativeSignIn: NSObject, ASWebAuthenticationPresentationContextProvid
     }
     private func finish(_ result: Result<URL, Error>) {
         guard let callback = continuation else { return }
+        let completed = session
         continuation = nil; session = nil
+        completed?.cancel()
         callback.resume(with: result)
     }
 }

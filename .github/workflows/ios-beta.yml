@@ -34,7 +34,15 @@ jobs:
           xcodebuild build -project Zova.xcodeproj -scheme Zova -configuration Release -destination 'generic/platform=iOS' -derivedDataPath ../ios-build CODE_SIGNING_ALLOWED=NO
       - name: Preserve simulator review evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        run: |
+          if [ -d ios-results.xcresult ]; then
+            xcrun xcresulttool export attachments --path ios-results.xcresult --output-path ios-test-attachments
+          fi
+      - name: Upload simulator review evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ios-simulator-evidence
-          path: ios-results.xcresult
+          path: |
+            ios-results.xcresult
+            ios-test-attachments

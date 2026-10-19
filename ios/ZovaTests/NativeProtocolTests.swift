@@ -52,4 +52,90 @@ final class NativeProtocolTests: XCTestCase {
         try KeychainVault.clear()
         XCTAssertNil(try KeychainVault.load())
     }
+
+    func testLateSignInCannotRestoreForgottenSession() async throws {
+        try KeychainVault.clear()
+        let started = expectation(description: "Token request started")
+        MockNativeTransport.respond = { request in
+            XCTAssertEqual(request.url?.host, "zova-social.com")
+            XCTAssertEqual(request.url?.path, "/api/v1/auth/token")
+            started.fulfill()
+            return (200, Self.tokenData, 0.25)
+        }
+        let api = try mockAPI()
+        let pending = Task { try await api.exchange(code: String(repeating: "c", count: 43), verifier: String(repeating: "v", count: 64)) }
+        await fulfillment(of: [started], timeout: 3)
+        await api.forget()
+        do { try await pending.value; XCTFail("Late sign-in must be rejected") }
+        catch ZovaFailure.signInRequired { }
+        XCTAssertNil(try KeychainVault.load())
+    }
+
+    func testConcurrentRefreshUsesOneRotationAndKeepsTokensOutOfWebRequest() async throws {
+        try KeychainVault.save(NativeTokens(access: String(repeating: "a", count: 64), refresh: String(repeating: "r", count: 64), expires: .distantPast))
+        let refresh = expectation(description: "Single refresh")
+        refresh.assertForOverFulfill = true
+        MockNativeTransport.respond = { request in
+            XCTAssertEqual(request.url?.host, "zova-social.com")
+            if request.url?.path == "/api/v1/auth/refresh" {
+                refresh.fulfill()
+                return (200, Self.tokenData, 0.15)
+            }
+            XCTAssertEqual(request.url?.path, "/api/v1/native-handoff")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer " + String(repeating: "b", count: 64))
+            return (200, Data(("{\"ticket\":\"" + String(repeating: "t", count: 43) + "\"}").utf8), 0)
+        }
+        let api = try mockAPI()
+        async let first = api.handoff(destination: "/studio")
+        async let second = api.handoff(destination: "/drafts")
+        let values = try await [first, second]
+        await fulfillment(of: [refresh], timeout: 3)
+        for value in values {
+            XCTAssertNil(value.value(forHTTPHeaderField: "Authorization"))
+            XCTAssertFalse(value.url!.absoluteString.contains(String(repeating: "b", count: 64)))
+            XCTAssertEqual(value.httpMethod, "POST")
+            XCTAssertEqual(value.url?.path, "/mobile/web-session")
+        }
+        XCTAssertEqual(try KeychainVault.load()?.refresh, String(repeating: "n", count: 64))
+        await api.forget()
+    }
+
+    func testLateRefreshCannotRestoreForgottenSession() async throws {
+        try KeychainVault.save(NativeTokens(access: String(repeating: "a", count: 64), refresh: String(repeating: "r", count: 64), expires: .distantPast))
+        let started = expectation(description: "Refresh started")
+        MockNativeTransport.respond = { request in
+            XCTAssertEqual(request.url?.path, "/api/v1/auth/refresh")
+            started.fulfill()
+            return (200, Self.tokenData, 0.25)
+        }
+        let api = try mockAPI()
+        let pending = Task { try await api.handoff(destination: "/studio") }
+        await fulfillment(of: [started], timeout: 3)
+        await api.forget()
+        do { _ = try await pending.value; XCTFail("Late refresh must be rejected") }
+        catch ZovaFailure.signInRequired { }
+        XCTAssertNil(try KeychainVault.load())
+    }
+
+    private static var tokenData: Data { Data(("{\"access_token\":\"" + String(repeating: "b", count: 64) + "\",\"refresh_token\":\"" + String(repeating: "n", count: 64) + "\",\"expires_in\":900}").utf8) }
+    private func mockAPI() throws -> NativeAPI {
+        let transport = URLSessionConfiguration.ephemeral
+        transport.protocolClasses = [MockNativeTransport.self]
+        return NativeAPI(configuration: try ZovaConfiguration(base: URL(string: "https://zova-social.com")!), transport: transport)
+    }
+}
+
+private final class MockNativeTransport: URLProtocol {
+    static var respond: ((URLRequest) -> (Int, Data, Double))!
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let (status, data, delay) = Self.respond(request)
+        DispatchQueue.global().asyncAfter(deadline: .now() + delay) { [self] in
+            client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: data)
+            client?.urlProtocolDidFinishLoading(self)
+        }
+    }
+    override func stopLoading() { }
 }

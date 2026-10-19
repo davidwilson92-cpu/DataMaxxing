@@ -15,9 +15,9 @@ actor NativeAPI {
     private var tokens: NativeTokens?
     private var rotation: Task<NativeTokens, Error>?
     private var sessionEpoch = 0
-    init(configuration: ZovaConfiguration) {
+    init(configuration: ZovaConfiguration, transport: URLSessionConfiguration = .ephemeral) {
         self.configuration = configuration
-        let settings = URLSessionConfiguration.ephemeral
+        let settings = transport
         settings.httpCookieStorage = nil
         settings.httpShouldSetCookies = false
         settings.urlCache = nil

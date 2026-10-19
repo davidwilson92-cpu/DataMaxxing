@@ -34,10 +34,16 @@ def test_account_deletion_request_is_authenticated_idempotent_and_truthful():
     with SessionLocal() as db:
         row = db.get(DeletionRequest, response.headers['location'].rsplit('/', 1)[1])
         assert row.status == 'received'
-        assert row.subject_hash == hash_api_key(str(uid))
+        assert row.subject_hash == hash_api_key(f'account:{uid}')
         assert db.get(User, uid).active
     other, _, _, _ = account()
     assert other.post('/account/deletion', data={'confirmation': 'DELETE'}, follow_redirects=False).headers['location'] != response.headers['location']
+    from nova.data_lifecycle import erase_local_account
+    with SessionLocal() as db:
+        erase_local_account(db, uid, 'synthetic-ios-deletion-case', writes_paused=True)
+    finished = TestClient(app).get(response.headers['location'])
+    assert 'Active account data erased' in finished.text
+    assert 'awaiting processing' not in finished.text
 
 
 @pytest.fixture(autouse=True)
@@ -193,7 +199,10 @@ def test_native_billing_is_disabled_and_web_billing_unchanged():
     native, web, *_ = sign_in()
     browser = shell(native)
     assert browser.post('/billing/checkout', data={}).status_code == 403
-    assert browser.get('/billing/portal').status_code == 403
+    blocked = browser.get('/billing/portal')
+    assert blocked.status_code == 403
+    assert blocked.headers['x-content-type-options'] == 'nosniff'
+    assert blocked.headers['x-frame-options'] == 'DENY'
     assert web.get('/subscribe').status_code == 200
 
 

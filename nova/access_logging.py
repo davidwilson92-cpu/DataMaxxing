@@ -5,7 +5,7 @@ import re
 
 def safe_path(value):
     path = str(value).split('?', 1)[0]
-    return re.sub(r'(/mobile/(?:browser|authorize)/)[^/]+', r'\1[redacted]', path)
+    return re.sub(r'(/mobile/(?:browser|authorize)/|/data-deletion/status/)[^/]+', r'\1[redacted]', path)
 
 
 class RedactAccess(logging.Filter):

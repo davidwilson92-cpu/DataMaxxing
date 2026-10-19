@@ -13,6 +13,10 @@ final class ZovaSession: ObservableObject {
     let signIn = NativeSignIn()
     let pages = [StudioPage("/studio"), StudioPage("/drafts"), StudioPage("/analytics"), StudioPage("/account")]
     func start() async {
+        #if DEBUG
+        // Hosted unit tests exercise the vault independently of first-install cleanup.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return }
+        #endif
         if !UserDefaults.standard.bool(forKey: "zova-installed") {
             try? KeychainVault.clear()
             await clearWebData()

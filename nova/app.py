@@ -27,6 +27,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from . import ai, billing, brands, allowances, customer_service, readiness
 from .connections import connection_options, safe_login_next
@@ -185,7 +186,6 @@ from .request_security import SecurityMiddleware, allowed_request
 from .recovery import router as recovery_router
 from .body_limit import BodyLimitMiddleware
 app.add_middleware(BodyLimitMiddleware)
-app.add_middleware(SecurityMiddleware)
 app.include_router(recovery_router)
 from .schedule_routes import router as schedule_router
 app.include_router(schedule_router)
@@ -499,9 +499,14 @@ def request_account_deletion(request: Request, confirmation: Annotated[str, Form
     code = hmac.new(session_secret().encode(), f"account-deletion:{user.id}".encode(), hashlib.sha256).hexdigest()
     row = db.get(DeletionRequest, code)
     if row is None:
-        db.add(DeletionRequest(code=code, subject_hash=hash_api_key(str(user.id)), status="received",
+        db.add(DeletionRequest(code=code, subject_hash=hash_api_key(f"account:{user.id}"), status="received",
                                scope="Full Zova account deletion requested by the signed-in owner; operator processing pending"))
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            if db.get(DeletionRequest, code) is None:
+                raise
     return RedirectResponse(f"/data-deletion/status/{code}", status_code=303)
 
 @app.post("/data-deletion/callback")
@@ -1277,3 +1282,4 @@ redact_access_logs()
 app.include_router(mobile_auth_router)
 app.include_router(mobile_shell_router)
 app.add_middleware(MobileContinuationMiddleware)
+app.add_middleware(SecurityMiddleware)
