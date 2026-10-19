@@ -167,14 +167,27 @@ def browser_prompt(ticket: str, request: Request):
         if row.purpose != 'browser':
             raise HTTPException(401, 'Invalid browser handoff')
         proof = browser_proof(ticket, request.cookies.get('nova_session', ''))
-        return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Continue in your browser | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Continue as {html.escape(user.display_name or 'you')}</h1><p>{html.escape(user.email)}</p><p>This opens the account from your iPhone app. Review the account before connecting a social profile.</p><form method="post"><input type="hidden" name="proof" value="{proof}"><button>Continue to your account</button></form><p>When finished, return to the Zova app. Your connection status refreshes automatically.</p><a href="/studio">Cancel</a></main></body></html>''')
+        return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Continue in your browser | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Continue as {html.escape(user.display_name or 'you')}</h1><p>{html.escape(user.email)}</p><p>This opens the account from your iPhone app. Only continue if this is your Zova email. Your Instagram login is separate.</p><form method="post"><input type="hidden" name="proof" value="{proof}"><button>Continue to your account</button></form><p>When finished, close this browser and return to Zova to refresh your connections.</p><form method="post"><input type="hidden" name="proof" value="{proof}"><button name="decision" value="cancel">This isn’t my Zova account</button></form></main></body></html>''')
 
 
 @router.post('/mobile/browser/{ticket}', include_in_schema=False)
-def browser_accept(ticket: str, request: Request, proof: str = Form(...)):
+def browser_accept(ticket: str, request: Request, proof: str = Form(...), decision: Literal['continue', 'cancel'] = Form('continue')):
     require_enabled()
     if not hmac.compare_digest(proof, browser_proof(ticket, request.cookies.get('nova_session', ''))):
         raise HTTPException(403, 'Browser confirmation expired')
+    if decision == 'cancel':
+        with SessionLocal() as db:
+            row = db.get(MobileHandoff, hash_api_key(ticket))
+            shell_session(db, row)
+            if row.purpose != 'browser':
+                raise HTTPException(401, 'Invalid browser handoff')
+            claimed = db.execute(update(MobileHandoff).where(
+                MobileHandoff.token_hash == row.token_hash, MobileHandoff.used.is_(False)
+            ).values(used=True))
+            if claimed.rowcount != 1:
+                raise HTTPException(401, 'Sign-in handoff expired or already used')
+            db.commit()
+        return HTMLResponse('''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Switch Zova account</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Switch your Zova account</h1><p>No social account was connected.</p><p>Close this browser. In the Zova app, open Account and select Sign out. Then sign in with your own Zova email before connecting Instagram.</p><p>Your existing drafts and connections stay with their original account.</p></main></body></html>''')
     return accept_handoff(ticket, 'browser', request)
 
 

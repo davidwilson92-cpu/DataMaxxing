@@ -24,7 +24,8 @@ class Groups(HTMLParser):
 
 
 def test_grouping_preserves_account_forms_and_reveals_save_errors():
-    client, _, _, _ = account()
+    client, _, _, email = account()
+    assert email in client.get('/account').text
     parser = Groups()
     parser.feed(client.get('/account').text)
     assert set(parser.groups) == {'profile', 'voice', 'socials', 'security', 'plan'}
@@ -33,7 +34,7 @@ def test_grouping_preserves_account_forms_and_reveals_save_errors():
     assert parser.forms['/account/profile'] == 'profile'
     assert parser.forms['/account/preferences'] == 'voice'
     assert parser.forms['/account/password'] == 'security'
-    assert parser.forms['/logout'] == 'plan'
+    assert parser.forms['/logout'] is None
     for query, expected in [('saved=profile', 'profile'), ('saved=password', 'security'), ('saved=voice', 'voice'),
                             ('error=password_match', 'security'), ('connection_failed=instagram', 'socials')]:
         parsed = Groups()

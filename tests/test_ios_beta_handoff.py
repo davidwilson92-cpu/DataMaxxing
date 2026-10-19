@@ -213,6 +213,37 @@ def test_browser_transfer_requires_explicit_cookie_bound_confirmation():
     assert other.post(path, data={'proof': proof}).status_code in {401, 403}
 
 
+def test_wrong_account_can_cancel_without_switching_browser_identity_or_connecting():
+    native, _, uid, _, _ = sign_in()
+    other, other_id, cookie, email = account()
+    native_email = native.get('/api/v1/native-profile').json()['email']
+    path = '/mobile/browser/' + handoff(native, '/connect/instagram?workspace=0', 'browser')
+    page = other.get(path)
+    assert native_email in page.text and email not in page.text
+    assert 'This isn’t my Zova account' in page.text
+    proof = re.search(r'name="proof" value="([a-f0-9]+)"', page.text)[1]
+    assert TestClient(app).post(path, data={'proof': proof, 'decision': 'cancel'}).status_code == 403
+    cancelled = other.post(path, data={'proof': proof, 'decision': 'cancel'})
+    assert cancelled.status_code == 200
+    assert 'Switch your Zova account' in cancelled.text
+    assert 'Sign out' in cancelled.text
+    assert 'set-cookie' not in cancelled.headers
+    assert user_from_session(other.cookies.get('nova_session')).id == other_id
+    assert native.get('/api/v1/native-profile').json()['id'] == uid
+    assert other.post(path, data={'proof': proof}).status_code == 401
+
+
+def test_browser_cancel_cannot_consume_studio_ticket():
+    from nova.mobile_shell import browser_proof
+    native, *_ = sign_in()
+    ticket = handoff(native)
+    browser = TestClient(app)
+    assert browser.post('/mobile/browser/' + ticket, data={
+        'proof': browser_proof(ticket, ''), 'decision': 'cancel'
+    }).status_code == 401
+    assert browser.post('/mobile/web-session', data={'ticket': ticket}, follow_redirects=False).status_code == 303
+
+
 def test_revoked_session_cannot_finish_a_previously_minted_ticket():
     native, _, _, _, _ = sign_in()
     ticket = handoff(native)

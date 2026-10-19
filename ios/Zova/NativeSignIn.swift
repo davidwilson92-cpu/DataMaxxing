@@ -24,7 +24,8 @@ final class NativeSignIn: NSObject, ASWebAuthenticationPresentationContextProvid
                 }
             }
             flow.presentationContextProvider = self
-            flow.prefersEphemeralWebBrowserSession = false
+            // Choose the Zova account deliberately; do not inherit Safari identity.
+            flow.prefersEphemeralWebBrowserSession = true
             session = flow
             if !flow.start() { finish(.failure(ZovaFailure.unavailable)) }
         }
