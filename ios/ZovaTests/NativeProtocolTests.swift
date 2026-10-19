@@ -2,6 +2,15 @@ import XCTest
 @testable import Zova
 
 final class NativeProtocolTests: XCTestCase {
+    func testInstagramUsesNormalBrowserWithoutChangingOtherProviderRoutes() throws {
+        let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
+        XCTAssertTrue(configuration.usesSystemBrowser(for: "/connect/instagram?workspace=8"))
+        for value in ["/connect/facebook", "/connect/tiktok", "/connect/x", "/connect/instagram/other", "https://evil.test/connect/instagram", "//evil.test/connect/instagram"] {
+            XCTAssertFalse(configuration.usesSystemBrowser(for: value))
+        }
+        let link = URL(string: "https://zova-social.com/oauth/instagram/facebook/start?workspace=8")!
+        XCTAssertEqual(configuration.browserDestination(link), "/connect/instagram?workspace=8")
+    }
     func testOnlyOwnedHTTPSConfiguration() throws {
         for value in ["http://zova-social.com", "https://zova-social.com.evil.test", "https://user:pass@zova-social.com", "https://zova-social.com:443", "https://zova-social.com?token=secret", "https://zova-social.com/other"] {
             XCTAssertThrowsError(try ZovaConfiguration(base: URL(string: value)!))

@@ -34,7 +34,7 @@ def test_grouping_preserves_account_forms_and_reveals_save_errors():
     assert parser.forms['/account/preferences'] == 'voice'
     assert parser.forms['/account/password'] == 'security'
     assert parser.forms['/logout'] == 'plan'
-    for query, expected in [('saved=profile', 'profile'), ('saved=password', 'security'),
+    for query, expected in [('saved=profile', 'profile'), ('saved=password', 'security'), ('saved=voice', 'voice'),
                             ('error=password_match', 'security'), ('connection_failed=instagram', 'socials')]:
         parsed = Groups()
         page = client.get('/account?' + query)

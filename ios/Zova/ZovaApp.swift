@@ -107,6 +107,9 @@ struct ZovaRoot: View {
         .task { await model.start() }
         .onOpenURL { model.signIn.received($0) }
         .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { model.signIn.received(url) } }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active && model.cookieReady { model.pages.forEach { $0.refreshConnections() } }
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboard = true }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboard = false }
         .sheet(item: $browser, onDismiss: { model.pages.forEach { $0.refreshConnections() } }) { link in
@@ -188,7 +191,16 @@ struct ZovaRoot: View {
         guard !browserBusy else { return }
         browserBusy = true
         defer { browserBusy = false }
-        do { let request = try await model.api.handoff(destination: destination, browser: true); if let url = request.url { browser = LinkSheet(url: url) } }
+        do {
+            let request = try await model.api.handoff(destination: destination, browser: true)
+            if let url = request.url {
+                if model.configuration.usesSystemBrowser(for: destination) {
+                    if !(await UIApplication.shared.open(url)) {
+                        model.pages[selected].failure = "Couldn’t open your browser. Try connecting Instagram again."
+                    }
+                } else { browser = LinkSheet(url: url) }
+            }
+        }
         catch { model.pages[selected].failure = error.localizedDescription }
     }
     private func clearExport() {

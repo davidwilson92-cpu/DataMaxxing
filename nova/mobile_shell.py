@@ -167,7 +167,7 @@ def browser_prompt(ticket: str, request: Request):
         if row.purpose != 'browser':
             raise HTTPException(401, 'Invalid browser handoff')
         proof = browser_proof(ticket, request.cookies.get('nova_session', ''))
-        return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Continue in your browser | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css"></head><body><main><h1>Continue as {html.escape(user.display_name or 'you')}</h1><p>{html.escape(user.email)}</p><p>This opens the account from your iPhone app. Review the account before connecting a social profile.</p><form method="post"><input type="hidden" name="proof" value="{proof}"><button>Continue to your account</button></form><p>When finished, tap Done to return to Zova.</p><a href="/studio">Cancel</a></main></body></html>''')
+        return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Continue in your browser | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css"></head><body><main><h1>Continue as {html.escape(user.display_name or 'you')}</h1><p>{html.escape(user.email)}</p><p>This opens the account from your iPhone app. Review the account before connecting a social profile.</p><form method="post"><input type="hidden" name="proof" value="{proof}"><button>Continue to your account</button></form><p>When finished, return to the Zova app. Your connection status refreshes automatically.</p><a href="/studio">Cancel</a></main></body></html>''')
 
 
 @router.post('/mobile/browser/{ticket}', include_in_schema=False)

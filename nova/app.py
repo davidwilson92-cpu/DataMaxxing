@@ -675,7 +675,7 @@ def save_preferences(request:Request,writing_tone:Annotated[str,Form()]="",audie
     user=current_user(request); prefs=get_preferences(db,user.id)
     try:ZoneInfo(timezone_name)
     except Exception:timezone_name="Europe/London"
-    prefs.writing_tone=writing_tone[:5000]; prefs.audience=audience[:5000]; prefs.topics=topics[:5000]; prefs.things_to_avoid=things_to_avoid[:5000]; prefs.example_posts=example_posts[:12000]; prefs.preferred_post_length=max(30,min(preferred_post_length,4000)); prefs.timezone=timezone_name; db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account",303)
+    prefs.writing_tone=writing_tone[:5000]; prefs.audience=audience[:5000]; prefs.topics=topics[:5000]; prefs.things_to_avoid=things_to_avoid[:5000]; prefs.example_posts=example_posts[:12000]; prefs.preferred_post_length=max(30,min(preferred_post_length,4000)); prefs.timezone=timezone_name; db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=voice",303)
 
 @app.post("/account/profile")
 async def update_profile(request: Request, display_name: Annotated[str, Form()] = "", guidance: Annotated[str | None, Form()] = None, next_url: Annotated[str, Form(alias="next")] = "", db: Session = Depends(get_db)):

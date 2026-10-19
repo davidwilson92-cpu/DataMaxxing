@@ -43,6 +43,13 @@ struct ZovaConfiguration {
               let url = URL(string: path, relativeTo: base)?.absoluteURL, owns(url) else { throw ZovaFailure.unsafeURL }
         return url
     }
+    func usesSystemBrowser(for destination: String) -> Bool {
+        // Instagram sign-in has failed before callback in the embedded browser.
+        // Keep the same bounded native handoff, but use the normal browser.
+        guard let parts = URLComponents(string: destination), parts.scheme == nil,
+              parts.host == nil else { return false }
+        return parts.path == "/connect/instagram"
+    }
     func browserDestination(_ url: URL) -> String? {
         guard owns(url) else { return nil }
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
