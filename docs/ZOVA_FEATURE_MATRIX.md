@@ -1,3 +1,16 @@
+# 19 October 2026 — phone feedback and dark product styling
+
+| Capability | Implementation / tests | Release and evidence boundary |
+|---|---|---|
+| Shared black/violet product styling | Shared theme loaded last; forms, selections, results, Account, Drafts and Performance included; local mobile and live desktop visual review | a407043 application checks passed485/1 skipped on both databases; production release recorded in handoff. Native status bar/background needs replacement binary |
+| Grouped Account | Five keyboard-accessible details categories; hash links and save errors reveal relevant group; voice save returns to open preferences; socials-only native refresh preserved | Live Account verified; synthetic forms/session/deep-link/focus tests passed; no customer records altered |
+| Cleaner Studio | + New post beside brand, smaller Next move; hero hidden on composer focus; mobile weekly summary hidden while typing; clearer composer prompt | Phone-size synthetic focus verified, live desktop inspected; physical iOS keyboard retest remains |
+| iPhone Instagram connection | Same session/purpose-bound handoff opens normal browser, auto-refreshes connections on app return; other providers retain current route | Three start302s/no callback observed; old in-app flow is not fixed by claim. Native8d602a5 passed16 unit/1 UI tests and release compilation; still needs signed TestFlight delivery and real phone/provider validation. No grants reset or test post |
+
+All79 broader beta findings remain tracked. This is a bounded beta update, not commercial certification.
+
+---
+
 # TikTok approval status — 18 October 2026
 
 App revision with video.publish and merged 3m51s demonstration: **submitted, In review** (portal verified). Separate public-access audit: **submitted**, after owner-approved legal declarations; TikTok submission confirmation verified, expected response2-4weeks. Recording demonstrates private Direct Post, actual TikTok result, editable caption, privacy/consent and disclosure controls. It does not prove public paid-partnership publishing, native iOS readiness or unrestricted reviewer access. Production remains inbox-only. See current handoff for evidence and continuation.
