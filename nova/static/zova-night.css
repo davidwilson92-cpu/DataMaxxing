@@ -23,6 +23,12 @@
 .app-body .analytics-kpis>.analytics-empty h2{color:#f5f2fa}
 .app-body .analytics-period-control select{background:#15111d;color:#f5f2fa;border-color:#4a3b5c}
 .app-body .library-toolbar strong{color:#f5f2fa}
+.app-body .draft-search input[type=search]{background:#15111d;color:#f5f2fa;border-color:#4a3b5c}
+.app-body .draft-filters{background:#15111d;border-color:#4a3b5c}
+.app-body :is(.empty-library,.analytics-kpis>.analytics-empty){border-radius:18px;padding:24px}
+.app-body .empty-library h2{font-size:26px;line-height:1.25;color:#f5f2fa}
+.app-body .empty-library p{color:#b7adca}
+.app-body .library-topbar>.button{gap:6px}
 .app-body :is(.analytics-post,.analytics-recommendation,.analytics-prompts button,.draft-filters){background:#21182e;color:#e3d7f1;border-color:#4a3b5c}
 .app-body :is(.analytics-kpi span,.analytics-kpi small,.platform-performance-main>div:first-child span,.platform-performance dt,.analytics-post dt){color:#b7adca}
 .simple-chat .post-copy textarea:focus{background:#21182e;box-shadow:0 0 0 8px #21182e}
