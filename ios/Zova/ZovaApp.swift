@@ -90,6 +90,7 @@ struct ZovaRoot: View {
     private let titles = ["Studio", "Drafts", "Performance", "Account"]
     private let icons = ["square.and.pencil", "doc.on.doc", "chart.bar", "person.crop.circle"]
     private let purple = Color(red: 0.486, green: 0.227, blue: 0.929)
+    private let readableAccent = Color(red: 0.73, green: 0.56, blue: 1)
     private let readableSecondary = Color(red: 0.72, green: 0.68, blue: 0.79)
     var body: some View {
         ZStack {
@@ -130,7 +131,7 @@ struct ZovaRoot: View {
                     Image("ZovaMark").resizable().scaledToFit().frame(width: 48, height: 48)
                     Text("Zova").font(.system(size: 32, weight: .bold))
                 }.padding(.top, 48)
-                Text("Your AI social manager.").font(.headline).foregroundStyle(purple)
+                Text("Your AI social manager.").font(.headline).foregroundStyle(readableAccent)
                 Text("Your ideas.\nStill you.").font(.system(size: 48, weight: .bold, design: .rounded)).minimumScaleFactor(0.65)
                 Text("Shape your next post, plan your socials and share in your voice.")
                     .font(.title3).foregroundStyle(readableSecondary).fixedSize(horizontal: false, vertical: true)
@@ -145,7 +146,7 @@ struct ZovaRoot: View {
                     Button("Privacy") { openLegal("/privacy-policy") }
                     Button("Terms") { openLegal("/terms-of-service") }
                     Button("Help") { openLegal("/help") }
-                }.font(.subheadline).tint(purple).frame(minHeight: 44)
+                }.font(.subheadline).tint(readableAccent).frame(minHeight: 44)
                 Text(betaLabel).font(.footnote).foregroundStyle(readableSecondary)
             }.padding(28).frame(maxWidth: 560)
         }
