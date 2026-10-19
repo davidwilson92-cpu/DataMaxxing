@@ -43,9 +43,14 @@ def test_grouping_preserves_account_forms_and_reveals_save_errors():
         assert parsed.groups[expected]
 
 
-def test_shared_night_theme_and_clear_creation_action_keep_routes_available():
+def test_only_account_and_bridging_pages_use_dark_theme():
     client, _, _, _ = account()
-    for route in ['/studio', '/drafts', '/analytics', '/account']:
+    for route in ['/studio', '/drafts', '/analytics']:
+        page = client.get(route)
+        assert page.status_code == 200
+        assert '/static/zova-night.css' not in page.text
+        assert '/static/studio-layout.css' in page.text
+    for route in ['/account', '/connect/instagram', '/connect/facebook', '/brands']:
         page = client.get(route)
         assert page.status_code == 200
         assert '/static/zova-night.css' in page.text

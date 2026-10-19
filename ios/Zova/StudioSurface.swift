@@ -59,7 +59,7 @@ struct StudioSurface: UIViewRepresentable {
         view.navigationDelegate = context.coordinator
         view.uiDelegate = context.coordinator
         view.isOpaque = false
-        view.backgroundColor = UIColor(red: 0.031, green: 0.024, blue: 0.059, alpha: 1)
+        view.backgroundColor = page.path == "/account" ? UIColor(red: 0.031, green: 0.024, blue: 0.059, alpha: 1) : .white
         view.scrollView.backgroundColor = view.backgroundColor
         view.scrollView.contentInsetAdjustmentBehavior = .never
         view.allowsBackForwardNavigationGestures = true

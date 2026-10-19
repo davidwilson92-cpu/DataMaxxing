@@ -92,9 +92,10 @@ struct ZovaRoot: View {
     private let purple = Color(red: 0.486, green: 0.227, blue: 0.929)
     private let readableAccent = Color(red: 0.73, green: 0.56, blue: 1)
     private let readableSecondary = Color(red: 0.72, green: 0.68, blue: 0.79)
+    private var darkScreen: Bool { model.phase != .studio || selected == 3 }
     var body: some View {
         ZStack {
-            Color(red: 0.031, green: 0.024, blue: 0.059).ignoresSafeArea()
+            (darkScreen ? Color(red: 0.031, green: 0.024, blue: 0.059) : Color.white).ignoresSafeArea()
             switch model.phase {
             case .opening: ProgressView("Opening Zova…").tint(purple)
             case .signedOut: welcome
@@ -106,6 +107,7 @@ struct ZovaRoot: View {
             }
         }
         .task { await model.start() }
+        .preferredColorScheme(darkScreen ? .dark : .light)
         .onOpenURL { model.signIn.received($0) }
         .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { model.signIn.received(url) } }
         .onChange(of: scenePhase) { _, phase in
@@ -236,5 +238,5 @@ private struct ObservedStudioPage<Content: View>: View {
 
 @main
 struct ZovaApp: App {
-    var body: some Scene { WindowGroup { ZovaRoot().preferredColorScheme(.dark) } }
+    var body: some Scene { WindowGroup { ZovaRoot() } }
 }
