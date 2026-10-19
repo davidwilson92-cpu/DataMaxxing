@@ -152,19 +152,11 @@ struct ZovaRoot: View {
         }
     }
     private func pageView(_ index: Int) -> some View {
-        ZStack(alignment: .top) {
+        ObservedStudioPage(page: model.pages[index], configuration: model.configuration, browserBusy: browserBusy) {
             StudioSurface(page: model.pages[index], configuration: model.configuration,
                           ready: { model.loaded() }, signedOut: { Task { await model.didSignOut() } },
                           browser: { destination in Task { await openAccount(destination) } },
                           external: openExternal, share: { exportToRemove = $0; exported = LinkSheet(url: $0) })
-            if model.pages[index].loading || browserBusy { ProgressView().padding(10).background(.regularMaterial, in: Capsule()).padding(6) }
-            if let failure = model.pages[index].failure {
-                VStack(spacing: 12) {
-                    Text(failure).font(.callout).multilineTextAlignment(.center)
-                    Button("Open saved work") { model.pages[index].recover(model.configuration) }.buttonStyle(.borderedProminent).tint(purple)
-                    Button("Dismiss") { model.pages[index].failure = nil }
-                }.padding(20).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20)).padding(20)
-            }
         }
     }
     private func openLegal(_ path: String) { if let url = try? model.configuration.endpoint(path) { browser = LinkSheet(url: url) } }
@@ -186,6 +178,26 @@ struct ZovaRoot: View {
         if directory.deletingLastPathComponent() == FileManager.default.temporaryDirectory.standardizedFileURL,
            directory.lastPathComponent.hasPrefix("zova-export-") { try? FileManager.default.removeItem(at: directory) }
         exportToRemove = nil
+    }
+}
+
+private struct ObservedStudioPage<Content: View>: View {
+    @ObservedObject var page: StudioPage
+    let configuration: ZovaConfiguration
+    let browserBusy: Bool
+    @ViewBuilder let content: () -> Content
+    var body: some View {
+        ZStack(alignment: .top) {
+            content()
+            if page.loading || browserBusy { ProgressView().padding(10).background(.regularMaterial, in: Capsule()).padding(6) }
+            if let failure = page.failure {
+                VStack(spacing: 12) {
+                    Text(failure).font(.callout).multilineTextAlignment(.center)
+                    Button("Open saved work") { page.recover(configuration) }.buttonStyle(.borderedProminent)
+                    Button("Dismiss") { page.failure = nil }
+                }.padding(20).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20)).padding(20)
+            }
+        }
     }
 }
 

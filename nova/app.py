@@ -35,7 +35,7 @@ from .db import (
     PostLog, Publication, ScheduledPost, SessionLocal, SocialConnection, User, DeletionRequest, get_db, get_preferences, utcnow,
 )
 from .scheduler import loop as scheduler_loop, process_due
-from .security import revoke_session, current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password
+from .security import revoke_session, current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password, session_secret
 from .user_data import normalize_country, normalize_email, normalize_name
 from .social import (
     INSTAGRAM_SCOPES, INSTAGRAM_FACEBOOK_SCOPES, META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, instagram_authorize_url, instagram_exchange, meta_authorize_url, meta_exchange,
@@ -484,6 +484,25 @@ def data_deletion_instructions(request:Request):
     try:user=current_user(request)
     except HTTPException:user=None
     return templates.TemplateResponse(request, "data_deletion.html",template_context(request,user,contact_email=os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@zova-social.com")))
+
+@app.get("/account/deletion", response_class=HTMLResponse)
+def account_deletion(request: Request):
+    user = current_user(request)
+    return templates.TemplateResponse(request, "account_deletion.html", template_context(request, user))
+
+@app.post("/account/deletion")
+def request_account_deletion(request: Request, confirmation: Annotated[str, Form()], db: Session = Depends(get_db)):
+    user = current_user(request)
+    if confirmation.strip() != "DELETE":
+        raise HTTPException(400, "Type DELETE to request account deletion")
+    # Stable opaque receipt makes repeated requests idempotent without exposing identity.
+    code = hmac.new(session_secret().encode(), f"account-deletion:{user.id}".encode(), hashlib.sha256).hexdigest()
+    row = db.get(DeletionRequest, code)
+    if row is None:
+        db.add(DeletionRequest(code=code, subject_hash=hash_api_key(str(user.id)), status="received",
+                               scope="Full Zova account deletion requested by the signed-in owner; operator processing pending"))
+        db.commit()
+    return RedirectResponse(f"/data-deletion/status/{code}", status_code=303)
 
 @app.post("/data-deletion/callback")
 async def meta_data_deletion_callback(request:Request,db:Session=Depends(get_db)):

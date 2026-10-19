@@ -14,6 +14,7 @@ actor NativeAPI {
     private let session: URLSession
     private var tokens: NativeTokens?
     private var rotation: Task<NativeTokens, Error>?
+    private var sessionEpoch = 0
     init(configuration: ZovaConfiguration) {
         self.configuration = configuration
         let settings = URLSessionConfiguration.ephemeral
@@ -50,8 +51,10 @@ actor NativeAPI {
         }
     }
     func exchange(code: String, verifier: String) async throws {
+        let epoch = sessionEpoch
         let data = try await request("/api/v1/auth/token", body: ["client_id": "zova-ios", "redirect_uri": configuration.callback.absoluteString, "code": code, "code_verifier": verifier])
         let pair = try JSONDecoder().decode(TokenReply.self, from: data).tokens()
+        guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
         try KeychainVault.save(pair)
         tokens = pair
     }
@@ -59,19 +62,26 @@ actor NativeAPI {
         if tokens == nil { tokens = try KeychainVault.load() }
         guard let pair = tokens else { throw ZovaFailure.signInRequired }
         if pair.expires.timeIntervalSinceNow > 45 { return pair.access }
-        if let rotation { return try await rotation.value.access }
+        let epoch = sessionEpoch
+        if let rotation {
+            let next = try await rotation.value
+            guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
+            return next.access
+        }
         let task = Task<NativeTokens, Error> {
             let data = try await self.request("/api/v1/auth/refresh", body: ["refresh_token": pair.refresh])
             let next = try JSONDecoder().decode(TokenReply.self, from: data).tokens()
-            try KeychainVault.save(next)
             return next
         }
         rotation = task
         do {
             let next = try await task.value
+            guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
+            try KeychainVault.save(next)
             tokens = next; rotation = nil
             return next.access
         } catch {
+            guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
             rotation = nil
             // A lost rotation response is ambiguous; do not replay its old token.
             tokens = nil; try? KeychainVault.clear()
@@ -92,11 +102,11 @@ actor NativeAPI {
         return result
     }
     func logout() async {
-        if let pair = tokens ?? (try? KeychainVault.load()) {
+        let pair = tokens ?? (try? KeychainVault.load())
+        forget()
+        if let pair {
             _ = try? await request("/api/v1/auth/logout", body: [:], token: pair.access)
         }
-        rotation?.cancel(); rotation = nil; tokens = nil
-        try? KeychainVault.clear()
     }
-    func forget() { rotation?.cancel(); rotation = nil; tokens = nil; try? KeychainVault.clear() }
+    func forget() { sessionEpoch += 1; rotation?.cancel(); rotation = nil; tokens = nil; try? KeychainVault.clear() }
 }

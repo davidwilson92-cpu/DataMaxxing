@@ -1,5 +1,5 @@
 /* The iPhone provides navigation; the same Studio owns editing and approval. */
-.ios-shell .studio-mobile-navigation,.ios-shell .studio-nav-rail,.ios-shell .app-sidebar,.ios-shell a[href="/subscribe"],.ios-shell #plan .account-links{display:none!important}
+.ios-shell .studio-mobile-navigation,.ios-shell .studio-nav-rail,.ios-shell .app-nav,.ios-shell .mobile-menu-toggle,.ios-shell a[href="/subscribe"],.ios-shell #plan .account-links{display:none!important}
 .ios-shell{overscroll-behavior-y:none;-webkit-text-size-adjust:100%;--ios-bottom-inset:0px}
 .ios-shell .app-shell{grid-template-columns:minmax(0,1fr)}
 .ios-shell .conversation-workspace{margin-left:0!important}

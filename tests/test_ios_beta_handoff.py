@@ -11,12 +11,33 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from nova.app import app
-from nova.db import Brand, MobileGrant, MobileHandoff, MobileSession, SessionLocal, User, utcnow
+from nova.db import Brand, DeletionRequest, MobileGrant, MobileHandoff, MobileSession, SessionLocal, User, utcnow
 from nova.mobile_auth import challenge_for
 from nova.security import hash_api_key, user_from_session
 from test_account_integrity import account
 
 CALLBACK = 'https://zova-social.com/mobile/callback'
+
+
+def test_account_deletion_request_is_authenticated_idempotent_and_truthful():
+    web, uid, _, _ = account()
+    assert TestClient(app).post('/account/deletion', data={'confirmation': 'DELETE'}).status_code == 401
+    assert web.get('/account/deletion').status_code == 200
+    assert web.post('/account/deletion', data={'confirmation': 'other'}).status_code == 400
+    response = web.post('/account/deletion', data={'confirmation': 'DELETE'}, follow_redirects=False)
+    assert response.status_code == 303
+    assert web.post('/account/deletion', data={'confirmation': 'DELETE'}, follow_redirects=False).headers['location'] == response.headers['location']
+    page = web.get(response.headers['location'])
+    assert 'Deletion request received' in page.text
+    assert 'have not yet been deleted' in page.text
+    assert 'Platform connection removed' not in page.text
+    with SessionLocal() as db:
+        row = db.get(DeletionRequest, response.headers['location'].rsplit('/', 1)[1])
+        assert row.status == 'received'
+        assert row.subject_hash == hash_api_key(str(uid))
+        assert db.get(User, uid).active
+    other, _, _, _ = account()
+    assert other.post('/account/deletion', data={'confirmation': 'DELETE'}, follow_redirects=False).headers['location'] != response.headers['location']
 
 
 @pytest.fixture(autouse=True)
