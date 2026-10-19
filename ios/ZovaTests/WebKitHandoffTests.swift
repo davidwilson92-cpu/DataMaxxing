@@ -23,8 +23,9 @@ final class WebKitHandoffTests: XCTestCase {
         defer { listener.cancel() }
         await fulfillment(of: [ready], timeout: 5)
         let port = try XCTUnwrap(listener.port?.rawValue)
-        let view = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
-        view.configuration.websiteDataStore = .nonPersistent()
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        let view = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: configuration)
         var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/mobile/web-session")!)
         request.httpMethod = "POST"
         request.httpBody = Data("ticket=synthetic-one-use-ticket".utf8)
@@ -36,7 +37,7 @@ final class WebKitHandoffTests: XCTestCase {
         XCTAssertNotNil(view.url)
     }
 
-    private static func read(_ connection: NWConnection, buffered: Data,
+    nonisolated private static func read(_ connection: NWConnection, buffered: Data,
                              exchanged: XCTestExpectation, opened: XCTestExpectation) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { chunk, _, _, error in
             guard error == nil, let chunk, !chunk.isEmpty else { connection.cancel(); return }
@@ -64,7 +65,7 @@ final class WebKitHandoffTests: XCTestCase {
             }
         }
     }
-    private static func send(_ connection: NWConnection, _ text: String) {
+    nonisolated private static func send(_ connection: NWConnection, _ text: String) {
         connection.send(content: Data(text.utf8), completion: .contentProcessed { _ in connection.cancel() })
     }
 }

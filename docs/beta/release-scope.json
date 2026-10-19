@@ -27,7 +27,7 @@
     "ios/Zova/StudioSurface.swift": "f40f9c3979ce33d57b6fe505cbca6f61ad0f428e54b06a1e11c264ca43a18a63",
     "ios/Zova/ZovaApp.swift": "345e2457e808c930b693f5f4e1b9a3c08d2ce758417f81d9dc442c5c0a6d9c7a",
     "ios/ZovaTests/NativeProtocolTests.swift": "6e72170767e901dff08bcdd47c79825f9705095409f41bfa7fddfc8e7956da63",
-    "ios/ZovaTests/WebKitHandoffTests.swift": "f7ddb92e15284cfdd7a681e7a909b28056bf84183875dccc5260982a596a5f1d",
+    "ios/ZovaTests/WebKitHandoffTests.swift": "aefcd84140260a527852f99fa34ed8785984f9798d223eda16671c24bdf7d2c9",
     "ios/ZovaUITests/ZovaUITests.swift": "46f73f1c293840d034faca5b4f34b6dcf3e59c317781a66843e5ec1346a0693a",
     "ios/project.yml": "1a43c93f2e76d2300b51a070eab696fab89f6a6d28bec75fd2720de79cd27086",
     "nova/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
