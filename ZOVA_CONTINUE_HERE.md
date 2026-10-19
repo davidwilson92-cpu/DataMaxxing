@@ -1,3 +1,15 @@
+# iPhone internal beta available — 19 October 2026
+
+Zova Social 0.1.0 (4) is uploaded, processed and **Testing** in App Store Connect. Private group Zova Social Internal Beta has one tester, David Wilson, invited at 10:08 BST. Apple app ID6824416979 / bundle com.zovasocial.app / team7B4W8RN6GX. This is separate from Zova Market: never overwrite that app. Native binary source16fbb9a8e168d774a130f5cecfcc266928960141; build UUIDe5b9c889-61cb-463a-b0b0-fb3cdfe744ef. Build3 is not distributed. Owner authorised registration, signing and internal upload; no public App Store submission.
+
+Current worktree: C:/Users/david/.codex/.chatgpt-projects/g-p-6a8a0aa881c88191a2835a8d53316369/zova-ios-beta, branch codex/ios-beta-20261019, draft PR34. Read docs/IOS_BETA_READINESS_20261019.md first for evidence, feature matrix and rollback. Backend candidate f47e1be540f167f6bf6594318dde56f3a107d822 includes the final native Account refresh preserving unsaved edits; Render deployment dep-dbats96q1p3s73d3c2ig reports Deploy succeeded | Live, duration46.9s, verified at10:11 BST. Its native tree matches build4. Main remains older; specific-commit deployment disabled Auto-Deploy deliberately. Do not enable it blindly or deploy broad PR28.
+
+Exact f47 checks green: application CI39225907537 and39225914327, native CI39225914321. Application476 passed/1 skipped on SQLite and PostgreSQL; synthetic backup/restore, container, dependencies and release guardrails passed. Native11 unit tests,1 welcome UI test and release compilation passed; JS native refresh3 tests passed. Initial Apple upload exposed an iPad orientation mismatch; fixed explicit target family and added actual IPA metadata regression gate. Later build4 is Apple's accepted final build.
+
+Production native flag, exact callback and Associated Domains are configured. Verified existing web account and Facebook/TikTok/X connections remained intact; Instagram is not connected in that checked account. No social grant or post changed. Render database recovery shows3-day PITR and a completed logical export created09:03 BST; no production restore or data download. Physical iPhone sign-in, Studio/media/keyboard/VoiceOver/provider-return checks remain pending user installation. All79 wider beta gaps retained; no commercial certification, charges or subscription enforcement.
+
+---
+
 # TikTok public-access audit submitted — 18 October 2026
 
 Owner approved the final Direct Post audit declarations. Accepted the three displayed declarations and submitted the prepared audit for app7672846663509215253 with the reviewed3m51s/4.65MB merged video. TikTok explicitly confirmed: “Your Application to request access to Content Posting API has been submitted!” It states an expected response in2-4weeks and directs checking Manage apps for status. Evidence: social-proof/tiktok-final-1810/audit-submitted.png and audit-submitted.txt. This is submission confirmation, not approval.
