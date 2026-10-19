@@ -145,7 +145,19 @@ final class NativeProtocolTests: XCTestCase {
                 return (200, Data(("{\"ticket\":\"" + String(repeating: "t", count: 64) + "\"}").utf8), 0)
             }
             XCTAssertEqual(request.url?.path, "/api/v1/native-web-session")
-            XCTAssertTrue(String(data: request.httpBody!, encoding: .utf8)!.contains(String(repeating: "t", count: 64)))
+            var body = request.httpBody ?? Data()
+            if let stream = request.httpBodyStream {
+                stream.open()
+                defer { stream.close() }
+                var buffer = [UInt8](repeating: 0, count: 1024)
+                while stream.hasBytesAvailable {
+                    let count = stream.read(&buffer, maxLength: buffer.count)
+                    if count <= 0 { break }
+                    body.append(contentsOf: buffer.prefix(count))
+                }
+            }
+            let payload = (try? JSONSerialization.jsonObject(with: body)) as? [String: String]
+            XCTAssertEqual(payload?["ticket"], String(repeating: "t", count: 64))
             return (200, Data("{\"destination\":\"/studio\"}".utf8), 0)
         }
         let api = try mockAPI()
