@@ -3,7 +3,7 @@
 .simple-chat .conversation-topbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;height:72px;padding:8px 24px;align-items:center}
 .simple-chat .studio-header-actions{margin:0;display:flex;gap:8px;align-items:center}
 .simple-chat #newChatBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #dcd2e5;font-size:14px;padding:8px 12px;min-height:44px;width:auto}
-.simple-chat #newChatBtn::after{content:none}
+.simple-chat .studio-header-actions #newChatBtn::after{content:none}
 .simple-chat #newChatBtn .new-post-plus{font-size:24px;line-height:1}
 .simple-chat .studio-brand-context{margin:0;max-width:100%;min-width:0}
 .simple-chat .studio-brand-context button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#65596f;font-size:13px}
