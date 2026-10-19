@@ -1,3 +1,13 @@
+# iPhone feedback: dark product theme and grouped Account — 19 October 2026
+
+Owner screenshots now show Studio loaded on the phone: build7 bootstrap acceptance is observed. This does not verify social connections or every native feature. New bounded candidate: shared near-black/violet product theme, grouped Account settings with deep-link/save-error reveal, + New post beside the brand, compact Next move/header, hero hidden on composer focus and mobile weekly summary hidden while typing. Native shell/background/status appearance also changes to dark; needs a replacement TestFlight binary. Existing forms, workspace links, native socials-only refresh, drafts and immutable approvals preserved.
+
+Instagram remains an open provider journey defect, not falsely resolved. Production logs show /connect/instagram200 then /oauth/instagram/start302 at11:14,11:31 and11:42 BST, **no callback** in the four-hour inspected window. This narrows the observed failure to before return to Zova; no token-exchange failure is evidenced. Asked owner where it stops and the displayed message. Do not disconnect accounts, change grants, remove reauthentication or weaken state/session protections to guess at a fix. Real phone/provider retest still needed.
+
+Validation in progress:45 focused Python tests passed;5 Node native/account/focus cases passed, syntax and diff checks clean. Synthetic loopback phone previews used disposable SQLite/users and no provider keys. Preview helper under ignored social-proof is local only, not product source. Exact application/PostgreSQL and native CI, deployment and new TestFlight status must be recorded before release claims. All79 broader gaps remain tracked. Rollback runtime to2bce283 / dep-dbaulsrrjlhs73aorpsg; build7 remains previous native binary. No migrations or customer data changes.
+
+---
+
 # Replacement iPhone beta7 released; phone acceptance pending — 19 October 2026
 
 Owner confirmed build5 installed and failing. Do not repeat the version5 question or claim its origin-header patch fixed the phone. Production logs confirmed /mobile/web-session403 after build5. Exact device header mismatch was not captured; the new implementation removes the failing WebKit POST rather than claiming the simulator reproduced every phone condition.

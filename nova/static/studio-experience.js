@@ -96,7 +96,14 @@ function undoTextEdit(){
 document.getElementById('brief').addEventListener('input',sizeComposer);
 document.querySelectorAll('dialog').forEach(dialog=>dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}}));
 
-function fitVisibleViewport(){const view=window.visualViewport;document.querySelector('.conversation-workspace').style.setProperty('--chat-height',view&&window.innerWidth<761?view.height+'px':'100dvh');}
+function fitVisibleViewport(){
+ const view=window.visualViewport,mobile=window.innerWidth<761;
+ document.querySelector('.conversation-workspace').style.setProperty('--chat-height',view&&mobile?view.height+'px':'100dvh');
+ const typing=document.activeElement?.id==='brief';
+ document.body.classList.toggle('composer-keyboard-open',mobile&&typing);
+}
+document.getElementById('brief').addEventListener('focus',fitVisibleViewport);
+document.getElementById('brief').addEventListener('blur',fitVisibleViewport);
 window.visualViewport?.addEventListener('resize',fitVisibleViewport);
 window.addEventListener('resize',fitVisibleViewport);
 fitVisibleViewport();

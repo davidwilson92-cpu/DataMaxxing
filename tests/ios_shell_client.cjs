@@ -4,6 +4,28 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const source=fs.readFileSync('nova/static/ios-shell.js','utf8');
 
+test('deep links expand the correct account category without clearing other settings',()=>{
+ const group={tagName:'DETAILS',open:false,parentElement:null},target={tagName:'SECTION',parentElement:group,scrollIntoView(){this.scrolled=true}};
+ let onHash;
+ const context={location:{hash:'#socials'},document:{getElementById:id=>id==='socials'?target:null},window:{addEventListener:(event,fn)=>onHash=fn}};
+ vm.createContext(context);vm.runInContext(fs.readFileSync('nova/static/account-sections.js','utf8'),context);
+ assert.equal(group.open,true);assert.equal(target.scrolled,true);
+ context.location.hash='#%invalid';assert.doesNotThrow(()=>onHash());
+});
+
+test('mobile composer focus tracks keyboard layout and resets after blur',()=>{
+ const classes=new Set(),properties={};
+ const context={window:{innerWidth:393,visualViewport:{height:420}},document:{activeElement:{id:'brief'},
+  body:{classList:{toggle:(name,on)=>on?classes.add(name):classes.delete(name)}},
+  querySelector:()=>({style:{setProperty:(name,value)=>properties[name]=value}})}};
+ const experience=fs.readFileSync('nova/static/studio-experience.js','utf8');
+ vm.createContext(context);vm.runInContext(experience.slice(experience.indexOf('function fitVisibleViewport()'),experience.indexOf("document.getElementById('brief').addEventListener('focus'")),context);
+ vm.runInContext('fitVisibleViewport()',context);
+ assert.equal(properties['--chat-height'],'420px');assert.equal(classes.has('composer-keyboard-open'),true);
+ context.document.activeElement=null;vm.runInContext('fitVisibleViewport()',context);assert.equal(classes.size,0);
+ context.window.innerWidth=1200;vm.runInContext('fitVisibleViewport()',context);assert.equal(properties['--chat-height'],'100dvh');
+});
+
 test('returning from connection refreshes Studio destinations without clearing the idea',async()=>{
  const input={value:'My unsaved idea'},data={instagram:[],x:['Old account']};let rendered=0;
  const context={window:{},connectionData:data,renderReadiness:()=>rendered++,input,

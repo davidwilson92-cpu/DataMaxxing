@@ -90,10 +90,10 @@ struct ZovaRoot: View {
     private let titles = ["Studio", "Drafts", "Performance", "Account"]
     private let icons = ["square.and.pencil", "doc.on.doc", "chart.bar", "person.crop.circle"]
     private let purple = Color(red: 0.486, green: 0.227, blue: 0.929)
-    private let readableSecondary = Color(red: 0.36, green: 0.34, blue: 0.40)
+    private let readableSecondary = Color(red: 0.72, green: 0.68, blue: 0.79)
     var body: some View {
         ZStack {
-            Color.white.ignoresSafeArea()
+            Color(red: 0.031, green: 0.024, blue: 0.059).ignoresSafeArea()
             switch model.phase {
             case .opening: ProgressView("Opening Zova…").tint(purple)
             case .signedOut: welcome
@@ -223,5 +223,5 @@ private struct ObservedStudioPage<Content: View>: View {
 
 @main
 struct ZovaApp: App {
-    var body: some Scene { WindowGroup { ZovaRoot().preferredColorScheme(.light) } }
+    var body: some Scene { WindowGroup { ZovaRoot().preferredColorScheme(.dark) } }
 }
