@@ -62,10 +62,12 @@ def session_cookie(session):
     return payload + '.' + hmac.new(session_secret().encode(), payload.encode(), hashlib.sha256).hexdigest()
 
 
-def accept_handoff(ticket, purpose, request):
+def accept_handoff(ticket, purpose, request, native=False):
     with SessionLocal() as db:
         row = db.get(MobileHandoff, hash_api_key(ticket))
         session, user = shell_session(db, row)
+        if native and row.session_id != request.state.mobile_session_id:
+            raise HTTPException(401, 'Invalid native session handoff')
         if row.purpose != purpose:
             raise HTTPException(401, 'Invalid sign-in handoff')
         claimed = db.execute(update(MobileHandoff).where(
@@ -78,7 +80,8 @@ def accept_handoff(ticket, purpose, request):
         if claimed.rowcount != 1:
             raise HTTPException(401, 'Sign-in handoff expired or already used')
         db.commit()
-        response = RedirectResponse(destination(row.destination, purpose), 303)
+        target = destination(row.destination, purpose)
+        response = JSONResponse({'destination': target}) if native else RedirectResponse(target, 303)
         response.set_cookie('nova_session', session_cookie(session),
                             max_age=max(0, int((session.expires_at.replace(tzinfo=session.expires_at.tzinfo or utcnow().tzinfo) - utcnow()).total_seconds())),
                             httponly=True, secure=os.environ.get('PUBLIC_BASE_URL', '').startswith('https://'), samesite='lax')
@@ -128,6 +131,18 @@ def create_handoff(body: HandoffRequest, request: Request):
                              expires_at=utcnow() + timedelta(seconds=60)))
         db.commit()
     return {'ticket': ticket, 'expires_in': 60}
+
+
+class NativeWebTicket(BaseModel):
+    ticket: str = Field(min_length=40, max_length=100)
+
+
+@router.post('/api/v1/native-web-session')
+def native_web_session(body: NativeWebTicket, request: Request):
+    # Redeem through native URLSession, then install only this HttpOnly cookie
+    # into WebKit before its first GET. No browser-origin exception is needed.
+    native_user(request)
+    return accept_handoff(body.ticket, 'studio', request, native=True)
 
 
 @router.post('/mobile/web-session', include_in_schema=False)

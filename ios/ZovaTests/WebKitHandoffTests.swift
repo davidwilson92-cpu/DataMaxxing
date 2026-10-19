@@ -41,6 +41,51 @@ final class WebKitHandoffTests: XCTestCase {
         withExtendedLifetime(navigation) { }
     }
 
+    func testNativeCookieInstallPrecedesFirstWebKitGET() async throws {
+        let ready = expectation(description: "Cookie listener ready")
+        let opened = expectation(description: "First GET has installed HttpOnly cookie")
+        let parameters = NWParameters.tcp
+        parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
+        let listener = try NWListener(using: parameters)
+        listener.stateUpdateHandler = { if case .ready = $0 { ready.fulfill() } }
+        listener.newConnectionHandler = { connection in
+            connection.start(queue: .main)
+            Self.read(connection, buffered: Data(), exchanged: opened, opened: opened)
+        }
+        listener.start(queue: .main)
+        defer { listener.cancel() }
+        await fulfillment(of: [ready], timeout: 5)
+        let port = try XCTUnwrap(listener.port?.rawValue)
+        let url = URL(string: "http://127.0.0.1:\(port)/studio")!
+        let cookie = try XCTUnwrap(HTTPCookie.cookies(withResponseHeaderFields: ["Set-Cookie":"zova_probe=synthetic; Path=/; HttpOnly; SameSite=Lax"], for: url).first)
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        let request = try await StudioBootstrap.request(NativeWebSession(url: url, cookie: cookie), store: configuration.websiteDataStore.httpCookieStore)
+        XCTAssertEqual(request.httpMethod, "GET")
+        XCTAssertNil(request.httpBody)
+        XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+        let view = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: configuration)
+        let navigation = WebKitProbeNavigation()
+        view.navigationDelegate = navigation
+        view.load(request)
+        await fulfillment(of: [opened], timeout: 60)
+        withExtendedLifetime((view, navigation)) { }
+    }
+
+    func testProductionCoordinatorRejectsHTTPAndNonHTTPJSONWithoutMarkingReady() throws {
+        let page = StudioPage("/studio")
+        var ready = false
+        let surface = StudioSurface(page: page, configuration: try ZovaConfiguration(base: URL(string: "https://zova-social.com")!), ready: { ready = true }, signedOut: {}, browser: { _ in }, external: { _ in }, share: { _ in })
+        let coordinator = surface.makeCoordinator()
+        XCTAssertTrue(coordinator.responds(to: NSSelectorFromString("webView:decidePolicyForNavigationResponse:decisionHandler:")))
+        let url = URL(string: "https://zova-social.com/mobile/web-session")!
+        XCTAssertFalse(coordinator.acceptResponse(HTTPURLResponse(url: url, statusCode: 403, httpVersion: nil, headerFields: ["Content-Type":"application/json"])!))
+        XCTAssertNotNil(page.failure)
+        XCTAssertFalse(coordinator.acceptResponse(URLResponse(url: url, mimeType: "application/json", expectedContentLength: 0, textEncodingName: "utf-8")))
+        XCTAssertFalse(ready)
+        XCTAssertTrue(coordinator.acceptResponse(HTTPURLResponse(url: URL(string: "https://zova-social.com/studio")!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type":"text/html"])!))
+    }
+
     nonisolated private static func read(_ connection: NWConnection, buffered: Data,
                              exchanged: XCTestExpectation, opened: XCTestExpectation) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { chunk, _, _, error in

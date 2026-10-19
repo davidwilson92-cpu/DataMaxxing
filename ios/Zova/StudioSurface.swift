@@ -1,6 +1,22 @@
+// Native cookie installation completes before any Studio GET is loaded.
 import SwiftUI
 import WebKit
 import SafariServices
+
+@MainActor
+enum StudioBootstrap {
+    static func request(_ session: NativeWebSession, store: WKHTTPCookieStore = WKWebsiteDataStore.default().httpCookieStore) async throws -> URLRequest {
+        let existing = await store.allCookies()
+        for cookie in existing where cookie.name == "zova_brand" && cookie.domain == session.cookie.domain {
+            await store.deleteCookie(cookie)
+        }
+        await store.setCookie(session.cookie)
+        guard await store.allCookies().contains(where: { $0.name == session.cookie.name && $0.domain == session.cookie.domain && $0.value == session.cookie.value }) else {
+            throw ZovaFailure.secureStorage
+        }
+        return URLRequest(url: session.url, cachePolicy: .reloadIgnoringLocalCacheData)
+    }
+}
 
 @MainActor
 final class StudioPage: ObservableObject {
@@ -67,8 +83,13 @@ struct StudioSurface: UIViewRepresentable {
             parent.page.loading = true
         }
         func webView(_ view: WKWebView, didFinish navigation: WKNavigation!) {
-            parent.page.loading = false; parent.page.failure = nil
+            parent.page.loading = false
             guard let url = view.url, parent.configuration.owns(url) else { return }
+            guard url.path != "/mobile/web-session" else {
+                parent.page.failure = "Studio couldn’t finish signing in. Close and reopen Zova to try again."
+                return
+            }
+            parent.page.failure = nil
             if url.path == "/login" || url.path == "/" {
                 parent.signedOut(); return
             }
@@ -107,16 +128,20 @@ struct StudioSurface: UIViewRepresentable {
                 parent.external(url)
             }
         }
-        func webView(_ view: WKWebView, decidePolicyFor response: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
-            if let http = response.response as? HTTPURLResponse, http.statusCode == 401 {
-                decisionHandler(.cancel); parent.signedOut(); return
+        func acceptResponse(_ response: URLResponse) -> Bool {
+            if let http = response as? HTTPURLResponse, http.statusCode == 401 {
+                parent.signedOut(); return false
             }
-            if let http = response.response as? HTTPURLResponse, http.statusCode >= 400 {
-                decisionHandler(.cancel)
+            let badStatus = (response as? HTTPURLResponse).map { $0.statusCode >= 400 } ?? false
+            if badStatus || response.mimeType == "application/json" || response.url?.path == "/mobile/web-session" {
                 parent.page.loading = false
-                parent.page.failure = "Studio couldn’t open securely. Please close and reopen Zova, then try again."
-                return
+                parent.page.failure = "Studio couldn’t open securely. Close and reopen Zova to try again."
+                return false
             }
+            return true
+        }
+        func webView(_ view: WKWebView, decidePolicyFor response: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+            guard !response.isForMainFrame || acceptResponse(response.response) else { decisionHandler(.cancel); return }
             decisionHandler(response.canShowMIMEType ? .allow : .download)
         }
         func webView(_ view: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {

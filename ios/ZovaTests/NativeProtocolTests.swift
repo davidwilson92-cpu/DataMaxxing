@@ -135,6 +135,28 @@ final class NativeProtocolTests: XCTestCase {
         XCTAssertNil(try KeychainVault.load())
     }
 
+    func testNativeBootstrapRedeemsOutsideWebKitAndReturnsOnlyCookieAndGETTarget() async throws {
+        try KeychainVault.save(NativeTokens(access: String(repeating: "a", count: 64), refresh: String(repeating: "r", count: 64), expires: Date().addingTimeInterval(900)))
+        defer { try? KeychainVault.clear() }
+        MockNativeTransport.respond = { request in
+            XCTAssertNotNil(request.value(forHTTPHeaderField: "Authorization"))
+            XCTAssertNil(request.value(forHTTPHeaderField: "Cookie"))
+            if request.url?.path == "/api/v1/native-handoff" {
+                return (200, Data(("{\"ticket\":\"" + String(repeating: "t", count: 64) + "\"}").utf8), 0)
+            }
+            XCTAssertEqual(request.url?.path, "/api/v1/native-web-session")
+            XCTAssertTrue(String(data: request.httpBody!, encoding: .utf8)!.contains(String(repeating: "t", count: 64)))
+            return (200, Data("{\"destination\":\"/studio\"}".utf8), 0)
+        }
+        let api = try mockAPI()
+        let value = try await api.webSession(destination: "/studio")
+        XCTAssertEqual(value.url.absoluteString, "https://zova-social.com/studio")
+        XCTAssertTrue(value.cookie.isHTTPOnly)
+        XCTAssertTrue(value.cookie.isSecure)
+        XCTAssertEqual(value.cookie.name, "nova_session")
+        await api.forget()
+    }
+
     private static var tokenData: Data { Data(("{\"access_token\":\"" + String(repeating: "b", count: 64) + "\",\"refresh_token\":\"" + String(repeating: "n", count: 64) + "\",\"expires_in\":900}").utf8) }
     private func mockAPI() throws -> NativeAPI {
         let transport = URLSessionConfiguration.ephemeral
@@ -150,7 +172,11 @@ private final class MockNativeTransport: URLProtocol {
     override func startLoading() {
         let (status, data, delay) = Self.respond(request)
         DispatchQueue.global().asyncAfter(deadline: .now() + delay) { [self] in
-            client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!, cacheStoragePolicy: .notAllowed)
+            var headers = ["Content-Type": "application/json"]
+            if request.url?.path == "/api/v1/native-web-session" {
+                headers["Set-Cookie"] = "nova_session=ios.synthetic.bound; Path=/; Max-Age=900; Secure; HttpOnly; SameSite=Lax"
+            }
+            client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: headers)!, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: data)
             client?.urlProtocolDidFinishLoading(self)
         }

@@ -11,6 +11,7 @@ final class ZovaSession: ObservableObject {
     let configuration = ZovaConfiguration.bundled
     lazy var api = NativeAPI(configuration: configuration)
     let signIn = NativeSignIn()
+    private var authorityEpoch = 0
     let pages = [StudioPage("/studio"), StudioPage("/drafts"), StudioPage("/analytics"), StudioPage("/account")]
     func start() async {
         #if DEBUG
@@ -25,7 +26,7 @@ final class ZovaSession: ObservableObject {
         do {
             guard try KeychainVault.load() != nil else { phase = .signedOut; return }
             try await api.ensureAvailable()
-            pages[0].load(try await api.handoff(destination: "/studio"))
+            try await openStudio()
             phase = .studio
         } catch ZovaFailure.signInRequired { await didSignOut() }
         catch { message = error.localizedDescription; phase = .signedOut }
@@ -41,9 +42,17 @@ final class ZovaSession: ObservableObject {
             let code = try NativeProof.code(from: url, configuration: configuration, state: state)
             try await api.exchange(code: code, verifier: verifier)
             await clearWebData()
-            pages[0].load(try await api.handoff(destination: "/studio"))
+            try await openStudio()
             cookieReady = false; phase = .studio
         } catch { message = error.localizedDescription }
+    }
+    private func openStudio() async throws {
+        let epoch = authorityEpoch
+        let session = try await api.webSession(destination: "/studio")
+        guard epoch == authorityEpoch else { throw ZovaFailure.signInRequired }
+        let request = try await StudioBootstrap.request(session)
+        guard epoch == authorityEpoch else { throw ZovaFailure.signInRequired }
+        pages[0].load(request)
     }
     func loaded() {
         guard !cookieReady else { return }
@@ -53,6 +62,7 @@ final class ZovaSession: ObservableObject {
         }
     }
     func didSignOut() async {
+        authorityEpoch += 1
         await api.forget()
         await clearWebData()
         for page in pages { page.request = nil; page.webView?.loadHTMLString("", baseURL: nil) }
@@ -128,7 +138,7 @@ struct ZovaRoot: View {
                     Button("Terms") { openLegal("/terms-of-service") }
                     Button("Help") { openLegal("/help") }
                 }.font(.subheadline).tint(purple).frame(minHeight: 44)
-                Text("Beta access • No purchases in this app").font(.footnote).foregroundStyle(readableSecondary)
+                Text("Beta " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") + " (" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "") + ") • No purchases").font(.footnote).foregroundStyle(readableSecondary)
             }.padding(28).frame(maxWidth: 560)
         }
     }

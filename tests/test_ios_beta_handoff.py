@@ -394,3 +394,49 @@ def test_native_handoff_header_cannot_bypass_other_route_origin_protection():
     headers = {'origin':'null','sec-fetch-site':'cross-site','x-zova-native-handoff':'1'}
     assert native.post('/api/v1/native-handoff', json={'destination':'/studio'}, headers=headers).status_code == 403
     assert TestClient(app).post('/mobile/web-session', data={'ticket':'x'*64}, headers=headers).status_code == 401
+
+
+def test_native_cookie_bootstrap_requires_bearer_and_owns_ticket():
+    first, _, uid, _, _ = sign_in()
+    other, *_ = sign_in()
+    ticket = handoff(first)
+    body = {'ticket':ticket}
+    assert TestClient(app).post('/api/v1/native-web-session',json=body).status_code == 401
+    assert other.post('/api/v1/native-web-session',json=body).status_code == 401
+    result = first.post('/api/v1/native-web-session',json=body,follow_redirects=False)
+    assert result.status_code == 200
+    assert result.json() == {'destination':'/studio'}
+    assert 'location' not in result.headers
+    cookie = result.cookies.get('nova_session')
+    assert user_from_session(cookie).id == uid
+    assert 'HttpOnly' in result.headers['set-cookie'] and 'SameSite=lax' in result.headers['set-cookie']
+    assert first.post('/api/v1/native-web-session',json=body).status_code == 401
+    browser = TestClient(app)
+    browser.cookies.set('nova_session',cookie)
+    assert browser.get('/studio').status_code == 200
+    first.post('/api/v1/auth/logout')
+    assert browser.get('/api/drafts').status_code == 401
+
+
+def test_native_cookie_bootstrap_rejects_browser_authority_origin_and_wrong_purpose(monkeypatch):
+    native, web, *_ = sign_in()
+    ticket = handoff(native)
+    assert web.post('/api/v1/native-web-session',json={'ticket':ticket}).status_code == 401
+    assert native.post('/api/v1/native-web-session',json={'ticket':ticket},headers={'origin':'null','x-zova-native-handoff':'1'}).status_code == 403
+    wrong = handoff(native,'/account','browser')
+    assert native.post('/api/v1/native-web-session',json={'ticket':wrong}).status_code == 401
+    monkeypatch.setenv('PUBLIC_BASE_URL','https://zova-social.com')
+    accepted = native.post('/api/v1/native-web-session',json={'ticket':ticket})
+    assert accepted.status_code == 200 and '; Secure' in accepted.headers['set-cookie']
+
+
+def test_native_cookie_bootstrap_is_gated_and_expired_ticket_cannot_set_cookie(monkeypatch):
+    native, *_ = sign_in()
+    ticket = handoff(native)
+    with SessionLocal() as db:
+        db.get(MobileHandoff,hash_api_key(ticket)).expires_at = utcnow()-timedelta(seconds=1)
+        db.commit()
+    failed = native.post('/api/v1/native-web-session',json={'ticket':ticket})
+    assert failed.status_code == 401 and 'set-cookie' not in failed.headers
+    monkeypatch.setenv('ZOVA_MOBILE_ENABLED','false')
+    assert native.post('/api/v1/native-web-session',json={'ticket':ticket}).status_code == 404

@@ -26,6 +26,9 @@ actor NativeAPI {
         session = URLSession(configuration: settings, delegate: RedirectGuard(configuration), delegateQueue: nil)
     }
     private func request(_ path: String, body: [String: String]? = nil, token: String? = nil) async throws -> Data {
+        try await response(path, body: body, token: token).0
+    }
+    private func response(_ path: String, body: [String: String]? = nil, token: String? = nil) async throws -> (Data, HTTPURLResponse) {
         var request = URLRequest(url: try configuration.endpoint(path))
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -40,7 +43,7 @@ actor NativeAPI {
         if response.statusCode == 401 { throw ZovaFailure.signInRequired }
         if response.statusCode == 429 { throw ZovaFailure.server("Please wait a moment before trying again.") }
         guard (200...299).contains(response.statusCode), data.count <= 1_048_576 else { throw ZovaFailure.unavailable }
-        return data
+        return (data, response)
     }
     func ensureAvailable() async throws {
         let data = try await request("/api/v1/native-config")
@@ -104,6 +107,27 @@ actor NativeAPI {
         result.setValue("1", forHTTPHeaderField: "X-Zova-Native-Handoff")
         return result
     }
+    func webSession(destination: String) async throws -> NativeWebSession {
+        let epoch = sessionEpoch
+        let token = try await access()
+        let data = try await request("/api/v1/native-handoff", body: ["destination": destination, "purpose": "studio"], token: token)
+        struct Ticket: Decodable { let ticket: String }
+        let ticket = try JSONDecoder().decode(Ticket.self, from: data).ticket
+        guard (40...100).contains(ticket.count) else { throw ZovaFailure.invalidResponse }
+        let (result, headers) = try await response("/api/v1/native-web-session", body: ["ticket": ticket], token: token)
+        struct Target: Decodable { let destination: String }
+        let target = try JSONDecoder().decode(Target.self, from: result).destination
+        guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
+        guard target == destination else { throw ZovaFailure.invalidResponse }
+        let values = headers.allHeaderFields.reduce(into: [String: String]()) { result, item in
+            if let key = item.key as? String, let value = item.value as? String { result[key] = value }
+        }
+        let cookies = HTTPCookie.cookies(withResponseHeaderFields: values, for: configuration.base)
+        guard let cookie = cookies.first(where: { $0.name == "nova_session" }),
+              cookie.domain == configuration.base.host, cookie.path == "/",
+              cookie.isSecure, cookie.isHTTPOnly, cookie.value.hasPrefix("ios.") else { throw ZovaFailure.invalidResponse }
+        return NativeWebSession(url: try configuration.endpoint(target), cookie: cookie)
+    }
     func logout() async {
         let pair = tokens ?? (try? KeychainVault.load())
         forget()
@@ -112,4 +136,9 @@ actor NativeAPI {
         }
     }
     func forget() { sessionEpoch += 1; rotation?.cancel(); rotation = nil; tokens = nil; try? KeychainVault.clear() }
+}
+
+struct NativeWebSession {
+    let url: URL
+    let cookie: HTTPCookie
 }
