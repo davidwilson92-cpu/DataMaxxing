@@ -20,7 +20,7 @@ Direct OpenAI usage is billed separately today. Moving the web host does not aut
 
 ## Facts needed before applying
 
-Owner question remains pending: confirm registered legal name, approximate founding date, self-funded versus named investor/accelerator, previous AWS/Azure/Google startup credits and the company-domain email to use. Do not infer eligibility from the website. Select the intended company cloud billing account after sign-in; never create duplicates or put account IDs/keys into public documents.
+Owner confirmed self-funded and started August 2026. App Store Connect identifies the existing developer organisation as ZOVA SOCIAL LIMITED. Product start date is not proof of the legal incorporation date. Previous AWS/Azure/Google startup credits and the company-domain email remain unanswered; ask only for those missing facts before finalising the application. Do not infer a credit award from eligibility. Select the intended company cloud billing account after sign-in; never create duplicates or put account IDs/keys into public documents.
 
 Draft factual product description for the application:
 
@@ -49,7 +49,7 @@ AWS implementation candidate: a small managed container deployment, managed Post
 | Pool budget | Defaults preserve size5 + overflow10 | Configure size/overflow/timeouts/recycle and declared web replica count; startup checks web+worker pool demand against `DB_CONNECTION_BUDGET` |
 | Shared media | Existing storage untouched | External mode requires configured private S3-compatible bucket and no public-base setting |
 
-`scripts/prepare_database.py --confirm-target-backed-up` requires an explicit target database and must run with writes stopped using the migration identity. It does not certify a backup or install complete RLS/grants. Schema verification checks compatibility, not full constraints/indexes/permissions. A configured bucket is not proof of its actual IAM/public-access policy. These are preparatory controls, not a finished distributed scheduler or safe-cutover certificate.
+`scripts/prepare_database.py --confirm-target-backed-up` requires an explicit target database and must run with writes stopped using the migration identity. It does not certify a backup or install complete RLS/grants. Schema verification checks compatibility, not full constraints/indexes/permissions. CI now includes a dedicated synthetic recovery fixture for credential decryption, passwords, live/revoked sessions, uncertain publications, withdrawn AI permission and media checksums after pg_dump/pg_restore; require its receipt before counting it as passed. This tests a preserved filesystem path, not S3 IAM or a changed storage layout. A configured bucket is not proof of its actual IAM/public-access policy. These are preparatory controls, not a finished distributed scheduler or safe-cutover certificate.
 
 ## Migration stages and evidence required
 

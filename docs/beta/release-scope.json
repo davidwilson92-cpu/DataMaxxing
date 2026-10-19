@@ -4,7 +4,7 @@
   "files": {
     ".dockerignore": "53d51f371583ea7eec0450adc334498e5ec8566217c637a4d11f3b088cdf87a7",
     ".github/workflows/ios-beta.yml": "fed9551dd7024dc1411da8fd511ff3984344464b0546d929cc78571a9f48941d",
-    ".github/workflows/validate.yml": "bab8905265ffd2b1b7d8d8b6f934422b5debc0305544ac7ccbe83c74832a9c3e",
+    ".github/workflows/validate.yml": "3e2e4e6ec20c7888c532f44919d1c9ef916ce4c3b7c785a3e675f331196db08f",
     "AGENTS.md": "8d238a8ffd7a11b1b00b8ff3e196a171d5316d646ec0653c2fa83d3d196817ae",
     "Dockerfile": "3ef0f07011fe2a3cd7e8d8f1c7ffd5c3eec70c864eb685f003d9aae095a9a064",
     "app.py": "da8ca0fb649af377ecfa1cec44ee559897beb8afcd1180d2c79f3aca9d198d51",
@@ -170,6 +170,7 @@
     "scripts/check_service.py": "15ead86b1913208041e50661956ad5b25854878d8bac90fc80b805f63a08da7f",
     "scripts/check_synthetic_restore.py": "4a1e753330ebd898cda8f7cd29c58efc62064db82d1f46c0604b8043144af95d",
     "scripts/prepare_database.py": "b21a389bd63c442925231bcbad9538703cd5ff638c1e2f2ae3e30cd5c59102ae",
+    "scripts/synthetic_recovery.py": "0f3e4025d1374f565822bd206a0ef8080be8f7a36b750029d2d1ddc38f4f1a57",
     "scripts/unit_economics.py": "0a8000a24aacf5eb089d1abf3313944b41db98ad0fb7dcadeb84340fa8e4cb45",
     "tests/ai_privacy_client.test.cjs": "e0b82e2e294b58eb628b0ae1357d2e921066dcebef709591fb1c4ef19505001f",
     "tests/analytics_commercial.test.cjs": "816ce50c86dc6c8dfbc5196be0d6b9733e4b566fa79c0daea1f278e4d8460dcb",
@@ -220,6 +221,7 @@
     "tests/test_studio_experience.py": "9ea543d03dfde64fe336326ea3064f84b8e756de2e1a41a116529c5dcf75c1ad",
     "tests/test_studio_fork_pending.py": "3e7f8021fa99cc8a1c2b0a0ea98c3f876d5c40526f10b90a94d7efcfab636187",
     "tests/test_studio_message_media.py": "e3ed23f75f5de7dc133563d679b6aff3b8455b21e53295e6409c8b08816ba24f",
+    "tests/test_synthetic_recovery.py": "9a67c6a5b25f82e5fb9f98b6f7a2c33b768828b25c30ecd16177960f46d47bfe",
     "tests/test_tiktok_direct_post.py": "a5fc58787e8b8fdccc03bc6425bf73ed927dcbfdf6178eb1158a64467d793c34",
     "tests/test_tiktok_disclosure_regressions.py": "a47c094836d2371f0d2ca3b6dda2ebd0995801b9ead3046233a85ff1a5071677",
     "tests/test_tiktok_outcomes.py": "71328a1ea70fe2766a8e56947cc395bc466e09f050d1e930676f35c894182ca3",
@@ -230,6 +232,6 @@
     "tests/test_workspace_persistence.py": "8cce3a676c81c504d65424b90a14ca719d88407b4b8033ef8afa0490f2ccde61"
   },
   "release_class": "limited-beta",
-  "reviewed_update": "2026-10-19: commercial-readiness increment; explicit AI sharing, Performance correctness/clarity, safe diagnostics and dormant portable worker; no commercial certification or cloud activation; final saved-draft navigation avoids generation/AI prompt while preserving failed-save and workspace-switch guards",
+  "reviewed_update": "2026-10-19: commercial-readiness increment; explicit AI sharing, Performance correctness/clarity, safe diagnostics and dormant portable worker; no commercial certification or cloud activation; final saved-draft navigation avoids generation/AI prompt while preserving failed-save and workspace-switch guards; dedicated synthetic credential/session/media recovery rehearsal and native9 delivery receipt",
   "source_candidate": "db7fc42"
 }
