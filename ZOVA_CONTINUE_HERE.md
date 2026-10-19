@@ -1,3 +1,23 @@
+# iPhone Studio handoff repair released — 19 October 2026
+
+Owner's build4 screenshot exposed a real initial-navigation403, not an installation failure. **Replacement Zova Social0.1.0(5) is now Testing**, manually assigned to Zova Social Internal Beta with1 invitation. Apple build UUID77e6529f-aefc-4d7c-bb30-441e60f069ff; signed source671bbdd8df5e1324158391db63053d6be84b9149. Production native sources are identical in latest test-onlyb9dcd32. Ask owner to Update in TestFlight, fully close/reopen and confirm Studio. Physical-device confirmation is still pending; do not claim it already works on the phone.
+
+Backend a9398b2f8a7718f372c7bdfdffc4534aa9d60f6e is Live on existing Render service (10:32 BST,53.4s). Scoped fix: non-simple native header on initial one-use ticket POST; opaque origin allowed only for this exact marked exchange. Hostile concrete origins, unmarked opaque requests and unrelated mutations remain blocked. No CORS grant. Ticket expiry/purpose/ownership/revocation/replay checks preserved. iPhone intercepts HTTP errors instead of rendering raw JSON.
+
+Required checks completed: native39231451448 **success**,12 unit tests including actual WebKit network POST/header/body/303/session-cookie (4.401s),1 welcome UI test and release iPhone compilation. Application39231451464 **success**,480 passed/1 skipped each SQLite/PostgreSQL; restore/container/dependency/scope gates passed. Earlier loopback compile/timeout attempts failed and were corrected, not waived. Live probes in social-proof/ios-webkit-origin-live-fix.json; actual WebKit evidence ios-webkit-ci-network.txt; Apple release screenshot testflight-build5-testing.png. No user/social/upload data changes, no posts/grants/charges. All79 broader gaps retained. Draft PR34 remains pending device acceptance.
+
+Read docs/IOS_BETA_READINESS_20261019.md for full matrix/history. Rollback server to f47e1be preserves data but restores the known old-client origin blocker; no schema rollback. Do not deploy broad PR28 or enable Auto-Deploy while main remains old. Do not overwrite separate Zova Market app.
+
+---
+
+# iPhone beta first-device blocker — 19 October 2026, 10:24 BST
+
+Owner installed build4 and reported all tabs showing JSON403: Open Zova directly and try again. This is a confirmed release blocker; build4 availability was not proof of working Studio. Reproduced public POST /mobile/web-session with opaque Origin:null; SecurityMiddleware blocks the initial WebKit navigation before consuming the one-use ticket. Fix541ca62 adds a non-simple X-Zova-Native-Handoff:1 header to the native request and allows opaque origin only on the exact POST ticket exchange with this marker. Explicit hostile origins and all other routes stay protected; CORS not enabled; actual one-use,60s, purpose/session/owner checks remain required. Native now intercepts HTTP errors instead of rendering raw JSON.
+
+Candidate671bbdd8df5e1324158391db63053d6be84b9149 adds a real WebKit loopback POST/redirect-cookie integration test. Local35 native handoff/lifecycle tests pass, including reproduced failure, fixed exchange, replay and hostile-origin boundaries. Required hosted validation39230191672/application and39230191657/native is running. New signing/upload job https://codemagic.io/app/6ad5cbbeadaac76a4f1f8525/build/6ad5e2be7550aed81090123e started. Do not distribute a new build until actual WebKit test and release checks pass; do not call the device issue fixed until owner retests the updated build. Production is now a9398b2 / Render Live,53.4s; public synthetic probes verify marked opaque-origin exchange reaches401 ticket validation, unmarked/hostile remain403 and no CORS grant. Apple processed build5 UUID77e6529f-aefc-4d7c-bb30-441e60f069ff (native source671bbdd; later commits change tests only). It is Ready to Test but not assigned to the group yet. Actual WebKit loopback test compiled but timed out during cold startup; timeout/diagnostics corrected in test-only252a1c3/b9dcd32. Await latest native run before distribution. Do not treat incomplete loopback checks as passing.
+
+---
+
 # iPhone internal beta available — 19 October 2026
 
 Zova Social 0.1.0 (4) is uploaded, processed and **Testing** in App Store Connect. Private group Zova Social Internal Beta has one tester, David Wilson, invited at 10:08 BST. Apple app ID6824416979 / bundle com.zovasocial.app / team7B4W8RN6GX. This is separate from Zova Market: never overwrite that app. Native binary source16fbb9a8e168d774a130f5cecfcc266928960141; build UUIDe5b9c889-61cb-463a-b0b0-fb3cdfe744ef. Build3 is not distributed. Owner authorised registration, signing and internal upload; no public App Store submission.
@@ -368,3 +388,5 @@ Before release: run staging PostgreSQL concurrency and worker recovery; real-mod
 Rollback: cancel pending series deliveries before returning code to b746bad; do not automatically cancel sending/unknown outcomes. Keep additive tables and completed history. Restore-test a database backup before any release.
 
 Local git origin points to the original local checkout, not GitHub. Do not push to it. No PR or deployment created in this task.
+
+WebKit regression outcome: latest test-only b9dcd32 / native run39231451448 completed the12 unit tests (including real WebKit POST/header/body/303 redirect/session-cookie) and welcome UI test successfully; release compilation was running at this entry. Actual network test passed4.401s. Earlier15s timeout is recorded as a failed attempt, not a passing result. Evidence: social-proof/ios-webkit-ci-network.txt. Application39231451464 passed480/1 skipped on both SQLite/PostgreSQL with restore/container/dependency/scope gates. Final build5 source671bbdd has identical production native sources to b9dcd32; test-only changes require no new binary.
