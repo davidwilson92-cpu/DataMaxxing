@@ -103,7 +103,7 @@ def consent(grant_id: str, request: Request):
         return RedirectResponse('/login?'+urlencode({'next':'/mobile/authorize/'+grant_id}), 303)
     proof = consent_proof(grant_id, token)
     return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign in to Zova for iOS</title>
-    <link rel="stylesheet" href="/static/mobile-auth.css"></head><body><main>
+    <link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main>
     <img src="/static/zova-mark.svg" alt="Zova" width="48" height="48">
     <h1>Continue to Zova for iOS</h1><p>Sign in as <strong>{html.escape(user.email)}</strong>.</p>
     <p>Your drafts, strategy and connected accounts will be available in the app. Posting still needs your approval.</p>
