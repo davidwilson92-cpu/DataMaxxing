@@ -1,0 +1,70 @@
+import XCTest
+import WebKit
+import Network
+@testable import Zova
+
+// Exercise WebKit's actual network process, not just URLSession mocks. The
+// listener is loopback-only and uses disposable synthetic credentials.
+@MainActor
+final class WebKitHandoffTests: XCTestCase {
+    func testInitialPostKeepsNativeHeaderBodyAndRedirectSessionCookie() async throws {
+        let ready = expectation(description: "Loopback listener ready")
+        let exchanged = expectation(description: "WebKit posted synthetic ticket")
+        let opened = expectation(description: "Redirect retained session cookie")
+        let parameters = NWParameters.tcp
+        parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
+        let listener = try NWListener(using: parameters)
+        listener.stateUpdateHandler = { state in if case .ready = state { ready.fulfill() } }
+        listener.newConnectionHandler = { connection in
+            connection.start(queue: .main)
+            Self.read(connection, buffered: Data(), exchanged: exchanged, opened: opened)
+        }
+        listener.start(queue: .main)
+        defer { listener.cancel() }
+        await fulfillment(of: [ready], timeout: 5)
+        let port = try XCTUnwrap(listener.port?.rawValue)
+        let view = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        view.configuration.websiteDataStore = .nonPersistent()
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/mobile/web-session")!)
+        request.httpMethod = "POST"
+        request.httpBody = Data("ticket=synthetic-one-use-ticket".utf8)
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.setValue("1", forHTTPHeaderField: "X-Zova-Native-Handoff")
+        view.load(request)
+        await fulfillment(of: [exchanged, opened], timeout: 15)
+        // Keep WebKit alive until its redirect completes.
+        XCTAssertNotNil(view.url)
+    }
+
+    private static func read(_ connection: NWConnection, buffered: Data,
+                             exchanged: XCTestExpectation, opened: XCTestExpectation) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { chunk, _, _, error in
+            guard error == nil, let chunk, !chunk.isEmpty else { connection.cancel(); return }
+            var data = buffered; data.append(chunk)
+            guard let text = String(data: data, encoding: .utf8),
+                  let split = text.range(of: "\r\n\r\n") else {
+                read(connection, buffered: data, exchanged: exchanged, opened: opened); return
+            }
+            let head = String(text[..<split.lowerBound]).lowercased()
+            let body = String(text[split.upperBound...])
+            if head.hasPrefix("post /mobile/web-session ") {
+                if !body.contains("ticket=synthetic-one-use-ticket") {
+                    read(connection, buffered: data, exchanged: exchanged, opened: opened); return
+                }
+                XCTAssertTrue(head.contains("x-zova-native-handoff: 1"))
+                XCTAssertTrue(head.contains("content-type: application/x-www-form-urlencoded"))
+                exchanged.fulfill()
+                send(connection, "HTTP/1.1 303 See Other\r\nLocation: /studio\r\nSet-Cookie: zova_probe=synthetic; Path=/; HttpOnly; SameSite=Lax\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+            } else if head.hasPrefix("get /studio ") {
+                XCTAssertTrue(head.contains("zova_probe=synthetic"))
+                opened.fulfill()
+                send(connection, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 15\r\nConnection: close\r\n\r\n<h1>Studio</h1>")
+            } else {
+                send(connection, "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+            }
+        }
+    }
+    private static func send(_ connection: NWConnection, _ text: String) {
+        connection.send(content: Data(text.utf8), completion: .contentProcessed { _ in connection.cancel() })
+    }
+}
