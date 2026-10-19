@@ -133,7 +133,8 @@ struct StudioSurface: UIViewRepresentable {
                 parent.signedOut(); return false
             }
             let badStatus = (response as? HTTPURLResponse).map { $0.statusCode >= 400 } ?? false
-            if badStatus || response.mimeType == "application/json" || response.url?.path == "/mobile/web-session" {
+            let download = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Disposition")?.lowercased().hasPrefix("attachment") ?? false
+            if badStatus || (response.mimeType == "application/json" && !download) || response.url?.path == "/mobile/web-session" {
                 parent.page.loading = false
                 parent.page.failure = "Studio couldn’t open securely. Close and reopen Zova to try again."
                 return false

@@ -83,6 +83,7 @@ final class WebKitHandoffTests: XCTestCase {
         XCTAssertNotNil(page.failure)
         XCTAssertFalse(coordinator.acceptResponse(URLResponse(url: url, mimeType: "application/json", expectedContentLength: 0, textEncodingName: "utf-8")))
         XCTAssertFalse(ready)
+        XCTAssertTrue(coordinator.acceptResponse(HTTPURLResponse(url: URL(string: "https://zova-social.com/account/export")!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type":"application/json", "Content-Disposition":"attachment; filename=export.json"])!))
         XCTAssertTrue(coordinator.acceptResponse(HTTPURLResponse(url: URL(string: "https://zova-social.com/studio")!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type":"text/html"])!))
     }
 
