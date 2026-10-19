@@ -1,3 +1,11 @@
+# Browser confirmation replay reproduced; recovery candidate — 19 October 2026
+
+Owner reports progress: can sign into Instagram but stays there; returning/retrying shows Safari raw JSON Browser confirmation expired (15:27 screenshot). Production last-hour logs show native browser POST303 at15:26:22, then POST403 and GET401 at15:26:23. Instagram start302 at15:25:39 but NO Instagram callback in the inspected hour. Do not conflate the proved Zova resubmission defect with an already-solved provider return; no final grant acceptance observed. Asked owner whether Allow/permissions or exact-account Zova review appeared; answer pending.
+
+Reproduced the same403 with a synthetic accepted handoff then resubmitted pre-cookie-change form. Candidate only lets the same already-authenticated active iOS device session resume the used browser ticket by303 to its bounded original connection page. It never redeems again, issues cookies, authorises a different device/user, revives a revoked session or connects/publishes anything. Changed-cookie unused requests remain403 and get a readable account-review link; expired/missing browser GET/POST get readable recovery instead of JSON. Studio/bootstrap one-use semantics unchanged. Tests cover repeat GET/POST, expired consumed tickets, no new cookie, same-user different-session rejection, revocation and unchanged fresh-ticket CSRF. Initial regressions failed against old code; corrected focused3 cases pass. Full required application checks/deployment remain pending. Use build8; no new native build for this server fix. All79 wider gaps and existing data/grants preserved.
+
+---
+
 # Instagram browser-only authorization link live — 19 October 2026,15:08 BST
 
 Server39d0d17bac09261764ff08e04003d13ddc37f666 is Live: Render dep-dbb28fc9v7es73aec6sg, started15:07:57 BST,53.0s, service live15:08:50. Public health/login/native-config200. Application39265783737 succeeded488/1 skipped each SQLite/PostgreSQL plus restore/container/dependency/scope gates. Focused73 tests passed. No new native binary: use installed8 and start a FRESH connection after closing old Instagram/browser attempt.

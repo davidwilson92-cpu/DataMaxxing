@@ -210,7 +210,64 @@ def test_browser_transfer_requires_explicit_cookie_bound_confirmation():
     assert accepted.status_code == 303 and accepted.headers['location'] == '/connect/tiktok?workspace=0'
     issued = SimpleCookie(accepted.headers.get_list('set-cookie')[0])['nova_session'].value
     assert user_from_session(issued).id == uid
-    assert other.post(path, data={'proof': proof}).status_code in {401, 403}
+    resumed = other.post(path, data={'proof': proof}, follow_redirects=False)
+    assert resumed.status_code == 303
+    assert resumed.headers['location'] == '/connect/tiktok?workspace=0'
+    assert 'set-cookie' not in resumed.headers
+
+
+def test_browser_back_after_confirming_resumes_only_the_same_active_device_session():
+    native, _, uid, pair, _ = sign_in()
+    browser = TestClient(app)
+    ticket = handoff(native, '/connect/instagram?workspace=0', 'browser')
+    path = '/mobile/browser/' + ticket
+    prompt = browser.get(path)
+    proof = re.search(r'name="proof" value="([a-f0-9]+)"', prompt.text)[1]
+    accepted = browser.post(path, data={'proof': proof}, follow_redirects=False)
+    assert accepted.status_code == 303
+    # A back/refresh resubmits the old form after the handoff rotated its cookie.
+    resumed = browser.post(path, data={'proof': proof}, follow_redirects=False)
+    assert resumed.status_code == 303
+    assert resumed.headers['location'] == '/connect/instagram?workspace=0'
+    assert 'set-cookie' not in resumed.headers
+    # An expired, already-used ticket can only navigate an already-authorised
+    # cookie; it never grants a fresh session or restores revoked authority.
+    with SessionLocal() as db:
+        db.get(MobileHandoff, hash_api_key(ticket)).expires_at = utcnow() - timedelta(seconds=1)
+        db.commit()
+    assert browser.get(path, follow_redirects=False).status_code == 303
+    stranger = TestClient(app)
+    assert stranger.get(path).status_code == 401
+    assert stranger.post(path, data={'proof': proof}).status_code in {401, 403}
+    # Same user, different native session must not consume this recovery path.
+    from nova.mobile_shell import session_cookie
+    with SessionLocal() as db:
+        source = db.get(MobileSession, pair['session_id'])
+        separate = MobileSession(id=secrets.token_hex(24), user_id=uid, auth_version=source.auth_version,
+                                 access_hash=secrets.token_hex(32), access_expires_at=source.access_expires_at,
+                                 expires_at=source.expires_at)
+        db.add(separate); db.commit()
+        different_cookie = session_cookie(separate)
+    stranger.cookies.set('nova_session', different_cookie)
+    assert stranger.get(path).status_code == 401
+    native.post('/api/v1/auth/logout')
+    assert browser.get(path).status_code == 401
+
+
+def test_changed_browser_cookie_gets_safe_recovery_without_consuming_unused_ticket():
+    native, *_ = sign_in()
+    browser, _, _, _ = account()
+    ticket = handoff(native, '/connect/instagram', 'browser')
+    path = '/mobile/browser/' + ticket
+    proof = re.search(r'name="proof" value="([a-f0-9]+)"', browser.get(path).text)[1]
+    browser.cookies.clear()
+    rejected = browser.post(path, data={'proof': proof})
+    assert rejected.status_code == 403
+    assert rejected.headers['content-type'].startswith('text/html')
+    assert 'Review your Zova account again' in rejected.text
+    assert 'set-cookie' not in rejected.headers
+    with SessionLocal() as db:
+        assert not db.get(MobileHandoff, hash_api_key(ticket)).used
 
 
 def test_wrong_account_can_cancel_without_switching_browser_identity_or_connecting():

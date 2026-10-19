@@ -21,7 +21,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from .db import MobileHandoff, MobileSession, SessionLocal, SocialConnection, User, get_db, utcnow
 from .mobile_auth import enabled, future, native_user, require_enabled
-from .security import current_user, hash_api_key, session_secret
+from .security import current_user, hash_api_key, session_secret, user_from_session
 
 router = APIRouter()
 PAGES = {'/studio', '/drafts', '/analytics', '/account', '/security', '/brands'}
@@ -156,14 +156,45 @@ def browser_proof(ticket, cookie):
     return hmac.new(session_secret().encode(), f'native-browser:{hash_api_key(ticket)}:{hash_api_key(cookie)}'.encode(), hashlib.sha256).hexdigest()
 
 
+def resume_browser(ticket, request):
+    """Back/refresh may revisit the form after its cookie was replaced.
+
+    Only navigate an already-authorised cookie from the exact original device
+    session. Never redeem the ticket again or issue another cookie.
+    """
+    cookie = request.cookies.get('nova_session', '')
+    parts = cookie.split('.')
+    if len(parts) != 7 or parts[0] != 'ios':
+        return None
+    user = user_from_session(cookie)
+    if not user:
+        return None
+    with SessionLocal() as db:
+        row = db.get(MobileHandoff, hash_api_key(ticket))
+        if not row or not row.used or row.purpose != 'browser' or row.session_id != parts[4]:
+            return None
+        return RedirectResponse(destination(row.destination, 'browser'), 303)
+
+
+def browser_recovery(ticket=None, status=401):
+    action = (f'<a href="/mobile/browser/{html.escape(ticket, quote=True)}">Review your Zova account again</a>'
+              if ticket else '<p>Close this browser and start the connection again from Zova.</p>')
+    return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Continue your connection | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Let’s resume your connection</h1><p>This browser confirmation is no longer current. Your saved work and existing connections are unchanged.</p>{action}</main></body></html>''', status_code=status)
+
+
 @router.get('/mobile/browser/{ticket}', include_in_schema=False)
 def browser_prompt(ticket: str, request: Request):
     require_enabled()
     if not 40 <= len(ticket) <= 100:
         raise HTTPException(404, 'Not found')
+    if resumed := resume_browser(ticket, request):
+        return resumed
     with SessionLocal() as db:
         row = db.get(MobileHandoff, hash_api_key(ticket))
-        session, user = shell_session(db, row)
+        try:
+            session, user = shell_session(db, row)
+        except HTTPException:
+            return browser_recovery()
         if row.purpose != 'browser':
             raise HTTPException(401, 'Invalid browser handoff')
         proof = browser_proof(ticket, request.cookies.get('nova_session', ''))
@@ -173,8 +204,10 @@ def browser_prompt(ticket: str, request: Request):
 @router.post('/mobile/browser/{ticket}', include_in_schema=False)
 def browser_accept(ticket: str, request: Request, proof: str = Form(...), decision: Literal['continue', 'cancel'] = Form('continue')):
     require_enabled()
+    if decision == 'continue' and (resumed := resume_browser(ticket, request)):
+        return resumed
     if not hmac.compare_digest(proof, browser_proof(ticket, request.cookies.get('nova_session', ''))):
-        raise HTTPException(403, 'Browser confirmation expired')
+        return browser_recovery(ticket, status=403)
     if decision == 'cancel':
         with SessionLocal() as db:
             row = db.get(MobileHandoff, hash_api_key(ticket))
@@ -188,7 +221,10 @@ def browser_accept(ticket: str, request: Request, proof: str = Form(...), decisi
                 raise HTTPException(401, 'Sign-in handoff expired or already used')
             db.commit()
         return HTMLResponse('''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Switch Zova account</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Switch your Zova account</h1><p>No social account was connected.</p><p>Close this browser. In the Zova app, open Account and select Sign out. Then sign in with your own Zova email before connecting Instagram.</p><p>Your existing drafts and connections stay with their original account.</p></main></body></html>''')
-    return accept_handoff(ticket, 'browser', request)
+    try:
+        return accept_handoff(ticket, 'browser', request)
+    except HTTPException:
+        return browser_recovery()
 
 
 @router.get('/mobile/callback', include_in_schema=False)
