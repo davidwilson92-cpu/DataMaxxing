@@ -358,3 +358,39 @@ def test_access_logs_strip_query_and_handoff_secret():
 def test_mutating_native_route_rejects_cross_site_origin():
     native, *_ = sign_in()
     assert native.post('/api/v1/native-handoff', json={'destination': '/studio'}, headers={'origin': 'https://evil.test'}).status_code == 403
+
+
+def test_webkit_opaque_origin_handoff_requires_native_header_and_one_use_ticket():
+    native, _, uid, *_ = sign_in()
+    ticket = handoff(native)
+    browser = TestClient(app)
+    headers = {'origin': 'null', 'sec-fetch-site': 'cross-site'}
+    denied = browser.post('/mobile/web-session', data={'ticket': ticket}, headers=headers)
+    assert denied.status_code == 403
+    assert denied.json()['detail'] == 'Open Zova directly and try again.'
+    headers['x-zova-native-handoff'] = '1'
+    accepted = browser.post('/mobile/web-session', data={'ticket': ticket}, headers=headers, follow_redirects=False)
+    assert accepted.status_code == 303
+    assert accepted.headers['location'] == '/studio'
+    assert user_from_session(browser.cookies.get('nova_session')).id == uid
+    assert browser.get('/studio').status_code == 200
+    assert browser.post('/mobile/web-session', data={'ticket': ticket}, headers=headers).status_code == 401
+
+
+@pytest.mark.parametrize('origin', ['https://evil.test', 'https://zova-social.com.evil.test'])
+def test_native_handoff_header_does_not_allow_untrusted_origins(origin):
+    native, *_ = sign_in()
+    ticket = handoff(native)
+    browser = TestClient(app)
+    headers = {'origin': origin, 'sec-fetch-site': 'cross-site', 'x-zova-native-handoff': '1'}
+    assert browser.post('/mobile/web-session', data={'ticket': ticket}, headers=headers).status_code == 403
+    # Rejection must not consume the ticket or establish an account session.
+    assert not browser.cookies.get('nova_session')
+    assert browser.post('/mobile/web-session', data={'ticket': ticket}, headers={'origin':'null','x-zova-native-handoff':'1'}, follow_redirects=False).status_code == 303
+
+
+def test_native_handoff_header_cannot_bypass_other_route_origin_protection():
+    native, *_ = sign_in()
+    headers = {'origin':'null','sec-fetch-site':'cross-site','x-zova-native-handoff':'1'}
+    assert native.post('/api/v1/native-handoff', json={'destination':'/studio'}, headers=headers).status_code == 403
+    assert TestClient(app).post('/mobile/web-session', data={'ticket':'x'*64}, headers=headers).status_code == 401

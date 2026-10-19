@@ -111,6 +111,12 @@ struct StudioSurface: UIViewRepresentable {
             if let http = response.response as? HTTPURLResponse, http.statusCode == 401 {
                 decisionHandler(.cancel); parent.signedOut(); return
             }
+            if let http = response.response as? HTTPURLResponse, http.statusCode >= 400 {
+                decisionHandler(.cancel)
+                parent.page.loading = false
+                parent.page.failure = "Studio couldn’t open securely. Please close and reopen Zova, then try again."
+                return
+            }
             decisionHandler(response.canShowMIMEType ? .allow : .download)
         }
         func webView(_ view: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {

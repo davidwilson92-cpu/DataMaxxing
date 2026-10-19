@@ -99,6 +99,9 @@ actor NativeAPI {
         result.httpMethod = "POST"
         result.httpBody = Data(("ticket=" + value.ticket).utf8)
         result.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        // The initial WebKit navigation may send Origin:null. A non-simple
+        // header distinguishes this ticket exchange from a cross-site form.
+        result.setValue("1", forHTTPHeaderField: "X-Zova-Native-Handoff")
         return result
     }
     func logout() async {

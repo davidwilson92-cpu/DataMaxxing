@@ -45,7 +45,16 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             configured = urlsplit(os.environ.get('PUBLIC_BASE_URL',''))
             expected = f'{configured.scheme}://{configured.netloc}' if configured.netloc else str(request.base_url).rstrip('/')
             # Browsers supply Origin on unsafe requests. Non-browser legacy clients have no ambient browser origin.
-            if (origin and origin != expected) or request.headers.get('sec-fetch-site') == 'cross-site':
+            # WKWebView's first native POST has an opaque Origin, unlike a
+            # same-site HTML form. Only the one-use ticket exchange accepts it,
+            # with a non-simple header that cross-site forms cannot supply.
+            # No CORS permission is granted; untrusted concrete origins still fail.
+            native_handoff = (
+                request.method == 'POST' and path == '/mobile/web-session'
+                and request.headers.get('x-zova-native-handoff') == '1'
+                and origin in {None, 'null', expected}
+            )
+            if ((origin and origin != expected) or request.headers.get('sec-fetch-site') == 'cross-site') and not native_handoff:
                 response = JSONResponse({'detail':'Open Zova directly and try again.'},403)
             size = request.headers.get('content-length','0')
             maximum = 160*1024*1024 if path == '/api/media' else 1024*1024

@@ -109,6 +109,8 @@ final class NativeProtocolTests: XCTestCase {
         for value in values {
             XCTAssertNil(value.value(forHTTPHeaderField: "Authorization"))
             XCTAssertFalse(value.url!.absoluteString.contains(String(repeating: "b", count: 64)))
+            XCTAssertEqual(value.value(forHTTPHeaderField: "X-Zova-Native-Handoff"), "1")
+            XCTAssertEqual(value.value(forHTTPHeaderField: "Content-Type"), "application/x-www-form-urlencoded")
             XCTAssertEqual(value.httpMethod, "POST")
             XCTAssertEqual(value.url?.path, "/mobile/web-session")
         }
