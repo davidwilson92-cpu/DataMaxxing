@@ -270,7 +270,8 @@ def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str,
     db.info.update(brand_id=0,brand_user_id=user.id);request.state.brand_id=0
     get_preferences(db,user.id)
     readiness.event(user.id,'signup',user.id)
-    resp=RedirectResponse("/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
+    from .mobile_auth import resume_destination
+    resp=RedirectResponse(resume_destination(request.cookies.get('zova_mobile_grant'), db) or "/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, error: str | None = None):
@@ -288,9 +289,15 @@ def apple_client_secret() -> str:
 
 
 @app.get("/auth/apple/start")
-def apple_start(intent: str = "login", db: Session = Depends(get_db)):
+def apple_start(request: Request, intent: str = "login", db: Session = Depends(get_db)):
     if not apple_configured(): raise HTTPException(503, "Sign in with Apple is not configured")
     state, nonce = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+    from .mobile_auth import resume_destination
+    native_resume = resume_destination(request.cookies.get('zova_mobile_grant'), db)
+    if native_resume:
+        # Persist the entire opaque state hash. This survives Apple's cross-site
+        # form_post without depending on a SameSite=Lax browser cookie.
+        state += '.' + native_resume.rsplit('/', 1)[1]
     db.add(AuthState(provider="apple", state_hash=hash_api_key(state), nonce_hash=hash_api_key(nonce), intent="signup" if intent == "signup" else "login")); db.commit()
     params = httpx.QueryParams({"client_id": os.environ["APPLE_CLIENT_ID"], "redirect_uri": os.environ.get("APPLE_REDIRECT_URI", f"{base_url()}/auth/apple/callback"), "response_type": "code id_token", "response_mode": "form_post", "scope": "name email", "state": state, "nonce": nonce})
     return RedirectResponse(f"https://appleid.apple.com/auth/authorize?{params}", 302)
@@ -331,7 +338,9 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
         db.commit()
     if not identity: db.add(AuthIdentity(user_id=user.id, provider="apple", subject=subject)); db.commit()
     if created:readiness.event(user.id,'signup',user.id)
-    resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303); set_user_cookie(resp, user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
+    from .mobile_auth import resume_destination
+    native_resume = resume_destination(state.partition('.')[2], db)
+    resp = RedirectResponse(native_resume or ("/onboarding/socials" if created else "/studio"), 303); set_user_cookie(resp, user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 
 @app.post("/login")
 def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Form()],next:Annotated[str,Form()]="/studio",db:Session=Depends(get_db)):
@@ -1276,10 +1285,10 @@ app.include_router(connection_review_router)
 
 # Native authority is disabled by default; the existing Studio stays shared.
 from .mobile_auth import router as mobile_auth_router
-from .mobile_shell import router as mobile_shell_router, MobileContinuationMiddleware
+from .mobile_shell import router as mobile_shell_router, NativeBillingMiddleware
 from .access_logging import install as redact_access_logs
 redact_access_logs()
 app.include_router(mobile_auth_router)
 app.include_router(mobile_shell_router)
-app.add_middleware(MobileContinuationMiddleware)
+app.add_middleware(NativeBillingMiddleware)
 app.add_middleware(SecurityMiddleware)

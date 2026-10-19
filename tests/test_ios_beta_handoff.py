@@ -262,7 +262,7 @@ def test_parallel_ticket_consumption_only_creates_one_cookie():
     assert outcomes.count(303) == 1 and outcomes.count(401) == 3
 
 
-def test_signup_or_apple_return_resumes_explicit_native_consent():
+def test_native_signup_returns_to_consent_without_redirecting_normal_web_work():
     web, *_ = account()
     verifier, state = secrets.token_urlsafe(48), secrets.token_urlsafe(32)
     response = web.get('/mobile/authorize', params={'client_id': 'zova-ios', 'redirect_uri': CALLBACK, 'code_challenge': challenge_for(verifier), 'state': state}, follow_redirects=False)
@@ -270,9 +270,69 @@ def test_signup_or_apple_return_resumes_explicit_native_consent():
     grant_id = grant_path.rsplit('/', 1)[1]
     # Secure pending cookie is set on production HTTPS; simulate its presence here.
     web.cookies.set('zova_mobile_grant', grant_id)
-    returned = web.get('/onboarding/socials', follow_redirects=False)
+    # Abandoning the system sign-in window must not take over ordinary web work.
+    assert web.get('/studio', follow_redirects=False).status_code == 200
+    from test_onboarding import signup_payload
+    email = 'native-signup-' + secrets.token_hex(8) + '@example.com'
+    returned = web.post('/signup', data=signup_payload(email), follow_redirects=False)
     assert returned.status_code == 303 and returned.headers['location'] == grant_path
     assert 'Continue to the app' in web.get(grant_path).text
+    assert email in web.get(grant_path).text
+
+
+def test_apple_native_resume_uses_single_use_state_without_cross_site_cookies(monkeypatch):
+    import importlib
+    from types import SimpleNamespace
+    application = importlib.import_module('nova.app')
+    web, uid, *_ = account()
+    verifier = secrets.token_urlsafe(48)
+    native_state = secrets.token_urlsafe(32)
+    begun = web.get('/mobile/authorize', params={'client_id':'zova-ios', 'redirect_uri':CALLBACK, 'code_challenge':challenge_for(verifier), 'state':native_state}, follow_redirects=False)
+    grant_path = begun.headers['location']
+    web.cookies.set('zova_mobile_grant', grant_path.rsplit('/', 1)[1])
+    for name in ('APPLE_CLIENT_ID','APPLE_TEAM_ID','APPLE_KEY_ID','APPLE_PRIVATE_KEY'):
+        monkeypatch.setenv(name, 'synthetic-provider-setting')
+    started = web.get('/auth/apple/start', follow_redirects=False)
+    values = parse_qs(urlsplit(started.headers['location']).query)
+    state = values['state'][0]
+    assert state.endswith('.' + grant_path.rsplit('/', 1)[1])
+    with SessionLocal() as db:
+        email = db.get(User, uid).email
+    monkeypatch.setattr(application, 'apple_client_secret', lambda: 'synthetic-client-proof')
+    monkeypatch.setattr(application.httpx, 'post', lambda *a, **k: SimpleNamespace(status_code=200))
+    monkeypatch.setattr(application.jwt, 'PyJWKClient', lambda *a: SimpleNamespace(get_signing_key_from_jwt=lambda *a: SimpleNamespace(key='synthetic-provider-key')))
+    monkeypatch.setattr(application.jwt, 'decode', lambda *a, **k: {'sub':'synthetic-native-'+secrets.token_hex(8), 'email':email, 'email_verified':True, 'nonce':values['nonce'][0]})
+    # Apple form_post does not send a SameSite=Lax pending-flow cookie.
+    callback = TestClient(app)
+    body = {'state':state, 'code':'synthetic-code', 'id_token':'synthetic-token'}
+    assert callback.post('/auth/apple/callback', data={**body, 'state':state+'tampered'}, follow_redirects=False).status_code == 400
+    response = callback.post('/auth/apple/callback', data=body, headers={'sec-fetch-site':'cross-site'}, follow_redirects=False)
+    assert response.status_code == 303 and response.headers['location'] == grant_path
+    page = callback.get(grant_path)
+    assert email in page.text
+    proof = re.search(r'name="proof" value="([a-f0-9]+)"', page.text)[1]
+    approved = callback.post(grant_path, data={'proof':proof}, follow_redirects=False)
+    native_code = parse_qs(urlsplit(approved.headers['location']).query)
+    assert native_code['state'] == [native_state]
+    native = TestClient(app)
+    pair = native.post('/api/v1/auth/token', json={'client_id':'zova-ios', 'redirect_uri':CALLBACK, 'code':native_code['code'][0], 'code_verifier':verifier})
+    assert pair.status_code == 200
+    native.headers['Authorization'] = 'Bearer ' + pair.json()['access_token']
+    assert native.get('/api/v1/native-profile').json()['id'] == uid
+    assert shell(native).get('/studio').status_code == 200
+    assert callback.post('/auth/apple/callback', data=body, follow_redirects=False).status_code == 400
+
+
+def test_password_login_preserves_native_consent_destination():
+    _, uid, _, email = account()
+    web = TestClient(app)
+    response = web.get('/mobile/authorize', params={'client_id':'zova-ios', 'redirect_uri':CALLBACK, 'code_challenge':challenge_for(secrets.token_urlsafe(48)), 'state':secrets.token_urlsafe(32)}, follow_redirects=False)
+    target = response.headers['location']
+    assert web.get(target, follow_redirects=False).headers['location'].startswith('/login?next=')
+    signed_in = web.post('/login', data={'email':email, 'password':'old-password-123', 'next':target}, follow_redirects=False)
+    assert signed_in.headers['location'] == target
+    assert email in web.get(target).text
+    assert web.get('/studio', follow_redirects=False).status_code == 200
 
 
 def test_association_scope_config_and_no_wildcards(monkeypatch):

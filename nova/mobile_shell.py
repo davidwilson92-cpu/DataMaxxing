@@ -19,9 +19,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select, update
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from .db import MobileGrant, MobileHandoff, MobileSession, SessionLocal, SocialConnection, User, get_db, utcnow
+from .db import MobileHandoff, MobileSession, SessionLocal, SocialConnection, User, get_db, utcnow
 from .mobile_auth import enabled, future, native_user, require_enabled
-from .security import current_user, hash_api_key, session_secret, user_from_session
+from .security import current_user, hash_api_key, session_secret
 
 router = APIRouter()
 PAGES = {'/studio', '/drafts', '/analytics', '/account', '/security', '/brands'}
@@ -175,21 +175,11 @@ def association():
     return JSONResponse({'applinks': {'details': [{'appIDs': [app_id], 'components': [{'/': '/mobile/callback', 'comment': 'Zova native sign-in only'}]}]}, 'webcredentials': {'apps': [app_id]}})
 
 
-class MobileContinuationMiddleware(BaseHTTPMiddleware):
+class NativeBillingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         path = request.url.path
         cookie = request.cookies.get('nova_session', '')
         if cookie.startswith('ios.') and path.startswith('/billing/'):
             return JSONResponse({'detail': 'Purchases are unavailable in the iOS beta.'}, 403,
                                 headers={'Cache-Control': 'no-store'})
-        pending = request.cookies.get('zova_mobile_grant', '')
-        if enabled() and request.method == 'GET' and path in {'/studio', '/onboarding/socials', '/onboarding/writing-style'} and pending:
-            from starlette.concurrency import run_in_threadpool
-            def resume():
-                user = user_from_session(cookie)
-                with SessionLocal() as db:
-                    grant = db.get(MobileGrant, pending)
-                    return bool(user and grant and not grant.code_hash and future(grant.expires_at))
-            if await run_in_threadpool(resume):
-                return RedirectResponse('/mobile/authorize/' + pending, 303, headers={'Cache-Control': 'no-store'})
         return await call_next(request)

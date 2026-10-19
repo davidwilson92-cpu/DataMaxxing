@@ -56,6 +56,17 @@ def consent_proof(grant_id, browser_token):
     return hmac.new(session_secret().encode(), f'mobile-consent:{grant_id}:{hash_api_key(browser_token)}'.encode(), hashlib.sha256).hexdigest()
 
 
+def resume_destination(grant_id, db):
+    """Resume only the completed sign-in that started this native request."""
+    if not enabled() or not re.fullmatch(r'[A-Za-z0-9_-]{43}', grant_id or ''):
+        return None
+    row = db.get(MobileGrant, grant_id)
+    if not row or row.code_hash or not future(row.expires_at):
+        return None
+    validate_client(row.client_id, row.redirect_uri)
+    return '/mobile/authorize/' + row.id
+
+
 @router.get('/mobile/authorize', include_in_schema=False)
 def begin(request: Request, client_id: str, redirect_uri: str, code_challenge: str, state: str, code_challenge_method: str = 'S256'):
     validate_client(client_id, redirect_uri)
