@@ -1,5 +1,11 @@
 # Zova Social iPhone beta — 19 October 2026
 
+## Latest delivered beta:0.1.0(8)
+
+Released to existing private Zova Social Internal Beta group with1 tester at approximately14:39 BST. Apple build4c7fd194-4007-4da5-b766-b23639c4375f; source0cb83b2; Codemagic6ad61b167550aed81090246d completed and upload succeeded14:36:31 BST. Instagram now uses the bounded session-owned handoff in the normal browser; other providers retain their previous sheet. Fresh Zova sign-in requests ephemeral browser authentication. Core Studio/Drafts/Performance remain light, Account and intermediary pages dark. Server0cb83b2 was already live; no migrations or social grants changed.
+
+Evidence: native39259002240 passed16 unit tests,1 UI test and release compilation; application39258328505 passed487/1 skipped each SQLite/PostgreSQL plus release gates. Exact source and signing identity observed in build overview/publishing receipt. Apple shows Testing and the existing group assigned. What to Test covers Instagram callback, correct Zova identity and keyboard/layout. Actual phone/provider acceptance remains pending; owner asked to update8 and retry. Prior7 remains available for rollback; it retains the old embedded Instagram defect. No commercial certification or resolution of the79 wider beta gaps.
+
 ## Release identity and boundaries
 
 Isolated branch `codex/ios-beta-20261019`, based on reviewed Studio/TikTok runtime `1bd3b9486ea79c82413978c07e7d82a4c26ef52c` and handoff `0639b87`. Selectively reused disabled PKCE/session foundations from PR28; did not adopt the broad service/account/RLS/queue migration. The bounded backend is deployed for internal iPhone beta; final deployment receipt is recorded below.

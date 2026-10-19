@@ -1,3 +1,31 @@
+# Replacement iPhone beta8 released — 19 October 2026,14:39 BST
+
+Zova Social0.1.0(8) is now **Testing** in the existing Zova Social Internal Beta group with1 tester. Apple build4c7fd194-4007-4da5-b766-b23639c4375f. Signed source0cb83b2; Codemagic6ad61b167550aed81090246d finished3m21s, upload accepted14:36:31 BST. Apple processing completed and group assigned around14:39 BST. Focused What to Test notes saved for browser Instagram return, exact Zova email, account switching, light core/dark Account and typing layout. Owner told to update to8 and retry Instagram. **Physical Instagram acceptance is still pending**; do not claim the provider loop is fixed on the phone merely because build8 is available.
+
+Native validation39259002240 succeeded16 unit tests,1 UI test and release compilation. Application39258328505 succeeded487/1 skipped on both SQLite/PostgreSQL plus restore/container/scope/dependencies. Server0cb83b2 was already live; no new server/data/schema/grant/publishing/billing changes for this native release. Both Instagram routes and existing account separation preserved. Other social providers keep their previous browser flow. Separate Zova Market remains untouched.
+
+Rollback native by making prior7 available from the existing group if needed; it restores the known failing embedded Instagram flow, so keep the Safari workaround. Do not erase user data or replay unknown posts. All79 broader beta gaps retained. The historical delivery-blocker notes below are superseded by this receipt.
+
+---
+
+# Replacement iPhone signing request accepted — 19 October 2026,14:29 BST
+
+Owner's “See now” showed the actual branch list in Codemagic. Selected codex/ios-beta-20261019 and Zova Social internal TestFlight workflow, started the build under existing authorisation. Receipt: https://codemagic.io/app/6ad5cbbeadaac76a4f1f8525/build/6ad61b167550aed81090246d. Overview confirms index7, Mac mini M2, correct branch and exact validated commit0cb83b2. Build finished3m21s; publishing log confirms Zova0.1.0(8), com.zovasocial.app, UPLOAD SUCCEEDED with no errors at14:36:31 BST, delivery4c7fd194-4007-4da5-b766-b23639c4375f. Apple Build Uploads shows8 Processing. Do not start duplicates. No new credentials/permissions/paid resources. Still must observe Apple processing and internal group assignment before telling owner to update. Build7 remains latest available to test until new evidence.
+
+---
+
+# Instagram still fails after new signup — 19 October 2026
+
+Owner's14:22 screenshot shows Instagram's native loading skeleton and “Something went wrong” after a successful new Zova signup. The account mismatch does not explain this remaining failure. Do not ask for another signup or claim switching email fixes Instagram. New account identity has not been supplied.
+
+Exact native candidate0cb83b2 passed39259002240:16 unit tests,1 welcome UI test and release iPhone compilation. Normal-browser Instagram routing is implemented but still NOT delivered to the phone. Application39258328505 passed487/1 skipped on each database plus release gates. Server0cb83b2 remains live; TestFlight7 remains latest delivered binary.
+
+Codemagic still cannot load branches/workflows. Refreshed same public repo using equivalent URL without .git, with no improvement; restored original URL. No signing/access/billing changes or new signed build. Asked owner to try Start new build in normal laptop browser and select codex/ios-beta-20261019, never main; answer pending. This may distinguish a side-browser failure; do not assume it will resolve the service error.
+
+Interim owner path: normal Safari on iPhone, zova-social.com, intended Zova login, Account / Social accounts / Connect Instagram. Earlier owner tests succeeded there, but current provider retest is still required. If it fails there too, investigate provider request/account/logs rather than assuming embedded browser alone. Preserve all users/data/uploads/grants and both Instagram routes.
+
+---
+
 # Latest owner correction and iPhone account mismatch — 19 October 2026
 
 **Theme source of truth:** Studio, Drafts and Performance must be plain light/white. Account and connection/sign-in intermediary pages stay near-black/violet. This overrides earlier global dark entries below. Live server72ad0573da850fb472c6b47bea6966f9e06d7223, Render dep-dbb1a7ff3r2c73fth8j0,14:03:25 BST. Live core3 white and connection page dark inspected. Application39256612072 passed485/1 skipped on both databases plus release checks. Native light/dark conditional source is committed; validation39256385114 pending at this entry.
