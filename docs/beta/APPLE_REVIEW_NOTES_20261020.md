@@ -1,9 +1,11 @@
 # Zova Social — prepared external TestFlight review
 
-Status: prepared locally, not submitted. Build 0.1.0 (10), bundle
-`com.zovasocial.app`, was successfully uploaded from runtime `25374db`.
-Apple processing and external-group assignment require the owner's renewed
-App Store Connect sign-in. Do not submit incomplete review access details.
+Status: review not submitted. Build 0.1.0 (10), bundle `com.zovasocial.app`, from
+runtime `25374db` is processed and Ready to Submit. What to Test is saved and the
+existing one-tester internal group assigned. The new Zova Social External Beta
+group has zero testers. Its build10 flow requires contact phone and a dedicated
+review login; name/business email are prepared but not saved in that modal.
+Do not submit incomplete review access details.
 
 ## Beta description
 
@@ -81,6 +83,9 @@ describe deletion as instant erasure or claim unverified provider revocation.
 - Native CI: `39453432747`, successful, 16 unit and 1 UI test.
 - Codemagic: `6ad7907b454d2506f7ab80b9`, upload succeeded.
 - Render: `dep-dbbp1k0ae00c73abch8g`, live.
-- Apple processing: unverified.
+- Apple processing: complete, Ready to Submit; UUID
+  `49d32ac0-86d6-43bc-a0e3-8d82d9101af1`.
+- Internal group: existing group assigned, 1 tester.
+- External group: `f3f15099-0bec-49dc-8347-cd55beb805c0`, 0 testers.
 - Beta App Review submission/approval: not completed.
 - External invitations: not sent.

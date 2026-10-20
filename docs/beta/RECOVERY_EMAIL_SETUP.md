@@ -9,18 +9,26 @@ establish an outbound SMTP service. Preserve its current root MX/SPF records.
 
 ## Proposed minimal-cost option
 
-Owner choice is pending: reuse an existing outgoing provider or prepare Resend's
-Free plan. Its published allowance currently includes 3,000 emails per month,
-limited to 100 per day. Keep paid overages and all paid upgrades disabled.
+Owner confirms Gmail use and Cloudflare registration, and asks for setup help.
+Cloudflare now has an active **support@zova-social.com → zova.social@gmail.com**
+rule, using the same verified destination as the existing David address. That
+existing rule and root DNS/catch-all settings are unchanged. The new route has
+not yet been tested with a delivered message.
+
+Resend Free is prepared for application mail; owner signup is pending. Its
+published allowance currently includes 3,000 emails per month, limited to 100
+per day. Keep paid overages and upgrades disabled. No Resend sending domain or
+credential is configured yet, so automated recovery mail is still unavailable.
 
 Sources checked 20 October 2026:
 [Resend pricing](https://resend.com/pricing) and
 [SMTP setup](https://resend.com/docs/send-with-smtp).
 Recheck before committing to a service because limits may change.
 
-If selected, verify a dedicated sending subdomain through the provider's actual
-displayed DNS records. Do not replace incoming-mail records or add a second SPF
-record at an existing hostname. Disable open/click tracking for account-security
+Use the provider's actual displayed DNS records to verify the sending domain.
+Prefer a dedicated return-path/sending subdomain where the verified From address
+and reply routing allow it. Do not replace incoming-mail records or add a second
+SPF record at an existing hostname. Disable open/click tracking for account-security
 messages. Use a sending-only credential limited to the approved domain.
 
 The existing Zova mail implementation supports verified STARTTLS and is compatible
@@ -34,6 +42,15 @@ with Resend's documented port 587 settings:
 | `SMTP_PASSWORD` | Sending credential, entered only in the protected secret field |
 | `SMTP_FROM` | Sender on the domain actually verified by the owner |
 | `PUBLIC_BASE_URL` | `https://zova-social.com` |
+
+The production Render service successfully completed a verified STARTTLS
+connection to smtp.resend.com:587 and confirmed AUTH availability on 20 October.
+No authentication or email send occurred in that connectivity probe.
+
+After a delivery check, set `SUPPORT_EMAIL=support@zova-social.com` in the existing
+Render service so Help uses the new address. Do not claim Gmail can send replies
+as support@ until its separate Send mail as verification/SMTP configuration is
+actually complete; forwarding alone only covers incoming mail.
 
 Do not copy a credential into this document, chat, logs, screenshots or Git.
 If using another provider, inspect its TLS/authentication requirements before

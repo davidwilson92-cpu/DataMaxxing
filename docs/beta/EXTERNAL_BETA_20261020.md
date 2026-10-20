@@ -26,15 +26,15 @@ format, account type or iPhone callback.
 | Upload persistence | Render has a 1 GB disk at `/app/uploads`; daily snapshots through 20 October; database UI shows 3-day PITR and an export from 19 October 09:03 BST | Isolated production database/key/media restoration rehearsal remains open; synthetic CI restore passed. Never restore over production |
 | Publication backlog | Zero overdue/stuck jobs. Read-only reconciliation leaves Instagram publication-2 from 22 September unknown; no provider receipt identifier was stored | Manual destination evidence needed; preserve no-resend protection and historical ledger |
 | TikTok | Live developer version has `user.info.basic,video.upload`, Direct Post off; `video.publish` revision still In review. Production uses inbox mode | Provider approval of the production revision, verified media prefix, controlled configuration and reconsent before feed publishing |
-| iPhone | Build 10 from `25374db` uploaded successfully to Apple; export explicitly external-eligible. Native tests passed 16 unit/1 UI plus release compile | Apple processing/group/review and exact-device sign-in, cancellation, account switching and social return remain open |
-| Apple external access | External Beta App Review and reviewer metadata needed | Apple approval before inviting external testers; never make testers App Store Connect administrators |
-| Tester support | Tester brief below; existing in-app Help and TestFlight feedback | Confirm support mailbox is monitored, name response owner, choose first small cohort |
+| iPhone | Build 10 processed, notes saved and existing internal group assigned. Native tests passed 16 unit/1 UI plus release compile. Owner confirms automatic Instagram return in response to the build9 check; same return code in10 | Other providers, cancellation/account switching and current build10 device acceptance remain open; no real publishing proof inferred |
+| Apple external access | External group created with 0 testers; build10 selection reaches the required contact/reviewer form | Contact phone, verified dedicated review login and Beta App Review approval before external invitations; no App Store Connect administrator access for testers |
+| Tester support | support@zova-social.com forwarding to the existing verified Gmail is Active in Cloudflare; brief, Help and TestFlight feedback prepared | Prove delivery, update Help's configured address, confirm support owner, choose first small cohort |
 
 ## Provider scope to communicate honestly
 
 | Platform | Beta journey | Limits / acceptance |
 |---|---|---|
-| Instagram | Professional Business/Creator connection, reviewed feed/Reel/Story selection | Personal profiles cannot use the publishing API. Stories/account permissions are checked by the provider. iPhone return acceptance pending |
+| Instagram | Professional Business/Creator connection, reviewed feed/Reel/Story selection; automatic iPhone return owner-confirmed | Personal profiles cannot use the publishing API. Stories/account permissions are checked by the provider. Cancellation, account switching and publishing are separate checks |
 | Facebook | Connect and select a managed Page; review exact destination and content | Pages, not personal timelines. Historical owner Page text test does not prove unrestricted customer permissions |
 | X | Connect exact account; single post/thread and media options supported by its grant | Provider access/credit/rate limits apply; cancellation and return still need current phone acceptance |
 | TikTok | Approved inbox upload; creator completes posting in TikTok | Do not advertise production Direct Post or paid-partnership publishing while the live scope revision is pending |
@@ -100,10 +100,18 @@ Update this checklist and the main handoff with final receipts and unresolved ga
   16 unit tests, 1 UI test and iPhone release compilation passed.
 - [Codemagic build](https://codemagic.io/app/6ad5cbbeadaac76a4f1f8525/build/6ad7907b454d2506f7ab80b9):
   0.1.0 (10), exact source `25374db`, successful Apple upload. App Store Connect
-  session expired, so processing and external availability have not been verified.
+  now shows Ready to Submit, UUID `49d32ac0-86d6-43bc-a0e3-8d82d9101af1`.
+  What to Test saved; existing internal group assigned. External group
+  `f3f15099-0bec-49dc-8347-cd55beb805c0` created with no testers; review not submitted.
 - Existing live account remains signed in with its Facebook, X and TikTok
   connections visible. The synthetic 393px Studio consent-decline/reload/retry
   check preserved the pending message. No real posts or provider grants changed.
+- Owner reports automatic return to Zova after final Instagram connection
+  confirmation. This closes the reported Instagram return defect for that test,
+  not the other providers or all device scenarios.
+- Render successfully negotiated verified STARTTLS to `smtp.resend.com:587`
+  without authentication or sending a message. Account/domain/sender setup and
+  actual delivery remain pending.
 
 All automated recovery evidence uses disposable synthetic data. A green CI run
 does not establish delivered reset email, live alert delivery, managed production

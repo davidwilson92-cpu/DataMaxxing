@@ -1,3 +1,47 @@
+# Owner confirms Instagram return; external Apple group prepared — 20 October 2026
+
+Owner answered the build9 phone check: **"Returns automatically to Zova"** after
+Instagram's final profile confirmation. Record this as owner-reported physical
+Instagram acceptance. Do not generalise it to Facebook/X/TikTok, cancellation,
+account switching or publishing. Build10 retains the same native social-return code.
+
+Owner signed back into App Store Connect. Build10 has finished processing and
+shows Ready to Submit; UUID 49d32ac0-86d6-43bc-a0e3-8d82d9101af1. Saved focused
+What to Test notes and assigned the existing Zova Social Internal Beta group
+(1 existing tester). Created **Zova Social External Beta**, group
+f3f15099-0bec-49dc-8347-cd55beb805c0, with zero testers. Its Add Builds flow selects
+10 but requires contact phone and a dedicated reviewer account before proceeding.
+No Beta App Review submission, public invitation link or external invitations.
+Contact name/email prepared in the unsaved modal; owner asked for review phone.
+Never share the owner's personal Zova account as reviewer credentials.
+
+Email: owner uses Gmail and Cloudflare domain registration, requests setup help.
+Owner signed into Cloudflare. Existing active david@zova-social.com rule routes
+to the verified destination zova.social@gmail.com. Created **support@zova-social.com**
+using that same verified destination and confirmed Active in the rules table.
+Existing David rule, root DNS and catch-all unchanged. This is configured
+forwarding, not a proven new-message inbox receipt or an outbound sender.
+Resend signup is open in tab58. Owner asked to create/sign into Resend, completing
+credentials/account terms directly. No Resend account creation, sending DNS record,
+sender grant or paid upgrade performed. Configure SUPPORT_EMAIL only after the
+support route's delivery check; application mail remains unconfigured.
+Production Render successfully negotiates verified STARTTLS with
+smtp.resend.com:587 and advertises AUTH. This proves network/TLS connectivity only;
+no credentials used and no email sent. Preserve incoming Cloudflare MX/SPF.
+
+Continue at Apple tab38's contact/reviewer form after owner information arrives.
+Cloudflare57/Resend58 are handoffs. Proofs in social-proof:
+testflight10-notes-saved-20261020.png,
+testflight-external-group-created-20261020.png,
+resend-signup-handoff-20261020.png and support-email-routing-active-20261020.png.
+Cloudflare account5fb2d0270682efea2d06d7809b84fad9, domain
+87fec50363781ebe0388782b3a5606ed; Email Routing path is
+/email-service/routing/87fec50363781ebe0388782b3a5606ed/routing-rules.
+Operational alert delivery and production
+recovery rehearsal remain open; no score uplift or readiness certification.
+
+---
+
 # External beta update live; TestFlight 10 uploaded — 20 October 2026
 
 Owner explicitly requests fixing/testing/reviewing, publishing validated updates on
