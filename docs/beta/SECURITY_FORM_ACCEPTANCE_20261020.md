@@ -44,9 +44,36 @@ social-provider, billing or native binary change is included.
   confirmation both supply the correct Origin, omit Referer, and redirect
   successfully. Reusing the same link shows a clear inline rejection.
 - The fixture sends no real email and contains no customer data or credentials.
-- Full application/PostgreSQL CI, live activation and actual reviewer email/reset
-  outcomes must be recorded in the release handoff; these local results do not
-  establish them.
+- [Required application/PostgreSQL CI 39482173393](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/39482173393)
+  passed for `b131f23af2dbd95c0609da5b18944753daaac3bc`: SQLite 564 passed/2
+  skipped; PostgreSQL 565 passed/1 skipped; 18 client tests/groups and Studio
+  harness; dependency audit zero known findings; synthetic restore, container
+  smoke and exact scope passed. The earlier local full run had an expected
+  scope-manifest failure before that manifest was reviewed/refreshed; it is
+  not recorded as a clean full-suite pass.
+- Render deployment `dep-dbbruo5pkucs73dudgv0` went live at 20:23 BST on
+  20 October with the exact tested revision. Readiness returned 200, required
+  schema was available and embedded worker was idle. Billing was off, checkout
+  disabled and subscription enforcement disabled. Zero overdue jobs, stuck
+  publications, failed mail and stuck mail; the historical unknown publication
+  remains unchanged.
+- The live reviewer verification request succeeded. Resend message
+  `01a15ac4-cc7f-7d56-8e7c-98d389266898` was Delivered. Its link was opened from
+  the provider's visible email preview in the same signed-in reviewer session.
+  Confirmation redirected to `/account?saved=verified`; using the link again
+  showed the expected inline rejection. This proves application confirmation and
+  provider delivery, not a separately observed Gmail inbox receipt for this message.
+- The live recovery request succeeded. Resend message
+  `01a15ac8-47cb-7bf5-9758-0932385111af` was Delivered and its emailed link
+  opened the reset form with the token removed from the address bar. No password
+  was entered or changed. Full live reset/session-invalidation acceptance still
+  requires the owner to complete credential entry and submission; equivalent
+  backend cases pass in the synthetic suite.
+- Evidence screenshots are in ignored `social-proof/`:
+  `security-forms-live-render-20261020.png`,
+  `security-form-live-single-use-20261020.png` and
+  `reviewer-recovery-verification-delivered-20261020.png`. No credentials or
+  email-link tokens are persisted in the evidence.
 
 ## Rollback and distribution
 

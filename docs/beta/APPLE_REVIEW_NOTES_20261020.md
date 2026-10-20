@@ -7,16 +7,22 @@ group has zero testers. Its build10 flow requires a dedicated review login;
 name/business email and the owner's supplied private telephone number are
 entered but not saved in that modal. Keep the telephone number out of public
 app UI, metadata and this repository.
-A dedicated Zova App Review signup is prepared for the owner's existing
-Gmail plus alias, zova.social+apple-review@gmail.com. The owner must complete
-new password entry/signup and enter the same credentials in Apple's private
-review fields. No reviewer account or review submission is confirmed yet.
+A dedicated Zova App Review account now exists at the owner's existing
+Gmail plus alias, zova.social+apple-review@gmail.com. The signed-in account
+has no social connections; its synthetic pending idea (draft36) survives reload.
+Its email was verified through the actual delivered verification link, and
+link reuse was rejected. The Apple form still has an empty password and disabled
+Next, confirmed by reading only the field's presence boolean. A fresh TestFlight
+Test Information page also has no saved reviewer details. The owner has been
+asked to enter the existing reviewer password privately in Apple. A fresh
+password-based sign-in and Beta App Review submission remain unverified.
 Do not submit incomplete review access details.
 Outgoing email is now configured; the two owner delivery checks are Delivered
 and Forwarded, and the owner confirms both arrived in Gmail. The dedicated
-reviewer signup and real recovery/verification
-acceptance are still needed. A generic confirmation of the mail-key action is
-not evidence that the owner has entered the reviewer password.
+reviewer recovery request also reports Delivered and opens the reset form.
+Password entry/change has not been performed; full live reset and old-session
+invalidation acceptance remain open. A generic confirmation of the mail-key
+action is not evidence that the owner has entered the reviewer password.
 
 ## Beta description
 
@@ -102,3 +108,7 @@ describe deletion as instant erasure or claim unverified provider revocation.
 - External group: `f3f15099-0bec-49dc-8347-cd55beb805c0`, 0 testers.
 - Beta App Review submission/approval: not completed.
 - External invitations: not sent.
+- Security-form follow-up: runtime `b131f23af2dbd95c0609da5b18944753daaac3bc`,
+  required CI `39482173393` successful, Render `dep-dbbruo5pkucs73dudgv0` Live.
+  Build10's native binary is unchanged. Live verification and recovery-email
+  evidence is in `SECURITY_FORM_ACCEPTANCE_20261020.md`.

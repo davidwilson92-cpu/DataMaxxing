@@ -1,3 +1,52 @@
+# Security-form fix live; Apple reviewer password still missing — 20 October 2026
+
+Owner requested checks and Beta App Review submission after creating the reviewer
+account. Account creation is confirmed. Zova App Review,
+zova.social+apple-review@gmail.com, has no social connections and one harmless
+pending idea, draft36, which survives reload and the new server deployment.
+No AI-sharing permission or real AI request, connection grant or social post was
+made during this check.
+
+Found and reproduced the live no-referrer/Origin-null form defect described
+below. Bounded fix **b131f23af2dbd95c0609da5b18944753daaac3bc** passed all
+required CI in **39482173393**: SQLite 564 passed/2 skipped, PostgreSQL 565
+passed/1 skipped, 18 client tests/groups plus Studio harness, synthetic restore,
+container smoke, dependency checks and exact scope. Native binary is unchanged.
+The earlier local full run's scope-manifest failure is not claimed as a pass.
+
+Render **dep-dbbruo5pkucs73dudgv0** became Live at **20:23 BST on 20 October**.
+Post-deploy shell readback confirms that exact commit, readiness200, database and
+schema ready, embedded worker idle, billing off, checkout false and subscription
+enforcement false. Zero overdue jobs, stuck publications, failed mail or stuck
+mail. The historical uncertain Instagram publication remains preserved.
+
+Actual reviewer verification email was Delivered by Resend, its link confirmed
+ownership and reuse was rejected inline. Actual password-reset request was
+Delivered and its link opened the reset form, with the token removed from the
+address bar. No password was entered or changed. A completed live reset and
+old-session revocation still require owner credential entry; synthetic checks
+pass. See **docs/beta/SECURITY_FORM_ACCEPTANCE_20261020.md** for exact receipts,
+screenshots and rollback limits. No passwords or link tokens are stored here.
+
+**Apple submission remains blocked on private reviewer credentials.** Original
+Test Information modal contains the private contact and reviewer username,
+but its Password field has no value and Next is disabled. A fresh second tab
+confirmed no saved TestFlight review details; the separate App Store review
+form also has no username or password. Only field-presence booleans were printed.
+The owner has a pending request to enter the existing Zova review password into
+Apple's Sign-In Information. Do not use the owner's Apple password, invent a
+credential or bypass the required new-password handoff with a server change.
+
+Next: once the owner fills the Apple field, verify the review login privately,
+finish the review notes and submit build0.1.0(10) to Beta App Review. Record the
+actual Apple receipt; do not equate submission with approval. Build10 remains
+Ready to Submit; the external group has no submitted build or invited testers.
+Customer charges stay off and Render stays in place. The external-invitation
+gates in EXTERNAL_BETA_20261020.md (live reset, remaining device/provider checks,
+alert delivery and isolated production recovery) are still open.
+
+---
+
 # Reviewer account created; security-form correction in validation — 20 October 2026
 
 Owner created Zova App Review at zova.social+apple-review@gmail.com and requests
