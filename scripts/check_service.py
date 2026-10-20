@@ -46,14 +46,22 @@ def check(payload, *, now=None):
     return {'status':'attention' if reasons else 'ok','reasons':reasons}
 
 
-if __name__=='__main__':
-    url=os.environ.get('ZOVA_MONITOR_URL','')
+def probe(url, secret, *, get=None):
     parts=urlsplit(url)
-    if parts.scheme!='https' and not (parts.scheme=='http' and parts.hostname in {'127.0.0.1','localhost'}):
-        raise SystemExit('Monitor needs HTTPS or loopback HTTP')
+    if (parts.username or parts.password or parts.query or parts.fragment
+            or parts.path not in {'','/'} or not parts.hostname
+            or (parts.scheme!='https' and not (parts.scheme=='http' and parts.hostname in {'127.0.0.1','localhost'}))):
+        return {'status':'attention','reasons':['invalid_monitor_destination']}
+    if not secret:
+        return {'status':'attention','reasons':['missing_monitor_credential']}
     try:
-        secret=os.environ['ZOVA_MONITOR_SECRET']
-        response=httpx.get(url.rstrip('/')+'/internal/status',headers={'Authorization':'Bearer '+secret},timeout=20,follow_redirects=False)
+        get=get or httpx.get
+        response=get(url.rstrip('/')+'/internal/status',headers={'Authorization':'Bearer '+secret},timeout=20,follow_redirects=False)
         response.raise_for_status();result=check(response.json())
     except Exception:result={'status':'attention','reasons':['probe_failed']}
+    return result
+
+
+if __name__=='__main__':
+    result=probe(os.environ.get('ZOVA_MONITOR_URL',''),os.environ.get('ZOVA_MONITOR_SECRET',''))
     print(json.dumps(result));sys.exit(1 if result['status']=='attention' else 0)

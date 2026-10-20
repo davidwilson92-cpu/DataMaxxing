@@ -10,6 +10,16 @@ from .readiness import spend_summary, cohort_report
 router=APIRouter()
 
 
+def require_operations(authorization, *, monitor=False):
+    """Monitoring can read health, never dispatch jobs or inspect cohorts."""
+    supplied=(authorization or '').removeprefix('Bearer ').encode('utf-8')
+    secrets=[os.environ.get('SCHEDULER_SECRET') or os.environ.get('ADMIN_API_KEY')]
+    if monitor:
+        secrets.append(os.environ.get('MONITOR_READ_TOKEN'))
+    if not any(secret and hmac.compare_digest(supplied,secret.encode('utf-8')) for secret in secrets):
+        raise HTTPException(401,'Invalid operations credential')
+
+
 def worker_status(db):
     from .runtime import scheduler_mode, integer
     from .db import WorkerHeartbeat
@@ -29,9 +39,7 @@ def ready(authorization: str | None = Header(default=None)):
     This does not make provider requests or claim the scheduler is healthy.
     Full table selections validate required columns even on an empty database.
     """
-    secret=os.environ.get('SCHEDULER_SECRET') or os.environ.get('ADMIN_API_KEY')
-    if not secret or not hmac.compare_digest((authorization or '').removeprefix('Bearer '),secret):
-        raise HTTPException(401,'Invalid operations credential')
+    require_operations(authorization,monitor=True)
     try:
         from .db import User, Draft, PerformanceSnapshot, AIConsent, WorkerHeartbeat
         with SessionLocal() as db:
@@ -46,10 +54,7 @@ def ready(authorization: str | None = Header(default=None)):
 
 @router.get('/internal/status')
 def status(authorization: str | None = Header(default=None)):
-    secret=os.environ.get('SCHEDULER_SECRET') or os.environ.get('ADMIN_API_KEY')
-    supplied=(authorization or '').removeprefix('Bearer ')
-    if not secret or not hmac.compare_digest(supplied,secret):
-        raise HTTPException(401,'Invalid operations credential')
+    require_operations(authorization,monitor=True)
     with SessionLocal() as db:
         db.execute(text('SELECT 1'))
         worker=worker_status(db)
@@ -73,7 +78,5 @@ def status(authorization: str | None = Header(default=None)):
 
 @router.get('/internal/cohorts')
 def cohorts(authorization: str | None = Header(default=None)):
-    secret=os.environ.get('SCHEDULER_SECRET') or os.environ.get('ADMIN_API_KEY')
-    if not secret or not hmac.compare_digest((authorization or '').removeprefix('Bearer '),secret):
-        raise HTTPException(401,'Invalid operations credential')
+    require_operations(authorization)
     with SessionLocal() as db:return cohort_report(db)

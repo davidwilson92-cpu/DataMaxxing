@@ -22,6 +22,47 @@ def test_monitor_accepts_complete_recent_report():
     assert check(healthy())=={'status':'ok','reasons':[]}
 
 
+def test_monitor_credential_cannot_dispatch_or_read_customer_cohorts(monkeypatch):
+    from test_account_integrity import account
+    client,*_=account()
+    monkeypatch.setenv('SCHEDULER_SECRET','synthetic-dispatch-secret')
+    monkeypatch.setenv('MONITOR_READ_TOKEN','synthetic-read-only-secret')
+    headers={'Authorization':'Bearer synthetic-read-only-secret'}
+    assert client.get('/internal/ready',headers=headers).status_code==200
+    assert client.get('/internal/status',headers=headers).status_code==200
+    assert client.get('/internal/cohorts',headers=headers).status_code==401
+    assert client.post('/internal/run-due',headers=headers).status_code==401
+    assert client.get('/internal/status').status_code==401
+    monkeypatch.delenv('MONITOR_READ_TOKEN')
+    assert client.get('/internal/status',headers=headers).status_code==401
+    assert client.get('/internal/status',headers={'Authorization':'Bearer synthetic-dispatch-secret'}).status_code==200
+
+
+@pytest.mark.parametrize('url',['http://example.test','https://user:pass@example.test',
+                              'https://example.test?secret=x','https://example.test/#token',
+                              'https://example.test/not-the-root','file:///private','https://'])
+def test_probe_never_sends_credentials_to_invalid_destination(url):
+    from scripts.check_service import probe
+    calls=[]
+    assert probe(url,'synthetic-secret',get=lambda *a,**k:calls.append(a))['status']=='attention'
+    assert calls==[]
+
+
+def test_probe_uses_verified_https_bounded_time_and_no_redirects():
+    from scripts.check_service import probe
+    calls=[]
+    class Response:
+        def raise_for_status(self):pass
+        def json(self):return healthy()
+    def get(url,**kwargs):
+        calls.append((url,kwargs));return Response()
+    assert probe('https://example.test/','synthetic-secret',get=get)['status']=='ok'
+    assert calls==[('https://example.test/internal/status',{
+        'headers':{'Authorization':'Bearer synthetic-secret'},'timeout':20,'follow_redirects':False})]
+    def fail(*a,**k):raise RuntimeError('private token and provider details')
+    assert probe('https://example.test','synthetic-secret',get=fail)=={'status':'attention','reasons':['probe_failed']}
+
+
 @pytest.mark.parametrize('state',['missing','stale','error','disabled','not_independently_monitored'])
 def test_monitor_does_not_hide_worker_failure(state):
     payload=healthy();payload['worker']['status']=state
