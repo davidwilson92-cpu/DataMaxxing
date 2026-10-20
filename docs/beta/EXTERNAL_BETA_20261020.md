@@ -17,16 +17,16 @@ format, account type or iPhone callback.
 
 | Gate | Evidence / current state | Acceptance needed |
 |---|---|---|
-| Exact candidate | Bounded follow-up on the previously validated `45d4d3b` candidate | Record final commit and all required application, PostgreSQL and native checks |
-| Staff directory | Reproduced unverified signup claiming an allowlisted address; access now requires verified mailbox ownership | Regression and deployment verification; staff MFA remains a separate commercial gap |
-| Disconnect | Local unlink clears tokens, cancels unsent jobs and unused approvals, and preserves in-flight/unknown receipts | Ownership, reconnect and concurrency regression; provider-side revocation remains separate and is explained |
+| Exact candidate | `25374db` live; application CI `39453432880` and native CI `39453432747` succeeded | Keep later changes separately validated; this does not establish physical-device/provider acceptance |
+| Staff directory | Reproduced unverified signup claiming an allowlisted address; verified-mailbox protection and regression are now deployed | Staff MFA remains a separate commercial gap |
+| Disconnect | Deployed local unlink clears tokens, cancels unsent jobs and unused approvals, and preserves in-flight/unknown receipts; ownership and reconnect regressions passed | Provider-side revocation remains separate and is explained; validate live provider cancellation without disturbing customer grants |
 | Monitoring | Embedded scheduler now records durable progress; probe rejects stale/incomplete documents, broken workers, old usage reservations and missing recovery-email configuration | Install an approved alert route and prove delivery/acknowledgement; a passing unit test is not monitoring coverage |
-| Charges | Production inspected: subscription enforcement false; Stripe mode and live-checkout flags unset (defaults off) | Recheck after deployment; never enable payments for this beta |
+| Charges | After deployment, live runtime confirms billing off, checkout false, enforcement false | Never enable payments for this beta |
 | Password recovery | Production has no SMTP host/from configuration | Configure the owner's mail provider and prove a reset email arrives, is single-use and invalidates old sessions |
-| Upload persistence | Render production has a 1 GB disk mounted at `/app/uploads`; daily snapshots visible through 20 October | Database/key/media restoration rehearsal; do not restore an old snapshot over production |
-| Publication backlog | Production status: zero overdue/stuck jobs; one historical unknown outcome | Investigate read-only; keep no-resend protection until provider evidence resolves it |
+| Upload persistence | Render has a 1 GB disk at `/app/uploads`; daily snapshots through 20 October; database UI shows 3-day PITR and an export from 19 October 09:03 BST | Isolated production database/key/media restoration rehearsal remains open; synthetic CI restore passed. Never restore over production |
+| Publication backlog | Zero overdue/stuck jobs. Read-only reconciliation leaves Instagram publication-2 from 22 September unknown; no provider receipt identifier was stored | Manual destination evidence needed; preserve no-resend protection and historical ledger |
 | TikTok | Live developer version has `user.info.basic,video.upload`, Direct Post off; `video.publish` revision still In review. Production uses inbox mode | Provider approval of the production revision, verified media prefix, controlled configuration and reconsent before feed publishing |
-| iPhone | Build 9 is Internal-only; replacement export is external-eligible without public App Store submission | Build uploaded/processed; exact-device sign-in, cancellation, account switching and return from each supported social |
+| iPhone | Build 10 from `25374db` uploaded successfully to Apple; export explicitly external-eligible. Native tests passed 16 unit/1 UI plus release compile | Apple processing/group/review and exact-device sign-in, cancellation, account switching and social return remain open |
 | Apple external access | External Beta App Review and reviewer metadata needed | Apple approval before inviting external testers; never make testers App Store Connect administrators |
 | Tester support | Tester brief below; existing in-app Help and TestFlight feedback | Confirm support mailbox is monitored, name response owner, choose first small cohort |
 
@@ -85,3 +85,26 @@ build 9 is a device fallback, not an externally distributable build.
 Track implementation, automated tests, device/provider acceptance, Render deployment
 and Apple review separately. This document does not claim an external beta is open.
 Update this checklist and the main handoff with final receipts and unresolved gates.
+
+## Verified release receipts
+
+- Render deploy `dep-dbbp1k0ae00c73abch8g`, service `srv-d9rqg6navr4c739thoeg`:
+  exact runtime `25374dba138c8c50ebeb5b0224b7d4af55b180bd` live on 20 October.
+  Dependency readiness 200, schema present, embedded worker idle and no-charge
+  configuration verified after deployment.
+- [Application CI](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/39453432880):
+  SQLite 563 passed/2 skipped; PostgreSQL 564 passed/1 skipped; 13 client groups
+  and Studio harness; dependency audit reported zero known findings; synthetic
+  restore, container smoke and exact scope passed.
+- [Native CI](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/39453432747):
+  16 unit tests, 1 UI test and iPhone release compilation passed.
+- [Codemagic build](https://codemagic.io/app/6ad5cbbeadaac76a4f1f8525/build/6ad7907b454d2506f7ab80b9):
+  0.1.0 (10), exact source `25374db`, successful Apple upload. App Store Connect
+  session expired, so processing and external availability have not been verified.
+- Existing live account remains signed in with its Facebook, X and TikTok
+  connections visible. The synthetic 393px Studio consent-decline/reload/retry
+  check preserved the pending message. No real posts or provider grants changed.
+
+All automated recovery evidence uses disposable synthetic data. A green CI run
+does not establish delivered reset email, live alert delivery, managed production
+restoration, provider approval or a working physical iPhone journey.

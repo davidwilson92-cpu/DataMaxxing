@@ -11,8 +11,9 @@ Tell us when something is unclear as well as when something breaks.
 2. In Studio, enter an idea and review the AI-sharing choice. Create a caption,
    edit it, add an image or short video, then close and reopen the app.
    Your saved conversation, caption and attachment should still be there.
-3. Open Next move. Set or review your strategy, choose an idea and turn it into a
-   draft. Tell us whether the suggestion was useful and what you expected instead.
+3. Open Next move. If you have no plan, use **Set your goal**. To edit an existing
+   plan, use Studio's **Post options → Your plan & recurring drafts**. Choose one
+   suggested idea and turn it into a draft. Tell us whether it was useful.
 4. Connect only a social account you own. Check the displayed destination before
    confirming the connection. Try cancelling once and then connecting successfully.
    The iPhone journey should return to Zova.

@@ -1,11 +1,19 @@
-# External beta preparation in progress — 20 October 2026
+# External beta update live; TestFlight 10 uploaded — 20 October 2026
 
 Owner explicitly requests fixing/testing/reviewing, publishing validated updates on
 Render and preparing external TestFlight. Keep charges disabled; keep AWS Free
 unchanged. Read docs/beta/EXTERNAL_BETA_20261020.md and TESTER_BRIEF.md. This is not
 commercial certification or permission to publish real social posts.
 
-Bounded follow-up to45d4d3b: verified-mailbox requirement for the allowlisted staff
+Runtime **25374dba138c8c50ebeb5b0224b7d4af55b180bd** is LIVE on Render service
+srv-d9rqg6navr4c739thoeg, deploy dep-dbbp1k0ae00c73abch8g (20 October, 17:03 BST).
+Live dependency readiness and database/schema checks return 200. Embedded worker
+has a real idle heartbeat; no overdue/stuck publications. Runtime billing mode is
+off, checkout false and subscription enforcement false. Existing signed-in web
+session remained usable; Account shows free beta, retained Facebook/X/TikTok
+connections and the explicit AI-sharing choice. No real posts or grants changed.
+
+Bounded follow-up to 45d4d3b: verified-mailbox requirement for the allowlisted staff
 directory (unverified access reproduced before fixing); local unlink cancels only
 unsent jobs/publications and unused reviews, leaving pending/in-flight/unknown
 provider receipts intact; cancelled review gives a clear conflict even after
@@ -15,12 +23,31 @@ configuration. External-eligible TestFlight export uses existing signing/workflo
 counter, minimum build10, no public App Store submission. Two tracked bytecode
 files removed; local virtual environment excluded from Docker context.
 
-Live inspection before deployment: Render419d452 remains live, subscription
-enforcement false and Stripe mode/live-checkout unset (off defaults). Production
-has no SMTP host/from, no configured AI cost rates/threshold, no overdue/stuck jobs,
-one old unknown publication and47 unpriced AI calls this month. Uploads have an
-existing1GB disk at/app/uploads with daily snapshots through20October. Do not
-restore it over live data.
+Exact application CI 39453432880 passed: SQLite 563 passed/2 PostgreSQL-only skips;
+PostgreSQL 564 passed/1 SQLite-backup skip; 13 client tests/groups and Studio harness;
+dependency audit 0 known findings; container, synthetic PostgreSQL/key/password/
+session/media/AI-consent recovery and exact beta scope all passed. Native CI
+39453432747 passed 16 unit tests, 1 UI test and release compilation. Local final
+suite also 563 passed/2 skipped. These are synthetic tests, not real provider or
+managed production restore evidence. Browser check at 393px verified AI decline
+retains the sent message, reload and retry. The synthetic model failure also kept
+the message; this is not proof of real-model answer quality.
+
+Codemagic build 6ad7907b454d2506f7ab80b9 archived exact 25374db and uploaded
+**0.1.0 (10)**, com.zovasocial.app. Apple upload log says UPLOAD SUCCEEDED with no
+errors. Signing log explicitly shows Test Flight Internal Testing Only: False.
+Apple processing, external group assignment and Beta App Review remain unverified:
+App Store Connect tab38 is signed out and owner has been asked to sign back in.
+Do not say build10 is installable or externally approved yet. Native code is the
+same as build9; current-device sign-in/return acceptance is still pending.
+
+Production has no SMTP host/from, no configured AI cost rates/threshold, one old
+unknown publication and 47 unpriced AI calls this month. Read-only reconciliation
+left publication-2 (Instagram, 22 September) unknown: no stored provider receipt
+identifier exists. Never resend or mark it published/failed without evidence.
+Uploads have an existing 1 GB disk at /app/uploads with daily snapshots through
+20 October. Managed PostgreSQL UI shows 3-day point-in-time recovery and a
+19 October 09:03 BST export. No production restore was performed.
 
 TikTok portal's Live version currently has user.info.basic+video.upload and Direct
 Post disabled; video.publish revision remains In review. Production inbox=true and
@@ -28,12 +55,21 @@ verified media prefix absent. Owner's earlier audit approval is separate evidenc
 not proof that this scope is live. Preserve inbox until provider approval and
 controlled activation; do not advertise all-social Direct Post as completed.
 
-App Store Connect session expired during inspection; owner asked to sign in again.
-Also awaiting mail-provider identification and real-device build9 social-return
-acceptance. Keep these open. Pre-scope full local test run560 passed/2skipped plus
-the expected exact-scope mismatch; subsequent bounded publication/manifest
-regressions16passed. Final exact candidate CI/deployment/build receipts pending.
-No production data, grants, charges, cloud or signing rights changed in this step.
+Open gates: outgoing recovery/verification email with a delivered single-use reset;
+renewed Apple sign-in/reviewer access/external approval; real iPhone social-return
+acceptance; delivered operational alerts and isolated production recovery rehearsal.
+Public DNS shows Cloudflare Email Routing for the company domain, not evidence of
+outbound sending. Owner asked whether to prepare Resend Free or use an existing
+outgoing provider. No email account, paid plan, DNS change or credential was created.
+Use docs/beta/APPLE_REVIEW_NOTES_20261020.md for the prepared review content.
+
+Evidence: social-proof/external-beta-validation-20261020.json;
+social-proof/external-beta-ci-25374db; render-external-beta-live-25374db.png;
+testflight10-uploaded-20261020.png; beta-ai-declined-20261020.png.
+These local proofs are ignored by Git; the CI runs and deployment/build IDs above
+are durable remote receipts. Update the final review state when owner actions
+arrive. Do not rebuild an identical iPhone binary or repeat completed tests.
+All 79 historical gaps remain recorded; no unsupported score uplift.
 
 ---
 
