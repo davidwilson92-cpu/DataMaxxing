@@ -21,7 +21,9 @@ final class WebKitHandoffTests: XCTestCase {
         }
         listener.start(queue: .main)
         defer { listener.cancel() }
-        await fulfillment(of: [ready], timeout: 5)
+        // CI's cold network process has taken >5s before the listener was ready.
+        // Keep the handshake assertions strict; allow bounded setup time first.
+        await fulfillment(of: [ready], timeout: 30)
         let port = try XCTUnwrap(listener.port?.rawValue)
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
@@ -54,7 +56,7 @@ final class WebKitHandoffTests: XCTestCase {
         }
         listener.start(queue: .main)
         defer { listener.cancel() }
-        await fulfillment(of: [ready], timeout: 5)
+        await fulfillment(of: [ready], timeout: 30)
         let port = try XCTUnwrap(listener.port?.rawValue)
         let url = URL(string: "http://127.0.0.1:\(port)/studio")!
         let cookie = try XCTUnwrap(HTTPCookie.cookies(withResponseHeaderFields: ["Set-Cookie":"zova_probe=synthetic; Path=/; HttpOnly; SameSite=Lax"], for: url).first)
