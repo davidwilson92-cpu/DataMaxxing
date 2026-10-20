@@ -83,7 +83,11 @@ the security-form failure and require pausing invitations until corrected.
 Preserve database records, email configuration, uploads and existing session keys.
 Do not weaken origin checks as a workaround.
 
-Apple reviewer credentials remain private to App Store Connect. The available
-Apple form still had an empty password after the owner reported completion;
-username was filled and the owner was asked to enter the existing review password.
-Do not submit unverified login details or claim Apple approval before its receipt.
+Apple reviewer credentials remain private to App Store Connect. After the owner
+completed its form, Apple showed build10 Waiting for Review. The saved credential
+is redacted to browser tools: one attempted automated login used that protected
+placeholder, so its rejection is not evidence about the real password. No
+credential was printed or persisted. The owner then performed a fresh login
+using the same password entered in Apple and confirmed success. Browser checks
+verified the reviewer email in Account and access to draft36. Review Notes and
+accurate external-beta metadata are saved; Apple approval is still pending.

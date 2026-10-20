@@ -1,28 +1,29 @@
-# Zova Social — prepared external TestFlight review
+# Zova Social — submitted external TestFlight review
 
-Status: review not submitted. Build 0.1.0 (10), bundle `com.zovasocial.app`, from
-runtime `25374db` is processed and Ready to Submit. What to Test is saved and the
-existing one-tester internal group assigned. The new Zova Social External Beta
-group has zero testers. Its build10 flow requires a dedicated review login;
-name/business email and the owner's supplied private telephone number are
-entered but not saved in that modal. Keep the telephone number out of public
-app UI, metadata and this repository.
+Status: **Waiting for Review**, observed in Apple's external group on 20 October
+2026 (record checked at 19:47 UTC). The owner completed the review form; on
+resuming, submission had already completed. Build 0.1.0 (10), bundle
+`com.zovasocial.app`, uses native source `25374db` and the current tested web
+runtime `b131f23`. What to Test is saved. The existing one-tester internal group
+and zero-tester external group are assigned. Private reviewer contact details
+are saved in Apple. Keep the supplied telephone number out of public app UI,
+metadata, screenshots and this repository. Submission is not Apple approval.
 A dedicated Zova App Review account now exists at the owner's existing
 Gmail plus alias, zova.social+apple-review@gmail.com. The signed-in account
 has no social connections; its synthetic pending idea (draft36) survives reload.
 Its email was verified through the actual delivered verification link, and
-link reuse was rejected. The Apple form still has an empty password and disabled
-Next, confirmed by reading only the field's presence boolean. A fresh TestFlight
-Test Information page also has no saved reviewer details. The owner has been
-asked to enter the existing reviewer password privately in Apple. A fresh
-password-based sign-in and Beta App Review submission remain unverified.
-Do not submit incomplete review access details.
+link reuse was rejected. The owner entered the private reviewer password and
+then performed a fresh Zova login using the same password, confirming success.
+Browser inspection verified the exact reviewer identity in Account and access
+to draft36. The Apple password is redacted to tools; do not persist it or infer
+its validity from a redacted readback. Review Notes are now saved, the description
+accurately says external beta, and Feedback Email is support@zova-social.com.
 Outgoing email is now configured; the two owner delivery checks are Delivered
 and Forwarded, and the owner confirms both arrived in Gmail. The dedicated
 reviewer recovery request also reports Delivered and opens the reset form.
 Password entry/change has not been performed; full live reset and old-session
-invalidation acceptance remain open. A generic confirmation of the mail-key
-action is not evidence that the owner has entered the reviewer password.
+invalidation acceptance remain open. The successful login does not establish
+that a password-reset/session-revocation journey was completed.
 
 ## Beta description
 
@@ -72,7 +73,7 @@ The beta has no active purchases, customer charges or subscription enforcement.
 Account contains privacy controls and an account-deletion request route. Do not
 describe deletion as instant erasure or claim unverified provider revocation.
 
-## Complete before submission
+## Submission checklist and remaining invitation gates
 
 1. Verify build 10 has finished Apple processing and is eligible for an external
    TestFlight group. Keep the public App Store release disabled.
@@ -84,10 +85,11 @@ describe deletion as instant erasure or claim unverified provider revocation.
    access to another person's social account. Explain provider account eligibility
    accurately; do not supply customer tokens, passwords or grants.
 4. Contact name, business email `david@zova-social.com` and the owner's supplied
-   private telephone number are already entered in the unsaved Apple form.
+   private telephone number are now saved in Apple's private review form.
    Keep the phone private to Apple's review contact. Confirm the mailbox is monitored.
-5. Complete the remaining password-recovery, device-return and operational gates
-   in `EXTERNAL_BETA_20261020.md`. Export-compliance and legal declarations must
+5. Before external invitations, complete the remaining password-recovery,
+   device-return and operational gates in `EXTERNAL_BETA_20261020.md`.
+   Export-compliance and legal declarations must
    match the shipped app; do not accept a new agreement on the owner's behalf
    without the required confirmation.
 6. Submit Beta App Review only when all required fields and review access are
@@ -106,9 +108,16 @@ describe deletion as instant erasure or claim unverified provider revocation.
   `49d32ac0-86d6-43bc-a0e3-8d82d9101af1`.
 - Internal group: existing group assigned, 1 tester.
 - External group: `f3f15099-0bec-49dc-8347-cd55beb805c0`, 0 testers.
-- Beta App Review submission/approval: not completed.
+- Beta App Review submission: completed; visible status **Waiting for Review**.
+- Beta App Review approval: pending; no approval is claimed.
 - External invitations: not sent.
 - Security-form follow-up: runtime `b131f23af2dbd95c0609da5b18944753daaac3bc`,
   required CI `39482173393` successful, Render `dep-dbbruo5pkucs73dudgv0` Live.
   Build10's native binary is unchanged. Live verification and recovery-email
   evidence is in `SECURITY_FORM_ACCEPTANCE_20261020.md`.
+- Submission screenshot: ignored
+  `social-proof/apple-external-beta-waiting-review-20261020.png`.
+- Owner-confirmed fresh login using Apple's reviewer credential, followed by
+  observed Account identity and access to saved draft36. No password readback
+  was logged or persisted. Review Notes, external-beta description and verified
+  support Feedback Email all reached Apple's Saved state.

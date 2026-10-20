@@ -27,7 +27,7 @@ format, account type or iPhone callback.
 | Publication backlog | Zero overdue/stuck jobs. Read-only reconciliation leaves Instagram publication-2 from 22 September unknown; no provider receipt identifier was stored | Manual destination evidence needed; preserve no-resend protection and historical ledger |
 | TikTok | Live developer version has `user.info.basic,video.upload`, Direct Post off; `video.publish` revision still In review. Production uses inbox mode | Provider approval of the production revision, verified media prefix, controlled configuration and reconsent before feed publishing |
 | iPhone | Build 10 processed, notes saved and existing internal group assigned. Native tests passed 16 unit/1 UI plus release compile. Owner confirms automatic Instagram return in response to the build9 check; same return code in10 | Other providers, cancellation/account switching and current build10 device acceptance remain open; no real publishing proof inferred |
-| Apple external access | External group has 0 testers; build10 processed. Reviewer account is created, isolated, email verified and has one saved synthetic pending idea. Apple's available password field is still empty; Next disabled | Owner enters private Apple reviewer password; verify password-based access, submit Beta App Review and obtain approval before invitations |
+| Apple external access | Build10 assigned to external group, **Waiting for Review**. Reviewer is isolated, email verified and has one saved synthetic pending idea. Owner completed fresh login with the same password saved in Apple; Account identity and draft access verified. Review notes and external-beta metadata saved | Obtain Apple approval and close remaining invitation gates; no external testers invited |
 | Tester support | support@zova-social.com is Active; delivery check shows Delivered and Forwarded to Gmail; owner confirms receipt; live Help links to the new address | Confirm support monitoring arrangements, then choose first small cohort |
 
 ## Provider scope to communicate honestly
@@ -102,7 +102,9 @@ Update this checklist and the main handoff with final receipts and unresolved ga
   0.1.0 (10), exact source `25374db`, successful Apple upload. App Store Connect
   now shows Ready to Submit, UUID `49d32ac0-86d6-43bc-a0e3-8d82d9101af1`.
   What to Test saved; existing internal group assigned. External group
-  `f3f15099-0bec-49dc-8347-cd55beb805c0` created with no testers; review not submitted.
+  `f3f15099-0bec-49dc-8347-cd55beb805c0` has no testers. The owner completed
+  submission; Apple now shows **Waiting for Review** for build10. Review access,
+  notes, external-beta description and support Feedback Email were checked.
 - Existing live account remains signed in with its Facebook, X and TikTok
   connections visible. The synthetic 393px Studio consent-decline/reload/retry
   check preserved the pending message. No real posts or provider grants changed.
@@ -127,6 +129,10 @@ Update this checklist and the main handoff with final receipts and unresolved ga
   Both reviewer verification and reset emails show Delivered in Resend. The
   reset form opens, but no password change was performed. See
   `SECURITY_FORM_ACCEPTANCE_20261020.md` for exact receipts and limits.
+- Apple submission record checked at 19:47 UTC on 20 October. Screenshot:
+  `social-proof/apple-external-beta-waiting-review-20261020.png` (ignored).
+  Submission is not approval. No invitation, public App Store release, real post,
+  grant change, customer charge or password reset occurred.
 
 All automated recovery evidence uses disposable synthetic data. The delivered
 live reset email does not establish a completed live reset or revoked sessions.

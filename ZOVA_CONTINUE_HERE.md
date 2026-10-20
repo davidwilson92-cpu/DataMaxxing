@@ -1,3 +1,45 @@
+# External TestFlight build submitted — 20 October 2026
+
+The owner completed Apple's private reviewer fields. On resuming, the existing
+Apple tab already showed **Zova Social 0.1.0 (10) — Waiting for Review** in
+**Zova Social External Beta**. Submission had therefore completed through the
+owner's browser interaction; do not attribute a second submission to the agent.
+This is Beta App Review submission, not approval or a public App Store release.
+Verified status on 20 October; record checked at 19:47 UTC / 20:47 BST.
+
+App ID **6824416979**, bundle **com.zovasocial.app**, build UUID
+**49d32ac0-86d6-43bc-a0e3-8d82d9101af1**, external group
+**f3f15099-0bec-49dc-8347-cd55beb805c0**. Build10 is assigned to that external
+group and the existing one-tester internal group. No external invitations were
+sent; the external group has no testers.
+
+The private contact and review username are now saved in Apple. Credential
+readback is redacted by the browser tools; it must not be treated as the real
+password or evidence that a password is wrong. The owner performed a fresh
+login using the same password entered in Apple and confirmed success. Browser
+checks then observed Studio, the exact reviewer email in Account and the saved
+synthetic draft36. No credential is retained in chat, evidence or Git.
+
+Apple's previously empty Review Notes are now saved with reviewer navigation,
+optional provider connection/publishing, explicit AI sharing, free-beta status,
+accurate Instagram/Facebook/X eligibility and production TikTok inbox limits.
+Replaced the leftover "internal beta" description with external-beta copy and
+set Feedback Email to the already delivery-tested **support@zova-social.com**.
+Each save reached Saved. What to Test is present and accurately covers account,
+draft/edit/media/reload, AI permission, social return/cancellation, final review,
+keyboard/larger text/VoiceOver and safe feedback. No legal terms were accepted.
+
+Screenshot receipt: ignored
+**social-proof/apple-external-beta-waiting-review-20261020.png**. See
+**docs/beta/APPLE_REVIEW_NOTES_20261020.md** for submission details.
+Render remains on tested **b131f23**, native build10 is unchanged, charges and
+subscription enforcement remain off. No real post, provider grant or password
+change occurred. Keep the remaining live reset/session-invalidation, device,
+alert-delivery and isolated production-restore gates in the external-beta
+checklist; Apple approval and those gates are still needed before invitations.
+
+---
+
 # Security-form fix live; Apple reviewer password still missing — 20 October 2026
 
 Owner requested checks and Beta App Review submission after creating the reviewer
