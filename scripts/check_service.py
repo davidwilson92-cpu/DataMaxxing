@@ -47,7 +47,8 @@ def check(payload, *, now=None):
 
 
 def probe(url, secret, *, get=None):
-    parts=urlsplit(url)
+    try:parts=urlsplit(url)
+    except ValueError:return {'status':'attention','reasons':['invalid_monitor_destination']}
     if (parts.username or parts.password or parts.query or parts.fragment
             or parts.path not in {'','/'} or not parts.hostname
             or (parts.scheme!='https' and not (parts.scheme=='http' and parts.hostname in {'127.0.0.1','localhost'}))):

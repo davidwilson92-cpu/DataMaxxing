@@ -40,7 +40,7 @@ def test_monitor_credential_cannot_dispatch_or_read_customer_cohorts(monkeypatch
 
 @pytest.mark.parametrize('url',['http://example.test','https://user:pass@example.test',
                               'https://example.test?secret=x','https://example.test/#token',
-                              'https://example.test/not-the-root','file:///private','https://'])
+                              'https://example.test/not-the-root','file:///private','https://','https://[broken'])
 def test_probe_never_sends_credentials_to_invalid_destination(url):
     from scripts.check_service import probe
     calls=[]

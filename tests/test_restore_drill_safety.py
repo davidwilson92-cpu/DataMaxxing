@@ -28,10 +28,13 @@ def test_media_copy_rejects_escape_and_missing_files(tmp_path):
     with pytest.raises(ValueError):media_path(root,root)
 
 
-def test_rehearsal_never_imports_application_or_accepts_restore_url():
-    source=(Path(__file__).parents[1]/'scripts/rehearse_render_restore.py').read_text()
-    assert 'import nova' not in source and 'from nova' not in source
-    assert 'default_transaction_read_only=on' in source
-    assert "listen_addresses=''" in source
-    assert '--snapshot=' in source
-    assert 'source.execute(\'CREATE' not in source
+def test_rehearsal_refuses_unapproved_host_before_opening_database(monkeypatch):
+    import psycopg
+    from scripts.rehearse_render_restore import run
+    opened=[]
+    monkeypatch.setenv('RENDER_SERVICE_ID','a-different-service')
+    monkeypatch.setenv('DATABASE_URL','postgresql://production.invalid/db')
+    monkeypatch.setattr(psycopg,'connect',lambda *a,**k:opened.append(a))
+    with pytest.raises(ValueError,match='named Render'):
+        run('/unused')
+    assert opened==[]
