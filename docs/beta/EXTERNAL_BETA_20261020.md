@@ -17,16 +17,16 @@ format, account type or iPhone callback.
 
 | Gate | Evidence / current state | Acceptance needed |
 |---|---|---|
-| Exact candidate | Security-form runtime `b131f23` live; required application/PostgreSQL CI `39482173393` passed. Native build10 remains based on `25374db`, native CI `39453432747` passed | This does not establish physical-device/provider acceptance |
+| Exact candidate | Runtime `7048c35` live; required application/PostgreSQL CI `39492645799` and native CI `39492645584` passed. Submitted native build 10 remains based on `25374db`; native app source is unchanged | This does not establish physical-device/provider acceptance |
 | Staff directory | Reproduced unverified signup claiming an allowlisted address; verified-mailbox protection and regression are now deployed | Staff MFA remains a separate commercial gap |
 | Disconnect | Deployed local unlink clears tokens, cancels unsent jobs and unused approvals, and preserves in-flight/unknown receipts; ownership and reconnect regressions passed | Provider-side revocation remains separate and is explained; validate live provider cancellation without disturbing customer grants |
-| Monitoring | Embedded scheduler now records durable progress; probe rejects stale/incomplete documents, broken workers, old usage reservations and missing recovery-email configuration | Install an approved alert route and prove delivery/acknowledgement; a passing unit test is not monitoring coverage |
+| Monitoring | Embedded scheduler records durable advancing progress; probe rejects stale/incomplete documents and unhealthy dependencies. Separate read-only access is implemented. New Render cron is prepared, not created | Owner approves cost/read-only access and confirms alert destination; prove delivery/acknowledgement. Historical uncertainty/unpriced usage remains visible |
 | Charges | After deployment, live runtime confirms billing off, checkout false, enforcement false | Never enable payments for this beta |
-| Password recovery | Restricted Resend SMTP is live. Owner confirmed two delivery checks in Gmail. Actual reviewer verification was delivered, confirmed and rejected on reuse; actual reset request was delivered and opened the reset form | Owner completes a live reset; then verify old-session invalidation and the new Apple reviewer password |
-| Upload persistence | Render has a 1 GB disk at `/app/uploads`; daily snapshots through 20 October; database UI shows 3-day PITR and an export from 19 October 09:03 BST | Isolated production database/key/media restoration rehearsal remains open; synthetic CI restore passed. Never restore over production |
+| Password recovery | Restricted Resend SMTP is live. Owner confirmed two delivery checks in Gmail. Actual reviewer verification was delivered, confirmed and rejected on reuse; actual reset request was delivered and opened the reset form | Owner creates the prepared separate recovery-test account and completes its live reset; verify old-session invalidation. Preserve Apple's reviewer password |
+| Upload persistence | Render has a 1 GB disk with daily snapshots; database UI shows 3-day PITR. Fresh isolated logical restore matched 44 tables / 401 rows, 39 encrypted values and 16 available uploads. Four old August files are missing, with no current draft/review/schedule references found | Full media result remains incomplete; retain records and seek older backup/originals. Managed PITR and independent key recovery remain unproved. Never restore over production |
 | Publication backlog | Zero overdue/stuck jobs. Read-only reconciliation leaves Instagram publication-2 from 22 September unknown; no provider receipt identifier was stored | Manual destination evidence needed; preserve no-resend protection and historical ledger |
 | TikTok | Live developer version has `user.info.basic,video.upload`, Direct Post off; `video.publish` revision still In review. Production uses inbox mode | Provider approval of the production revision, verified media prefix, controlled configuration and reconsent before feed publishing |
-| iPhone | Build 10 processed, notes saved and existing internal group assigned. Native tests passed 16 unit/1 UI plus release compile. Owner confirms automatic Instagram return in response to the build9 check; same return code in10 | Other providers, cancellation/account switching and current build10 device acceptance remain open; no real publishing proof inferred |
+| iPhone | Build 10 processed, notes saved and existing internal group assigned. Native tests passed 16 unit/1 UI plus release compile. Owner confirms automatic Instagram return in response to the build9 check; same return code in10 | Other providers, cancellation/account switching and current build 10 device acceptance remain open; no real publishing proof inferred |
 | Apple external access | Build10 assigned to external group, **Waiting for Review**. Reviewer is isolated, email verified and has one saved synthetic pending idea. Owner completed fresh login with the same password saved in Apple; Account identity and draft access verified. Review notes and external-beta metadata saved | Obtain Apple approval and close remaining invitation gates; no external testers invited |
 | Tester support | support@zova-social.com is Active; delivery check shows Delivered and Forwarded to Gmail; owner confirms receipt; live Help links to the new address | Confirm support monitoring arrangements, then choose first small cohort |
 
@@ -103,7 +103,7 @@ Update this checklist and the main handoff with final receipts and unresolved ga
   now shows Ready to Submit, UUID `49d32ac0-86d6-43bc-a0e3-8d82d9101af1`.
   What to Test saved; existing internal group assigned. External group
   `f3f15099-0bec-49dc-8347-cd55beb805c0` has no testers. The owner completed
-  submission; Apple now shows **Waiting for Review** for build10. Review access,
+  submission; Apple now shows **Waiting for Review** for build 10. Review access,
   notes, external-beta description and support Feedback Email were checked.
 - Existing live account remains signed in with its Facebook, X and TikTok
   connections visible. The synthetic 393px Studio consent-decline/reload/retry
@@ -134,7 +134,8 @@ Update this checklist and the main handoff with final receipts and unresolved ga
   Submission is not approval. No invitation, public App Store release, real post,
   grant change, customer charge or password reset occurred.
 
-All automated recovery evidence uses disposable synthetic data. The delivered
-live reset email does not establish a completed live reset or revoked sessions.
-A green CI run does not establish live alert delivery, managed production
-restoration, provider approval or a working physical iPhone journey.
+Automated CI recovery uses disposable synthetic data. The later controlled live
+logical restore is documented in `BETA_CHECKS_20261020.md`; its overall media result
+is incomplete because four historical files are missing. The delivered live reset
+email does not establish a completed reset or revoked sessions. A green CI run does
+not establish alert delivery, managed PITR, provider approval or physical-device acceptance.

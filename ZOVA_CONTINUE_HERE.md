@@ -1,3 +1,82 @@
+# Beta checks published; owner acceptance gates remain — 20 October 2026
+
+The owner asked to finish beta checks while Apple reviews build 10. The bounded
+follow-up is **live on Render** at exact
+**7048c353d2833a24076bde99a8a09a4c2e7a286f**,
+deploy **dep-dbbt0mjncjis73c1hcv0**, instance **r9986**, at 21:35 BST.
+Do not deploy main or the unfinished broad migration. Customer billing mode is
+off, checkout false and subscription enforcement false, verified through effective
+runtime functions after deployment. No provider grant, real post or tester invite.
+
+Changes: optional separate read-only monitor access (cannot dispatch or read
+customer cohort reports); bounded safe monitor requests; stored attachment
+availability/size checks before review and dispatch. Missing media after review
+now fails before sending, releasing its reservation instead of becoming an unknown
+provider outcome. Missing previews fail safely; draft/media records are retained.
+There is no schema migration and native application source is unchanged.
+
+Required CI **39492645799** passed for that exact candidate: **584 SQLite tests /
+2 skipped, 585 PostgreSQL tests / 1 skipped**, 18 client tests/groups plus Studio,
+dependency audit with no known findings, synthetic restore, hosting-image smoke
+and the exact beta scope. Native CI **39492645584** passed **16 unit tests, 1 UI
+test and iPhone release compilation**. An earlier native run failed only on the
+5-second cold listener setup deadline, while the handshake checks completed;
+the bounded 30-second setup allowance fixes that test without removing assertions.
+Do not count the earlier failed run as passing. Build **0.1.0 (10)** remains the
+submitted binary; no new TestFlight build is required for these server changes.
+
+Live checks: dependency readiness 200, schema/database available, embedded worker
+idle with progress advancing from 20:38:21 to 20:39:22 UTC, zero overdue/stuck
+publications, failed/stuck mail or old reservations. The
+full status correctly remains attention for **one historical unknown Instagram
+publication** and **47 unpriced AI calls**; neither was hidden or marked resolved.
+Reviewer stays signed in as the same account; Studio draft 36 and its pending idea
+survive deployment/reload. Drafts, Performance, Account and Help load. Help confirms
+free beta/no card and support@zova-social.com. A temporary 502 during Render's
+disk-backed restart cleared when the new service became Live.
+
+Recovery: a consistent read-only production snapshot was restored into a private,
+disposable local PostgreSQL 18 instance with no network listener or app/providers.
+All **44 tables / 401 rows** matched; **39 encrypted values** decrypted correctly and
+rejected the wrong key; **16 files / 6,187,895 bytes** passed copy/restore hashes.
+Temporary copies, local server and extracted official tools were removed.
+Overall media recovery is **incomplete**: four uploads from 29–30 August are missing
+on disk, with no current draft, conversation, review or schedule references found.
+Local workspace upload folders had no matching originals. Records remain intact.
+Do not call this a full media recovery or a managed PITR/independent-key recovery.
+Receipt: `docs/beta/restore-receipt-20261020.json`.
+
+Outstanding owner inputs already requested asynchronously; do not duplicate them:
+
+- Create the prepared separate **Zova Recovery Check** account with controlled
+  alias **zova.social+beta-recovery@gmail.com** in tab 64. Owner enters/submits its
+  password and terms. Then conduct live reset/login, old-session and used-link
+  rejection. **Do not change Apple's reviewer password.**
+- Confirm build 10 on the physical phone: attachment/draft reload and Facebook/X/
+  TikTok sign-in cancellation/return, with phone/iOS details. Instagram return was
+  confirmed previously; do not infer every provider or current-device scenario.
+- Approve or decline the prepared **zova-beta-monitor** Render cron: every 10 minutes,
+  runtime capped 30 seconds, auto-deploy off, smallest instance, **$1/month minimum**.
+  Separate read-only credential creation is also pending approval. Tab 65 is the
+  unsubmitted form; **no new service or credential was created**. Keep the
+  health-only token distinct from scheduler/admin/database/provider/billing keys.
+  Prove alert delivery/acknowledgement and address historical attention/noise
+  explicitly; do not silently suppress uncertainty or missing cost coverage.
+- Confirm support/alert inbox ownership (support@ or david@). Existing delivery
+  and forwarding were confirmed in Gmail; ongoing coverage has not been confirmed.
+
+Apple was rechecked: **Waiting for Review**, external group still **0 testers**.
+No external invitations yet. Remain on Render; AWS and customer charges unchanged.
+See **docs/beta/BETA_CHECKS_20261020.md** for evidence and remaining limits,
+**EXTERNAL_BETA_20261020.md** for invitation gates and **TESTER_BRIEF.md** for the
+ready-to-use tester guide. All 79 deferred commercial findings remain retained.
+Rollback for this bounded update: runtime **b131f23**, preserving data/disk/keys and
+all publication receipts; pause any subsequently activated monitor if rolling back.
+Never replay unknown posts or restore stale production data as a code rollback.
+Screenshot: ignored **social-proof/beta-checks-render-live-20261020.png**.
+
+---
+
 # External TestFlight build submitted — 20 October 2026
 
 The owner completed Apple's private reviewer fields. On resuming, the existing
@@ -9,7 +88,7 @@ Verified status on 20 October; record checked at 19:47 UTC / 20:47 BST.
 
 App ID **6824416979**, bundle **com.zovasocial.app**, build UUID
 **49d32ac0-86d6-43bc-a0e3-8d82d9101af1**, external group
-**f3f15099-0bec-49dc-8347-cd55beb805c0**. Build10 is assigned to that external
+**f3f15099-0bec-49dc-8347-cd55beb805c0**. Build 10 is assigned to that external
 group and the existing one-tester internal group. No external invitations were
 sent; the external group has no testers.
 
@@ -18,7 +97,7 @@ readback is redacted by the browser tools; it must not be treated as the real
 password or evidence that a password is wrong. The owner performed a fresh
 login using the same password entered in Apple and confirmed success. Browser
 checks then observed Studio, the exact reviewer email in Account and the saved
-synthetic draft36. No credential is retained in chat, evidence or Git.
+synthetic draft 36. No credential is retained in chat, evidence or Git.
 
 Apple's previously empty Review Notes are now saved with reviewer navigation,
 optional provider connection/publishing, explicit AI sharing, free-beta status,
@@ -32,7 +111,7 @@ keyboard/larger text/VoiceOver and safe feedback. No legal terms were accepted.
 Screenshot receipt: ignored
 **social-proof/apple-external-beta-waiting-review-20261020.png**. See
 **docs/beta/APPLE_REVIEW_NOTES_20261020.md** for submission details.
-Render remains on tested **b131f23**, native build10 is unchanged, charges and
+Render remains on tested **b131f23**, native build 10 is unchanged, charges and
 subscription enforcement remain off. No real post, provider grant or password
 change occurred. Keep the remaining live reset/session-invalidation, device,
 alert-delivery and isolated production-restore gates in the external-beta
@@ -45,19 +124,19 @@ checklist; Apple approval and those gates are still needed before invitations.
 Owner requested checks and Beta App Review submission after creating the reviewer
 account. Account creation is confirmed. Zova App Review,
 zova.social+apple-review@gmail.com, has no social connections and one harmless
-pending idea, draft36, which survives reload and the new server deployment.
+pending idea, draft 36, which survives reload and the new server deployment.
 No AI-sharing permission or real AI request, connection grant or social post was
 made during this check.
 
 Found and reproduced the live no-referrer/Origin-null form defect described
 below. Bounded fix **b131f23af2dbd95c0609da5b18944753daaac3bc** passed all
 required CI in **39482173393**: SQLite 564 passed/2 skipped, PostgreSQL 565
-passed/1 skipped, 18 client tests/groups plus Studio harness, synthetic restore,
+passed/ 1 skipped, 18 client tests/groups plus Studio harness, synthetic restore,
 container smoke, dependency checks and exact scope. Native binary is unchanged.
 The earlier local full run's scope-manifest failure is not claimed as a pass.
 
 Render **dep-dbbruo5pkucs73dudgv0** became Live at **20:23 BST on 20 October**.
-Post-deploy shell readback confirms that exact commit, readiness200, database and
+Post-deploy shell readback confirms that exact commit, readiness 200, database and
 schema ready, embedded worker idle, billing off, checkout false and subscription
 enforcement false. Zero overdue jobs, stuck publications, failed mail or stuck
 mail. The historical uncertain Instagram publication remains preserved.
@@ -80,8 +159,8 @@ Apple's Sign-In Information. Do not use the owner's Apple password, invent a
 credential or bypass the required new-password handoff with a server change.
 
 Next: once the owner fills the Apple field, verify the review login privately,
-finish the review notes and submit build0.1.0(10) to Beta App Review. Record the
-actual Apple receipt; do not equate submission with approval. Build10 remains
+finish the review notes and submit build0.1.0 (10) to Beta App Review. Record the
+actual Apple receipt; do not equate submission with approval. Build 10 remains
 Ready to Submit; the external group has no submitted build or invited testers.
 Customer charges stay off and Render stays in place. The external-invitation
 gates in EXTERNAL_BETA_20261020.md (live reset, remaining device/provider checks,
@@ -93,7 +172,7 @@ alert delivery and isolated production recovery) are still open.
 
 Owner created Zova App Review at zova.social+apple-review@gmail.com and requests
 checks followed by Beta App Review submission. Verified onboarding identity and
-all four socials Not connected. Created one harmless pending idea, draft36;
+all four socials Not connected. Created one harmless pending idea, draft 36;
 saved state survived reload, Drafts shows one item and Performance shows the
 unconnected state. No AI consent granted, AI request, social connection or post.
 
@@ -116,7 +195,7 @@ request/confirmation succeeded with valid Origin and no Referer; replay rejected
 inline. Full suite running; its first pass preceded the refreshed exact-scope
 manifest and hit that expected scope-drift check. New manifest now reviewed and
 validates, but fresh required application/PostgreSQL CI must pass before deployment.
-Runtime remains 25374db; native build10 is unchanged. No Apple submission yet.
+Runtime remains 25374db; native build 10 is unchanged. No Apple submission yet.
 
 ---
 
@@ -173,7 +252,7 @@ After these inputs: verify reviewer access and only synthetic content; test
 real delivered email/verification/single-use recovery; finish review notes and
 submit Beta App Review with a visible receipt. External invitations still wait
 on Apple approval and the other documented acceptance gates. Runtime25374db and
-build10 are unchanged. No reviewer account or review submission is confirmed.
+build 10 are unchanged. No reviewer account or review submission is confirmed.
 The two approved delivery tests are the only new emails. No social posts/grants,
 customer charges, AWS upgrade or cloud migration.
 Evidence in ignored social-proof: resend-social-sending-key-created,
@@ -190,9 +269,9 @@ handoff. Resend58, Cloudflare57 and Render54 hold mail configuration evidence.
 Owner answered the build9 phone check: **"Returns automatically to Zova"** after
 Instagram's final profile confirmation. Record this as owner-reported physical
 Instagram acceptance. Do not generalise it to Facebook/X/TikTok, cancellation,
-account switching or publishing. Build10 retains the same native social-return code.
+account switching or publishing. Build 10 retains the same native social-return code.
 
-Owner signed back into App Store Connect. Build10 has finished processing and
+Owner signed back into App Store Connect. Build 10 has finished processing and
 shows Ready to Submit; UUID 49d32ac0-86d6-43bc-a0e3-8d82d9101af1. Saved focused
 What to Test notes and assigned the existing Zova Social Internal Beta group
 (1 existing tester). Created **Zova Social External Beta**, group
@@ -251,7 +330,7 @@ provider receipts intact; cancelled review gives a clear conflict even after
 reconnection. Embedded scheduler now records progress; monitor rejects stale or
 incomplete documents and flags worker failure, old reservations and missing mail
 configuration. External-eligible TestFlight export uses existing signing/workflow
-counter, minimum build10, no public App Store submission. Two tracked bytecode
+counter, minimum build 10, no public App Store submission. Two tracked bytecode
 files removed; local virtual environment excluded from Docker context.
 
 Exact application CI 39453432880 passed: SQLite 563 passed/2 PostgreSQL-only skips;
@@ -269,7 +348,7 @@ Codemagic build 6ad7907b454d2506f7ab80b9 archived exact 25374db and uploaded
 errors. Signing log explicitly shows Test Flight Internal Testing Only: False.
 Apple processing, external group assignment and Beta App Review remain unverified:
 App Store Connect tab38 is signed out and owner has been asked to sign back in.
-Do not say build10 is installable or externally approved yet. Native code is the
+Do not say build 10 is installable or externally approved yet. Native code is the
 same as build9; current-device sign-in/return acceptance is still pending.
 
 Production has no SMTP host/from, no configured AI cost rates/threshold, one old
@@ -322,11 +401,11 @@ Owner also asked to update TestFlight0.1.0(9), fully close/reopen and complete o
 
 # Commercial candidate validated; TestFlight9 available — 19 October 2026,21:49 BST
 
-Latest owner request: assess commercial readiness across product/design/iOS/engineering/security; iteratively improve and then pursue credit-supported cloud migration. Current work is a bounded candidate, not a commercial launch. Baseline db7fc42 / live server419d452 is preserved. Read docs/COMMERCIAL_READINESS_20261019.md (13 dimensions, 5.6→6.3 judgement), docs/architecture/CLOUD_MIGRATION_20261019.md and docs/beta/current-reconciliation-20261019.json. All79 original areas retained; historical RLS/service claims are not assumed active.
+Latest owner request: assess commercial readiness across product/design/iOS/engineering/security; iteratively improve and then pursue credit-supported cloud migration. Current work is a bounded candidate, not a commercial launch. Baseline db7fc42 / live server419d452 is preserved. Read docs/COMMERCIAL_READINESS_20261019.md (13 dimensions, 5.6→6.3 judgement), docs/architecture/CLOUD_MIGRATION_20261019.md and docs/beta/current-reconciliation-20261019.json. All 79 original areas retained; historical RLS/service claims are not assumed active.
 
 Candidate: account-bound explicit AI sharing with server enforcement, version/revocation/export/erasure and first-use dialog; Performance7/30-day answers, incomplete metrics/no fabricated winner, stale refresh/late answer protection, safer links and larger mobile typography; saved Next move/recurring drafts open without generating again or demanding a new AI permission; simpler Account/Drafts/current Help; safe correlated request failures and provider-error/review-URL redaction. Two additive tables only. Portable worker/runtime controls remain INACTIVE: embedded scheduler/default pool retained, no hosting/env/grants/customer-data change. Invalid external mode refuses before DB preparation; explicit offline target preparation, pool budget, private shared-storage config requirement and PG worker lock/heartbeat prepared. No unfinished broad migration merged.
 
-Local full run540 passed/2 PostgreSQL-only skips before the final import-order safeguard; focused safeguard/diagnostics11 passed/1 PG skip. Existing Studio client harness and13 node tests/groups passed. Desktop plus393px synthetic phone screenshots reviewed; initial spacing, tiny metrics, misleading comparison bars and dark-dialog contrast were corrected. Permission cancel/allow/result verified with synthetic account and no real provider request. Candidate7e6a7fe passed hosted SQLite541/2 skipped, PostgreSQL542/1 skipped, dependency/restore/container and exact-scope checks (39319457603). Final saved-draft refinement passes the client failure/save/workspace tests and requires new exact-candidate validation. Save final receipt in social-proof/commercial-validation-20261019.json and PR34 checks; do not treat the earlier run as validation of later changes. No new real posts, charges or deployment.
+Local full run540 passed/2 PostgreSQL-only skips before the final import-order safeguard; focused safeguard/diagnostics11 passed/1 PG skip. Existing Studio client harness and13 node tests/groups passed. Desktop plus393px synthetic phone screenshots reviewed; initial spacing, tiny metrics, misleading comparison bars and dark-dialog contrast were corrected. Permission cancel/allow/result verified with synthetic account and no real provider request. Candidate7e6a7fe passed hosted SQLite541/2 skipped, PostgreSQL542/ 1 skipped, dependency/restore/container and exact-scope checks (39319457603). Final saved-draft refinement passes the client failure/save/workspace tests and requires new exact-candidate validation. Save final receipt in social-proof/commercial-validation-20261019.json and PR34 checks; do not treat the earlier run as validation of later changes. No new real posts, charges or deployment.
 
 Owner confirmed self-funded, started August2026. Existing Apple developer organisation is ZOVA SOCIAL LIMITED; previous startup credits/company-domain email remain pending. Owner signed back into Apple: build0.1.0(9), UUIDe309aeb4-126e-48bb-a4eb-fc4a4d1a21d2, is now verified Testing in existing Zova Social Internal Beta group a74d0ba7-0d28-4f11-bfb3-c77e75986ba8 with1 tester at21:41BST. Focused What to Test notes saved; screenshot social-proof/testflight9-testing-20261019.png. Owner asked to update9 and verify automatic return after final social confirmation; answer pending. No duplicate build, new signing grants, tester or public release. Existing8 fallback. No new Swift code in this increment. Build9/server419d452 do not yet include this commercial candidate.
 
@@ -335,13 +414,13 @@ Do not cut over to a cloud, claim credits awarded or enable paid plans. Start wi
 
 Final recovery iteration: scripts/synthetic_recovery.py seeds only a loopback CI database before pg_dump, then checks passwords, token decryption/wrong key rejection, live and revoked sessions, unknown publication, withdrawn AI permission and checksum-verified media restoration after pg_restore. New local guard/corruption tests6 passed. Await final exact-candidate hosted receipt; never claim cloud/production restore or RPO/RTO from this synthetic drill. All operator decisions and commercial gates remain open.
 
-Final implementation45d4d3b passed required PR application39321607637: SQLite547 passed/2 PostgreSQL-only skips; PostgreSQL548 passed/1 separate SQLite-backup skip;13 Node tests/groups and Studio harness; dependencies0 reported vulnerabilities; synthetic restore/recovery, container smoke and exact beta scope passed. Native39321607625 passed16 unit/1 UI tests plus release compilation. Final structured receipt: social-proof/commercial-validation-20261019.json; CI artifacts and PR34 carry remote evidence. The two owned loopback preview services8793/8794 are stopped and temporary review tabs closed; Apple38 is retained as a deliverable. These commercial changes are NOT deployed; live419d452 and delivered native9 remain separate. Final documentation receipts do not change the validated runtime.
+Final implementation45d4d3b passed required PR application39321607637: SQLite547 passed/2 PostgreSQL-only skips; PostgreSQL548 passed/1 separate SQLite-backup skip;13 Node tests/groups and Studio harness; dependencies0 reported vulnerabilities; synthetic restore/recovery, container smoke and exact beta scope passed. Native39321607625 passed 16 unit/1 UI tests plus release compilation. Final structured receipt: social-proof/commercial-validation-20261019.json; CI artifacts and PR34 carry remote evidence. The two owned loopback preview services8793/8794 are stopped and temporary review tabs closed; Apple38 is retained as a deliverable. These commercial changes are NOT deployed; live419d452 and delivered native9 remain separate. Final documentation receipts do not change the validated runtime.
 
 ---
 
 # Native9 accepted by Apple; App Store Connect sign-in required — 19 October2026,16:25 BST
 
-Codemagic6ad634947550aed810902dd4 FINISHED3m29s. Apple upload succeeded16:25:19 BST, delivery/build UUID e309aeb4-126e-48bb-a4eb-fc4a4d1a21d2, Zova0.1.0(9), com.zovasocial.app, source419d452. Existing signing profile/certificate/workflow only. Server419d452 is already LIVE (Render dep-dbb3804s728c73a8jaug); application513/1 skipped each database and native16 unit/1 UI/release checks passed. Shared Studio/Account inspected live, screenshots saved below. User-facing update already explains shared UI is live.
+Codemagic6ad634947550aed810902dd4 FINISHED3m29s. Apple upload succeeded16:25:19 BST, delivery/build UUID e309aeb4-126e-48bb-a4eb-fc4a4d1a21d2, Zova0.1.0(9), com.zovasocial.app, source419d452. Existing signing profile/certificate/workflow only. Server419d452 is already LIVE (Render dep-dbb3804s728c73a8jaug); application513/ 1 skipped each database and native16 unit/1 UI/release checks passed. Shared Studio/Account inspected live, screenshots saved below. User-facing update already explains shared UI is live.
 
 Refreshing App Store Connect tab38 redirected to Apple login authResult=FAILED. This is an expired browser session, not a rejected build. Asked owner to sign in to existing App Store Connect tab, including verification, and tell us when in; answer pending. Do not enter/ask for passwords or codes. Apple processing, build9 What to Test notes and assignment to existing Zova Social Internal Beta group a74d0ba7-0d28-4f11-bfb3-c77e75986ba8 remain TO DO. Do not claim9 can be installed until status Testing/group confirmed. Existing8 remains delivered fallback; avoid duplicate signed builds. Native phone automatic dismissal remains unverified until owner updates and accepts profile in a fresh flow. No real social posts or grant changes authorised/tested here.
 
@@ -355,9 +434,9 @@ Browser handoffs: Codemagic tab37 (new build receipt) and Apple tab38 (login) ma
 
 Runtime419d4520fb76a357f007a6c95c274f78c26625d1 is LIVE on Render dep-dbb3804s728c73a8jaug, started16:15:12 BST,1m17s; service live16:16:29. Public health/login/native-config200; public studio-layout.css, zova-night.css and studio-publish.js hash-match reviewed source. Existing signed-in browser Studio/Account inspected without submitting posts/settings; Studio weekly summary absent, plain Account rows present. Evidence social-proof/studio-slim-live-20261019.png and account-rows-live-20261019.png. No provider grants or customer data changed.
 
-Exact candidate application39275914996 SUCCEEDED513/1 skipped each SQLite/PostgreSQL, dependencies/restore/container/exact-scope guards. Native39275915374 SUCCEEDED16 unit tests,1 UI test and iPhone release compilation. First application attempt had two obsolete tests expecting the weekly summary in Studio; moved assertions to Drafts and assert absence in Studio, preserving pending/overdue visibility there. Older duplicate/outdated checks cancelled to avoid needless work; no failed gate waived.
+Exact candidate application39275914996 SUCCEEDED513/ 1 skipped each SQLite/PostgreSQL, dependencies/restore/container/exact-scope guards. Native39275915374 SUCCEEDED16 unit tests, 1 UI test and iPhone release compilation. First application attempt had two obsolete tests expecting the weekly summary in Studio; moved assertions to Drafts and assert absence in Studio, preserving pending/overdue visibility there. Older duplicate/outdated checks cancelled to avoid needless work; no failed gate waived.
 
-Codemagic6ad634947550aed810902dd4 is PUBLISHING Zova0.1.0(9), com.zovasocial.app, exact source419d452, correct branch codex/ios-beta-20261019, index8, existing workflow/profile/certificate. Machine started16:21 BST. No new signing permissions, credentials, billing or other-app changes. Apple upload acceptance/processing/internal-group availability still pending; do NOT yet tell owner9 can be installed. Build8 remains latest delivered. Hold runtime changes; finish this delivery before new work. All79 wider gaps retained; rollback server8846cbc and native8 without restoring stale data or replaying uncertain posts.
+Codemagic6ad634947550aed810902dd4 is PUBLISHING Zova0.1.0(9), com.zovasocial.app, exact source419d452, correct branch codex/ios-beta-20261019, index8, existing workflow/profile/certificate. Machine started16:21 BST. No new signing permissions, credentials, billing or other-app changes. Apple upload acceptance/processing/internal-group availability still pending; do NOT yet tell owner9 can be installed. Build8 remains latest delivered. Hold runtime changes; finish this delivery before new work. All 79 wider gaps retained; rollback server8846cbc and native8 without restoring stale data or replaying uncertain posts.
 
 ---
 
@@ -367,17 +446,17 @@ Owner confirms Instagram CONNECTS on the iPhone after converting to an eligible 
 
 Candidate combines the native identity handoff and provider choice into one screen while retaining cookie-bound explicit confirmation, correct Zova email, both Instagram routes and final exact-profile confirmation. New native client uses Apple ASWebAuthenticationSession HTTPS return on the EXISTING associated /mobile/callback route for all four providers. Per-attempt SHA256 state, exact platform, host/path/query validation; server return requires a signed 20-minute receipt AND the same live native device cookie. Receipt is navigation only; app refreshes server connections, never authenticates from URL. Consumed browser receipts retained at most20 minutes beyond original expiry during sign-in cleanup; unused ticket60-second expiry unchanged. Review binds return receipt to its staged grant; switched parallel attempt cannot capture another review's return. Existing build8 keeps its browser flow (no return opt-in); a replacement TestFlight binary is required for automatic dismissal. Instagram #weblink, scopes and provider callback URLs unchanged.
 
-Shared UI: header controls share a44px aligned baseline; mobile workspace sits below; Your week removed only from Studio, retained in Drafts. Account categories are flat icon/label/chevron rows; all forms/save-error/hash behavior retained. Raw destination IDs removed from review presentation, internal immutable target binding unchanged. Core screens remain white; Account/bridges near-black. Synthetic393px browser preview inspected for Studio, typing and Account expansion; social-proof/studio-header-slim-20261019.png and account-rows-20261019.png. Required full application/PostgreSQL/native checks, deployment and replacement TestFlight delivery still pending. No real grants or posts changed; no charges. All79 wider gaps retained. Rollback server8846cbc and prior native8, preserving data and ledgers.
+Shared UI: header controls share a44px aligned baseline; mobile workspace sits below; Your week removed only from Studio, retained in Drafts. Account categories are flat icon/label/chevron rows; all forms/save-error/hash behavior retained. Raw destination IDs removed from review presentation, internal immutable target binding unchanged. Core screens remain white; Account/bridges near-black. Synthetic393px browser preview inspected for Studio, typing and Account expansion; social-proof/studio-header-slim-20261019.png and account-rows-20261019.png. Required full application/PostgreSQL/native checks, deployment and replacement TestFlight delivery still pending. No real grants or posts changed; no charges. All 79 wider gaps retained. Rollback server8846cbc and prior native8, preserving data and ledgers.
 
 ---
 
 # Browser confirmation recovery live — 19 October 2026,15:39 BST
 
-Server8846cbc3ef9aa389dabded81e07936e3e021a714 is Live on Render dep-dbb2mmfbtjjs7394qmi0, started15:38:17 BST,50.4s. Public health/login/native-config200. Application39270163640 succeeded490/1 skipped each SQLite/PostgreSQL plus dependency/restore/container/exact-scope checks. New repeated-form/device-isolation regressions passed. Native code is unchanged from shipped8; PR native39270163584 also SUCCEEDED. Recovery HTML visually inspected using a loopback-only disposable-account preview; no production auth bypass or test data installed.
+Server8846cbc3ef9aa389dabded81e07936e3e021a714 is Live on Render dep-dbb2mmfbtjjs7394qmi0, started15:38:17 BST,50.4s. Public health/login/native-config200. Application39270163640 succeeded490/ 1 skipped each SQLite/PostgreSQL plus dependency/restore/container/exact-scope checks. New repeated-form/device-isolation regressions passed. Native code is unchanged from shipped8; PR native39270163584 also SUCCEEDED. Recovery HTML visually inspected using a loopback-only disposable-account preview; no production auth bypass or test data installed.
 
 Verified public callback settings on live instance using only whitelisted nonsecret environment reads: Instagram redirect is https://zova-social.com/oauth/instagram/callback, client configured, scopes default. No credentials accessed or changed. Rejected repeat-submit matches owner Safari screenshot and production303→403→401 sequence. Recovery removes raw JSON for these browser requests without issuing new cookies or reviving authority. Owner asked for a fresh attempt on8 and whether Instagram shows Allow/permissions versus only its feed. Provider return and final account confirmation remain UNVERIFIED; last inspected hour has no direct Instagram callback. Do not claim the Instagram integration is fully repaired from the browser-recovery tests alone. No new TestFlight build required.
 
-Rollback to39d0d17 / dep-dbb28fc9v7es73aec6sg preserves the browser-only weblink marker but restores the repeat-form expiry defect. No schema/data/connection changes; do not erase records or replay posts. All79 wider gaps retained.
+Rollback to39d0d17 / dep-dbb28fc9v7es73aec6sg preserves the browser-only weblink marker but restores the repeat-form expiry defect. No schema/data/connection changes; do not erase records or replay posts. All 79 wider gaps retained.
 
 ---
 
@@ -385,13 +464,13 @@ Rollback to39d0d17 / dep-dbb28fc9v7es73aec6sg preserves the browser-only weblink
 
 Owner reports progress: can sign into Instagram but stays there; returning/retrying shows Safari raw JSON Browser confirmation expired (15:27 screenshot). Production last-hour logs show native browser POST303 at15:26:22, then POST403 and GET401 at15:26:23. Instagram start302 at15:25:39 but NO Instagram callback in the inspected hour. Do not conflate the proved Zova resubmission defect with an already-solved provider return; no final grant acceptance observed. Asked owner whether Allow/permissions or exact-account Zova review appeared; answer pending.
 
-Reproduced the same403 with a synthetic accepted handoff then resubmitted pre-cookie-change form. Candidate only lets the same already-authenticated active iOS device session resume the used browser ticket by303 to its bounded original connection page. It never redeems again, issues cookies, authorises a different device/user, revives a revoked session or connects/publishes anything. Changed-cookie unused requests remain403 and get a readable account-review link; expired/missing browser GET/POST get readable recovery instead of JSON. Studio/bootstrap one-use semantics unchanged. Tests cover repeat GET/POST, expired consumed tickets, no new cookie, same-user different-session rejection, revocation and unchanged fresh-ticket CSRF. Initial regressions failed against old code; corrected focused3 cases pass. Full required application checks/deployment remain pending. Use build8; no new native build for this server fix. All79 wider gaps and existing data/grants preserved.
+Reproduced the same403 with a synthetic accepted handoff then resubmitted pre-cookie-change form. Candidate only lets the same already-authenticated active iOS device session resume the used browser ticket by303 to its bounded original connection page. It never redeems again, issues cookies, authorises a different device/user, revives a revoked session or connects/publishes anything. Changed-cookie unused requests remain403 and get a readable account-review link; expired/missing browser GET/POST get readable recovery instead of JSON. Studio/bootstrap one-use semantics unchanged. Tests cover repeat GET/POST, expired consumed tickets, no new cookie, same-user different-session rejection, revocation and unchanged fresh-ticket CSRF. Initial regressions failed against old code; corrected focused3 cases pass. Full required application checks/deployment remain pending. Use build8; no new native build for this server fix. All 79 wider gaps and existing data/grants preserved.
 
 ---
 
 # Instagram browser-only authorization link live — 19 October 2026,15:08 BST
 
-Server39d0d17bac09261764ff08e04003d13ddc37f666 is Live: Render dep-dbb28fc9v7es73aec6sg, started15:07:57 BST,53.0s, service live15:08:50. Public health/login/native-config200. Application39265783737 succeeded488/1 skipped each SQLite/PostgreSQL plus restore/container/dependency/scope gates. Focused73 tests passed. No new native binary: use installed8 and start a FRESH connection after closing old Instagram/browser attempt.
+Server39d0d17bac09261764ff08e04003d13ddc37f666 is Live: Render dep-dbb28fc9v7es73aec6sg, started15:07:57 BST,53.0s, service live15:08:50. Public health/login/native-config200. Application39265783737 succeeded488/ 1 skipped each SQLite/PostgreSQL plus restore/container/dependency/scope gates. Focused73 tests passed. No new native binary: use installed8 and start a FRESH connection after closing old Instagram/browser attempt.
 
 Only runtime change adds #weblink to the existing direct Instagram authorize URL. Both Instagram's primary AASA and Apple's cached association explicitly exclude this fragment from app launch; captured ignored social-proof/instagram-aasa-20261019.json and instagram-aasa-apple-cache-20261019.json. State, scopes, reauthentication, callback, final exact-account confirmation and both login routes preserved. No account/grant/upload/data/billing changes. Owner says the remaining provider message is “unable to log in, unexpected error occurred”; whether Safari appeared first was not established. Fresh phone/provider acceptance requested and still pending. Do not claim end-to-end success until owner confirms.
 
@@ -413,9 +492,9 @@ Candidate adds only #weblink to Instagram's existing authorization URL, preservi
 
 Zova Social0.1.0(8) is now **Testing** in the existing Zova Social Internal Beta group with1 tester. Apple build4c7fd194-4007-4da5-b766-b23639c4375f. Signed source0cb83b2; Codemagic6ad61b167550aed81090246d finished3m21s, upload accepted14:36:31 BST. Apple processing completed and group assigned around14:39 BST. Focused What to Test notes saved for browser Instagram return, exact Zova email, account switching, light core/dark Account and typing layout. Owner told to update to8 and retry Instagram. **Physical Instagram acceptance is still pending**; do not claim the provider loop is fixed on the phone merely because build8 is available.
 
-Native validation39259002240 succeeded16 unit tests,1 UI test and release compilation. Application39258328505 succeeded487/1 skipped on both SQLite/PostgreSQL plus restore/container/scope/dependencies. Server0cb83b2 was already live; no new server/data/schema/grant/publishing/billing changes for this native release. Both Instagram routes and existing account separation preserved. Other social providers keep their previous browser flow. Separate Zova Market remains untouched.
+Native validation39259002240 succeeded16 unit tests, 1 UI test and release compilation. Application39258328505 succeeded487/ 1 skipped on both SQLite/PostgreSQL plus restore/container/scope/dependencies. Server0cb83b2 was already live; no new server/data/schema/grant/publishing/billing changes for this native release. Both Instagram routes and existing account separation preserved. Other social providers keep their previous browser flow. Separate Zova Market remains untouched.
 
-Rollback native by making prior7 available from the existing group if needed; it restores the known failing embedded Instagram flow, so keep the Safari workaround. Do not erase user data or replay unknown posts. All79 broader beta gaps retained. The historical delivery-blocker notes below are superseded by this receipt.
+Rollback native by making prior7 available from the existing group if needed; it restores the known failing embedded Instagram flow, so keep the Safari workaround. Do not erase user data or replay unknown posts. All 79 broader beta gaps retained. The historical delivery-blocker notes below are superseded by this receipt.
 
 ---
 
@@ -429,7 +508,7 @@ Owner's “See now” showed the actual branch list in Codemagic. Selected codex
 
 Owner's14:22 screenshot shows Instagram's native loading skeleton and “Something went wrong” after a successful new Zova signup. The account mismatch does not explain this remaining failure. Do not ask for another signup or claim switching email fixes Instagram. New account identity has not been supplied.
 
-Exact native candidate0cb83b2 passed39259002240:16 unit tests,1 welcome UI test and release iPhone compilation. Normal-browser Instagram routing is implemented but still NOT delivered to the phone. Application39258328505 passed487/1 skipped on each database plus release gates. Server0cb83b2 remains live; TestFlight7 remains latest delivered binary.
+Exact native candidate0cb83b2 passed39259002240:16 unit tests,1 welcome UI test and release iPhone compilation. Normal-browser Instagram routing is implemented but still NOT delivered to the phone. Application39258328505 passed487/ 1 skipped on each database plus release gates. Server0cb83b2 remains live; TestFlight7 remains latest delivered binary.
 
 Codemagic still cannot load branches/workflows. Refreshed same public repo using equivalent URL without .git, with no improvement; restored original URL. No signing/access/billing changes or new signed build. Asked owner to try Start new build in normal laptop browser and select codex/ios-beta-20261019, never main; answer pending. This may distinguish a side-browser failure; do not assume it will resolve the service error.
 
@@ -439,7 +518,7 @@ Interim owner path: normal Safari on iPhone, zova-social.com, intended Zova logi
 
 # Latest owner correction and iPhone account mismatch — 19 October 2026
 
-**Theme source of truth:** Studio, Drafts and Performance must be plain light/white. Account and connection/sign-in intermediary pages stay near-black/violet. This overrides earlier global dark entries below. Live server72ad0573da850fb472c6b47bea6966f9e06d7223, Render dep-dbb1a7ff3r2c73fth8j0,14:03:25 BST. Live core3 white and connection page dark inspected. Application39256612072 passed485/1 skipped on both databases plus release checks. Native light/dark conditional source is committed; validation39256385114 pending at this entry.
+**Theme source of truth:** Studio, Drafts and Performance must be plain light/white. Account and connection/sign-in intermediary pages stay near-black/violet. This overrides earlier global dark entries below. Live server72ad0573da850fb472c6b47bea6966f9e06d7223, Render dep-dbb1a7ff3r2c73fth8j0,14:03:25 BST. Live core3 white and connection page dark inspected. Application39256612072 passed485/ 1 skipped on both databases plus release checks. Native light/dark conditional source is committed; validation39256385114 pending at this entry.
 
 **New owner evidence:** native handoff offers an email the owner says is not theirs. The prompt obtains it from the bearer device session's User record, never the browser cookie. Do not presume this establishes cross-account leakage or a typo. Owner confirmed the correct Zova email is david.wilson92@hotmail.com. The displayed .org address is not theirs. Read-only production lookup confirmed two distinct active records: .com created29 August, no active native sessions; .org created14 September with active native sessions and19 October sign-in. Neither email is verified. This confirms the phone is authenticated to the .org record, but does NOT prove who created it. No identity/data/grant changes made; asked owner to sign out and authenticate .com. Never rename/merge without verified ownership. Do not change emails, merge accounts, transfer drafts/connections or approve this identity. Instagram screenshot shows native Instagram loading skeleton before callback; phone still runs7 with the old embedded browser route. Normal-browser Instagram fix remains undelivered because existing Codemagic cannot load branches/workflows. No successful new binary upload. Do not tell owner to install8.
 
@@ -447,7 +526,7 @@ Interim owner path: normal Safari on iPhone, zova-social.com, intended Zova logi
 
 **Bounded account recovery candidate:** browser handoff explicitly distinguishes Zova from Instagram identity; wrong-account action consumes only this one-use ticket without accepting it, issuing a cookie, changing browser/native identity or revoking grants. Instructions return to app Account/sign out. Account email and existing Sign out moved outside collapsed categories. Future native login requests an ephemeral auth browser so Safari's remembered Zova identity is not inherited. Existing browser proof, owner/purpose/session/replay protections retained. Focused synthetic tests42 passed, including two-account cancellation/no-cookie/replay and wrong-purpose cases. Native validation and full application checks must finish before release claims. User's real account identity and actual phone/provider flow remain unverified.
 
-**Rollback:** previous72ad057 retains light-core preference and is the rollback for current0cb83b2. Account recovery candidate has no migrations; revert its bounded code changes to72ad057 if necessary. Never restore stale customer data or resend unknown publications. All79 wider beta gaps remain. TestFlight7 is still the only delivered beta. Preserve separate Zova Market, all users/data/uploads/grants, both Instagram routes, explicit posting approvals and disabled charges.
+**Rollback:** previous72ad057 retains light-core preference and is the rollback for current0cb83b2. Account recovery candidate has no migrations; revert its bounded code changes to72ad057 if necessary. Never restore stale customer data or resend unknown publications. All 79 wider beta gaps remain. TestFlight7 is still the only delivered beta. Preserve separate Zova Market, all users/data/uploads/grants, both Instagram routes, explicit posting approvals and disabled charges.
 
 ---
 
@@ -459,11 +538,11 @@ Interim owner path: normal Safari on iPhone, zova-social.com, intended Zova logi
 
 **Phone acceptance:** owner screenshots show Studio loaded in build7, so the earlier bootstrap blocker is accepted as repaired on the phone. Do not ask again whether7 opens Studio. Instagram remains unverified: direct connection starts302 at11:14,11:31,11:42 BST, with no direct callback in the inspected four-hour logs. Asked owner for the stopping screen/error. No token exchange failure was observed. New native implementation opens the same bounded, purpose/session-bound Instagram handoff in the normal browser, where the owner previously reported success, and refreshes connection presentation when the app becomes active. Other platforms keep their existing sheet. No grant reset, reauthentication removal or approval bypass.
 
-**Native candidate:**8d602a5674592c0625e9ca8e62a6d04fcc0a0146 adds the normal-browser route and dark native canvas/status appearance with readable violet links. CI39250881721 **success**:16 unit tests,1 welcome UI test, release compilation. New Instagram routing test passed; real WebKit cookie bootstrap/error/export tests retained. Simulator welcome screenshot reviewed; its build1 label is a simulator build, NOT a new TestFlight release. Application39250888058 success485 passed/1 skipped each SQLite/PostgreSQL, plus backup restore/container/dependencies/exact scope. Deployed a407043 also passed39250027919 with the same counts; native-only palette tweak does not require another web deployment. Superseded/duplicate native jobs were cancelled, not counted as passes.
+**Native candidate:**8d602a5674592c0625e9ca8e62a6d04fcc0a0146 adds the normal-browser route and dark native canvas/status appearance with readable violet links. CI39250881721 **success**:16 unit tests,1 welcome UI test, release compilation. New Instagram routing test passed; real WebKit cookie bootstrap/error/export tests retained. Simulator welcome screenshot reviewed; its build1 label is a simulator build, NOT a new TestFlight release. Application39250888058 success485 passed/ 1 skipped each SQLite/PostgreSQL, plus backup restore/container/dependencies/exact scope. Deployed a407043 also passed39250027919 with the same counts; native-only palette tweak does not require another web deployment. Superseded/duplicate native jobs were cancelled, not counted as passes.
 
 **Remaining delivery blocker:** Codemagic's existing app6ad5cbbeadaac76a4f1f8525 cannot load branches/workflows and shows “Oh no! Looks like something broke down.” Reproduced via settings, last build and Applications/start-build after refresh. No new signed build was started/uploaded. **0.1.0(7) remains the latest delivered TestFlight build**; do not tell the owner to install8. Resume in existing Codemagic app when service recovers; select codex/ios-beta-20261019/current reviewed source, reuse zova-social-testflight profile, existing distribution certificate and zova-testflight Apple integration. No secrets exported, new auth grants or paid resources created to bypass this. Upload/internal group assignment and real iPhone Instagram/keyboard retest remain. Interim owner option: connect through the regular browser on zova-social.com and reopen the app; do not claim this has just been retested.
 
-Evidence under ignored social-proof/: instagram-precallback-attempts.txt, codemagic-branch-loading-block.png, dark-release-preflight.json, account-dark-live.png, studio-dark-live-focused.png, drafts-dark-live.png, performance-dark-live.png, ios-dark-validation/ios-test-attachments/. Updated feature matrix and docs/IOS_BETA_READINESS_20261019.md distinguish implementation, tests and delivery. PR34 remains draft; not commercial certification. All79 wider beta gaps retained.
+Evidence under ignored social-proof/: instagram-precallback-attempts.txt, codemagic-branch-loading-block.png, dark-release-preflight.json, account-dark-live.png, studio-dark-live-focused.png, drafts-dark-live.png, performance-dark-live.png, ios-dark-validation/ios-test-attachments/. Updated feature matrix and docs/IOS_BETA_READINESS_20261019.md distinguish implementation, tests and delivery. PR34 remains draft; not commercial certification. All 79 wider beta gaps retained.
 
 **Rollback:** redeploy pre-update2bce283476563ef399f1afe413aee40abe2e65c2 / dep-dbaulsrrjlhs73aorpsg and keep build7. No migrations in this update; do not drop tables, restore stale writes or replay pending/unknown publications. Existing users, PostgreSQL, uploads, encrypted connections, both Instagram routes, explicit approvals and disabled charges remain.
 
@@ -475,7 +554,7 @@ Owner screenshots now show Studio loaded on the phone: build7 bootstrap acceptan
 
 Instagram remains an open provider journey defect, not falsely resolved. Production logs show /connect/instagram200 then /oauth/instagram/start302 at11:14,11:31 and11:42 BST, **no callback** in the four-hour inspected window. This narrows the observed failure to before return to Zova; no token-exchange failure is evidenced. Asked owner where it stops and the displayed message. Do not disconnect accounts, change grants, remove reauthentication or weaken state/session protections to guess at a fix. Real phone/provider retest still needed.
 
-Validation in progress:45 focused Python tests passed;5 Node native/account/focus cases passed, syntax and diff checks clean. Synthetic loopback phone previews used disposable SQLite/users and no provider keys. Preview helper under ignored social-proof is local only, not product source. Exact application/PostgreSQL and native CI, deployment and new TestFlight status must be recorded before release claims. All79 broader gaps remain tracked. Rollback runtime to2bce283 / dep-dbaulsrrjlhs73aorpsg; build7 remains previous native binary. No migrations or customer data changes.
+Validation in progress:45 focused Python tests passed;5 Node native/account/focus cases passed, syntax and diff checks clean. Synthetic loopback phone previews used disposable SQLite/users and no provider keys. Preview helper under ignored social-proof is local only, not product source. Exact application/PostgreSQL and native CI, deployment and new TestFlight status must be recorded before release claims. All 79 broader gaps remain tracked. Rollback runtime to2bce283 / dep-dbaulsrrjlhs73aorpsg; build7 remains previous native binary. No migrations or customer data changes.
 
 ---
 
@@ -487,7 +566,7 @@ Owner confirmed build5 installed and failing. Do not repeat the version5 questio
 
 Production2bce283 is Live on Render dep-dbaulsrrjlhs73aorpsg (11:03 BST,1m09s). Native URLSession redeems an owned, active, one-use ticket with bearer at /api/v1/native-web-session; receives one Secure/HttpOnly session cookie and a bounded destination. Swift validates and installs the cookie in WKHTTPCookieStore before a plain GET /studio. No access/refresh token enters WebKit or a URL. Existing session/purpose/owner/version/expiry/replay/revocation checks and browser origin protections remain. Legacy clients/browser handoffs preserved. Actual Coordinator rejects generic/HTTP JSON error documents without hiding JSON file exports; welcome shows build number.
 
-Validation: application39234304434 and test-only39235234636 green,483 passed/1 skipped each SQLite/PostgreSQL plus restore/container/dependencies/scope. Native39235234656 **success**,15 unit tests including real cookie-first GET and production error/export policy,1 welcome UI test and release compilation. Test-onlyb10bd55e701dd03b4acdab13b86ce579fef37fe6 corrected the URLProtocol harness to read streamed bodies; production Swift and project settings exactly match build7 source2bce283. Earlier harness crash was not waived. Public health/login/signup/config200; native-web-session without bearer401/no cookie. Proof: social-proof/ios-native-cookie-live-preflight.json, native-cookie-ci-tests.txt, native-cookie-bootstrap-live.png, testflight-build7-testing.png.
+Validation: application39234304434 and test-only39235234636 green,483 passed/ 1 skipped each SQLite/PostgreSQL plus restore/container/dependencies/scope. Native39235234656 **success**,15 unit tests including real cookie-first GET and production error/export policy,1 welcome UI test and release compilation. Test-onlyb10bd55e701dd03b4acdab13b86ce579fef37fe6 corrected the URLProtocol harness to read streamed bodies; production Swift and project settings exactly match build7 source2bce283. Earlier harness crash was not waived. Public health/login/signup/config200; native-web-session without bearer401/no cookie. Proof: social-proof/ios-native-cookie-live-preflight.json, native-cookie-ci-tests.txt, native-cookie-bootstrap-live.png, testflight-build7-testing.png.
 
 No customer/profile/draft/upload/social grant changes or real posts/charges. Existing79 beta gaps retained; separate Zova Market app untouched. Draft PR34 remains pending physical acceptance. Read docs/IOS_BETA_READINESS_20261019.md. Rollback server to a9398b2 / dep-dbau7ce1egvs73c5jfsg if needed (preserves data but new app bootstrap route then unavailable); no schema rollback. Auto-Deploy remains off while main is older. Do not deploy broad PR28.
 
@@ -499,7 +578,7 @@ Owner explicitly confirms0.1.0(5) installed and still sees raw origin-protection
 
 New candidate2bce283476563ef399f1afe413aee40abe2e65c2 replaces the app's WebKit POST bootstrap: native URLSession uses bearer+one-use owned ticket to redeem /api/v1/native-web-session, parses the one Secure/HttpOnly cookie, installs it in WKHTTPCookieStore, then loads ordinary GET /studio. Access/refresh tokens never enter WebKit. Cookie remains bound to the originating revocable session; endpoint rejects web-cookie-only authority, wrong session/purpose, expired/reused tickets and cross-origin requests. Legacy WebKit/browser handoffs remain compatible; no origin protections removed. Actual Coordinator now rejects JSON even if response is not HTTPURLResponse, and cannot mark /mobile/web-session ready. Visible welcome build label added.
 
-Local38 handoff/lifecycle tests passed before final single-cookie header adjustment. Application39234304434 passed483/1 skipped on both databases plus release checks. Native39234291707 exposed a forced unwrap in the new test harness reading URLProtocol.httpBody (iOS supplies httpBodyStream), not product code; corrected test-onlyb10bd55. New native39235234656 is running; application39235234636 is green. Production iOS source is unchanged between2bce283 andb10bd55. Earlier native compile caught a SwiftUI version-label type-check error, fixed4b03567; export attachment compatibility protected2bce283. Replacement signed iPhone build started in existing Codemagic account; capture actual new build URL/status before claims. Production2bce283 is now Live, Render11:03 BST/1m09s, public health/login/signup/config healthy; native-web-session without bearer returns401 with no cookie. See social-proof/ios-native-cookie-live-preflight.json. The first signed replacement attempt6 failed on the version-label compile error before upload. Corrected signed build7 uploaded successfully (Codemagic6ad5ea777550aed81090148a), Apple UUIDdf822ba2-979a-4de9-aa56-481774dbab71, Ready to Test but not assigned while the final native run is pending. Build7 code is2bce283; test-onlyb10bd55 does not require another binary. Need full native cookie-first GET and production Coordinator tests, exact application/PostgreSQL/restore/container/dependency checks, then deploy and assign processed replacement to private group. Owner phone retest required; no unsupported success claim.
+Local38 handoff/lifecycle tests passed before final single-cookie header adjustment. Application39234304434 passed483/ 1 skipped on both databases plus release checks. Native39234291707 exposed a forced unwrap in the new test harness reading URLProtocol.httpBody (iOS supplies httpBodyStream), not product code; corrected test-onlyb10bd55. New native39235234656 is running; application39235234636 is green. Production iOS source is unchanged between2bce283 andb10bd55. Earlier native compile caught a SwiftUI version-label type-check error, fixed4b03567; export attachment compatibility protected2bce283. Replacement signed iPhone build started in existing Codemagic account; capture actual new build URL/status before claims. Production2bce283 is now Live, Render11:03 BST/1m09s, public health/login/signup/config healthy; native-web-session without bearer returns401 with no cookie. See social-proof/ios-native-cookie-live-preflight.json. The first signed replacement attempt6 failed on the version-label compile error before upload. Corrected signed build7 uploaded successfully (Codemagic6ad5ea777550aed81090148a), Apple UUIDdf822ba2-979a-4de9-aa56-481774dbab71, Ready to Test but not assigned while the final native run is pending. Build7 code is2bce283; test-onlyb10bd55 does not require another binary. Need full native cookie-first GET and production Coordinator tests, exact application/PostgreSQL/restore/container/dependency checks, then deploy and assign processed replacement to private group. Owner phone retest required; no unsupported success claim.
 
 ---
 
@@ -509,7 +588,7 @@ Owner's build4 screenshot exposed a real initial-navigation403, not an installat
 
 Backend a9398b2f8a7718f372c7bdfdffc4534aa9d60f6e is Live on existing Render service (10:32 BST,53.4s). Scoped fix: non-simple native header on initial one-use ticket POST; opaque origin allowed only for this exact marked exchange. Hostile concrete origins, unmarked opaque requests and unrelated mutations remain blocked. No CORS grant. Ticket expiry/purpose/ownership/revocation/replay checks preserved. iPhone intercepts HTTP errors instead of rendering raw JSON.
 
-Required checks completed: native39231451448 **success**,12 unit tests including actual WebKit network POST/header/body/303/session-cookie (4.401s),1 welcome UI test and release iPhone compilation. Application39231451464 **success**,480 passed/1 skipped each SQLite/PostgreSQL; restore/container/dependency/scope gates passed. Earlier loopback compile/timeout attempts failed and were corrected, not waived. Live probes in social-proof/ios-webkit-origin-live-fix.json; actual WebKit evidence ios-webkit-ci-network.txt; Apple release screenshot testflight-build5-testing.png. No user/social/upload data changes, no posts/grants/charges. All79 broader gaps retained. Draft PR34 remains pending device acceptance.
+Required checks completed: native39231451448 **success**,12 unit tests including actual WebKit network POST/header/body/303/session-cookie (4.401s),1 welcome UI test and release iPhone compilation. Application39231451464 **success**,480 passed/ 1 skipped each SQLite/PostgreSQL; restore/container/dependency/scope gates passed. Earlier loopback compile/timeout attempts failed and were corrected, not waived. Live probes in social-proof/ios-webkit-origin-live-fix.json; actual WebKit evidence ios-webkit-ci-network.txt; Apple release screenshot testflight-build5-testing.png. No user/social/upload data changes, no posts/grants/charges. All 79 broader gaps retained. Draft PR34 remains pending device acceptance.
 
 Read docs/IOS_BETA_READINESS_20261019.md for full matrix/history. Rollback server to f47e1be preserves data but restores the known old-client origin blocker; no schema rollback. Do not deploy broad PR28 or enable Auto-Deploy while main remains old. Do not overwrite separate Zova Market app.
 
@@ -529,9 +608,9 @@ Zova Social 0.1.0 (4) is uploaded, processed and **Testing** in App Store Connec
 
 Current worktree: C:/Users/david/.codex/.chatgpt-projects/g-p-6a8a0aa881c88191a2835a8d53316369/zova-ios-beta, branch codex/ios-beta-20261019, draft PR34. Read docs/IOS_BETA_READINESS_20261019.md first for evidence, feature matrix and rollback. Backend candidate f47e1be540f167f6bf6594318dde56f3a107d822 includes the final native Account refresh preserving unsaved edits; Render deployment dep-dbats96q1p3s73d3c2ig reports Deploy succeeded | Live, duration46.9s, verified at10:11 BST. Its native tree matches build4. Main remains older; specific-commit deployment disabled Auto-Deploy deliberately. Do not enable it blindly or deploy broad PR28.
 
-Exact f47 checks green: application CI39225907537 and39225914327, native CI39225914321. Application476 passed/1 skipped on SQLite and PostgreSQL; synthetic backup/restore, container, dependencies and release guardrails passed. Native11 unit tests,1 welcome UI test and release compilation passed; JS native refresh3 tests passed. Initial Apple upload exposed an iPad orientation mismatch; fixed explicit target family and added actual IPA metadata regression gate. Later build4 is Apple's accepted final build.
+Exact f47 checks green: application CI39225907537 and39225914327, native CI39225914321. Application476 passed/ 1 skipped on SQLite and PostgreSQL; synthetic backup/restore, container, dependencies and release guardrails passed. Native11 unit tests,1 welcome UI test and release compilation passed; JS native refresh3 tests passed. Initial Apple upload exposed an iPad orientation mismatch; fixed explicit target family and added actual IPA metadata regression gate. Later build4 is Apple's accepted final build.
 
-Production native flag, exact callback and Associated Domains are configured. Verified existing web account and Facebook/TikTok/X connections remained intact; Instagram is not connected in that checked account. No social grant or post changed. Render database recovery shows3-day PITR and a completed logical export created09:03 BST; no production restore or data download. Physical iPhone sign-in, Studio/media/keyboard/VoiceOver/provider-return checks remain pending user installation. All79 wider beta gaps retained; no commercial certification, charges or subscription enforcement.
+Production native flag, exact callback and Associated Domains are configured. Verified existing web account and Facebook/TikTok/X connections remained intact; Instagram is not connected in that checked account. No social grant or post changed. Render database recovery shows3-day PITR and a completed logical export created09:03 BST; no production restore or data download. Physical iPhone sign-in, Studio/media/keyboard/VoiceOver/provider-return checks remain pending user installation. All 79 wider beta gaps retained; no commercial certification, charges or subscription enforcement.
 
 ---
 
@@ -539,7 +618,7 @@ Production native flag, exact callback and Associated Domains are configured. Ve
 
 Owner approved the final Direct Post audit declarations. Accepted the three displayed declarations and submitted the prepared audit for app7672846663509215253 with the reviewed3m51s/4.65MB merged video. TikTok explicitly confirmed: “Your Application to request access to Content Posting API has been submitted!” It states an expected response in2-4weeks and directs checking Manage apps for status. Evidence: social-proof/tiktok-final-1810/audit-submitted.png and audit-submitted.txt. This is submission confirmation, not approval.
 
-Both outstanding requests are now submitted: app revision/video.publish is In review; separate Content Posting API public-access audit is submitted. Await TikTok decisions. Production remains inbox-only; do not activate Direct Post or infer scope upgrade from submission. After both required approvals, verify live permissions, reconnect for video.publish with the account owner's consent, and run a specifically authorised public publishing test before controlled rollout. No real post, production deployment, grant change, billing or iOS rollout occurred in this submission step. All79 broader gaps retained.
+Both outstanding requests are now submitted: app revision/video.publish is In review; separate Content Posting API public-access audit is submitted. Await TikTok decisions. Production remains inbox-only; do not activate Direct Post or infer scope upgrade from submission. After both required approvals, verify live permissions, reconnect for video.publish with the account owner's consent, and run a specifically authorised public publishing test before controlled rollout. No real post, production deployment, grant change, billing or iOS rollout occurred in this submission step. All 79 broader gaps retained.
 
 ---
 
@@ -551,7 +630,7 @@ App7672846663509215253 production revision successfully SUBMITTED and portal sho
 
 Separate Content Posting API public-access AUDIT is fully populated with the new video and code-checked database field description, but NOT SUBMITTED. Browser tab13 is at Review with all three legal declarations unchecked. Owner has been asked for action-time approval to accept Developer Terms/Production-use compliance, exemption of TikTok reviewer access from Zova terms/policies, and truthful facts declaration. Await reply; do not claim audit submitted or TikTok approved. Draft form persistence across closing/reloading is not guaranteed; local audit-review.txt and audit-declarations.png preserve answers. Existing app review tab12 shows In review. Maintain those tabs for continuation.
 
-After owner approves declarations: tick the three checkboxes on the audit Review page, continue submission, verify an explicit receipt/success state, capture screenshot and update this handoff. If another legal declaration or CAPTCHA appears, use the required action-time confirmation. No charges, public posting, production-mode switch or iOS rollout authorised by submission. All79 beta gaps remain tracked.
+After owner approves declarations: tick the three checkboxes on the audit Review page, continue submission, verify an explicit receipt/success state, capture screenshot and update this handoff. If another legal declaration or CAPTCHA appears, use the required action-time confirmation. No charges, public posting, production-mode switch or iOS rollout authorised by submission. All 79 beta gaps remain tracked.
 
 ---
 
@@ -561,7 +640,7 @@ Owner requested “Publish updates”. Deployed exact tested runtime 1bd3b9486ea
 
 Before restart, saved read-only draft1/publication-1 UI text and screenshot under social-proof/sandbox-publication-1-before-1bd3b94.{txt,png}. It still showed Outcome unconfirmed; no authoritative receipt was recoverable from this UI. This preserves visible evidence, not a database/uploads backup. Do not resend or reinterpret that submission. Sandbox SQLite/uploads remain ephemeral.
 
-Post-deploy checks: /health and /login return200; all four versioned Studio assets (studio.js, studio-state.js, studio-publish.js, studio-design.css?v=20261018-media) match the exact tested candidate after newline normalization. Browser refresh of sandbox Studio returns the sign-in screen, so no new signed-in/model/provider result is claimed. Prior tests:440 passed/1 skipped each SQLite/PostgreSQL plus restore/container/dependency/frontend and scope gates; synthetic desktop/mobile attachment evidence retained. Local release evidence: social-proof/sandbox-release-1bd3b94.png and sandbox-release-1bd3b94-checks.json.
+Post-deploy checks: /health and /login return200; all four versioned Studio assets (studio.js, studio-state.js, studio-publish.js, studio-design.css?v=20261018-media) match the exact tested candidate after newline normalization. Browser refresh of sandbox Studio returns the sign-in screen, so no new signed-in/model/provider result is claimed. Prior tests:440 passed/ 1 skipped each SQLite/PostgreSQL plus restore/container/dependency/frontend and scope gates; synthetic desktop/mobile attachment evidence retained. Local release evidence: social-proof/sandbox-release-1bd3b94.png and sandbox-release-1bd3b94-checks.json.
 
 Next: owner signs in again and tests a fresh caption/video draft; sent video should appear on the user conversation turn with an empty composer. Sandbox permits private Only me testing; third-party paid partnerships remain unavailable pending TikTok approval. Do not resend old unknown publication1. Keep production inbox-only unchanged. Operational callback-query log redaction and all79 wider gaps remain tracked.
 
@@ -577,9 +656,9 @@ Sent attachments now live on the user turn with playable previews, while workspa
 
 TikTok adapter now records pre-send, requested, rejected and accepted receipt stages. Documented explicit init rejection becomes Failed with an allowlisted explanation; timeouts/ambiguous responses stay unknown. Receipt-bearing interrupted work is reconciled without resend. Conditional updates bind checkpoints, recovery and poll completion to the exact reviewed attempt; late workers/status responses cannot overwrite or send a replacement attempt. Worker recovery preserves receipts and does not let old receiptless unknowns starve pending work. Known processing failure reasons are safe mapped messages; raw provider errors/tokens are not retained.
 
-ZOVA_ENV=sandbox now makes its private-only restriction explicit in settings and server validation, even when creator_info lists wider choices. Own-brand promotion differs from third-party paid partnership: the latter requires Everyone/Friends and cannot be sent from this unaudited test app. Provider options remain displayed without a default; unavailable test choices are disabled. Approval remains external; no grant/audit/production changes. Production stays inbox-only; native branch remains undeployed. All79 wider beta gaps retained. Live access logs still include OAuth callback query strings; preserve the operational redaction follow-up without copying credentials into evidence.
+ZOVA_ENV=sandbox now makes its private-only restriction explicit in settings and server validation, even when creator_info lists wider choices. Own-brand promotion differs from third-party paid partnership: the latter requires Everyone/Friends and cannot be sent from this unaudited test app. Provider options remain displayed without a default; unavailable test choices are disabled. Approval remains external; no grant/audit/production changes. Production stays inbox-only; native branch remains undeployed. All 79 wider beta gaps retained. Live access logs still include OAuth callback query strings; preserve the operational redaction follow-up without copying credentials into evidence.
 
-Runtime candidate 1bd3b9486ea79c82413978c07e7d82a4c26ef52c is pushed. Hosted CI39161889443 passed all required jobs:440 passed/1 skipped each on SQLite and PostgreSQL, synthetic backup restore, container build/smoke, frontend planning/lifecycle checks, dependency audit (no known vulnerabilities) and exact beta scope. Independent review caught and closed three publication concurrency races; their interleaving regressions pass. The exact “Post this shlop” owned-video API/client case creates a caption with zero review/publication/schedule records. A final extra browser screenshot for that phrase was unavailable because CUA returned no browsers; the earlier attachment desktop/mobile visual evidence remains valid. No new live-model/provider result is claimed.
+Runtime candidate 1bd3b9486ea79c82413978c07e7d82a4c26ef52c is pushed. Hosted CI39161889443 passed all required jobs:440 passed/ 1 skipped each on SQLite and PostgreSQL, synthetic backup restore, container build/smoke, frontend planning/lifecycle checks, dependency audit (no known vulnerabilities) and exact beta scope. Independent review caught and closed three publication concurrency races; their interleaving regressions pass. The exact “Post this shlop” owned-video API/client case creates a caption with zero review/publication/schedule records. A final extra browser screenshot for that phrase was unavailable because CUA returned no browsers; the earlier attachment desktop/mobile visual evidence remains valid. No new live-model/provider result is claimed.
 
 At validation time sandbox remained2fa13f7 / production unchanged; see the release record above for deployment. Sandbox SQLite/uploads are ephemeral. Rollback for this candidate is exact2fa13f72009fa4629129070c14b8e15fa9f73631; older code ignores additive message-media and retry snapshot JSON. Preserve receipts and never replay unknown submissions.
 
@@ -665,9 +744,9 @@ Owner explicitly approved copying existing TikTok Sandbox client key/secret into
 
 Sandbox7672854716816082965 under TikTok app7672846663509215253 already has Direct Post and video.publish. Existing target user davidwilson493. Updated sandbox website to recording host. TikTok verified https://zova-tiktok-sandbox.onrender.com/ URL prefix using downloaded signature file; screenshot social-proof/tiktok-sandbox-prefix-verified.png. Production TikTok draft/live settings were not changed in this increment.
 
-Dedicated branch codex/tiktok-recording-sandbox-20261016 pinned on test service, Live7fdec1573a004bd28d79ee0e54c0628461969247, deploy dep-db91mlcvk9tc73ea9df0. Only runtime change versus PR33 is static sandbox verification route. Initial CI caught CRLF digest mismatch; corrected normalised digest, CI38901929057 passes all required jobs:315 tests/1 skipped on SQLite AND PostgreSQL, restore/container/dependencies/guardrails. Local Direct Post tests16passed. Verification endpoint200 with exact signature; signup rendered and no subscription charge. Production remains cc093687 inbox-only; no broad native branch deployment.
+Dedicated branch codex/tiktok-recording-sandbox-20261016 pinned on test service, Live7fdec1573a004bd28d79ee0e54c0628461969247, deploy dep-db91mlcvk9tc73ea9df0. Only runtime change versus PR33 is static sandbox verification route. Initial CI caught CRLF digest mismatch; corrected normalised digest, CI38901929057 passes all required jobs:315 tests/ 1 skipped on SQLite AND PostgreSQL, restore/container/dependencies/guardrails. Local Direct Post tests16passed. Verification endpoint200 with exact signature; signup rendered and no subscription charge. Production remains cc093687 inbox-only; no broad native branch deployment.
 
-User has been asked to create a SEPARATE Zova login at https://zova-tiktok-sandbox.onrender.com/signup then connect registered TikTok tester davidwilson493, or identify another account to add as sandbox target. Do not share passwords. Real OAuth, creator restrictions, uploaded media fetch, final review and private Direct Post outcome remain pending their connection; no ready-to-record end-to-end claim yet. Before sending anything obtain exact post/account/privacy approval. Complete provider verification, then recording; do not submit old inbox recording as Direct Post evidence. No iOS device validation performed. All79 broader beta gaps retained.
+User has been asked to create a SEPARATE Zova login at https://zova-tiktok-sandbox.onrender.com/signup then connect registered TikTok tester davidwilson493, or identify another account to add as sandbox target. Do not share passwords. Real OAuth, creator restrictions, uploaded media fetch, final review and private Direct Post outcome remain pending their connection; no ready-to-record end-to-end claim yet. Before sending anything obtain exact post/account/privacy approval. Complete provider verification, then recording; do not submit old inbox recording as Direct Post evidence. No iOS device validation performed. All 79 broader beta gaps retained.
 
 Rollback: keep test DB isolated; do not point sandbox back to production. Set only sandbox TIKTOK_SEND_TO_INBOX=true to disable Direct Post or suspend test service if requested. Keep production unchanged. Preserve any publish receipts before restarting disposable sandbox.
 
@@ -675,19 +754,19 @@ Rollback: keep test DB isolated; do not point sandbox back to production. Set on
 
 # Direct Post deployment evidence - 16 October 2026
 
-PR33 is merged as cc093687bc92f5600283918d330ef70691e4216e and verified Live on Render dep-db91bkvavr4c739qd50g. Public /health and versioned Studio publishing script return200; the script contains the new Direct Post controls and policy declaration. Required hosted checks passed:315 tests /1 skipped on SQLite and PostgreSQL plus restore, container, dependency and release checks.
+PR33 is merged as cc093687bc92f5600283918d330ef70691e4216e and verified Live on Render dep-db91bkvavr4c739qd50g. Public /health and versioned Studio publishing script return200; the script contains the new Direct Post controls and policy declaration. Required hosted checks passed:315 tests / 1 skipped on SQLite and PostgreSQL plus restore, container, dependency and release checks.
 
 Production remains inbox-only. Direct Post is NOT enabled or provider-validated. TikTok production draft contains video.publish and Direct Post. Updated notes were entered and Save clicked; subsequent reload and Manage apps navigation returned Request aborted, so persistence of the latest notes could not be reverified. Earlier draft save was verified. Separate audit at Supporting documents is unsubmitted. Verified URL prefix is https://zova-social.com/; TIKTOK_VERIFIED_MEDIA_PREFIX still needs configuring and validating against hosted storage before direct testing. Do not change delivery mode or resend previous test posts.
 
-Native PR28 includes the same server implementation. Its contract was regenerated for the additive connection_ids field (05e2c93);40 focused tests pass /1 skipped. All required hosted native checks passed in38900036915 and38900044596. Native remains disabled and undeployed. Desktop synthetic UI inspected; attempted mobile viewport override did not take effect, so mobile visual validation is still outstanding.
+Native PR28 includes the same server implementation. Its contract was regenerated for the additive connection_ids field (05e2c93);40 focused tests pass / 1 skipped. All required hosted native checks passed in38900036915 and38900044596. Native remains disabled and undeployed. Desktop synthetic UI inspected; attempted mobile viewport override did not take effect, so mobile visual validation is still outstanding.
 
-Remaining: isolated real Direct Post authorisation and exact-approved private test, new provider recording, reviewer access check, app revision plus public-access audit submission and approval, then reconnect for video.publish and controlled feed rollout. Existing inbox recording is insufficient. All79 broader beta gaps retained. Rollback and recording script: docs/TIKTOK_DIRECT_POST_20261016.md.
+Remaining: isolated real Direct Post authorisation and exact-approved private test, new provider recording, reviewer access check, app revision plus public-access audit submission and approval, then reconnect for video.publish and controlled feed rollout. Existing inbox recording is insufficient. All 79 broader beta gaps retained. Rollback and recording script: docs/TIKTOK_DIRECT_POST_20261016.md.
 
 ---
 
 # TikTok Direct Post preparation - 16 October 2026
 
-See docs/TIKTOK_DIRECT_POST_20261016.md. Production remains inbox-only. TikTok draft revision saved with video.publish and Direct Post; not submitted. Existing URL prefix https://zova-social.com/ verified. Separate audit form at Supporting documents, not submitted, browser answers may be ephemeral. New real Direct Post recording and provider validation required. Local implementation includes consent/disclosure/fresh creator/duration/verified-media controls and tests; no live Direct Post or native rollout claimed. All79 gaps retained.
+See docs/TIKTOK_DIRECT_POST_20261016.md. Production remains inbox-only. TikTok draft revision saved with video.publish and Direct Post; not submitted. Existing URL prefix https://zova-social.com/ verified. Separate audit form at Supporting documents, not submitted, browser answers may be ephemeral. New real Direct Post recording and provider validation required. Local implementation includes consent/disclosure/fresh creator/duration/verified-media controls and tests; no live Direct Post or native rollout claimed. All 79 gaps retained.
 
 ---
 
@@ -695,7 +774,7 @@ See docs/TIKTOK_DIRECT_POST_20261016.md. Production remains inbox-only. TikTok d
 
 Owner explicitly approved the exact single public text-only Facebook test. Published once through draft28 immutable final review to Zova Social Page1232370066628887. Zova returned Published and receipt122119807485439972. Independently opened Facebook and verified the exact text, Zova Social author and Public audience at https://www.facebook.com/61593199172836/posts/122119807485439972/ . Leave the post in place; do not resend or remove without owner request. Screenshot social-proof/facebook-provider-verified.png is local evidence.
 
-Facebook app-role connection and text publication now verified. General customer access remains blocked on the separate unsubmitted Meta Page-permission review; do not equate this test with approval. X text test verified; TikTok inbox received per owner, not publicly published. Instagram unchanged. Image/thread/scheduling and native device validation are not established by these live text/inbox tests. All79 broader gaps retained.
+Facebook app-role connection and text publication now verified. General customer access remains blocked on the separate unsubmitted Meta Page-permission review; do not equate this test with approval. X text test verified; TikTok inbox received per owner, not publicly published. Instagram unchanged. Image/thread/scheduling and native device validation are not established by these live text/inbox tests. All 79 broader gaps retained.
 
 ---
 
@@ -715,7 +794,7 @@ PR32 is Live (8ef1230, Render dep-db8vtgjrjlhs73betts0); all required checks pas
 
 # Social beta integration work - 16 October 2026
 
-Read docs/SOCIAL_BETA_COMPLETION_20261016.md for evidence and rollback. Instagram preserved. PR30 live; X authorised test published once and verified: https://x.com/DataMaxxingUK/status/2111033940157055189 . Do not resend. TikTok connected; draft27 holds an unsent synthetic video. Facebook three-permission review draft saved, not submitted. PR31 least-privilege Facebook change merged with required checks; hosting verification pending. Current cache-version follow-up has20 focused tests passing but is not yet deployed. Verify inbox review after rollout before requesting exact video-send approval. Restart stale Facebook consent without business_management before asking for Page grant. Native PR28 remains draft/disabled; shared fixes integrated through PR31, final checks pending. All79 gaps retained.
+Read docs/SOCIAL_BETA_COMPLETION_20261016.md for evidence and rollback. Instagram preserved. PR30 live; X authorised test published once and verified: https://x.com/DataMaxxingUK/status/2111033940157055189 . Do not resend. TikTok connected; draft27 holds an unsent synthetic video. Facebook three-permission review draft saved, not submitted. PR31 least-privilege Facebook change merged with required checks; hosting verification pending. Current cache-version follow-up has20 focused tests passing but is not yet deployed. Verify inbox review after rollout before requesting exact video-send approval. Restart stale Facebook consent without business_management before asking for Page grant. Native PR28 remains draft/disabled; shared fixes integrated through PR31, final checks pending. All 79 gaps retained.
 
 ---
 
@@ -727,24 +806,24 @@ Branch codex/next-move-open-sections-20261012 replaces the Details and Change th
 
 # Creator Studio refinement is live — 12 October 2026
 
-PR26 merged as db9a4ff6daff2735b48ff989771c9ae8c91e866c. Render dep-db6cikc9v7es739ubsbg is Live (56.6s rollout). Final candidate83fb222 passed all required checks in PR38244952639 and push38244944763. Brief startup HTTP errors recovered; health200 and exact deployed studio-design.css, studio-state.js and studio-experience.js matches verified. Signed-in live Studio starts with a blank composer/welcome and no recommendation card; saved history and personal workspace label render; recommendations load inside Next Move with existing Open draft, Details and Change this idea controls. No real post, grant or charge performed. Owner screenshot is local only: docs/validation/creator-studio-live.jpg. No schema change. Rollback798796b86168b68aa1e9993ca3a028991b3eee49 preserves data, uploads, sessions and connections. All79 broader beta findings remain open.
+PR26 merged as db9a4ff6daff2735b48ff989771c9ae8c91e866c. Render dep-db6cikc9v7es739ubsbg is Live (56.6s rollout). Final candidate83fb222 passed all required checks in PR38244952639 and push38244944763. Brief startup HTTP errors recovered; health200 and exact deployed studio-design.css, studio-state.js and studio-experience.js matches verified. Signed-in live Studio starts with a blank composer/welcome and no recommendation card; saved history and personal workspace label render; recommendations load inside Next Move with existing Open draft, Details and Change this idea controls. No real post, grant or charge performed. Owner screenshot is local only: docs/validation/creator-studio-live.jpg. No schema change. Rollback798796b86168b68aa1e9993ca3a028991b3eee49 preserves data, uploads, sessions and connections. All 79 broader beta findings remain open.
 
 ---
 
 # Creator Studio refinement — 12 October 2026 (not deployed)
 
-Branch codex/creator-studio-20261012 implements the creator critique with the owner's overriding preference: Studio starts with a blank chat; recommendations stay ONLY in Next Move. No home recommendation card or background generation. Refined purple identity/controls, saved brand/profile label, owned attachment thumbnails with safe fallbacks, readable two-line history, natural creator-hook guidance and consistent New chat welcome. Four visual review passes, including compact mobile navigation; desktop390px/320px mobile, keyboard-to-draft, media reopening and clean reset verified on synthetic localhost. Local274passed/1skipped; Node suites passed; ownership/brand/URL preview regressions added. See docs/CREATOR_STUDIO_REVIEW_20261012.md for the executed prompt, heuristic scores and evidence limits. All79 broader gaps retained; no migration, real posts, grants or charges. PR26 implementation2ec749a passed all required checks in38244715161 and38244710412. Await explicit publication; not merged. Rollback live798796b86168b68aa1e9993ca3a028991b3eee49.
+Branch codex/creator-studio-20261012 implements the creator critique with the owner's overriding preference: Studio starts with a blank chat; recommendations stay ONLY in Next Move. No home recommendation card or background generation. Refined purple identity/controls, saved brand/profile label, owned attachment thumbnails with safe fallbacks, readable two-line history, natural creator-hook guidance and consistent New chat welcome. Four visual review passes, including compact mobile navigation; desktop390px/320px mobile, keyboard-to-draft, media reopening and clean reset verified on synthetic localhost. Local274passed/1skipped; Node suites passed; ownership/brand/URL preview regressions added. See docs/CREATOR_STUDIO_REVIEW_20261012.md for the executed prompt, heuristic scores and evidence limits. All 79 broader gaps retained; no migration, real posts, grants or charges. PR26 implementation2ec749a passed all required checks in38244715161 and38244710412. Await explicit publication; not merged. Rollback live798796b86168b68aa1e9993ca3a028991b3eee49.
 
 ---
 
 # Studio design coherence is live — 12 October 2026
 
-PR25 merged as 798796b86168b68aa1e9993ca3a028991b3eee49. Required synthetic, PostgreSQL and production guardrail checks passed on final candidate 282ee8e in CI38241265879 and push38241259549. Live health returned200; studio-design.css, studio.js, studio-experience.js and strategy.js matched the tested files. Signed-in live draft24 and the loaded Next Move panel visually verified: compact composer, conditional Post/Story, primary Review & publish, consistent navigation icons, restrained branding and Details/Change this idea. No real social posts, grants or billing changes. Render dashboard connection closed during verification, so deployment ID was not recorded; live application and asset verification succeeded. No schema migration. Rollback to1998cec03762931a362c17705b8a04081c5cdb94 preserves data. All79 broader beta gaps remain open. Owner screenshots are local only. See docs/STUDIO_DESIGN_REVIEW_20261012.md.
+PR25 merged as 798796b86168b68aa1e9993ca3a028991b3eee49. Required synthetic, PostgreSQL and production guardrail checks passed on final candidate 282ee8e in CI38241265879 and push38241259549. Live health returned200; studio-design.css, studio.js, studio-experience.js and strategy.js matched the tested files. Signed-in live draft24 and the loaded Next Move panel visually verified: compact composer, conditional Post/Story, primary Review & publish, consistent navigation icons, restrained branding and Details/Change this idea. No real social posts, grants or billing changes. Render dashboard connection closed during verification, so deployment ID was not recorded; live application and asset verification succeeded. No schema migration. Rollback to1998cec03762931a362c17705b8a04081c5cdb94 preserves data. All 79 broader beta gaps remain open. Owner screenshots are local only. See docs/STUDIO_DESIGN_REVIEW_20261012.md.
 
 ---
 # Studio design coherence candidate — 12 October 2026 (not deployed)
 
-Branch codex/studio-design-coherence-20261012 completes three visual review passes against the six cosmetic criteria. See docs/STUDIO_DESIGN_REVIEW_20261012.md for recommendations, benchmark sources, measured layouts, scores and limits. Primary draft action, composer grouping, restrained branding, shared navigation icons, readable controls, compact Next Move and plain-language recommendation guidance implemented. Local SQLite272passed/1skipped; Node suites and synthetic desktop/mobile/keyboard/edit/reload review passed. PR25 implementation checks passed in CI38240968536 and38240961652, including PostgreSQL and beta safeguards. Not merged or deployed; use normal protected release flow when publishing. All79 broader beta findings retained; design8/10 scores are heuristic, not commercial readiness. No real provider actions or schema migration. Rollback1998cec.
+Branch codex/studio-design-coherence-20261012 completes three visual review passes against the six cosmetic criteria. See docs/STUDIO_DESIGN_REVIEW_20261012.md for recommendations, benchmark sources, measured layouts, scores and limits. Primary draft action, composer grouping, restrained branding, shared navigation icons, readable controls, compact Next Move and plain-language recommendation guidance implemented. Local SQLite272passed/1skipped; Node suites and synthetic desktop/mobile/keyboard/edit/reload review passed. PR25 implementation checks passed in CI38240968536 and38240961652, including PostgreSQL and beta safeguards. Not merged or deployed; use normal protected release flow when publishing. All 79 broader beta findings retained; design8/10 scores are heuristic, not commercial readiness. No real provider actions or schema migration. Rollback1998cec.
 
 ---
 
@@ -756,7 +835,7 @@ PR24 merged as1998cec03762931a362c17705b8a04081c5cdb94. Render dep-db6bf3k9v7es7
 
 # Next move details-only refinement — 12 October 2026 (not deployed)
 
-Branch codex/next-move-details-only-20261012: recommendation view exposes only Details and Change this idea beneath the card/carousel. Removed More options wrapper and reminder UI. Plan/settings/recurring controls are hidden from Next move and remain accessible in the separate Your plan view through Post options or Plan my socials. New accounts see Set your goal; confirming the plan returns to recommendations. Launcher retains white text/shimmer with a near-black plum-to-violet gradient. No backend/data/auth/publication changes. All79 broader beta findings retained.
+Branch codex/next-move-details-only-20261012: recommendation view exposes only Details and Change this idea beneath the card/carousel. Removed More options wrapper and reminder UI. Plan/settings/recurring controls are hidden from Next move and remain accessible in the separate Your plan view through Post options or Plan my socials. New accounts see Set your goal; confirming the plan returns to recommendations. Launcher retains white text/shimmer with a near-black plum-to-violet gradient. No backend/data/auth/publication changes. All 79 broader beta findings retained.
 
 Validated synthetic browser setup-to-plan-confirm-to-recommendation flow, clean panel and separate Post options planning access; Node onboarding, journey, schedule and Studio checks pass. Regression asserts planning/recommendation visibility separation. Hosted release checks/deployment remain pending. Rollback to1c978a1 preserves data.
 
@@ -894,4 +973,4 @@ Rollback: cancel pending series deliveries before returning code to b746bad; do 
 
 Local git origin points to the original local checkout, not GitHub. Do not push to it. No PR or deployment created in this task.
 
-WebKit regression outcome: latest test-only b9dcd32 / native run39231451448 completed the12 unit tests (including real WebKit POST/header/body/303 redirect/session-cookie) and welcome UI test successfully; release compilation was running at this entry. Actual network test passed4.401s. Earlier15s timeout is recorded as a failed attempt, not a passing result. Evidence: social-proof/ios-webkit-ci-network.txt. Application39231451464 passed480/1 skipped on both SQLite/PostgreSQL with restore/container/dependency/scope gates. Final build5 source671bbdd has identical production native sources to b9dcd32; test-only changes require no new binary.
+WebKit regression outcome: latest test-only b9dcd32 / native run39231451448 completed the12 unit tests (including real WebKit POST/header/body/303 redirect/session-cookie) and welcome UI test successfully; release compilation was running at this entry. Actual network test passed4.401s. Earlier15s timeout is recorded as a failed attempt, not a passing result. Evidence: social-proof/ios-webkit-ci-network.txt. Application39231451464 passed480/ 1 skipped on both SQLite/PostgreSQL with restore/container/dependency/scope gates. Final build5 source671bbdd has identical production native sources to b9dcd32; test-only changes require no new binary.
