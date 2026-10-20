@@ -3,9 +3,9 @@
 Outgoing email is configured and live on 20 October 2026, using the existing
 tested runtime `25374db`. Two authorised delivery checks were accepted by SMTP,
 reported Delivered by Resend, and reported Forwarded to the existing Gmail by
-Cloudflare. Owner confirmation of inbox receipt and the real verification/reset
-journey remain pending. Do not equate these delivery records with successful
-password recovery.
+Cloudflare. The owner confirmed **"Both emails arrived"** in Gmail on 20 October.
+The real verification/reset journey remains pending. Do not equate delivery
+checks with successful password recovery.
 
 The public domain uses Cloudflare Email Routing for incoming mail. This does not
 establish an outbound SMTP service. Preserve its current root MX/SPF records.
@@ -77,14 +77,14 @@ does not add a Reply-To header.
 
 | Check | Resend email ID | Observed outcome |
 |---|---|---|
-| support@zova-social.com | `01a15a72-4a7b-727d-bc06-0253fdfbff4f` | SMTP accepted; Resend Delivered; Cloudflare Forwarded to existing Gmail |
-| david@zova-social.com | `01a15a72-4ed5-7044-a7aa-1d3505ece6f3` | SMTP accepted; Resend Delivered; Cloudflare Forwarded |
+| support@zova-social.com | `01a15a72-4a7b-727d-bc06-0253fdfbff4f` | SMTP accepted; Resend Delivered; Cloudflare Forwarded; owner confirms Gmail receipt |
+| david@zova-social.com | `01a15a72-4ed5-7044-a7aa-1d3505ece6f3` | SMTP accepted; Resend Delivered; Cloudflare Forwarded; owner confirms Gmail receipt |
 
 Subjects identify these as Zova Social beta delivery checks. No password was
 changed and no verification/reset token was included in either message.
 Evidence screenshots are in ignored `social-proof/`: resend-email-delivered-checks
 and support-email-forwarded, both dated 20261020. Owner inbox acknowledgement
-is still outstanding. Cloudflare reports DMARC status none on the support check;
+is complete. Cloudflare reports DMARC status none on the support check;
 this is not evidence of a published DMARC enforcement policy.
 
 Do not copy a credential into this document, chat, logs, screenshots or Git.
@@ -96,7 +96,7 @@ configuring it. Current code does not implement implicit TLS on port 465.
 1. Completed: verified domain and restricted sending key; no changes to the
    separate Zova Market sender.
 2. Completed: existing production service configured, billing and publishing
-   configuration preserved. Confirm the owner's actual Gmail receipt.
+   configuration preserved. Owner confirms receipt of both checks in Gmail.
 3. Use a dedicated synthetic account whose mailbox the owner controls. Request
    one verification email through Zova and confirm receipt and verified identity.
 4. Request a password reset and confirm it arrives with the correct HTTPS

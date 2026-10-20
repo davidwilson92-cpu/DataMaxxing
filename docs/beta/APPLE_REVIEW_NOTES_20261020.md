@@ -13,7 +13,8 @@ new password entry/signup and enter the same credentials in Apple's private
 review fields. No reviewer account or review submission is confirmed yet.
 Do not submit incomplete review access details.
 Outgoing email is now configured; the two owner delivery checks are Delivered
-and Forwarded. The dedicated reviewer signup and real recovery/verification
+and Forwarded, and the owner confirms both arrived in Gmail. The dedicated
+reviewer signup and real recovery/verification
 acceptance are still needed. A generic confirmation of the mail-key action is
 not evidence that the owner has entered the reviewer password.
 

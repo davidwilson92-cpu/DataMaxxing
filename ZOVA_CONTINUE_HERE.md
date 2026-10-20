@@ -20,9 +20,10 @@ The authorised support and David delivery checks returned SMTP accepted; Resend
 reports Delivered. IDs: 01a15a72-4a7b-727d-bc06-0253fdfbff4f (support) and
 01a15a72-4ed5-7044-a7aa-1d3505ece6f3 (David). Cloudflare reports Forwarded for both.
 The support detail confirms the existing zova.social@gmail.com destination and
-SPF/DKIM pass at 18:53:22 BST. Owner has been asked to confirm actual Gmail inbox
-receipt; still unanswered. These checks contain no reset/verification token and
-do not prove the complete recovery journey.
+SPF/DKIM pass at 18:53:22 BST. Owner explicitly confirmed **"Both emails arrived"**
+in Gmail on 20 October. This completes the two delivery checks through to the
+owner's inbox. They contain no reset/verification token and do not prove the
+complete recovery journey.
 
 Set SUPPORT_EMAIL=support@zova-social.com after forwarding evidence. Deployment
 **dep-dbbqni1jfumc73d36gr0** is Live at 18:59:07 BST on the same runtime.
@@ -40,6 +41,8 @@ skip social connections, then fill the same existing credentials into Apple's
 review fields without clicking Next. New password entry is an owner handoff.
 Do not share the owner's personal account or attach their social profiles.
 Reviewer password/signup and Apple's username/password fields remain incomplete.
+Rechecked after the inbox confirmation: signup is still open and Apple's Next
+is disabled, with the private reviewer login fields blank.
 The owner's generic Yes approved the mail-key action; do not treat it as evidence
 of completed reviewer signup. Never bypass the password-entry handoff through
 another tool or backend route.
