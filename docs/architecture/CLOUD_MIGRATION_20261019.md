@@ -2,7 +2,7 @@
 
 ## Decision and current state
 
-Render stays live. Phase 0 (portable runtime and planning) has begun. No cloud account, paid service, application submission, DNS change, customer-data copy or migration cutover has occurred. Commercial gates in `../COMMERCIAL_READINESS_20261019.md` are still open.
+Render stays live. Phase 0 (portable runtime and planning) has begun. The owner is signed in to AWS Startups through Builder ID and the Founders package is saved in the application flow. No AWS billing account has been selected/linked, and no paid service, final application submission, DNS change, customer-data copy or migration cutover has occurred. Commercial gates in `../COMMERCIAL_READINESS_20261019.md` are still open.
 
 **Provisional first credit application: AWS Activate**, because this application already has a container, PostgreSQL and an S3-compatible storage adapter. This is an engineering-fit inference, not a claim AWS is cheapest. Compare the actual AWS award and post-credit estimate with Microsoft before selecting a destination. Minimal beta cost remains the owner preference. Do not buy an elaborate platform merely to spend credits.
 
@@ -27,24 +27,36 @@ Owner confirmed self-funded and started August 2026. On 20 October the owner pro
 | Product and website | Zova Social; https://zova-social.com |
 | Business contact | david@zova-social.com — owner supplied 20 October |
 | Developer organisation | ZOVA SOCIAL LIMITED — observed in Apple; confirm legal fields if the form requires them |
-| Funding | Self-funded — owner confirmed; no investor/accelerator Org ID supplied |
-| Started | August 2026 — owner confirmed product start; legal incorporation date unverified |
+| Funding | Self-funded — owner confirmed; owner selected No Funding and No Valuation in AWS, with no external funding date; no investor/accelerator Org ID supplied |
+| Founded | 12 August 2026 — owner entered directly in AWS; not independently verified as a legal incorporation date |
+| Founder / role | David Wilson / CEO — owner changed job-title field; duplicate founder role aligned to match |
+| Headcount | 1–10 band — owner entered directly; no exact number claimed |
+| AWS experience | 0–2 years — owner entered directly; this does not establish an existing hosting account |
+| Planned launch | 1 December 2026 — owner entered directly; a target, not evidence of commercial readiness or a deployment instruction |
 | Product stage | Existing web beta and iPhone TestFlight client; not a public App Store release |
 | Credit history | Owner states no company credit history; prior promotional-credit question requires precise confirmation |
 | Revenue, customer numbers, address, registration number | Not established; do not invent |
 | Intended AWS billing account | Not yet selected or linked |
 
-The Founders application entry is open in the side browser. The Builder ID email is populated; **Continue has not been pressed**, because it accepts the AWS Customer Agreement and starts credential setup. The owner has been asked to review the agreement, complete sign-in/verification personally, and stop before payment-card or paid-plan setup. Screenshot: `social-proof/aws-builder-handoff-20261020.png`. No Builder ID creation, AWS account linking, application submission or credit award has been verified.
+The owner completed Builder ID sign-in. **Founders** was selected and saved. The owner supplied the missing profile and product answers directly and continued, then both saved steps were reopened and reviewed. Founder contact is David Wilson/company email, founder Yes, job title and founder role CEO, Zova website, Social Media Marketing customers, scalable architecture / technology choices / reduced burn as goals, and cost management / containers / security as technical interests. Unsupported optional LinkedIn/public-profile/service selections remain blank.
+
+Product values are consumers and businesses; web browser and mobile app; launched initial product and iterating; AI/ML to improve the product; planned launch 1 December 2026. The owner replaced the initial Bootstrapped selection with **No Funding**, selected **No Valuation**, and left external-funding dates inapplicable. Preserve those choices. AWS spend share is **I'm not sure** because no cloud estimate or commitment exists; optional marketing budget remains blank.
+
+Both steps are confirmed saved. The application is now at `https://startups.aws.com/credits/apply/link-aws-account`. AWS requires a hosting/billing account separate from Builder ID. The console sign-in tab is open; the owner has been asked to sign in to the intended existing account, or report that none exists. No linking/verification control has been activated. No billing account identity, final submission or credit award has been verified. Screenshot: `social-proof/aws-account-link-needed-20261020.png`.
 
 AWS's [current credits page](https://aws.amazon.com/startups/credits/) says to use a professional email for Builder ID, while its [application guide](https://aws.amazon.com/aws-startups/learn/applying-for-aws-activate-credits-a-step-by-step-guide/) describes Builder ID as a personal profile and requires the business-domain email for the Activate profile/application. Reuse an existing Builder ID if the owner already has one; the supplied company-domain email is the application contact. Do not create duplicate cloud billing accounts. Account IDs, verification codes and keys stay out of public documentation.
 
-Next steps after sign-in: inspect the actual form, populate supported company/product facts, clarify only required missing fields, review the intended account and any linking permission, then show the completed application and terms before final submission. A paid-tier account is listed as an Activate requirement, but that is not permission to provision services or accept unbounded charges. Award amount, expiry, coverage and a budgeted migration still need evidence.
+Next steps: establish the intended existing AWS hosting account or prepare a new company account if the owner confirms none exists; review account identity and the actual linking permission before action-time confirmation, then show the completed application and terms before final submission. A paid-tier account is listed as an Activate requirement, but that is not permission to provision services or accept unbounded charges. Award amount, expiry, coverage and a budgeted migration still need evidence. [AWS promotional-credit terms](https://aws.amazon.com/awscredits/) checked 20 October (page updated 24 September): charges can arise for ineligible services and use beyond available credit, and taxes are excluded. Review these with the final application; do not claim the account cannot incur charges.
 
 Draft factual product description for the application:
 
 > Zova Social is an AI-assisted social media workspace for creators and small brands. Customers develop a content strategy, draft and refine platform-specific captions, inspect uploaded media, review destinations and content, and publish or schedule approved posts. The product has an existing web beta and an iPhone TestFlight client using a shared Python backend. PostgreSQL stores account and workflow records; social tokens are encrypted. We are preparing managed cloud hosting, private media storage, separate publishing workers, monitored recovery and a controlled commercial release.
 
-Do not claim revenue, number of customers, funding, security certification, public TikTok paid-content acceptance or App Store release. Those statements require evidence. The description is prepared locally, not submitted.
+The application's 250-character field contains this saved 249-character version:
+
+> Zova Social helps creators and small brands plan, draft and publish social posts with AI. Web and iPhone beta share a Python/PostgreSQL backend. We plan container hosting, private S3 media storage and publishing workers; captions use the OpenAI API.
+
+Do not claim revenue, number of customers, external funding, security certification, public TikTok paid-content acceptance or App Store release. Those statements require evidence. The short description is saved in the draft application; the final application has not been submitted.
 
 ## Low-complexity target
 
