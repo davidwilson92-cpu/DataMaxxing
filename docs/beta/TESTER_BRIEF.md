@@ -46,7 +46,8 @@ is not part of this external beta until the production permission review is comp
 
 ## Send useful feedback
 
-Use TestFlight's **Send Beta Feedback**, or Zova's **Help** contact.
+Use TestFlight's **Send Beta Feedback**, or email
+[support@zova-social.com](mailto:support@zova-social.com) through Zova's **Help**.
 Include:
 
 - What you were trying to do.

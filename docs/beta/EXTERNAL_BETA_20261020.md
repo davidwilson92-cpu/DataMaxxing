@@ -22,13 +22,13 @@ format, account type or iPhone callback.
 | Disconnect | Deployed local unlink clears tokens, cancels unsent jobs and unused approvals, and preserves in-flight/unknown receipts; ownership and reconnect regressions passed | Provider-side revocation remains separate and is explained; validate live provider cancellation without disturbing customer grants |
 | Monitoring | Embedded scheduler now records durable progress; probe rejects stale/incomplete documents, broken workers, old usage reservations and missing recovery-email configuration | Install an approved alert route and prove delivery/acknowledgement; a passing unit test is not monitoring coverage |
 | Charges | After deployment, live runtime confirms billing off, checkout false, enforcement false | Never enable payments for this beta |
-| Password recovery | Production has no SMTP host/from configuration | Configure the owner's mail provider and prove a reset email arrives, is single-use and invalidates old sessions |
+| Password recovery | Restricted Resend SMTP is live; two authorised checks show Delivered and Cloudflare Forwarded; recovery readiness true | Owner inbox acknowledgement and real verification/reset acceptance, including single use and old-session invalidation |
 | Upload persistence | Render has a 1 GB disk at `/app/uploads`; daily snapshots through 20 October; database UI shows 3-day PITR and an export from 19 October 09:03 BST | Isolated production database/key/media restoration rehearsal remains open; synthetic CI restore passed. Never restore over production |
 | Publication backlog | Zero overdue/stuck jobs. Read-only reconciliation leaves Instagram publication-2 from 22 September unknown; no provider receipt identifier was stored | Manual destination evidence needed; preserve no-resend protection and historical ledger |
 | TikTok | Live developer version has `user.info.basic,video.upload`, Direct Post off; `video.publish` revision still In review. Production uses inbox mode | Provider approval of the production revision, verified media prefix, controlled configuration and reconsent before feed publishing |
 | iPhone | Build 10 processed, notes saved and existing internal group assigned. Native tests passed 16 unit/1 UI plus release compile. Owner confirms automatic Instagram return in response to the build9 check; same return code in10 | Other providers, cancellation/account switching and current build10 device acceptance remain open; no real publishing proof inferred |
-| Apple external access | External group created with 0 testers; build10 selection reaches the required contact/reviewer form | Contact phone, verified dedicated review login and Beta App Review approval before external invitations; no App Store Connect administrator access for testers |
-| Tester support | support@zova-social.com forwarding to the existing verified Gmail is Active in Cloudflare; brief, Help and TestFlight feedback prepared | Prove delivery, update Help's configured address, confirm support owner, choose first small cohort |
+| Apple external access | External group created with 0 testers; build10 reaches the required form; private contact entered and dedicated signup prepared | Owner completes reviewer signup and private Apple credentials; verify access and obtain Beta App Review approval before external invitations |
+| Tester support | support@zova-social.com is Active; delivery check shows Delivered and Forwarded to existing Gmail; live Help links to the new address | Owner inbox acknowledgement and monitoring, then choose first small cohort |
 
 ## Provider scope to communicate honestly
 
@@ -109,9 +109,14 @@ Update this checklist and the main handoff with final receipts and unresolved ga
 - Owner reports automatic return to Zova after final Instagram connection
   confirmation. This closes the reported Instagram return defect for that test,
   not the other providers or all device scenarios.
-- Render successfully negotiated verified STARTTLS to `smtp.resend.com:587`
-  without authentication or sending a message. Account/domain/sender setup and
-  actual delivery remain pending.
+- Render email activation `dep-dbbqk2tpkucs73eg704g` is live on the same exact
+  `25374db` runtime. Restricted domain-only sending credential, verified
+  STARTTLS and two SMTP sends succeeded. Resend reports Delivered and Cloudflare
+  reports Forwarded for both. Recovery readiness is true, with zero mail failures
+  or stuck mail. Owner inbox receipt and the real reset flow remain unverified.
+- Support address activation `dep-dbbqni1jfumc73d36gr0` is Live at 18:59:07 BST
+  on the same runtime. Signed-in Help uses support@zova-social.com; session
+  continuity and the free-beta message remain intact.
 
 All automated recovery evidence uses disposable synthetic data. A green CI run
 does not establish delivered reset email, live alert delivery, managed production

@@ -12,6 +12,10 @@ Gmail plus alias, zova.social+apple-review@gmail.com. The owner must complete
 new password entry/signup and enter the same credentials in Apple's private
 review fields. No reviewer account or review submission is confirmed yet.
 Do not submit incomplete review access details.
+Outgoing email is now configured; the two owner delivery checks are Delivered
+and Forwarded. The dedicated reviewer signup and real recovery/verification
+acceptance are still needed. A generic confirmation of the mail-key action is
+not evidence that the owner has entered the reviewer password.
 
 ## Beta description
 
@@ -72,9 +76,9 @@ describe deletion as instant erasure or claim unverified provider revocation.
 3. Confirm the reviewer can inspect the product without publishing or requiring
    access to another person's social account. Explain provider account eligibility
    accurately; do not supply customer tokens, passwords or grants.
-4. Fill the contact using the confirmed business email `david@zova-social.com`
-   and David Wilson. Obtain the contact telephone number from the owner; do not
-   invent one. Confirm the mailbox is monitored.
+4. Contact name, business email `david@zova-social.com` and the owner's supplied
+   private telephone number are already entered in the unsaved Apple form.
+   Keep the phone private to Apple's review contact. Confirm the mailbox is monitored.
 5. Complete the remaining password-recovery, device-return and operational gates
    in `EXTERNAL_BETA_20261020.md`. Export-compliance and legal declarations must
    match the shipped app; do not accept a new agreement on the owner's behalf
@@ -89,6 +93,8 @@ describe deletion as instant erasure or claim unverified provider revocation.
 - Native CI: `39453432747`, successful, 16 unit and 1 UI test.
 - Codemagic: `6ad7907b454d2506f7ab80b9`, upload succeeded.
 - Render: `dep-dbbp1k0ae00c73abch8g`, live.
+- Email configuration activation: `dep-dbbqk2tpkucs73eg704g`, live on the same
+  runtime; no code, billing or social grant changes.
 - Apple processing: complete, Ready to Submit; UUID
   `49d32ac0-86d6-43bc-a0e3-8d82d9101af1`.
 - Internal group: existing group assigned, 1 tester.
