@@ -16,6 +16,28 @@ def test_origin_and_security_headers():
     assert 'frame-ancestors' in page.headers['content-security-policy']
 
 
+def test_security_forms_keep_link_privacy_and_reject_untrusted_origins(monkeypatch):
+    from nova import recovery, verification
+    client, _, _, email = account()
+    sent = []
+    monkeypatch.setattr(recovery, 'recovery_ready', lambda: True)
+    monkeypatch.setattr(verification, 'deliver', lambda address, token: sent.append(address))
+    for path in ('/verify-email', '/reset-password'):
+        page = client.get(path)
+        assert page.headers['referrer-policy'] == 'no-referrer'
+        assert page.headers['cache-control'] == 'no-store'
+        assert 'data-security-form' in page.text
+        assert '/static/security-forms.js' in page.text
+    for origin in ('null', 'https://other.example'):
+        for path in ('/account/verify-email', '/verify-email', '/reset-password'):
+            assert client.post(path, headers={'Origin': origin}).status_code == 403
+    assert sent == []
+    assert client.post('/account/verify-email',
+                       headers={'Origin': 'http://testserver', 'Sec-Fetch-Site': 'same-origin'},
+                       follow_redirects=False).status_code == 303
+    assert sent == [email]
+
+
 def test_database_limiter_is_shared_and_bounded():
     import secrets
     key=secrets.token_hex(16)

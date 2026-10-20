@@ -1,3 +1,34 @@
+# Reviewer account created; security-form correction in validation — 20 October 2026
+
+Owner created Zova App Review at zova.social+apple-review@gmail.com and requests
+checks followed by Beta App Review submission. Verified onboarding identity and
+all four socials Not connected. Created one harmless pending idea, draft36;
+saved state survived reload, Drafts shows one item and Performance shows the
+unconnected state. No AI consent granted, AI request, social connection or post.
+
+Apple's visible Test Information modal still had empty username/password despite
+the owner reporting entry. Filled the review email and asked the owner to enter
+the existing password in Apple's private Sign-In Information field. Next remains
+disabled until entered. Do not share the private contact phone or password.
+
+Live verification attempt reproduced HTTP403 "Open Zova directly and try again."
+before any mail send. Root cause: no-referrer pages' native form POSTs supply
+Origin null, correctly rejected by existing middleware. Implemented a bounded
+client helper for verification/recovery forms using CORS-mode same-origin fetch,
+keeping no-referrer and every backend Origin/token/session check unchanged.
+Errors remain inline with input retained and duplicate submission suppressed.
+See docs/beta/SECURITY_FORM_ACCEPTANCE_20261020.md.
+
+Focused Python: 24 passed. Client: 18 groups/tests plus Studio harness passed,
+including five new security-form regressions. Real local browser verification
+request/confirmation succeeded with valid Origin and no Referer; replay rejected
+inline. Full suite running; its first pass preceded the refreshed exact-scope
+manifest and hit that expected scope-drift check. New manifest now reviewed and
+validates, but fresh required application/PostgreSQL CI must pass before deployment.
+Runtime remains 25374db; native build10 is unchanged. No Apple submission yet.
+
+---
+
 # Recovery email live; Apple reviewer handoff remains — 20 October 2026
 
 Owner confirmed the prepared restricted Resend key/configuration and two delivery

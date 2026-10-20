@@ -16,6 +16,15 @@ key on the unchanged `25374db` runtime: two authorised checks are Delivered and
 Forwarded to the existing Gmail; owner confirms both emails arrived. Real
 verification/password-reset acceptance remains open; do not close the full
 recovery or monitoring findings on this evidence alone.
+The real reviewer-account check then reproduced a verification-form 403: native
+HTML POSTs under the security pages' no-referrer policy send an opaque Origin.
+The bounded 20 October follow-up changes only verification/recovery form submission
+and error presentation. CORS-mode same-origin fetch retains Origin while keeping
+no-referrer; server origin rejection, token ownership/expiry/single use and session
+revocation are unchanged. Local browser verification and replay rejection passed.
+Client regressions cover duplicate submissions, failed requests, retained input
+and off-site destinations. Required exact-candidate application/PostgreSQL checks
+and the live verification/recovery acceptance remain separate release evidence.
 TikTok's live app still grants inbox upload only; the `video.publish`
 revision is In review despite the owner's separately reported audit approval.
 Keep working inbox delivery until the live scope and media prefix are verified.
