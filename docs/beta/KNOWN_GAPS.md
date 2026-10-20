@@ -2,6 +2,19 @@
 
 ## External beta preparation — 20 October 2026
 
+Follow-up recovery checks found four missing legacy upload files (29–30 August).
+Read-only checks found no references to them in current draft workspaces, saved
+publish reviews or schedules. Preserve these records; no restored file or provider
+outcome is inferred. The bounded follow-up checks attachment existence/size before
+review and again before dispatch; a known missing object must fail before sending,
+not become an uncertain provider outcome. Exact candidate evidence is in the
+handoff and external-beta checklist. A fresh logical restore is separate from
+managed point-in-time recovery, and missing historical media remains a recovery gap.
+The independent Render monitor is prepared with a distinct read-only credential
+path; activation, its $1/month minimum and new credential require owner approval.
+Live recovery will use a separate test account, not change Apple's reviewer login.
+Physical build10 acceptance and alert delivery remain unverified. All79 retained.
+
 Owner authorises validated Render updates and external TestFlight preparation, with
 customer charges disabled and no cloud migration. See `EXTERNAL_BETA_20261020.md`
 and `TESTER_BRIEF.md`. The exact current candidate adds verified-mailbox protection

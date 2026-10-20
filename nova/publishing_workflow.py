@@ -11,6 +11,7 @@ from .db import Draft,MediaAsset,SocialConnection,PublishReview,Publication,Sche
 from .workspace import EDITABLE,PLATFORMS
 from .social import selected_connection,publishing_context,publish_platform
 from . import allowances
+from .storage import verify_available
 
 TERMINAL={'published','pending','publishing','unknown','scheduled','queued'}
 
@@ -72,6 +73,8 @@ def prepare_review(db,uid,body):
     for mid in list(dict.fromkeys(body.media_asset_ids)):
         asset=db.get(MediaAsset,mid)
         if not asset or asset.user_id!=uid:raise HTTPException(404,'Attachment not found')
+        try:verify_available(asset.storage_key,asset.size_bytes)
+        except RuntimeError as exc:raise HTTPException(409,str(exc)) from None
         media.append(asset)
     if len(media)>10:raise HTTPException(400,'Choose at most ten images.')
     videos=[a for a in media if a.mime_type.startswith('video/')]
@@ -211,9 +214,10 @@ def dispatch(db,publication,payload,publisher=publish_platform):
         if conn.account_id!=target['account_id']:raise RuntimeError('Account changed')
         media=[db.get(MediaAsset,i) for i in payload['media_asset_ids']]
         if any(not a or a.user_id!=publication.user_id for a in media):raise RuntimeError('Media unavailable')
+        for asset in media:verify_available(asset.storage_key,asset.size_bytes)
         if capability_error(conn,media):raise RuntimeError('Permission changed')
     except RuntimeError:
-        if not save_attempt('failed',{'error':'The reviewed account, media or permissions are unavailable. Reconnect/review before retrying.'}):db.rollback();return
+        if not save_attempt('failed',{'error':'The reviewed account, attachment or permissions are unavailable. Check the connection, re-upload missing media and review again.'}):db.rollback();return
         allowances.finish(db,f'publication:{publication.id}',False);db.commit();db.refresh(publication);return
     from .publication_evidence import recorder
     def record(evidence):

@@ -20,14 +20,31 @@ import time
 SERVICE = 'srv-d9rqg6navr4c739thoeg'
 
 
+class PostgreSQLCommandError(RuntimeError):
+    def __init__(self, tool, stderr):
+        self.tool=tool
+        message=stderr.decode('utf-8',errors='replace').lower()
+        self.kind=next((code for needle,code in (
+            ('schema "public" already exists','existing_default_schema'),
+            ('permission denied','permission_denied'),
+            ('does not exist','missing_dependency'),
+            ('unrecognized configuration parameter','version_mismatch'),
+            ('connection to server','connection_failed'),
+        ) if needle in message),'command_failed')
+        super().__init__('PostgreSQL command failed')
+
+
 def media_path(root, value):
     root = Path(root).resolve(strict=True)
     raw = Path(value)
     if not raw.is_absolute():
         raw = Path.cwd() / raw
-    resolved = raw.resolve(strict=True)
-    if not resolved.is_relative_to(root) or resolved == root or raw.is_symlink() or not resolved.is_file():
+    resolved = raw.resolve()
+    if not resolved.is_relative_to(root) or resolved == root or raw.is_symlink():
         raise ValueError('Media is outside the approved upload directory')
+    resolved = resolved.resolve(strict=True)
+    if not resolved.is_file():
+        raise ValueError('Media is not a regular file')
     return resolved
 
 
@@ -37,6 +54,26 @@ def file_digest(path):
         for block in iter(lambda: stream.read(1024 * 1024), b''):
             result.update(block)
     return result.hexdigest()
+
+
+def backup_media(upload_root, media, destination):
+    """Keep missing historical records visible while still testing the database."""
+    receipts=[];total=0;missing=0
+    for index,(storage_key,size_bytes) in enumerate(media):
+        try:original=media_path(upload_root,storage_key)
+        except FileNotFoundError:
+            missing+=1
+            continue
+        total+=original.stat().st_size
+        if total>512*1024*1024:
+            raise ValueError('Uploads exceed this bounded rehearsal size')
+        backup=Path(destination)/str(index)
+        before=file_digest(original)
+        shutil.copyfile(original,backup);os.chmod(backup,0o600)
+        if file_digest(original)!=before or file_digest(backup)!=before or backup.stat().st_size!=size_bytes:
+            raise ValueError('Media changed or mismatched')
+        receipts.append((backup,before))
+    return receipts,total,missing
 
 
 def table_manifest(connection):
@@ -123,7 +160,7 @@ def run(pg_bin):
             timeout=timeout,**kwargs)
         if completed.returncode:
             # Driver output can include identifiers. Keep it out of console evidence.
-            raise RuntimeError('PostgreSQL command failed')
+            raise PostgreSQLCommandError(name,completed.stderr)
         return completed.stdout
 
     try:
@@ -149,18 +186,8 @@ def run(pg_bin):
             os.chown(dump,uid,gid);os.chmod(dump,0o600)
             stage='media_backup'
             media=source.execute('SELECT storage_key,size_bytes FROM nova_media_assets ORDER BY id').fetchall()
-            media_receipts=[];total=0
-            for index,(storage_key,size_bytes) in enumerate(media):
-                original=media_path(upload_root,storage_key)
-                total+=original.stat().st_size
-                if total>512*1024*1024:
-                    raise ValueError('Uploads exceed this bounded rehearsal size')
-                backup=root/'media'/str(index)
-                before=file_digest(original)
-                shutil.copyfile(original,backup);os.chmod(backup,0o600)
-                if file_digest(original)!=before or file_digest(backup)!=before or backup.stat().st_size!=size_bytes:
-                    raise ValueError('Media missing, changed or mismatched')
-                media_receipts.append((backup,before))
+            media_receipts,total,missing=backup_media(upload_root,media,root/'media')
+            receipt['missing_media_records']=missing
         # The source read transaction is closed before starting the scratch server.
         stage='isolated_server'
         command('initdb',['-D',str(root/'pgdata'),'-U','zova_recovery','--auth=trust',
@@ -177,8 +204,10 @@ def run(pg_bin):
                 raise ValueError('Scratch database must not have a network listener')
             admin.execute('CREATE DATABASE zova_recovery')
         stage='database_restore'
+        # A schema-only-filtered dump includes CREATE SCHEMA public. The target
+        # is this invocation's newly created, identity-checked scratch database.
         command('pg_restore',['--host='+local['host'],'--port=55439','--username=zova_recovery',
-            '--dbname=zova_recovery','--no-owner','--no-privileges','--exit-on-error',str(dump)])
+            '--dbname=zova_recovery','--no-owner','--no-privileges','--clean','--if-exists','--exit-on-error',str(dump)])
         stage='compare_and_decrypt'
         with psycopg.connect(**local,options='-c default_transaction_read_only=on -c timezone=UTC') as restored:
             if table_manifest(restored)!=source_manifest:
@@ -203,12 +232,15 @@ def run(pg_bin):
                 recovered=backup.with_suffix('.restored')
                 shutil.copyfile(backup,recovered);os.chmod(recovered,0o600)
                 if file_digest(recovered)!=digest:raise ValueError('Media restore mismatch')
-        receipt.update(status='passed',source_major=source_version,tables=len(source_manifest),
+        receipt.update(status='incomplete' if missing else 'passed',database_restore='passed',
+            media_restore='incomplete' if missing else 'passed',source_major=source_version,tables=len(source_manifest),
             rows=sum(t['rows'] for t in source_manifest.values()),encrypted_values_verified=decrypted,
             media_files=len(media_receipts),media_bytes=total,snapshot_sha256=file_digest(dump),
             consistent_snapshot=True,network_listener=False)
     except Exception as exc:
         receipt.update(failed_stage=stage,error_type=type(exc).__name__)
+        if isinstance(exc,PostgreSQLCommandError):
+            receipt.update(failed_tool=exc.tool,failure_kind=exc.kind)
     finally:
         if server_started:
             try:command('pg_ctl',['-D',str(root/'pgdata'),'-m','immediate','-w','stop'])

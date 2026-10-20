@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import select
 from nova import social
 from nova.db import SessionLocal,SocialConnection,MediaAsset,ScheduledPost,utcnow
-from test_reviewed_publication import prepared
+from test_reviewed_publication import prepared, synthetic_storage
 
 
 def story_draft(monkeypatch,placement='story'):
@@ -13,7 +13,7 @@ def story_draft(monkeypatch,placement='story'):
     with SessionLocal() as db:
         conn=db.scalar(select(SocialConnection).where(SocialConnection.user_id==uid))
         conn.scope='instagram_business_content_publish'
-        asset=MediaAsset(user_id=uid,filename='story.jpg',mime_type='image/jpeg',storage_key='synthetic.jpg',public_url='https://example.test/story.jpg',size_bytes=100)
+        asset=MediaAsset(user_id=uid,filename='story.jpg',mime_type='image/jpeg',storage_key=synthetic_storage(100),public_url='https://example.test/story.jpg',size_bytes=100)
         db.add(asset);db.commit();body['media_asset_ids']=[asset.id]
     body['publish_options']={'instagram':{'format':placement}}
     response=client.patch(f"/api/drafts/{body['draft_id']}",json={'platforms':['instagram'],'variants':body['variants'],'workspace':{'instagram_format':placement,'media_asset_ids':body['media_asset_ids']}})

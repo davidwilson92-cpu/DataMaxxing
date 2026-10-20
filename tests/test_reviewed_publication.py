@@ -8,6 +8,11 @@ from nova.security import encrypt
 from test_account_integrity import account
 
 
+def synthetic_storage(size=20):
+    from nova.storage import save_bytes
+    return save_bytes(b'x'*size,'synthetic.mp4','video/mp4','http://testserver').storage_key
+
+
 def prepared(platforms=('x',)):
     client,uid,token,_=account()
     with SessionLocal() as db:

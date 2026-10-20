@@ -1282,10 +1282,12 @@ app.include_router(verification_router)
 
 @app.get('/media/preview/{asset_id}')
 def media_preview(asset_id:int,request:Request,db:Session=Depends(get_db)):
-    from .storage import get_public_url
+    from .storage import get_public_url, verify_available
     row=db.get(MediaAsset,asset_id)
     if not row or row.user_id!=current_user(request).id:raise HTTPException(404,'Media not found')
-    try:return RedirectResponse(get_public_url(row.storage_key,row.public_url,expires=300),307)
+    try:
+        verify_available(row.storage_key,row.size_bytes)
+        return RedirectResponse(get_public_url(row.storage_key,row.public_url,expires=300),307)
     except RuntimeError:raise HTTPException(404,'Media preview unavailable')
 
 from .connection_review import router as connection_review_router

@@ -95,13 +95,13 @@ def test_direct_creator_api_error_is_not_an_empty_success(monkeypatch):
 def test_inbox_review_upload_status_and_duplicate_protection(monkeypatch):
     from sqlalchemy import select
     from nova.db import SessionLocal, SocialConnection, MediaAsset
-    from test_reviewed_publication import prepared
+    from test_reviewed_publication import prepared, synthetic_storage
     monkeypatch.setenv('TIKTOK_SEND_TO_INBOX','true')
     client,uid,_,body=prepared(('tiktok',))
     with SessionLocal() as db:
         conn=db.scalar(select(SocialConnection).where(SocialConnection.user_id==uid))
         conn.scope='user.info.basic,video.upload'
-        asset=MediaAsset(user_id=uid,filename='test.mp4',mime_type='video/mp4',storage_key='synthetic',size_bytes=100)
+        asset=MediaAsset(user_id=uid,filename='test.mp4',mime_type='video/mp4',storage_key=synthetic_storage(100),size_bytes=100)
         db.add(asset);db.commit();body['media_asset_ids']=[asset.id]
     context=client.post('/api/publish-context',json={'platforms':['tiktok'],'variants':body['variants']})
     assert context.status_code==200

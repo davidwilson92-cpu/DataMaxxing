@@ -59,6 +59,25 @@ def get_bytes(storage_key: str) -> bytes:
     return pathlib.Path(storage_key).read_bytes()
 
 
+def verify_available(storage_key: str, size_bytes: int) -> None:
+    """Check the stored object before review/dispatch, without sending to a provider."""
+    try:
+        if storage_key.startswith('nova/') and os.environ.get('S3_BUCKET'):
+            size = _s3_client().head_object(Bucket=os.environ['S3_BUCKET'], Key=storage_key)['ContentLength']
+        else:
+            path = pathlib.Path(storage_key)
+            resolved = path.resolve(strict=True)
+            if not resolved.is_relative_to(UPLOAD_DIR.resolve()) or path.is_symlink() or not resolved.is_file():
+                raise ValueError('Invalid upload path')
+            # Opening catches unreadable files, without loading a large video.
+            with resolved.open('rb') as stream:
+                size = os.fstat(stream.fileno()).st_size
+        if size != size_bytes or size <= 0:
+            raise ValueError('Upload size mismatch')
+    except Exception:
+        raise RuntimeError('An attachment is unavailable. Remove it and upload it again before reviewing.') from None
+
+
 def get_public_url(storage_key: str, existing_public_url: str | None = None, expires: int = 3600) -> str:
     if existing_public_url:
         return existing_public_url
