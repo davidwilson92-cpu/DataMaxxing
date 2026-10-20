@@ -263,6 +263,7 @@ def dispatch(db,publication,payload,publisher=publish_platform):
 def confirm_review(db,uid,body,mode,publisher=publish_platform):
     review=db.get(PublishReview,body.review_token) if body.review_token else None
     if not review or review.user_id!=uid or review.draft_id!=body.draft_id:raise HTTPException(400,'Review this draft before confirming publication.')
+    if review.status=='cancelled':raise HTTPException(409,'This review is no longer valid. Review the current draft and destination again.')
     if review.status!='review':return results_for(db,uid,review.draft_id)
     payload=json.loads(review.payload_json)
     if bool(payload['scheduled_utc'])!=(mode=='schedule'):raise HTTPException(400,'Review the selected publication mode again.')

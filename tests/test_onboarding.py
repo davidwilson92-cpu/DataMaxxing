@@ -181,6 +181,14 @@ def test_admin_dashboard_is_allowlisted_and_hides_secrets():
     previous = os.environ.get("ADMIN_EMAILS")
     os.environ["ADMIN_EMAILS"] = email
     try:
+        # Claiming an allowlisted address at signup does not prove mailbox control.
+        assert client.get("/admin/users", cookies=signup.cookies).status_code == 404
+        from sqlalchemy import select
+        from nova.db import SessionLocal, User, utcnow
+        with SessionLocal() as db:
+            admin = db.scalar(select(User).where(User.email == email))
+            admin.email_verified_at = utcnow()
+            db.commit()
         page = client.get("/admin/users", cookies=signup.cookies)
         filtered = client.get("/admin/users", params={"q": email, "country": "GB", "subscription": "none"}, cookies=signup.cookies)
     finally:

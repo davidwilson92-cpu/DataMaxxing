@@ -1,6 +1,7 @@
 workflows:
+  # Retain the workflow ID and build counter used for builds 1–9.
   zova-ios-internal-beta:
-    name: Zova Social — internal TestFlight beta
+    name: Zova Social — reviewed external TestFlight beta
     max_build_duration: 40
     instance_type: mac_mini_m2
     integrations:
@@ -26,11 +27,13 @@ workflows:
           cd ios
           xcodegen generate
       - name: Configure existing signing identities
-        script: xcode-project use-profiles --project ios/Zova.xcodeproj --custom-export-options='{"testFlightInternalTestingOnly":true}'
+        script: xcode-project use-profiles --project ios/Zova.xcodeproj --custom-export-options='{"testFlightInternalTestingOnly":false}'
       - name: Archive the iPhone beta
         script: |
           set -eu
-          xcode-project build-ipa --project ios/Zova.xcodeproj --scheme Zova --archive-xcargs "CURRENT_PROJECT_VERSION=$((BUILD_NUMBER + 1)) ZOVA_SERVER_URL=$ZOVA_SERVER_URL"
+          ZOVA_BUILD_NUMBER=$((BUILD_NUMBER + 1))
+          test "$ZOVA_BUILD_NUMBER" -ge 10
+          xcode-project build-ipa --project ios/Zova.xcodeproj --scheme Zova --archive-xcargs "CURRENT_PROJECT_VERSION=$ZOVA_BUILD_NUMBER ZOVA_SERVER_URL=$ZOVA_SERVER_URL"
       - name: Verify exported iPhone metadata before upload
         script: python3 scripts/check_ios_archive.py build/ios/ipa/Zova.ipa
     artifacts:

@@ -644,7 +644,7 @@ def require_admin(request: Request) -> User:
     except HTTPException:
         raise HTTPException(404, "Not found")
     allowed = {email.strip().lower() for email in os.environ.get("ADMIN_EMAILS", "").split(",") if email.strip()}
-    if user.email.lower() not in allowed:
+    if user.email.lower() not in allowed or user.email_verified_at is None:
         raise HTTPException(404, "Not found")
     return user
 
@@ -721,7 +721,10 @@ def scan_social_voice(request: Request, db: Session = Depends(get_db)):
 def unlink(connection_id:int,request:Request,db:Session=Depends(get_db)):
     user=current_user(request); conn=db.get(SocialConnection,connection_id)
     if not conn or conn.user_id!=user.id: raise HTTPException(404,"Connection not found")
-    conn.active=False; conn.encrypted_access_token=""; conn.encrypted_refresh_token=None; db.commit(); return RedirectResponse("/account",303)
+    from .connection_lifecycle import unlink_local
+    brand_id=conn.brand_id
+    unlink_local(db,conn)
+    return RedirectResponse(f"/account?unlinked=1&workspace={brand_id}#socials",303)
 
 
 # ---------- OAuth connections ----------

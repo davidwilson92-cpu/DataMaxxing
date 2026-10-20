@@ -129,11 +129,24 @@ def process_due(limit: int = 25) -> dict[str, int]:
     return {"published": published, "failed": failed}
 
 
+def monitored_poll():
+    """Record progress for the existing single-server scheduler as well."""
+    from .worker import heartbeat
+    heartbeat('running')
+    try:
+        result = process_due()
+    except Exception:
+        heartbeat('error')
+        raise
+    heartbeat('idle')
+    return result
+
+
 async def loop() -> None:
     interval = max(int(os.environ.get("SCHEDULER_INTERVAL_SECONDS", "60")), 30)
     while True:
         try:
-            await asyncio.to_thread(process_due)
+            await asyncio.to_thread(monitored_poll)
         except Exception:
             log.error("Scheduler loop failed")
         await asyncio.sleep(interval)

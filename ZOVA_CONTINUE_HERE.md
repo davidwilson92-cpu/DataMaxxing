@@ -1,3 +1,42 @@
+# External beta preparation in progress — 20 October 2026
+
+Owner explicitly requests fixing/testing/reviewing, publishing validated updates on
+Render and preparing external TestFlight. Keep charges disabled; keep AWS Free
+unchanged. Read docs/beta/EXTERNAL_BETA_20261020.md and TESTER_BRIEF.md. This is not
+commercial certification or permission to publish real social posts.
+
+Bounded follow-up to45d4d3b: verified-mailbox requirement for the allowlisted staff
+directory (unverified access reproduced before fixing); local unlink cancels only
+unsent jobs/publications and unused reviews, leaving pending/in-flight/unknown
+provider receipts intact; cancelled review gives a clear conflict even after
+reconnection. Embedded scheduler now records progress; monitor rejects stale or
+incomplete documents and flags worker failure, old reservations and missing mail
+configuration. External-eligible TestFlight export uses existing signing/workflow
+counter, minimum build10, no public App Store submission. Two tracked bytecode
+files removed; local virtual environment excluded from Docker context.
+
+Live inspection before deployment: Render419d452 remains live, subscription
+enforcement false and Stripe mode/live-checkout unset (off defaults). Production
+has no SMTP host/from, no configured AI cost rates/threshold, no overdue/stuck jobs,
+one old unknown publication and47 unpriced AI calls this month. Uploads have an
+existing1GB disk at/app/uploads with daily snapshots through20October. Do not
+restore it over live data.
+
+TikTok portal's Live version currently has user.info.basic+video.upload and Direct
+Post disabled; video.publish revision remains In review. Production inbox=true and
+verified media prefix absent. Owner's earlier audit approval is separate evidence,
+not proof that this scope is live. Preserve inbox until provider approval and
+controlled activation; do not advertise all-social Direct Post as completed.
+
+App Store Connect session expired during inspection; owner asked to sign in again.
+Also awaiting mail-provider identification and real-device build9 social-return
+acceptance. Keep these open. Pre-scope full local test run560 passed/2skipped plus
+the expected exact-scope mismatch; subsequent bounded publication/manifest
+regressions16passed. Final exact candidate CI/deployment/build receipts pending.
+No production data, grants, charges, cloud or signing rights changed in this step.
+
+---
+
 # AWS account created; owner retains Free plan — 20 October 2026
 
 Owner supplied company email david@zova-social.com and said "No credit history for the company (new company)." Self-funded and August2026 product start remain confirmed. Preserve that wording; borrowing history is distinct from earlier AWS/Azure/Google promotional credits, so confirm the precise award-history question before attesting on an application. Updated facts, prepared answers and remaining unknowns are in docs/architecture/CLOUD_MIGRATION_20261019.md.

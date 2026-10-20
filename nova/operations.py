@@ -14,7 +14,7 @@ def worker_status(db):
     from .runtime import scheduler_mode, integer
     from .db import WorkerHeartbeat
     mode=scheduler_mode()
-    if mode!='external':return {'mode':mode,'status':'disabled' if mode=='disabled' else 'not_independently_monitored'}
+    if mode=='disabled':return {'mode':mode,'status':'disabled'}
     row=db.get(WorkerHeartbeat,'publishing')
     threshold=utcnow()-timedelta(seconds=max(integer('SCHEDULER_INTERVAL_SECONDS',60,30,3600)*3,300))
     # Compare timestamps in the database so SQLite's naive datetimes do not
@@ -53,6 +53,8 @@ def status(authorization: str | None = Header(default=None)):
     with SessionLocal() as db:
         db.execute(text('SELECT 1'))
         worker=worker_status(db)
+        from .recovery import recovery_ready
+        mail_configured=recovery_ready()
         overdue=db.scalar(select(func.count()).select_from(ScheduledPost).where(ScheduledPost.status=='scheduled',ScheduledPost.scheduled_at<utcnow()-timedelta(minutes=5)))
         uncertain=db.scalar(select(func.count()).select_from(Publication).where(Publication.status=='unknown'))
         stuck=db.scalar(select(func.count()).select_from(Publication).where(Publication.status.in_(['publishing','queued']),Publication.updated_at<utcnow()-timedelta(minutes=15)))
@@ -63,10 +65,10 @@ def status(authorization: str | None = Header(default=None)):
         mail_failures=db.scalar(select(func.count()).select_from(MailDelivery).where(MailDelivery.status=='failed',MailDelivery.created_at>utcnow()-timedelta(days=1)))
         mail_stuck=db.scalar(select(func.count()).select_from(MailDelivery).where(MailDelivery.status=='sending',MailDelivery.created_at<utcnow()-timedelta(minutes=5)))
         ai_failures=db.scalar(select(func.count()).select_from(AICall).where(AICall.status!='returned',AICall.created_at>utcnow()-timedelta(days=1)))
-        attention=bool(ai_failures or overdue or uncertain or stuck or spend['threshold_exceeded'] or spend['unpriced_calls'] or stale_billing or mail_failures or mail_stuck or worker['status'] in {'missing','stale','error'})
+        attention=bool(ai_failures or overdue or uncertain or stuck or spend['threshold_exceeded'] or spend['unpriced_calls'] or stale_billing or reservations or mail_failures or mail_stuck or not mail_configured or worker['status'] not in {'running','idle'})
         return {'status':'attention' if attention else 'ok','database':'reachable','overdue_jobs':overdue,'uncertain_publications':uncertain,'stuck_publications':stuck,
                 'stale_billing_accounts':stale_billing,'last_billing_event':latest.isoformat() if latest else None,
-                'ai_failures_24h':ai_failures,'old_usage_reservations':reservations,'mail_failures_24h':mail_failures,'stuck_mail':mail_stuck,'ai_spend':spend,'worker':worker,'checked_at':utcnow().isoformat()}
+                'ai_failures_24h':ai_failures,'old_usage_reservations':reservations,'mail_failures_24h':mail_failures,'stuck_mail':mail_stuck,'recovery_email_configured':mail_configured,'ai_spend':spend,'worker':worker,'checked_at':utcnow().isoformat()}
 
 
 @router.get('/internal/cohorts')
