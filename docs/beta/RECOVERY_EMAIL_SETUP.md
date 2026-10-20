@@ -15,10 +15,15 @@ rule, using the same verified destination as the existing David address. That
 existing rule and root DNS/catch-all settings are unchanged. The new route has
 not yet been tested with a delivered message.
 
-Resend Free is prepared for application mail; owner signup is pending. Its
+Owner has signed into the existing Resend account. Its
 published allowance currently includes 3,000 emails per month, limited to 100
-per day. Keep paid overages and upgrades disabled. No Resend sending domain or
-credential is configured yet, so automated recovery mail is still unavailable.
+per day; the account UI confirms Free and paid overages off (6 monthly sends,
+0 today at inspection). Keep paid overages and upgrades disabled. The existing
+`auth.zova-social.com` domain is verified in Ireland with Enforced TLS and no
+configured tracking subdomain. It already serves Zova Market; preserve that app's
+key and configuration. A separate Zova Social sending-only key restricted to
+this domain is prepared, pending owner action-time confirmation. No key has
+been created or configured in Render, so automated recovery mail is still unavailable.
 
 Sources checked 20 October 2026:
 [Resend pricing](https://resend.com/pricing) and
@@ -40,12 +45,18 @@ with Resend's documented port 587 settings:
 | `SMTP_PORT` | `587` |
 | `SMTP_USERNAME` | `resend` |
 | `SMTP_PASSWORD` | Sending credential, entered only in the protected secret field |
-| `SMTP_FROM` | Sender on the domain actually verified by the owner |
+| `SMTP_FROM` | `Zova <noreply@auth.zova-social.com>` on the existing verified domain |
 | `PUBLIC_BASE_URL` | `https://zova-social.com` |
 
 The production Render service successfully completed a verified STARTTLS
 connection to smtp.resend.com:587 and confirmed AUTH availability on 20 October.
 No authentication or email send occurred in that connectivity probe.
+
+The non-secret SMTP values above are prepared in an unsaved Render environment
+edit, with the password blank. After approved key creation and protected entry,
+Save and deploy reuses the service's current build; verify the exact existing
+runtime and disabled charges afterwards. Do not rebuild an unrelated branch.
+No DNS changes are needed for the already verified domain.
 
 After a delivery check, set `SUPPORT_EMAIL=support@zova-social.com` in the existing
 Render service so Help uses the new address. Do not claim Gmail can send replies

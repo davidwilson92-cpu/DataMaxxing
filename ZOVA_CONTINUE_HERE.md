@@ -1,3 +1,47 @@
+# Resend signed in; restricted mail setup prepared — 20 October 2026
+
+Owner signed into the existing Resend account and requests completion of email
+setup and external TestFlight. Resend already serves the separate Zova Market app:
+do not alter its key or mail history. The existing `auth.zova-social.com` domain
+is Verified, region Ireland, with Enforced TLS. Tracking is not configured.
+The transactional plan is Free, 6/3,000 used this month and 0/100 today when
+inspected; paid overages are off. No DNS change or plan upgrade is needed.
+
+Prepared, but did NOT create, key **Zova Social Render recovery**, Sending access
+only, limited to auth.zova-social.com. Browser action-time confirmation is pending
+for creating the key, storing it in the existing Render service, and sending
+delivery checks to the owner's support/David addresses. Resend tab58 is on the
+prepared Add API Key dialog. Never print the generated key or put it in Git,
+screenshots, logs or this handoff.
+
+Render tab54 has an UNSAVED environment edit with SMTP_HOST=smtp.resend.com,
+SMTP_PORT=587, SMTP_USERNAME=resend, SMTP_FROM=Zova <noreply@auth.zova-social.com>,
+and an empty SMTP_PASSWORD row. No environment changes or restart occurred.
+The save-option menu is open. Once the key is approved and entered, use
+**Save and deploy**, which Render documents as reusing the existing build,
+then verify the runtime remains 25374db and charges remain disabled. Do not
+choose Save, rebuild, and deploy from the service's unrelated main branch.
+
+Owner supplied the private review-contact telephone number. It is entered in
+Apple tab38's still-unsaved required review form; never put that personal number
+in app UI, public metadata, repository or this document. Prepared a separate
+signup in tab60 for **Zova App Review**, zova.social+apple-review@gmail.com.
+Owner asked to enter a unique new password, accept the app's terms and submit,
+skip social connections, then fill the same existing credentials into Apple's
+review fields without clicking Next. New password entry is an owner handoff.
+Do not share the owner's personal account or attach their social profiles.
+Both this handoff and the restricted mail-key confirmation remain pending.
+
+After these inputs: verify reviewer access and only synthetic content; test
+real delivered email/verification/single-use recovery; finish review notes and
+submit Beta App Review with a visible receipt. External invitations still wait
+on Apple approval and the other documented acceptance gates. Runtime25374db and
+build10 are unchanged. No new email sent, reviewer created or review submitted.
+Prepared screenshots: social-proof/resend-social-sending-key-prepared-20261020.png
+and apple-review-account-prepared-20261020.png.
+
+---
+
 # Owner confirms Instagram return; external Apple group prepared — 20 October 2026
 
 Owner answered the build9 phone check: **"Returns automatically to Zova"** after

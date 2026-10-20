@@ -3,8 +3,14 @@
 Status: review not submitted. Build 0.1.0 (10), bundle `com.zovasocial.app`, from
 runtime `25374db` is processed and Ready to Submit. What to Test is saved and the
 existing one-tester internal group assigned. The new Zova Social External Beta
-group has zero testers. Its build10 flow requires contact phone and a dedicated
-review login; name/business email are prepared but not saved in that modal.
+group has zero testers. Its build10 flow requires a dedicated review login;
+name/business email and the owner's supplied private telephone number are
+entered but not saved in that modal. Keep the telephone number out of public
+app UI, metadata and this repository.
+A dedicated Zova App Review signup is prepared for the owner's existing
+Gmail plus alias, zova.social+apple-review@gmail.com. The owner must complete
+new password entry/signup and enter the same credentials in Apple's private
+review fields. No reviewer account or review submission is confirmed yet.
 Do not submit incomplete review access details.
 
 ## Beta description
