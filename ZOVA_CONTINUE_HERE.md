@@ -1,3 +1,13 @@
+# Cloud application handoff; owner available — 20 October 2026
+
+Owner supplied company email david@zova-social.com and said "No credit history for the company (new company)." Self-funded and August2026 product start remain confirmed. Preserve that wording; borrowing history is distinct from earlier AWS/Azure/Google promotional credits, so confirm the precise award-history question before attesting on an application. Updated facts, prepared answers and remaining unknowns are in docs/architecture/CLOUD_MIGRATION_20261019.md.
+
+AWS Founders programme and application steps rechecked. Side-browser tab51 is at Builder ID setup with the company email populated; Continue has NOT been pressed and the Customer Agreement has NOT been accepted by the agent. Owner asked to complete sign-in/new-password/verification personally and stop before any card/paid-plan step. Await the owner reply before interacting with that flow. No cloud account, linked billing account, application submission, awarded credits, resources, charge or migration is verified. Screenshot social-proof/aws-builder-handoff-20261020.png. Reuse existing accounts rather than creating duplicates.
+
+Owner also asked to update TestFlight0.1.0(9), fully close/reopen and complete one social connection through Zova's final account confirmation, then report whether it returns automatically to the app. No post or disconnect/reset requested. Physical-device acceptance remains pending; no score uplift. Build9 was already verified Testing in the existing internal group. Runtime45d4d3b is tested but NOT deployed; live419d452 is unchanged. This turn only updates documentation/application preparation, not application code or commercial release status.
+
+---
+
 # Commercial candidate validated; TestFlight9 available — 19 October 2026,21:49 BST
 
 Latest owner request: assess commercial readiness across product/design/iOS/engineering/security; iteratively improve and then pursue credit-supported cloud migration. Current work is a bounded candidate, not a commercial launch. Baseline db7fc42 / live server419d452 is preserved. Read docs/COMMERCIAL_READINESS_20261019.md (13 dimensions, 5.6→6.3 judgement), docs/architecture/CLOUD_MIGRATION_20261019.md and docs/beta/current-reconciliation-20261019.json. All79 original areas retained; historical RLS/service claims are not assumed active.

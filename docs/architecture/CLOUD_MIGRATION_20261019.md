@@ -1,4 +1,4 @@
-# Cloud credits and migration preparation — 19 October 2026
+# Cloud credits and migration preparation — updated 20 October 2026
 
 ## Decision and current state
 
@@ -8,7 +8,7 @@ Render stays live. Phase 0 (portable runtime and planning) has begun. No cloud a
 
 ## Verified credit routes
 
-Checked against current primary sources on 19 October 2026. Amounts are ceilings in USD, not awarded cash or a promise to Zova.
+Checked against current primary sources on 19 October 2026; AWS Founders eligibility and application steps rechecked on 20 October. Amounts are ceilings in USD, not awarded cash or a promise to Zova.
 
 | Programme | Current offer / meaningful eligibility | Decision |
 |---|---|---|
@@ -18,9 +18,27 @@ Checked against current primary sources on 19 October 2026. Amounts are ceilings
 
 Direct OpenAI usage is billed separately today. Moving the web host does not automatically make those invoices credit-eligible, and changing AI vendors is not part of this migration. Obtain written coverage/expiry/exclusions from the selected programme.
 
-## Facts needed before applying
+## Application facts and current handoff
 
-Owner confirmed self-funded and started August 2026. App Store Connect identifies the existing developer organisation as ZOVA SOCIAL LIMITED. Product start date is not proof of the legal incorporation date. Previous AWS/Azure/Google startup credits and the company-domain email remain unanswered; ask only for those missing facts before finalising the application. Do not infer a credit award from eligibility. Select the intended company cloud billing account after sign-in; never create duplicates or put account IDs/keys into public documents.
+Owner confirmed self-funded and started August 2026. On 20 October the owner provided **david@zova-social.com** as the company email and said, **"No credit history for the company (new company)."** App Store Connect identifies the existing developer organisation as ZOVA SOCIAL LIMITED. Product start date is not proof of the legal incorporation date. Preserve the owner's wording: a borrowing history and previous promotional cloud-credit awards are different facts. Confirm the latter against the actual application question before making an eligibility declaration; do not turn the statement into an unsupported financial or credit-award attestation.
+
+| Field | Prepared answer / evidence |
+|---|---|
+| Product and website | Zova Social; https://zova-social.com |
+| Business contact | david@zova-social.com — owner supplied 20 October |
+| Developer organisation | ZOVA SOCIAL LIMITED — observed in Apple; confirm legal fields if the form requires them |
+| Funding | Self-funded — owner confirmed; no investor/accelerator Org ID supplied |
+| Started | August 2026 — owner confirmed product start; legal incorporation date unverified |
+| Product stage | Existing web beta and iPhone TestFlight client; not a public App Store release |
+| Credit history | Owner states no company credit history; prior promotional-credit question requires precise confirmation |
+| Revenue, customer numbers, address, registration number | Not established; do not invent |
+| Intended AWS billing account | Not yet selected or linked |
+
+The Founders application entry is open in the side browser. The Builder ID email is populated; **Continue has not been pressed**, because it accepts the AWS Customer Agreement and starts credential setup. The owner has been asked to review the agreement, complete sign-in/verification personally, and stop before payment-card or paid-plan setup. Screenshot: `social-proof/aws-builder-handoff-20261020.png`. No Builder ID creation, AWS account linking, application submission or credit award has been verified.
+
+AWS's [current credits page](https://aws.amazon.com/startups/credits/) says to use a professional email for Builder ID, while its [application guide](https://aws.amazon.com/aws-startups/learn/applying-for-aws-activate-credits-a-step-by-step-guide/) describes Builder ID as a personal profile and requires the business-domain email for the Activate profile/application. Reuse an existing Builder ID if the owner already has one; the supplied company-domain email is the application contact. Do not create duplicate cloud billing accounts. Account IDs, verification codes and keys stay out of public documentation.
+
+Next steps after sign-in: inspect the actual form, populate supported company/product facts, clarify only required missing fields, review the intended account and any linking permission, then show the completed application and terms before final submission. A paid-tier account is listed as an Activate requirement, but that is not permission to provision services or accept unbounded charges. Award amount, expiry, coverage and a budgeted migration still need evidence.
 
 Draft factual product description for the application:
 
