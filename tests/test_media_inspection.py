@@ -26,6 +26,58 @@ def test_transparent_images_keep_visible_contrast():
         assert decoded.getpixel((32, 32)) == (255, 255, 255)
 
 
+@pytest.mark.parametrize('image_format,mime', [
+    ('JPEG', 'image/jpeg'), ('PNG', 'image/png'),
+    ('GIF', 'image/gif'), ('WEBP', 'image/webp'),
+])
+def test_supported_image_decoders_preserve_visual_input_after_upload_validation(image_format, mime):
+    import base64
+    from nova.media_safety import validate_bytes
+    output = io.BytesIO()
+    Image.new('RGB', (48, 32), (92, 43, 128)).save(output, format=image_format)
+    data, validated_mime = validate_bytes(output.getvalue(), mime)
+    inputs, coverage, times = visual.visual_inputs(data, validated_mime)
+    assert coverage == 'Image inspected.' and times == [] and len(inputs) == 1
+    with Image.open(io.BytesIO(base64.b64decode(inputs[0]['image_url'].split(',', 1)[1]))) as decoded:
+        assert decoded.size == (48, 32) and decoded.mode == 'RGB'
+        assert all(abs(actual - expected) < 8 for actual, expected in
+                   zip(decoded.getpixel((24, 16)), (92, 43, 128)))
+
+
+def test_image_inspection_rotates_phone_photo_and_removes_exif():
+    import base64
+    from nova.media_safety import validate_bytes
+    photo = Image.new('RGB', (32, 48), 'purple')
+    exif = photo.getexif()
+    exif[274] = 6  # Phone camera's 90-degree orientation.
+    exif[315] = 'Synthetic private camera owner'
+    output = io.BytesIO()
+    photo.save(output, format='JPEG', exif=exif)
+    data, mime = validate_bytes(output.getvalue(), 'image/jpeg')
+    inputs, _, _ = visual.visual_inputs(data, mime)
+    encoded = base64.b64decode(inputs[0]['image_url'].split(',', 1)[1])
+    with Image.open(io.BytesIO(encoded)) as decoded:
+        assert decoded.size == (48, 32)
+        assert not decoded.getexif()
+    assert b'Synthetic private camera owner' not in encoded
+
+
+def test_animated_upload_is_validated_but_inspection_only_claims_first_frame():
+    import base64
+    from nova.media_safety import validate_bytes
+    output = io.BytesIO()
+    Image.new('RGB', (24, 24), 'red').save(
+        output, format='GIF', save_all=True,
+        append_images=[Image.new('RGB', (24, 24), 'blue')], duration=100, loop=0)
+    data, mime = validate_bytes(output.getvalue(), 'image/gif')
+    inputs, coverage, times = visual.visual_inputs(data, mime)
+    assert coverage == 'First frame only; animation was not inspected.'
+    assert times == [] and len(inputs) == 1
+    with Image.open(io.BytesIO(base64.b64decode(inputs[0]['image_url'].split(',', 1)[1]))) as decoded:
+        red, green, blue = decoded.getpixel((12, 12))
+        assert red > 230 and green < 20 and blue < 20
+
+
 def test_owned_image_payload_cached_and_passed_to_generation(monkeypatch):
     client, uid, _, _ = account()
     asset_id = uploaded(client)

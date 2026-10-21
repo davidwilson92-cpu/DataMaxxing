@@ -1,5 +1,22 @@
 # Beta known gaps and required follow-up
 
+## External beta acceptance — 21 October 2026
+
+Apple now shows build 0.1.0 (10) as Testing in the external beta group, with
+zero external testers. Apple approval does not close device, recovery or
+operational acceptance. Charges, checkout and subscription enforcement were
+verified off on the live 7048c35 runtime; readiness and worker health pass.
+
+A fresh dependency audit found known vulnerabilities in Pillow 12.3.0 and
+pip 25.0.1. Both installed versions were reproduced on Render. The bounded
+candidate pins Pillow 13.0.0, upgrades the hosting image's pip to 26.2.0 and
+adds an audit of the actual hosting-image package inventory to required CI.
+The previous CI runner audit did not establish the image's installer version.
+Do not reuse yesterday's clean audit as evidence for today's candidate.
+See BETA_ACCEPTANCE_20261021.md for exact candidate, test and deployment evidence.
+No native source, schema, user data, provider grant or billing change is included.
+All 79 retained commercial findings remain; none is broadly marked resolved.
+
 ## External beta preparation — 20 October 2026
 
 Follow-up recovery checks found four missing legacy upload files (29–30 August).

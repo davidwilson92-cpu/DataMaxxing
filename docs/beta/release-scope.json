@@ -61,7 +61,7 @@
     "tests/test_analytics_integrity.py": "3f551599ae2d3cf86ce27227547a82bffc0f5546620350bb9f2799fcbf847e64",
     "nova/post_tweet.py": "b549b0ce9c1511f4615a50d7e74c78f4c3acc2e14c807eeedbafabdeb182f7ac",
     "nova/env.example": "942423901e9e5777ce401c45ead34d1c7c9652ea0bd4e6356220b3c1b9ab5b48",
-    ".github/workflows/validate.yml": "071325b733031a5e19c036ceac869992c868b039149c344bfbc56f7f7cce9af6",
+    ".github/workflows/validate.yml": "e77cdbb0c0d58f98ccd1451617108164eb2fbba8b073500cc879ef522cfa3105",
     "nova/static/social-brand.css": "d3e9dee19aee388347312938a4a88b00e9fca0f755d0238beb2520ae2abe93ff",
     "nova/templates/social_icon.html": "e2156c8c67826954afa49908faa22628f0784a9cbe15d4f4e3fda03656924013",
     "tests/test_ai_privacy.py": "ade57ac494dcda2e8cfeb13b7ab5a56ca0944b5c73bf289d9fc8184b2372f401",
@@ -70,7 +70,7 @@
     "nova/templates/base.html": "1929278669f6ac4e29f584490697321919adecbcb539230035df0c0a79a91493",
     "nova/templates/ai_privacy.html": "7867ae9c468cbc7d305cf8e6a1365bb9a0c1371be5c6e8f7de331190936aeb3d",
     "tests/test_tiktok_disclosure_regressions.py": "a47c094836d2371f0d2ca3b6dda2ebd0995801b9ead3046233a85ff1a5071677",
-    "tests/test_media_inspection.py": "8e1d50fcdf5e36c70815e75fecdc8de164b0a74036536533074b09624dbaa7a8",
+    "tests/test_media_inspection.py": "8dabee36276729fc391804fae2c9be42ac5e850649a0c6a862b86cef8bafb0ee",
     "nova/publication_evidence.py": "c20cdf17bd0f8be12a0ddfc4db9bf7e8358a5ba09d2029e838de2a71988d3dcb",
     "nova/static/account-sections.js": "9b826d7adc643c06db43663df7ade8d23313892d7bc0d4479dd16a745e679ac9",
     "tests/test_restore_drill_safety.py": "c83548fb53832d6857fe95fb086da8b12b1cff2f46cd745ff21cdb976766b1f0",
@@ -140,7 +140,7 @@
     "nova/templates/subscribe.html": "d98e5ccca42135855b3e50f31cc05b756eb75b640d790b37c911f7ecdce721d3",
     "nova/static/membership.css": "8f11f0af52588bc27ad24639a378b19d8f72e0d46288c9aa4902f91cceb8bdcd",
     "tests/test_beta_monitoring.py": "f155ba8b1aec88c048cd8bde089eb71f4d87a2d79205a3416f5ebadce23ac8e2",
-    "docs/beta/KNOWN_GAPS.md": "bf202295de45128510893d91d39c34ae2993cb0d9e1897f720355edc3c448481",
+    "docs/beta/KNOWN_GAPS.md": "8d644366aec8a0ceffa978069dfcc216b880798f8291f30e32a267dd52d1dac0",
     "nova/connection_lifecycle.py": "33b4dd8b4356d99738816aa1ee738bd6f18e18f47371e204d6116a8c2ae52459",
     "nova/verification.py": "069aac9b5a4449e406e712c7af1b92479cf27504e19766e9ded7473d93838195",
     "tests/test_ios_archive.py": "eb79e232933f06e3bf07b925e8b7bd44b346ef5a0a6bd860f3e98eed33f4191d",
@@ -155,7 +155,7 @@
     "tests/test_social_beta_permissions.py": "3223e69aaa5af1489b9a21a1b717f1f251d720687b9c431e56037196030e5b72",
     "scripts/rehearse_render_restore.py": "bfdb39c0fcbf48a2ec1f5b5f5332384607c0bcbb6eb09f678dc8ed967678b81b",
     "tests/test_schedule_windows.py": "9c3ab9646ea4730e321276c88df6165e3adbf88b4609a53f93c68edcce2271c8",
-    "requirements.txt": "cb84d234a9bd6a63b5dbbaac25fbb81e4432a3054281cd167984c841d18f8d1b",
+    "requirements.txt": "2044175daf9731a64fe32561f981c7796a29373f9fbc2e5f496c08f160e36940",
     "tests/schedule_agenda.test.cjs": "8ee7c2a86d578f7c54339794d35a37773cb4d04b9f527b5e89faf6e774875f03",
     "nova/templates/data_deletion_status.html": "a89ed609114ac6e6f7e30e5928f08e73c5e03f10b5660ce071a789ce3ba9529b",
     "tests/test_connection_lifecycle.py": "baac3141b390e12f22d682947eb6dfa2b3e709703cba4ca1919e836630a96657",
@@ -205,7 +205,7 @@
     "render.yaml": "e68ad33acf543f3d4db45b9977ee624fc518a653e632039ed33f7bb769610031",
     "tests/security_forms_client.test.cjs": "e84599cca1adf294265a936b8b6e42bc034ed5e5cfe960e2d354019ce6b00a9b",
     "nova/templates/next_move_icon.html": "205f90b8b1cba1fa91cd199f33448694593ee6e151d6c967711a1dac7d10d255",
-    "Dockerfile": "3ef0f07011fe2a3cd7e8d8f1c7ffd5c3eec70c864eb685f003d9aae095a9a064",
+    "Dockerfile": "7b0b7c205cdb3ba441f835057bc8019bb0dbb949330c12f14d276317446680ea",
     "nova/connections.py": "89f909f34e42aa3923660f8e11035c029f9c5260e56d716b4ec5aaa90baf16ed",
     "nova/performance.py": "b082c990197563c3463dfbce7e85880a952b57c5ccc04b5352c7ac1aab6be102",
     "nova/billing.py": "48292b7bcd7058c79f3206727f79117bbce368d809f6ef96da1878a5b1870b9c",
@@ -241,6 +241,6 @@
     "nova/templates/studio_history.html": "a3ba1105280a2eacc0a9d35c83c8a14cbf1fe9c79ee289aec4c654bd561fe5d3"
   },
   "release_class": "limited-beta",
-  "reviewed_update": "2026-10-20: verification/recovery forms retain no-referrer while submitting with browser Origin; unchanged server origin rejection, token ownership, single use and session revocation. Focused/client/local-browser checks passed; required full application/PostgreSQL CI must pass before deployment. Existing external-beta scope, charges off and all 79 historical findings retained.",
-  "source_candidate": "25374db plus reviewed 2026-10-20 security form correction"
+  "reviewed_update": "2026-10-21: bounded Pillow 13.0.0 and hosting pip 26.2.0 security update; audit actual hosting image packages in required CI. No native application, schema, provider grant, authentication or billing change. All 79 commercial findings retained. Full candidate checks required before deployment.",
+  "source_candidate": "7048c35 plus reviewed 2026-10-21 dependency security update"
 }
