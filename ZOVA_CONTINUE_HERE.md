@@ -1,5 +1,16 @@
 # Approved TestFlight beta and security update — 22 October 2026
 
+**TestFlight invitation is now active:**
+https://testflight.apple.com/join/BxawFPCu
+
+At approximately 22:09 UTC, the owner's fresh Apple sign-in was observed. Build
+**0.1.0 (10)** remains **Testing**, assigned to **Zova Social External Beta**.
+The requested public link was saved with a **10-tester maximum**, currently 0/10,
+and its public landing page was verified as **Join the Zova Social beta**.
+No direct invitations were sent and no tester was enrolled by the agent.
+The separate live password-reset/session-revocation check remains unresolved;
+creating the invitation does not mark it passed or certify commercial readiness.
+
 Apple approved **0.1.0 (10)**: its external group was observed as **Testing** on
 21 October, with zero external testers. The app source is unchanged; no new
 binary is needed for this server dependency patch. This is TestFlight approval,
@@ -51,19 +62,18 @@ Follow-up at **21:57 UTC on 22 October**: the owner reports seeing "Password
 updated" and signing back into Apple. A fresh read of the live PostgreSQL account
 still finds auth_version 0 and its sole reset token unused (expired at 09:15 UTC).
 A newly opened Account page still accepts that account's existing session. The
-accessible Apple tabs remain signed out, including after navigating directly to
-the external group. These reports and observations are not reconciled. Ask which
-browser/account was used before repeating credential steps; a clarification is
-already pending. Do not claim live reset/revocation or a saved invitation link.
+accessible Apple tabs were still signed out, including after direct navigation to
+the external group. The subsequent sign-in is resolved and the invitation is now
+saved as recorded above. The recovery account discrepancy remains: reconcile the
+account/browser used before repeating credential steps or marking revocation passed.
 Live bcd260e readiness still passes, billing/checkout/enforcement remain off,
 worker idle and no overdue/stuck jobs or failed/stuck mail. The historical unknown
 publication and 49 unpriced AI calls remain visible, unchanged.
 
-TestFlight public-link form was prepared with **10 testers**. Saving on 22 October
-returned to Apple login because the session expired; **no link creation is
-confirmed**. Reconcile the reported sign-in/reset with the observed sessions,
-verify old-session rejection/new login, then create
-and verify the limited invitation link. Do not send invitations to others.
+The earlier link save returned to login after session expiry; the later successful
+save supersedes that blocker. Screenshot receipts are in ignored social-proof:
+`testflight-public-link-20261022.png` and `testflight-invitation-page-20261022.png`.
+Finish the separate live recovery acceptance without changing Apple's reviewer.
 
 See **docs/beta/BETA_ACCEPTANCE_20261021.md** for exact evidence and limits.
 Retain all 79 commercial findings and the four historical missing August uploads.

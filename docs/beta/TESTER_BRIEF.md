@@ -4,6 +4,13 @@ Zova helps turn your ideas into posts in your own voice. This beta is free: no c
 or subscription payment is needed. Use content you are comfortable testing with.
 Tell us when something is unclear as well as when something breaks.
 
+## Install on your iPhone
+
+Install Apple's **TestFlight** app, then open this invitation on your iPhone:
+[Join the Zova Social beta](https://testflight.apple.com/join/BxawFPCu).
+Tap **Accept**, then **Install**. The initial group is limited to 10 testers;
+the assigned version is **0.1.0 (10)** as of 22 October 2026.
+
 ## Your first session
 
 1. Install the invited build through TestFlight and create your own Zova account.

@@ -12,9 +12,11 @@ application monitoring remains a recorded beta limitation. The chosen operationa
 contact is david@zova-social.com; the owner confirms the delivered manual alert
 arrived. Live recovery acceptance remains unverified: the reported "Password
 updated" message does not match the 21:57 UTC record, which is still unused with
-auth_version 0 and a valid old session. Accessible Apple tabs remain signed out
-despite the reported sign-in. Browser/account clarification is pending; do not
-repeat credential steps blindly or infer a saved public link.
+auth_version 0 and a valid old session. Apple sign-in was subsequently observed;
+the public link https://testflight.apple.com/join/BxawFPCu is now saved, capped at
+10 testers, with build 0.1.0 (10) Testing. The landing page identifies Zova Social.
+No direct invitation or tester enrollment was performed. Recovery account/browser
+clarification remains pending; do not mark the reset check passed from this link.
 
 The tables below describe the 20 October starting state; use the newer acceptance
 record and main handoff for current status, rather than re-asking settled choices.

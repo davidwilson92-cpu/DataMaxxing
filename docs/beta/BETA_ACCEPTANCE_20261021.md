@@ -109,11 +109,23 @@ read-only checks at approximately 21:57 UTC do not yet match those reports:
   failures. Full status correctly retains the historical unknown publication and
   49 unpriced AI calls. No new code, deployment, paid monitor or credentials changed.
 
+## Invitation activation — 22 October, approximately 22:09 UTC
+
+- Fresh Apple sign-in is now observed. The external group's assigned build
+  **0.1.0 (10)** still shows **Testing**, with 88 days remaining at inspection.
+- Saved the owner-requested public link with **Set Limit: 10**. Apple now shows
+  **Tester Limit 0 of 10** and https://testflight.apple.com/join/BxawFPCu.
+- Opened the public destination and verified **Join the Zova Social beta** and
+  Apple's instruction to open it on a device with TestFlight installed.
+- No tester was enrolled and no direct invitation was sent. This resolves the
+  Apple-session/link blocker only; it does not close the separate recovery check.
+- Screenshot receipts (ignored): `social-proof/testflight-public-link-20261022.png`
+  and `social-proof/testflight-invitation-page-20261022.png`.
+
 ## Remaining acceptance
 
 - Complete the separate recovery account's actual email reset and new login;
   verify used-link and old-session rejection. Never reset Apple's reviewer.
-- Create and verify the capped TestFlight invitation link after those checks.
 
 The earlier logical recovery receipt remains valid evidence for the database,
 encrypted values and 16 available uploads; four missing August files remain
