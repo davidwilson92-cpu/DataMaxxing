@@ -95,13 +95,13 @@ def test_direct_creator_api_error_is_not_an_empty_success(monkeypatch):
 def test_inbox_review_upload_status_and_duplicate_protection(monkeypatch):
     from sqlalchemy import select
     from nova.db import SessionLocal, SocialConnection, MediaAsset
-    from test_reviewed_publication import prepared
+    from test_reviewed_publication import prepared, synthetic_storage
     monkeypatch.setenv('TIKTOK_SEND_TO_INBOX','true')
     client,uid,_,body=prepared(('tiktok',))
     with SessionLocal() as db:
         conn=db.scalar(select(SocialConnection).where(SocialConnection.user_id==uid))
         conn.scope='user.info.basic,video.upload'
-        asset=MediaAsset(user_id=uid,filename='test.mp4',mime_type='video/mp4',storage_key='synthetic',size_bytes=100)
+        asset=MediaAsset(user_id=uid,filename='test.mp4',mime_type='video/mp4',storage_key=synthetic_storage(100),size_bytes=100)
         db.add(asset);db.commit();body['media_asset_ids']=[asset.id]
     context=client.post('/api/publish-context',json={'platforms':['tiktok'],'variants':body['variants']})
     assert context.status_code==200
@@ -130,11 +130,15 @@ def test_inbox_review_upload_status_and_duplicate_protection(monkeypatch):
     client.post('/api/publish',json=approved)
     assert len(calls)==1
     import nova.scheduler as worker
-    monkeypatch.setattr(worker,'resolve_tiktok_post',lambda *a:{'status':'SEND_TO_USER_INBOX'})
+    import nova.tiktok_status as status
+    monkeypatch.setattr(status,'resolve_tiktok_post',lambda *a:{'status':'SEND_TO_USER_INBOX'})
     worker.process_due()
     result=client.get(f"/api/publications/{body['draft_id']}").json()['results']['tiktok']
     assert result['status']=='pending' and result['delivered_to_inbox']
-    monkeypatch.setattr(worker,'resolve_tiktok_post',lambda *a:{'status':'PUBLISH_COMPLETE','public_ids':['public-test-id']})
+    from datetime import timedelta
+    now=status.utcnow()
+    monkeypatch.setattr(status,'utcnow',lambda:now+timedelta(seconds=16))
+    monkeypatch.setattr(status,'resolve_tiktok_post',lambda *a:{'status':'PUBLISH_COMPLETE','public_ids':['1234567890123456789']})
     worker.process_due()
     result=client.get(f"/api/publications/{body['draft_id']}").json()['results']['tiktok']
     assert result['status']=='published' and not result['requires_tiktok_completion']

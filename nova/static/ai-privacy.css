@@ -1,0 +1,9 @@
+.ai-privacy-dialog{box-sizing:border-box;width:min(480px,calc(100% - 32px));max-height:calc(100dvh - 48px);overflow:auto;padding:24px;border:1px solid #ded7e9;border-radius:20px;background:#fff;color:#251d31;box-shadow:0 18px 64px #0d071833}
+.ai-privacy-dialog::backdrop{background:#10091d99;backdrop-filter:blur(3px)}
+.ai-privacy-dialog h2{margin:0 0 16px;font-size:24px;line-height:1.2;letter-spacing:-.03em;color:inherit}
+.ai-privacy-dialog p{font-size:15px;line-height:1.5;color:var(--ink2,#453952);margin:12px 0}
+.ai-privacy-dialog a{color:inherit;text-decoration:underline}
+.ai-privacy-dialog .ai-privacy-note{font-size:14px}
+.ai-privacy-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.ai-privacy-actions button{min-height:44px}
+.ai-privacy-dialog :focus-visible{outline:3px solid #8644de;outline-offset:3px}

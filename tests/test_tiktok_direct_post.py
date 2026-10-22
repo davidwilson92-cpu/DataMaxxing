@@ -3,6 +3,7 @@ import copy
 import httpx
 import pytest
 from nova import social, tiktok_policy as policy
+from test_reviewed_publication import synthetic_storage
 
 
 def setup(monkeypatch):
@@ -13,7 +14,7 @@ def setup(monkeypatch):
     monkeypatch.setattr(social,'get_bytes',lambda *a:b'synthetic')
     info={'creator_nickname':'Creator','privacy_level_options':['PUBLIC_TO_EVERYONE','SELF_ONLY'],'max_video_post_duration_sec':60,'comment_disabled':True}
     monkeypatch.setattr(social,'_tiktok_creator_info',lambda *a:info)
-    asset=SimpleNamespace(mime_type='video/mp4',storage_key='synthetic',public_url='https://zova-social.com/media/raw/test.mp4')
+    asset=SimpleNamespace(mime_type='video/mp4',storage_key=synthetic_storage(),public_url='https://zova-social.com/media/raw/test.mp4')
     options={'posting_mode':'direct','privacy_level':'PUBLIC_TO_EVERYONE','consent':True}
     context={**info,'privacy_options':info['privacy_level_options'],'max_video_duration_sec':60}
     return asset,options,context,info

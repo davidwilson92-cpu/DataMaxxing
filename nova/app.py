@@ -24,9 +24,10 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import Response, FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from . import ai, billing, brands, allowances, customer_service, readiness
 from .connections import connection_options, safe_login_next
@@ -35,7 +36,7 @@ from .db import (
     PostLog, Publication, ScheduledPost, SessionLocal, SocialConnection, User, DeletionRequest, get_db, get_preferences, utcnow,
 )
 from .scheduler import loop as scheduler_loop, process_due
-from .security import revoke_session, current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password
+from .security import revoke_session, current_user, decrypt, encrypt, hash_api_key, hash_password, make_state, make_user_session, verify_password, session_secret
 from .user_data import normalize_country, normalize_email, normalize_name
 from .social import (
     INSTAGRAM_SCOPES, INSTAGRAM_FACEBOOK_SCOPES, META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, instagram_authorize_url, instagram_exchange, meta_authorize_url, meta_exchange,
@@ -68,7 +69,8 @@ def template_context(request: Request, user: User | None = None, **kwargs: Any) 
     if user and not hasattr(request.state,'brand_id'):
         with SessionLocal() as context_db:brands.bind_request(context_db,request)
     brand = brands.context(user, getattr(request.state, 'brand_id', 0)) if user else None
-    return {"request": request, "user": user, "brand": brand, "connections": connection_options(), **customer_service.context(), **kwargs}
+    native_shell = request.cookies.get('nova_session', '').startswith('ios.')
+    return {"request": request, "user": user, "brand": brand, "native_shell": native_shell, "connections": connection_options(), **customer_service.context(), **kwargs}
 
 
 def set_user_cookie(response: RedirectResponse | JSONResponse, user: User) -> None:
@@ -153,30 +155,34 @@ def publish_legacy_creator(text: str, creator: Creator, db: Session) -> dict[str
         if oauth:
             token = _legacy_x_token(oauth, db)
             r = httpx.post("https://api.x.com/2/tweets", headers={"Authorization": f"Bearer {token}", "Content-Type":"application/json"}, json={"text": text}, timeout=30.0)
-            if r.status_code >= 400: raise RuntimeError(r.text)
+            if r.status_code >= 400: raise RuntimeError('X rejected the publishing request')
             pid = str(r.json()["data"]["id"])
         else:
             signer = OAuth1Client(decrypt(creator.encrypted_x_api_key), client_secret=decrypt(creator.encrypted_x_api_secret), resource_owner_key=decrypt(creator.encrypted_x_access_token), resource_owner_secret=decrypt(creator.encrypted_x_access_token_secret))
             url, headers, payload = signer.sign('https://api.x.com/2/tweets', http_method='POST', body=json.dumps({'text':text}), headers={'Content-Type':'application/json'})
             r = httpx.post(url, headers=headers, content=payload, timeout=30.0)
-            if r.status_code >= 400: raise RuntimeError(r.text)
+            if r.status_code >= 400: raise RuntimeError('X rejected the publishing request')
             pid = str(r.json()['data']['id'])
         row.status="published"; row.x_post_id=pid; db.commit()
         return {"post_id": pid, "url": f"https://x.com/{creator.x_username}/status/{pid}"}
     except Exception as exc:
-        row.status="failed"; row.error=str(exc); db.commit(); raise HTTPException(502, f"X API error: {exc}") from exc
+        row.status="failed"; row.error="X could not confirm this request. Check the destination before retrying."; db.commit()
+        raise HTTPException(502,row.error) from None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from .runtime import validate_runtime
+    mode = validate_runtime()
     bootstrap_legacy_account()
-    task = asyncio.create_task(scheduler_loop())
+    task = asyncio.create_task(scheduler_loop()) if mode == 'embedded' else None
     try:
         yield
     finally:
-        task.cancel()
-        try: await task
-        except asyncio.CancelledError: pass
+        if task is not None:
+            task.cancel()
+            try: await task
+            except asyncio.CancelledError: pass
 
 
 app = FastAPI(title="Zova Social Publishing", version="5.1.0", lifespan=lifespan)
@@ -184,8 +190,9 @@ from .request_security import SecurityMiddleware, allowed_request
 from .recovery import router as recovery_router
 from .body_limit import BodyLimitMiddleware
 app.add_middleware(BodyLimitMiddleware)
-app.add_middleware(SecurityMiddleware)
 app.include_router(recovery_router)
+from .ai_consent import router as ai_consent_router
+app.include_router(ai_consent_router)
 from .schedule_routes import router as schedule_router
 app.include_router(schedule_router)
 from .strategy import router as strategy_router, strategy_context
@@ -229,6 +236,10 @@ def health() -> dict[str, str]: return {"status":"ok","version":"5.1.0","brand":
 def tiktok_site_verification():
     return HTMLResponse("tiktok-developers-site-verification=H8OfSOj6UphrBG5ccohezZ2qB7ZV5Oig", media_type="text/plain")
 
+@app.get("/tiktokLhw6i0tawgVTxG8CrhbsX1BM6xPj2hzj.txt", response_class=HTMLResponse)
+def tiktok_sandbox_site_verification():
+    return HTMLResponse("tiktok-developers-site-verification=Lhw6i0tawgVTxG8CrhbsX1BM6xPj2hzj", media_type="text/plain")
+
 @app.get("/", response_class=HTMLResponse)
 def landing(request: Request):
     try: user = current_user(request)
@@ -265,7 +276,8 @@ def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str,
     db.info.update(brand_id=0,brand_user_id=user.id);request.state.brand_id=0
     get_preferences(db,user.id)
     readiness.event(user.id,'signup',user.id)
-    resp=RedirectResponse("/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
+    from .mobile_auth import resume_destination
+    resp=RedirectResponse(resume_destination(request.cookies.get('zova_mobile_grant'), db) or "/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, error: str | None = None):
@@ -283,9 +295,15 @@ def apple_client_secret() -> str:
 
 
 @app.get("/auth/apple/start")
-def apple_start(intent: str = "login", db: Session = Depends(get_db)):
+def apple_start(request: Request, intent: str = "login", db: Session = Depends(get_db)):
     if not apple_configured(): raise HTTPException(503, "Sign in with Apple is not configured")
     state, nonce = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+    from .mobile_auth import resume_destination
+    native_resume = resume_destination(request.cookies.get('zova_mobile_grant'), db)
+    if native_resume:
+        # Persist the entire opaque state hash. This survives Apple's cross-site
+        # form_post without depending on a SameSite=Lax browser cookie.
+        state += '.' + native_resume.rsplit('/', 1)[1]
     db.add(AuthState(provider="apple", state_hash=hash_api_key(state), nonce_hash=hash_api_key(nonce), intent="signup" if intent == "signup" else "login")); db.commit()
     params = httpx.QueryParams({"client_id": os.environ["APPLE_CLIENT_ID"], "redirect_uri": os.environ.get("APPLE_REDIRECT_URI", f"{base_url()}/auth/apple/callback"), "response_type": "code id_token", "response_mode": "form_post", "scope": "name email", "state": state, "nonce": nonce})
     return RedirectResponse(f"https://appleid.apple.com/auth/authorize?{params}", 302)
@@ -326,7 +344,9 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
         db.commit()
     if not identity: db.add(AuthIdentity(user_id=user.id, provider="apple", subject=subject)); db.commit()
     if created:readiness.event(user.id,'signup',user.id)
-    resp = RedirectResponse("/onboarding/socials" if created else "/studio", 303); set_user_cookie(resp, user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
+    from .mobile_auth import resume_destination
+    native_resume = resume_destination(state.partition('.')[2], db)
+    resp = RedirectResponse(native_resume or ("/onboarding/socials" if created else "/studio"), 303); set_user_cookie(resp, user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 
 @app.post("/login")
 def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Form()],next:Annotated[str,Form()]="/studio",db:Session=Depends(get_db)):
@@ -480,6 +500,30 @@ def data_deletion_instructions(request:Request):
     except HTTPException:user=None
     return templates.TemplateResponse(request, "data_deletion.html",template_context(request,user,contact_email=os.environ.get("PRIVACY_CONTACT_EMAIL","privacy@zova-social.com")))
 
+@app.get("/account/deletion", response_class=HTMLResponse)
+def account_deletion(request: Request):
+    user = current_user(request)
+    return templates.TemplateResponse(request, "account_deletion.html", template_context(request, user))
+
+@app.post("/account/deletion")
+def request_account_deletion(request: Request, confirmation: Annotated[str, Form()], db: Session = Depends(get_db)):
+    user = current_user(request)
+    if confirmation.strip() != "DELETE":
+        raise HTTPException(400, "Type DELETE to request account deletion")
+    # Stable opaque receipt makes repeated requests idempotent without exposing identity.
+    code = hmac.new(session_secret().encode(), f"account-deletion:{user.id}".encode(), hashlib.sha256).hexdigest()
+    row = db.get(DeletionRequest, code)
+    if row is None:
+        db.add(DeletionRequest(code=code, subject_hash=hash_api_key(f"account:{user.id}"), status="received",
+                               scope="Full Zova account deletion requested by the signed-in owner; operator processing pending"))
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            if db.get(DeletionRequest, code) is None:
+                raise
+    return RedirectResponse(f"/data-deletion/status/{code}", status_code=303)
+
 @app.post("/data-deletion/callback")
 async def meta_data_deletion_callback(request:Request,db:Session=Depends(get_db)):
     form=await request.form(); signed=str(form.get("signed_request") or "")
@@ -514,7 +558,7 @@ def studio(request:Request,db:Session=Depends(get_db)):
     connections={}
     for row in db.scalars(select(SocialConnection).where(SocialConnection.user_id==user.id,SocialConnection.active.is_(True))).all():
         connections.setdefault(row.platform,[]).append(row.username or row.account_id or "Connected account")
-    return templates.TemplateResponse(request, "studio.html",template_context(request,user,subscription_blocked=not billing.has_access(user),studio_connections=connections,studio_prefs=get_preferences(db,user.id),work_summary=work_summary(db,user.id)))
+    return templates.TemplateResponse(request, "studio.html",template_context(request,user,subscription_blocked=not billing.has_access(user),studio_connections=connections,studio_prefs=get_preferences(db,user.id)))
 
 @app.get("/drafts",response_class=HTMLResponse)
 def drafts_page(request:Request,db:Session=Depends(get_db)):
@@ -600,7 +644,7 @@ def require_admin(request: Request) -> User:
     except HTTPException:
         raise HTTPException(404, "Not found")
     allowed = {email.strip().lower() for email in os.environ.get("ADMIN_EMAILS", "").split(",") if email.strip()}
-    if user.email.lower() not in allowed:
+    if user.email.lower() not in allowed or user.email_verified_at is None:
         raise HTTPException(404, "Not found")
     return user
 
@@ -637,7 +681,7 @@ def save_preferences(request:Request,writing_tone:Annotated[str,Form()]="",audie
     user=current_user(request); prefs=get_preferences(db,user.id)
     try:ZoneInfo(timezone_name)
     except Exception:timezone_name="Europe/London"
-    prefs.writing_tone=writing_tone[:5000]; prefs.audience=audience[:5000]; prefs.topics=topics[:5000]; prefs.things_to_avoid=things_to_avoid[:5000]; prefs.example_posts=example_posts[:12000]; prefs.preferred_post_length=max(30,min(preferred_post_length,4000)); prefs.timezone=timezone_name; db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account",303)
+    prefs.writing_tone=writing_tone[:5000]; prefs.audience=audience[:5000]; prefs.topics=topics[:5000]; prefs.things_to_avoid=things_to_avoid[:5000]; prefs.example_posts=example_posts[:12000]; prefs.preferred_post_length=max(30,min(preferred_post_length,4000)); prefs.timezone=timezone_name; db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=voice",303)
 
 @app.post("/account/profile")
 async def update_profile(request: Request, display_name: Annotated[str, Form()] = "", guidance: Annotated[str | None, Form()] = None, next_url: Annotated[str, Form(alias="next")] = "", db: Session = Depends(get_db)):
@@ -665,7 +709,11 @@ def change_password(request: Request, current_password: Annotated[str, Form()], 
 def scan_social_voice(request: Request, db: Session = Depends(get_db)):
     user = current_user(request)
     try: profile = learn_voice_from_socials(db, user.id)
-    except Exception as exc: log.exception("Social voice scan failed"); raise HTTPException(502, f"Zova could not scan recent posts: {exc}") from exc
+    except HTTPException:
+        raise
+    except Exception:
+        log.warning("Social voice scan failed")
+        raise HTTPException(502, "Zova could not scan recent posts. Your saved voice is unchanged. Try again.") from None
     if not profile: return {"status": "waiting", "message": "Connect a social account so Zova can learn from recent posts."}
     return {"status": "learned", **profile}
 
@@ -673,7 +721,10 @@ def scan_social_voice(request: Request, db: Session = Depends(get_db)):
 def unlink(connection_id:int,request:Request,db:Session=Depends(get_db)):
     user=current_user(request); conn=db.get(SocialConnection,connection_id)
     if not conn or conn.user_id!=user.id: raise HTTPException(404,"Connection not found")
-    conn.active=False; conn.encrypted_access_token=""; conn.encrypted_refresh_token=None; db.commit(); return RedirectResponse("/account",303)
+    from .connection_lifecycle import unlink_local
+    brand_id=conn.brand_id
+    unlink_local(db,conn)
+    return RedirectResponse(f"/account?unlinked=1&workspace={brand_id}#socials",303)
 
 
 # ---------- OAuth connections ----------
@@ -687,6 +738,9 @@ def connect_platform(platform: str, request: Request):
 
 
 def connection_return(request: Request, platform: str, outcome: str = "connected"):
+    from .mobile_shell import social_return
+    if response := social_return(request, platform, outcome):
+        return response
     destination = "/onboarding/socials" if request.cookies.get("zova_onboarding")==str(current_user(request).id) else "/account"
     return RedirectResponse(f"{destination}?{outcome}={platform}", 303)
 
@@ -809,14 +863,31 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
 class GenerateRequest(BaseModel):
     media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     brief:str=Field(min_length=1,max_length=12000); instruction:str=Field(default="",max_length=5000); platforms:list[str]; thread_length:int=1; link_url:str=""; draft_id:int|None=None
+    source_draft_id:int|None=Field(default=None,gt=0)
+    source_revision:int|None=Field(default=None,ge=0)
     @field_validator("thread_length")
     @classmethod
     def valid_thread(cls,v:int): return v if v in {1,3,5} else 1
+    @model_validator(mode='after')
+    def valid_source(self):
+        if (self.source_draft_id is None) != (self.source_revision is None):
+            raise ValueError('A source draft requires its saved revision.')
+        if self.source_draft_id is not None and self.draft_id is not None:
+            raise ValueError('A source draft is only valid when creating a new draft.')
+        return self
 class RewriteRequest(BaseModel):
     media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     platform:str; posts:list[str]; action:str=""; instruction:str=Field(default="",max_length=1000)
 class ScheduleSuggestRequest(BaseModel): platforms:list[str]; context:str=""
-class InsightRequest(BaseModel): question:str=Field(min_length=1,max_length=2000)
+class InsightRequest(BaseModel):
+    question:str=Field(min_length=1,max_length=2000)
+    days:int=Field(default=7)
+
+    @field_validator("days")
+    @classmethod
+    def valid_window(cls, value):
+        if value not in (7,30):raise ValueError("Choose a 7 or 30 day post window")
+        return value
 class ConversationRequest(BaseModel):
     media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     message:str=Field(min_length=1,max_length=12000)
@@ -886,9 +957,9 @@ def learn_voice(payload: VoiceLearnRequest, request: Request, db: Session = Depe
         user = current_user(request)
         try:
             profile = ai.infer_voice_profile(payload.content)
-        except Exception as exc:
-            log.exception("Voice learning failed")
-            raise HTTPException(502, f"Zova could not analyse that sample: {exc}") from exc
+        except Exception:
+            log.warning("Voice learning failed")
+            raise HTTPException(502, "Zova could not analyse that sample. Your saved voice is unchanged. Try again.") from None
         prefs = get_preferences(db, user.id)
         prefs.writing_tone = profile["writing_tone"][:5000]
         prefs.audience = profile["audience"][:5000]
@@ -953,11 +1024,16 @@ def local_media(filename:str):
 @app.post("/api/ai/generate")
 def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)):
     with allowances.ai_action(db,current_user(request).id):
-        from .workspace import EDITABLE
+        from .workspace import EDITABLE, clean_workspace
         user=current_user(request); subscription_guard(user); platforms=_validate_platforms(body.platforms); prefs=get_preferences(db,user.id)
         row=db.get(Draft,body.draft_id) if body.draft_id else None
         if body.draft_id and (not row or row.user_id!=user.id):raise HTTPException(404,'Draft not found')
         if row and row.status not in EDITABLE:raise HTTPException(409,'This draft is already submitted.')
+        source=db.get(Draft,body.source_draft_id) if body.source_draft_id is not None else None
+        if body.source_draft_id is not None:
+            if not source or source.user_id!=user.id:raise HTTPException(404,'Source draft not found')
+            if source.status not in EDITABLE:raise HTTPException(409,'This source draft is already submitted.')
+            if source.revision!=body.source_revision:raise HTTPException(409,'The source draft changed. Open the latest saved version before retrying.')
         revision=row.revision if row else 0
         from .media_inspection import inspect_assets, context as media_context
         inspected=inspect_assets(db,user.id,body.media_asset_ids)
@@ -966,11 +1042,28 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
         if row:
             existing=json.loads(row.variants_json or '{}');existing.update(variants);variants=existing
             all_platforms=list(dict.fromkeys(json.loads(row.platforms_json or '[]')+platforms))
-            claimed=db.execute(update(Draft).where(Draft.id==row.id,Draft.revision==revision,Draft.status.in_(EDITABLE)).values(brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(all_platforms),variants_json=json.dumps(variants,ensure_ascii=False),thread_length=body.thread_length,revision=Draft.revision+1,updated_at=utcnow()).execution_options(synchronize_session=False))
+            workspace=json.loads(row.workspace_json or '{}');workspace['pending_message']=''
+            workspace.pop('pending_media_asset_ids',None);workspace.pop('pending_link_url',None)
+            claimed=db.execute(update(Draft).where(Draft.id==row.id,Draft.revision==revision,Draft.status.in_(EDITABLE)).values(brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(all_platforms),variants_json=json.dumps(variants,ensure_ascii=False),workspace_json=json.dumps(workspace,ensure_ascii=False),thread_length=body.thread_length,revision=Draft.revision+1,updated_at=utcnow()).execution_options(synchronize_session=False))
             if claimed.rowcount!=1:db.rollback();raise HTTPException(409,'This draft changed while generating. Open the latest saved version.')
             db.commit();db.refresh(row)
         else:
-            row=Draft(user_id=user.id,brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(platforms),variants_json=json.dumps(variants,ensure_ascii=False),thread_length=body.thread_length)
+            target_workspace={}
+            if source:
+                # Consume the persisted retry marker in the same transaction as
+                # the new draft. Preserve every other saved workspace field.
+                workspace=json.loads(source.workspace_json or '{}')
+                workspace['pending_message']=''
+                workspace.pop('pending_media_asset_ids',None);workspace.pop('pending_link_url',None)
+                target_workspace=clean_workspace({**workspace,'selected_platforms':platforms,
+                    'active_platform':platforms[0],'text_history':[]},db,user.id,previous_workspace=workspace)
+                claimed=db.execute(update(Draft).where(Draft.id==source.id,Draft.user_id==user.id,
+                    Draft.revision==body.source_revision,Draft.status.in_(EDITABLE)).values(
+                    workspace_json=json.dumps(workspace,ensure_ascii=False),revision=Draft.revision+1,
+                    updated_at=utcnow()).execution_options(synchronize_session=False))
+                if claimed.rowcount!=1:
+                    db.rollback();raise HTTPException(409,'The source draft changed while generating. Open the latest saved version before retrying.')
+            row=Draft(user_id=user.id,brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(platforms),variants_json=json.dumps(variants,ensure_ascii=False),workspace_json=json.dumps(target_workspace,ensure_ascii=False),thread_length=body.thread_length)
             db.add(row);db.commit();db.refresh(row)
         readiness.event(user.id,'generated',row.id)
         return {'draft_id':row.id,'variants':variants,'saved':True,'revision':row.revision}
@@ -1065,7 +1158,9 @@ def api_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
     user=current_user(request); row=db.get(Draft,draft_id)
     if not row or row.user_id!=user.id:raise HTTPException(404,"Draft not found")
     from .series import planned_context
-    return {"title":row.title,"display_title":draft_title(row),"planned":planned_context(db,row.id),"id":row.id,"brief":row.brief,"instruction":row.instruction,"revision":row.revision,"workspace":json.loads(row.workspace_json or "{}"),"platforms":json.loads(row.platforms_json or "[]"),"variants":json.loads(row.variants_json or "{}"),"thread_length":row.thread_length,"status":row.status,"created_at":row.created_at.isoformat(),"updated_at":row.updated_at.isoformat()}
+    from .workspace import hydrate_workspace_media
+    workspace=hydrate_workspace_media(json.loads(row.workspace_json or "{}"),db,user.id)
+    return {"title":row.title,"display_title":draft_title(row),"planned":planned_context(db,row.id),"id":row.id,"brief":row.brief,"instruction":row.instruction,"revision":row.revision,"workspace":workspace,"platforms":json.loads(row.platforms_json or "[]"),"variants":json.loads(row.variants_json or "{}"),"thread_length":row.thread_length,"status":row.status,"created_at":row.created_at.isoformat(),"updated_at":row.updated_at.isoformat()}
 
 @app.patch("/api/drafts/{draft_id}")
 def api_save_draft(draft_id:int,body:DraftSaveRequest,request:Request,db:Session=Depends(get_db)):
@@ -1124,49 +1219,30 @@ def api_analytics_dashboard(request:Request,days:int=Query(7),db:Session=Depends
     from sqlalchemy.exc import SQLAlchemyError
     try:
         record(db,user.id,view)
+        view['recommendation_history_saved']=True
     except SQLAlchemyError:
         db.rollback()
         log.warning('Performance evidence could not be saved for recommendations')
         view['note']+=' These results could not be saved for Next move; refresh to try again.'
+        view['recommendation_history_saved']=False
     return view
 
 @app.post("/api/insights")
 def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db)):
-    user=current_user(request); data=analytics_for_user(db,user.id); feed=recent_posts_for_user(db,user.id); dashboard=_analytics_dashboard(data,feed); summary=dashboard.get("summary") or {}; question=body.question.lower()
-    connected=[(name,value) for name,value in dashboard["platforms"].items() if name!="_summary" and isinstance(value,dict) and value.get("connected")]
-    score=lambda value:int(value.get("likes") or value.get("reactions") or 0)+int(value.get("comments") or value.get("replies") or 0)+int(value.get("shares") or value.get("reposts") or 0)
-    leader=max((item for item in connected if score(item[1])>0),key=lambda item:score(item[1]),default=None)
-    posts=dashboard.get("top_posts") or []
-    top=max(posts,key=lambda item:int(item.get("likes") or 0)+int(item.get("comments") or 0)+int(item.get("shares") or 0),default=None)
-    def number(key:str)->str:return "unavailable" if summary.get(key) is None else f"{int(summary[key]):,}"
-    if not connected:
-        answer="I don't have enough account data yet. Connect a social account and Zova will start reading the available performance signals."
-    elif any(word in question for word in ("trend","working","best","perform","improve","strategy")):
-        lead=f"{leader[0].title()} has the strongest engagement signal in the available data" if leader else "There is not yet a clear platform leader"
-        detail=f" Your strongest recent post is on {str(top.get('platform') or '').title()} with {int(top.get('likes') or 0):,} likes, {int(top.get('comments') or 0):,} comments and {int(top.get('shares') or 0):,} shares." if top else " Publish a few more posts so I can compare formats and topics."
-        answer=lead+"."+detail
-    elif "impression" in question or "view" in question:
-        answer=f"Your connected accounts recorded {number('impressions')} impressions in the available sample of posts published in the last seven days."
-    elif "like" in question:
-        answer=f"Your connected accounts recorded {number('likes')} likes in the available sample of posts published in the last seven days."
-    elif "comment" in question or "reply" in question:
-        answer=f"Your connected accounts recorded {number('comments')} comments or replies in the available sample of posts published in the last seven days."
-    elif "share" in question or "repost" in question:
-        answer=f"Your connected accounts recorded {number('shares')} shares or reposts in the available sample of posts published in the last seven days."
-    elif "follower" in question:
-        answer=f"Your connected accounts currently report {number('followers')} followers in total."
-    elif "recent" in question or "last post" in question:
-        answer=(f"Your latest available post was on {str(posts[0].get('platform') or '').title()}: “{str(posts[0].get('text') or 'Media post')[:180]}”" if posts else "No recent connected-account posts are available yet.")
-    else:
-        lead=f" {leader[0].title()} currently has the strongest engagement signal." if leader else ""
-        answer=f"In the available sample of posts published in the last seven days: {number('impressions')} impressions, {number('likes')} likes, {number('comments')} comments and {number('shares')} shares or reposts.{lead}"
-    answer += " " + dashboard["note"]
+    from .analytics_view import insight_fallback
+    user=current_user(request)
+    data=analytics_for_user(db,user.id)
+    feed=recent_posts_for_user(db,user.id,limit=30)
+    dashboard=_analytics_dashboard(data,feed,window_days=body.days)
+    summary=dashboard.get('summary') or {}
+    connected=any(value.get('connected') for value in dashboard['platforms'].values())
+    answer=insight_fallback(dashboard,body.question,body.days)
     if connected and os.environ.get("OPENAI_API_KEY"):
         try:
             with allowances.ai_action(db,user.id):
                 answer=ai.analyse_performance(question=body.question,dashboard=dashboard,preferences=get_preferences(db,user.id))
         except HTTPException:raise
-        except Exception as exc:log.warning("AI performance analysis failed; using account-data fallback: %s",exc)
+        except Exception:log.warning("AI performance analysis failed; using account-data fallback")
     return {"answer":answer,"summary":summary,"has_signal":bool(connected),"recommendations":dashboard.get("recommendations") or []}
 
 @app.get("/api/recent-posts")
@@ -1178,6 +1254,9 @@ def run_due(authorization:Annotated[str|None,Header()]=None):
     secret=os.environ.get("SCHEDULER_SECRET") or os.environ.get("ADMIN_API_KEY")
     token=bearer_token(authorization)
     if not secret or not hmac.compare_digest(token,secret):raise HTTPException(401,"Invalid scheduler secret")
+    from .runtime import scheduler_mode
+    if scheduler_mode() == 'external':
+        raise HTTPException(409,'The dedicated worker manages scheduled delivery')
     return process_due()
 
 
@@ -1203,11 +1282,25 @@ app.include_router(verification_router)
 
 @app.get('/media/preview/{asset_id}')
 def media_preview(asset_id:int,request:Request,db:Session=Depends(get_db)):
-    from .storage import get_public_url
+    from .storage import get_public_url, verify_available
     row=db.get(MediaAsset,asset_id)
     if not row or row.user_id!=current_user(request).id:raise HTTPException(404,'Media not found')
-    try:return RedirectResponse(get_public_url(row.storage_key,row.public_url,expires=300),307)
+    try:
+        verify_available(row.storage_key,row.size_bytes)
+        return RedirectResponse(get_public_url(row.storage_key,row.public_url,expires=300),307)
     except RuntimeError:raise HTTPException(404,'Media preview unavailable')
 
 from .connection_review import router as connection_review_router
 app.include_router(connection_review_router)
+
+# Native authority is disabled by default; the existing Studio stays shared.
+from .mobile_auth import router as mobile_auth_router
+from .mobile_shell import router as mobile_shell_router, NativeBillingMiddleware
+from .access_logging import install as redact_access_logs
+redact_access_logs()
+app.include_router(mobile_auth_router)
+app.include_router(mobile_shell_router)
+app.add_middleware(NativeBillingMiddleware)
+app.add_middleware(SecurityMiddleware)
+from .observability import RequestDiagnostics
+app.add_middleware(RequestDiagnostics)

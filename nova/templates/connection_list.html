@@ -1,4 +1,5 @@
 <div class="connection-list seamless social-connect-list">
+{% if request.query_params.get('unlinked') %}<p role="status">Unlinked from Zova. Unsent posts for this account are cancelled; anything already sending may still finish. You can also remove Zova’s permission in your social account settings.</p>{% endif %}
 {% for p in ['instagram','facebook','tiktok','x'] %}{% set option=connections[p] %}{% set rows=by_platform.get(p,[]) %}
 <div class="connection-row"><div>{% with platform=p %}{% include "social_icon.html" %}{% endwith %}<b>{{ option.name }}</b>
 <small>{{ option.detail }}</small>

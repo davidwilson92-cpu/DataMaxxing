@@ -1,3 +1,53 @@
+# 19 October 2026 — commercial-readiness candidate (supersedes older status below)
+
+| Capability | Implemented / tested boundary | External or release boundary |
+|---|---|---|
+| Studio / Drafts / Performance / Account | Core screens remain light; Account and bridges dark. Slim Studio header, no weekly card in Studio, flat Account categories. Current candidate simplifies headings/help and makes Performance metrics legible. | Shared runtime deployment status is in the latest handoff; browser previews are synthetic, not physical iPhone acceptance. |
+| AI sharing choice | Default-off, versioned account permission, server gate, cancel/failure protection, export/erasure inclusion and Account revocation; dedicated server/client tests | Existing synthetic AI fixtures explicitly bypass this gate. Approval is not a complete privacy/retention programme. |
+| Performance | Correct selected window for questions; missing data not zero; no stale panels/late answers or invented platform winner; safe links | Limited provider samples and differing counters remain labelled. Actual data coverage is provider-dependent. |
+| Diagnostics | Safe failure reference/header, route-template logs, provider payload removal and review-URL redaction | No external alerts configured or independent security audit completed. |
+| Synthetic recovery | CI fixture checks restored credential decryption/passwords, sessions/revocation, unknown publication, AI withdrawal and missing media recovery | Exact CI receipt required. Managed backup, key custody, S3 policies, changed storage layout and RPO/RTO remain unverified. |
+| Cloud portability | Embedded/external/disabled scheduling, single-worker PostgreSQL lease, heartbeat, bounded pools and offline schema preparation | External mode inactive. No cloud resources, private-media migration, production restore or cutover. |
+| iOS beta | Earlier server419d452 live; native0.1.0(9) verified Testing in the existing group with one tester; all-provider automatic return implemented | Owner phone acceptance remains pending. No new Swift change in this candidate. |
+| Social publishing | Existing confirmation/ownership/uncertain-result protections preserved | Historical provider tests do not establish every format/customer approval. Owner reports Direct Post approval; current production settings and public paid-content validation require separate verification. |
+| Commercial access | Existing free-beta offer and disabled charges retained | Paid plans, iOS purchase policy, operating/privacy gates and real acceptance remain open. |
+
+See [current scores, evidence and commercial gates](COMMERCIAL_READINESS_20261019.md) and [cloud plan](architecture/CLOUD_MIGRATION_20261019.md). All79 historical sections remain tracked; earlier branch evidence is not presumed active.
+
+---
+
+# Historical snapshot: 19 October 2026 — phone feedback and dark product styling
+
+| Capability | Implementation / tests | Release and evidence boundary |
+|---|---|---|
+| Shared black/violet product styling | Shared theme loaded last; forms, selections, results, Account, Drafts and Performance included; local mobile and live desktop visual review | a407043 application checks passed485/1 skipped on both databases; production release recorded in handoff. Native status bar/background needs replacement binary |
+| Grouped Account | Five keyboard-accessible details categories; hash links and save errors reveal relevant group; voice save returns to open preferences; socials-only native refresh preserved | Live Account verified; synthetic forms/session/deep-link/focus tests passed; no customer records altered |
+| Cleaner Studio | + New post beside brand, smaller Next move; hero hidden on composer focus; mobile weekly summary hidden while typing; clearer composer prompt | Phone-size synthetic focus verified, live desktop inspected; physical iOS keyboard retest remains |
+| iPhone Instagram connection | Same session/purpose-bound handoff opens normal browser, auto-refreshes connections on app return; other providers retain current route | Three start302s/no callback observed; old in-app flow is not fixed by claim. Native8d602a5 passed16 unit/1 UI tests and release compilation; still needs signed TestFlight delivery and real phone/provider validation. No grants reset or test post |
+
+All79 broader beta findings remain tracked. This is a bounded beta update, not commercial certification.
+
+---
+
+# TikTok approval status — 18 October 2026
+
+App revision with video.publish and merged 3m51s demonstration: **submitted, In review** (portal verified). Separate public-access audit: **submitted**, after owner-approved legal declarations; TikTok submission confirmation verified, expected response2-4weeks. Recording demonstrates private Direct Post, actual TikTok result, editable caption, privacy/consent and disclosure controls. It does not prove public paid-partnership publishing, native iOS readiness or unrestricted reviewer access. Production remains inbox-only. See current handoff for evidence and continuation.
+
+---
+
+# 18 October 2026 — sent-media and TikTok outcome update (sandbox deployed)
+
+| Capability | Implementation / evidence | Remaining boundary |
+|---|---|---|
+| Sent image/video message | Playable attachment moves into conversation; survives reload; removal changes active post only; ownership/brand/forged URL/failure tests and desktop/mobile preview | Synthetic UI/provider tests; deployed sandbox1bd3b94 assets verified; fresh signed-in run pending |
+| First-caption creation | “Post this shlop” with video/TikTok becomes an editable caption proposal; no review or publication is implied; API and client regressions | Old live dead-end reproduced on draft2; fix deployed1bd3b94; fresh signed-in check pending |
+| TikTok result accuracy | Safe rejection reasons, durable receipts, status/worker race protection and no automatic resend | Existing publication-1 error evidence lost in old version; must remain unknown |
+| Commercial disclosure | Own brand vs third-party partnership retained; sandbox private-only limit shown and enforced; paid visibility Everyone/Friends only | TikTok public-access audit still required; no live paid partnership validation |
+
+Runtime1bd3b9486ea79c82413978c07e7d82a4c26ef52c passed hosted CI39161889443:440 passed/1 skipped on each database, restore/container/dependency/frontend and exact beta gates. Providers mocked; attachment desktop/mobile visually checked; live first-caption dead-end observed, new first-caption path API/client tested. Sandbox deployment dep-dbaiictg1s2s73c85sf0 verified Live; health/login200 and all four changed Studio assets match candidate. Browser refresh returned sign-in. No new real-provider post or production deployment. See current handoff for evidence and rollback2fa13f7. All79 wider beta findings remain open.
+
+---
+
 # Social beta validation - 16 October 2026
 
 | Capability | Implementation and tests | Live provider / deployment evidence |
@@ -6,10 +56,11 @@
 | Facebook Page text / image | Actual-grant checks, posting scope, reviewed snapshots and receipts tested with mocked provider | Page use case and all three permission review requests saved, not submitted/approved; narrowed Page grant and connection verified; approved text test published once and independently verified on Facebook (122119807485439972). General customer permissions review still pending; live images not tested |
 | X text / thread / image | Media scope and immutable review/adapter tests; partial thread prevents resend | Callback corrected, account connected; authorised text test independently verified on X (2111033940157055189). Live images/threads not tested |
 | TikTok video to inbox | Approved scopes, review, chunk upload, inbox/published status and duplicate prevention tested | Approved inbox-only Web app; connected David Wilson; corrected live inbox final review verified after PR32. Synthetic draft27 sent once after exact approval; owner confirmed inbox receipt. Public completion remains in TikTok; pending label needs refinement |
-| TikTok direct publishing / analytics | Explicitly outside current approved scope | Separate provider approval required; not beta-ready capabilities |
+| TikTok Direct Post | PR33 deployed dormant; consent, disclosures, verified media URL and actual duration checks;315 tests pass on both databases | Approval draft prepared; separate audit unsubmitted; real Direct Post recording, grant and feed test outstanding. Inbox mode retained |
+| TikTok analytics | Outside current integration scope | Not validated |
 | Shared iOS | Shared API foundation remains draft PR28, flags off | Native registration/device/provider tests and deployment outstanding |
 
-Candidate d844afa passed CI38882996566: SQLite299 passed/1 skipped; PostgreSQL299 passed/1 skipped, restore/container/dependency and exact beta scope checks pass. Owner-approved X and TikTok connections saved; exact approved X text test published once. PR30/31/32 required checks passed and deployment verified; no Facebook or TikTok post sent. See [social evidence and rollback](SOCIAL_BETA_COMPLETION_20261016.md). All79 broader gaps retained; no commercial certification.
+Candidate d844afa passed CI38882996566: SQLite299 passed/1 skipped; PostgreSQL299 passed/1 skipped, restore/container/dependency and exact beta scope checks pass. Owner-approved X and TikTok connections saved; exact approved X text test published once. PR30/31/32 required checks passed and deployment verified; Facebook approved text test independently verified and TikTok inbox delivery owner-confirmed; no TikTok Direct Post sent. See [social evidence and rollback](SOCIAL_BETA_COMPLETION_20261016.md). All79 broader gaps retained; no commercial certification.
 
 ---
 
@@ -98,3 +149,15 @@ Current production baseline: main `78d9924` (21 September Instagram reauthentica
 See `COMMERCIAL_OPERATIONS_20260920.md`, `CUSTOMER_VALIDATION_20260920.md` and `COMMERCIAL_READINESS_EVIDENCE_20260920.md`. Provider approval is never inferred from code, old credentials, a connected status or a mock.
 
 Next move simplification: automatically fills empty/stale recommendations; post-first card with one draft action; compact alternatives/context/settings; linked draft title and explicit platform saved. Browser synthetic goal-to-draft/reload and failure/late-navigation harnesses validated. Live model relevance remains a separate check. See NEXT_MOVE_SIMPLE_20261010.md.
+
+## 18 October 2026 — focused draft recovery (deployed to TikTok sandbox only)
+
+Exact runtime 2fa13f72009fa4629129070c14b8e15fa9f73631 is Live on Render dep-dbai30rrjlhs73akkom0. CI39146945668 passed all release gates (359 passed / 1 skipped each on SQLite/PostgreSQL); public health/login and exact deployed assets verified. Browser needs fresh sign-in; live account/provider path was not repeated. Production unchanged. See the current handoff for rollback and ephemeral sandbox restrictions.
+
+| Capability | Implementation/evidence | Remaining boundary |
+|---|---|---|
+| Sent-message composer | Sent idea moves to conversation; empty composer persists; separate recoverable retry | Synthetic desktop/mobile/reload/keyboard/fork tests passed; exact sandbox assets verified; signed-in live retest pending |
+| TikTok sponsor captions | Selection-bound planning; first caption generated instead of missing X rewrite | Mocked model coverage; no real paid post |
+| TikTok disclosure | Own/paid flags, labels, consent reset, privacy restrictions and immutable review tested | Sandbox private-only; public-access audit needed for paid partnership delivery |
+
+Existing users/data/auth/social integrations and all 79 broader beta findings remain preserved.

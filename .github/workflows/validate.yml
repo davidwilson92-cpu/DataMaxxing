@@ -11,7 +11,7 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-      - run: python -m pip install --upgrade pip
+      - run: python -m pip install --upgrade pip==26.2.0
       - run: python -m pip install -r requirements.txt pytest pip-audit
       - run: python -m pip check
       - run: python -m pytest -q --junitxml=test-results.xml
@@ -22,6 +22,8 @@ jobs:
         run: |
           node --test tests/strategy_onboarding.test.cjs tests/schedule_agenda.test.cjs tests/next_move_journey.test.cjs
           node tests/studio_clarity_client.cjs
+          node --test tests/ios_shell_client.cjs tests/analytics_commercial.test.cjs tests/ai_privacy_client.test.cjs
+          node --test tests/security_forms_client.test.cjs
           for file in strategy analytics drafts; do node --check "nova/static/$file.js"; done
       - run: python -m pip_audit --format json -o dependency-audit.json
       - uses: actions/upload-artifact@v4
@@ -51,8 +53,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install -r requirements.txt pytest
+      - run: python -m pip install --upgrade pip==26.2.0
+      - run: python -m pip install -r requirements.txt pytest pip-audit
       - run: python -m pytest -q --junitxml=postgres-tests.xml
+      - name: Prepare synthetic credential and media recovery fixture
+        run: python scripts/synthetic_recovery.py prepare
       - name: Restore synthetic PostgreSQL backup
         env:
           PG_CONTAINER: ${{ job.services.postgres.id }}
@@ -61,8 +66,13 @@ jobs:
           docker exec "$PG_CONTAINER" createdb -U postgres zova_test_restored
           docker exec "$PG_CONTAINER" pg_restore -U postgres -d zova_test_restored /tmp/synthetic.dump
           python scripts/check_synthetic_restore.py
+          python scripts/synthetic_recovery.py verify
       - name: Build hosting image
         run: docker build -t zova-release .
+      - name: Audit packages installed in the hosting image
+        run: |
+          docker run --rm --network none zova-release python -m pip freeze --all > runtime-requirements.txt
+          python -m pip_audit --disable-pip --no-deps -r runtime-requirements.txt --format json -o runtime-dependency-audit.json
       - name: Smoke-test isolated hosting image
         run: |
           docker run -d --name zova-smoke -p 8772:10000 -e DATABASE_URL=sqlite:////tmp/synthetic.db -e PUBLIC_BASE_URL=http://localhost:8772 -e SESSION_SECRET=synthetic-ci-only -e CREDENTIAL_ENCRYPTION_KEY=eV7ZGbkgONCU5t6fVtxgBMvCKx6-4UlAHWVHN2LoflE= -e REQUIRE_SUBSCRIPTION=false zova-release
@@ -74,7 +84,11 @@ jobs:
         if: always()
         with:
           name: postgres-release-evidence
-          path: postgres-tests.xml
+          path: |
+            postgres-tests.xml
+            runtime-requirements.txt
+            runtime-dependency-audit.json
+            ${{ runner.temp }}/zova-recovery/receipt.json
 
   beta-release:
     name: Production guardrails

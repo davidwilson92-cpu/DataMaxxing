@@ -12,7 +12,10 @@ if DATABASE_URL.startswith('postgres://'):
 elif DATABASE_URL.startswith('postgresql://'):
     DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg://', 1)
 connect_args = {'check_same_thread': False} if DATABASE_URL.startswith('sqlite') else {}
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args)
+from .runtime import database_options, validate_runtime
+# Reject unsafe multi-service configuration before opening a database or running DDL.
+validate_runtime()
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args, **database_options(DATABASE_URL))
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 
@@ -461,9 +464,67 @@ class SeriesApproval(BrandScoped, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-Base.metadata.create_all(bind=engine)
-from .migrations import run_migrations
-run_migrations(engine)
+class AIConsent(Base):
+    __tablename__ = 'zova_ai_consent'
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), primary_key=True)
+    version: Mapped[str] = mapped_column(String(40), default='')
+    allowed: Mapped[bool] = mapped_column(Boolean, default=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MobileGrant(Base):
+    __tablename__ = 'zova_mobile_grants'
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    client_id: Mapped[str] = mapped_column(String(40))
+    redirect_uri: Mapped[str] = mapped_column(String(500))
+    challenge: Mapped[str] = mapped_column(String(43))
+    state: Mapped[str] = mapped_column(String(128))
+    user_id: Mapped[int | None] = mapped_column(ForeignKey('nova_users.id'), nullable=True)
+    auth_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    code_hash: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class MobileSession(Base):
+    __tablename__ = 'zova_mobile_sessions'
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
+    auth_version: Mapped[int] = mapped_column(Integer)
+    access_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    access_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MobileRefresh(Base):
+    __tablename__ = 'zova_mobile_refresh_tokens'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    session_id: Mapped[str] = mapped_column(ForeignKey('zova_mobile_sessions.id'), index=True)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class MobileHandoff(Base):
+    __tablename__ = 'zova_mobile_handoffs'
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    session_id: Mapped[str] = mapped_column(ForeignKey('zova_mobile_sessions.id'), index=True)
+    destination: Mapped[str] = mapped_column(String(500))
+    purpose: Mapped[str] = mapped_column(String(20))
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class WorkerHeartbeat(Base):
+    __tablename__ = 'zova_worker_heartbeats'
+    role: Mapped[str] = mapped_column(String(30), primary_key=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20))
+
+
+from .runtime import prepare_schema
+prepare_schema(Base.metadata, engine)
 
 
 def get_db(request: Request):

@@ -104,7 +104,7 @@ def test_studio_answers_account_questions_without_external_ai():
     signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     response = client.post("/api/insights", cookies=signup.cookies, json={"question": "What is working?"})
     assert response.status_code == 200
-    assert "account data" in response.json()["answer"]
+    assert "Connect an account" in response.json()["answer"]
 
 
 def test_drafts_are_saved_reopened_and_listed():
@@ -131,8 +131,8 @@ def test_separate_analytics_workspace_and_dashboard():
     signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     page = client.get("/analytics", cookies=signup.cookies)
     assert page.status_code == 200
-    assert "CROSS-PLATFORM ANALYTICS" in page.text
-    assert "Analyse my accounts" in page.text
+    assert "Performance" in page.text
+    assert "Ask about your results" in page.text
     dashboard = client.get("/api/analytics/dashboard", cookies=signup.cookies)
     assert dashboard.status_code == 200
     assert dashboard.json()["period"] == "Posts published in the last 7 days"
@@ -181,6 +181,14 @@ def test_admin_dashboard_is_allowlisted_and_hides_secrets():
     previous = os.environ.get("ADMIN_EMAILS")
     os.environ["ADMIN_EMAILS"] = email
     try:
+        # Claiming an allowlisted address at signup does not prove mailbox control.
+        assert client.get("/admin/users", cookies=signup.cookies).status_code == 404
+        from sqlalchemy import select
+        from nova.db import SessionLocal, User, utcnow
+        with SessionLocal() as db:
+            admin = db.scalar(select(User).where(User.email == email))
+            admin.email_verified_at = utcnow()
+            db.commit()
         page = client.get("/admin/users", cookies=signup.cookies)
         filtered = client.get("/admin/users", params={"q": email, "country": "GB", "subscription": "none"}, cookies=signup.cookies)
     finally:

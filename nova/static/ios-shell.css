@@ -1,0 +1,10 @@
+/* The iPhone provides navigation; the same Studio owns editing and approval. */
+.ios-shell .studio-mobile-navigation,.ios-shell .studio-nav-rail,.ios-shell .app-nav,.ios-shell .mobile-menu-toggle,.ios-shell a[href="/subscribe"],.ios-shell #plan .account-links{display:none!important}
+.ios-shell{overscroll-behavior-y:none;-webkit-text-size-adjust:100%;--ios-bottom-inset:0px}
+.ios-shell .app-shell{grid-template-columns:minmax(0,1fr)}
+.ios-shell .conversation-workspace{margin-left:0!important}
+.ios-shell input,.ios-shell select,.ios-shell textarea{font-size:max(16px,1em)}
+.ios-shell :is(button,.button,.quiet-button,.mini-button){min-height:44px}
+.ios-shell dialog{max-height:calc(100dvh - 24px);overscroll-behavior:contain}
+.ios-shell .conversation-topbar{padding-top:12px}
+@media(prefers-reduced-motion:reduce){.ios-shell *{scroll-behavior:auto!important}}

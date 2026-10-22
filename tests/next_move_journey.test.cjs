@@ -17,6 +17,15 @@ const idea={id:9,title:'Show how you make a mug',reason:'Help beginners get star
  node('strategy_goal').value='My unfinished edit';calls.length=0;await c.openNextMove();assert.equal(node('strategy_goal').value,'My unfinished edit');assert.equal(calls.filter(x=>x.endsWith('/recommend')).length,0);assert.ok(!calls.some(x=>x.includes('series')));
  ready=false;fail=true;await c.openNextMove();assert.match(node('strategyStatus').textContent,/Try again/);assert.equal(node('recommendButton').hidden,false);
  c.saveDraftNow=async()=>{throw Error('Save failed');};calls.length=0;await vm.runInContext('draftNextMove(9,{})',c);assert.equal(calls.length,0);assert.equal(navigations.length,0);assert.match(node('strategyStatus').textContent,/Save failed/);
+ // Opening saved work must not call the AI-generating endpoint or require new AI consent.
+ await vm.runInContext('draftNextMove(9,{},41)',c);assert.equal(navigations.length,0);assert.match(node('strategyStatus').textContent,/Save failed/);
+ c.saveDraftNow=async()=>{};c.api=async()=>{throw Error('No AI request allowed');};
+ await vm.runInContext('draftNextMove(9,{},41)',c);assert.deepEqual(navigations,['/studio?draft=41&workspace=7']);
+ assert.match(c.nextMoveCard({...idea,draft_id:41}),/draftNextMove\(9,this,41\)/);
+ navigations.length=0;await c.openLinkedDraft('/api/series/occurrences/12/draft',{},'44');assert.deepEqual(navigations,['/studio?draft=44&workspace=7']);
+ c.api=async()=>[{id:2,revision:1,status:'active',spec:{frequency:'weekly',mode:'fresh',timezone:'Europe/London'},occurrences:[{id:12,draft_id:44,due_at:'2026-11-01T12:00:00Z',status:'draft'}]}];
+ await c.loadSeries();assert.match(node('seriesList').innerHTML,/openLinkedDraft\('\/api\/series\/occurrences\/12\/draft',this,44\)/);
+ navigations.length=0;c.saveDraftNow=async()=>{c.workspaceEpoch++;};await vm.runInContext('draftNextMove(9,{},41)',c);assert.equal(navigations.length,0);
  c.saveDraftNow=async()=>{};c.api=async()=>({draft_id:42});await vm.runInContext('draftNextMove(9,{})',c);assert.deepEqual(navigations,['/studio?draft=42&workspace=7']);
  navigations.length=0;c.api=async()=>{c.workspaceEpoch++;return {draft_id:43};};await vm.runInContext('draftNextMove(9,{})',c);assert.equal(navigations.length,0);assert.match(node('strategyStatus').textContent,/current chat is unchanged/);
  c.api=async()=>({items:[{...idea,id:1,kind:'review',brief:'Read recent questions'},idea]});await c.loadNextMoves();assert.match(node('strategyActions').innerHTML,/Show how you make a mug/);assert.doesNotMatch(node('strategyActions').innerHTML,/Read recent questions/);assert.match(node('strategyActions').innerHTML,/1 of 2/);

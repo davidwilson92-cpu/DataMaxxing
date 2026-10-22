@@ -25,6 +25,7 @@ function renderCanvas(markup){
   if (typeof contextualRefinements === 'function') contextualRefinements();
 }
 function canvasView(mode){
+  document.body.classList.remove('review-active');
   canvasMode=mode;
   if(mode==='edit'){editingDraft=true;refreshDraft();}
   const editor=document.getElementById('canvasEditor'),preview=document.getElementById('canvasPreview');
@@ -59,7 +60,7 @@ function renderReadiness(){
   document.querySelectorAll('.composer-platforms input').forEach(input=>{input.closest('.platform-check').classList.toggle('is-selected',input.checked);input.closest('.platform-check').classList.toggle('is-connected',Boolean(connectionData[input.value]?.length));input.title=connectionData[input.value]?.length?'Connected':'Connect to publish; drafting is available';});
   document.getElementById('threadLength').disabled=!platforms.includes('x')||sendingMessage||!editableDraft();
 }
-function openReview(){document.getElementById('postSettings').close();const host=reviewHost();document.getElementById('chatFeed').append(host);host.scrollIntoView({block:'start',behavior:'smooth'});const heading=host.querySelector('.chat-confirmation:last-child h3');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}}
+function openReview(){document.body.classList.add('review-active');document.getElementById('postSettings').close();const host=reviewHost();document.getElementById('chatFeed').append(host);host.scrollIntoView({block:'start',behavior:'smooth'});const heading=host.querySelector('.chat-confirmation:last-child h3');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}}
 function publicationStatus(status){return {unknown:'Outcome unconfirmed — check the destination; do not resend until resolved',pending:'Waiting for platform processing',publishing:'Sending — awaiting a result',scheduled:'Scheduled',published:'Published',failed:'Failed — review before retrying',cancelled:'Cancelled'}[status]||status;}
 function downloadWorkspace(){
   const blob=new Blob([JSON.stringify(draftPayload(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -95,7 +96,14 @@ function undoTextEdit(){
 document.getElementById('brief').addEventListener('input',sizeComposer);
 document.querySelectorAll('dialog').forEach(dialog=>dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}}));
 
-function fitVisibleViewport(){const view=window.visualViewport;document.querySelector('.conversation-workspace').style.setProperty('--chat-height',view&&window.innerWidth<761?view.height+'px':'100dvh');}
+function fitVisibleViewport(){
+ const view=window.visualViewport,mobile=window.innerWidth<761;
+ document.querySelector('.conversation-workspace').style.setProperty('--chat-height',view&&mobile?view.height+'px':'100dvh');
+ const typing=document.activeElement?.id==='brief';
+ document.body.classList.toggle('composer-keyboard-open',mobile&&typing);
+}
+document.getElementById('brief').addEventListener('focus',fitVisibleViewport);
+document.getElementById('brief').addEventListener('blur',fitVisibleViewport);
 window.visualViewport?.addEventListener('resize',fitVisibleViewport);
 window.addEventListener('resize',fitVisibleViewport);
 fitVisibleViewport();

@@ -8,7 +8,7 @@ import hashlib
 from pathlib import Path
 from sqlalchemy import select, delete
 from . import db as models
-from .security import hash_password
+from .security import hash_password, hash_api_key
 from .storage import UPLOAD_DIR
 import secrets
 
@@ -31,6 +31,7 @@ EXPORT = {
     models.BillingAccount: ['mode','status','price_id','period_end','cancel_at_period_end'],
     models.UsageEntry: ['kind','period','amount','state'],
     models.ProductEvent: ['kind','created_at'],
+    models.AIConsent: ['version','allowed','updated_at'],
     models.AICall: ['model','status','input_tokens','cached_tokens','output_tokens','estimated_gbp','rate_date'],
 }
 
@@ -82,6 +83,11 @@ def erase_local_account(db, uid, verified_case, *, writes_paused=False):
     if not request:
         request=models.DeletionRequest(code=case,subject_hash=hashlib.sha256(str(uid).encode()).hexdigest(),scope=plan['retained'])
         db.add(request)
+    receipts = db.scalars(select(models.DeletionRequest).where(
+        models.DeletionRequest.subject_hash == hash_api_key(f'account:{uid}'),
+        models.DeletionRequest.status.in_(('received', 'erasing')))).all()
+    for receipt in receipts:
+        receipt.status='erasing';receipt.scope=plan['retained']
     request.status='erasing';db.commit()  # Revoke access before storage operations.
     for asset in rows(db,models.MediaAsset,uid):
         if asset.storage_key:
@@ -107,8 +113,14 @@ def erase_local_account(db, uid, verified_case, *, writes_paused=False):
             for name in names:setattr(row,name,'{}' if name.endswith('_json') else '')
             if cls is models.SocialConnection:row.active=False
             if cls is models.PublishReview:row.status='erased'
-    for cls in [models.SeriesApproval,models.SeriesOccurrence,models.ContentSeries,models.StrategyAction,models.Strategy,models.PerformanceSnapshot,models.AuthIdentity,models.RecoveryToken,models.EmailVerification,models.OAuthState,models.PendingConnection,models.ProductEvent]:
+    for cls in [models.AIConsent,models.SeriesApproval,models.SeriesOccurrence,models.ContentSeries,models.StrategyAction,models.Strategy,models.PerformanceSnapshot,models.AuthIdentity,models.RecoveryToken,models.EmailVerification,models.OAuthState,models.PendingConnection,models.ProductEvent]:
         db.execute(delete(cls).where(cls.user_id==uid))
+    device_ids=select(models.MobileSession.id).where(models.MobileSession.user_id==uid)
+    db.execute(delete(models.MobileHandoff).where(models.MobileHandoff.session_id.in_(device_ids)))
+    db.execute(delete(models.MobileRefresh).where(models.MobileRefresh.session_id.in_(device_ids)))
+    db.execute(delete(models.MobileSession).where(models.MobileSession.user_id==uid))
+    db.execute(delete(models.MobileGrant).where(models.MobileGrant.user_id==uid))
     user.email=f'erased-{uid}@deleted.invalid';user.display_name='Deleted account';user.default_brand_name='Deleted brand';user.country_code='';user.email_verified_at=None;user.marketing_consent=False
+    for receipt in receipts:receipt.status='active_store_erased'
     request.status='active_store_erased';db.commit()
     return {'status':request.status,'scope':request.scope,'receipt':case}

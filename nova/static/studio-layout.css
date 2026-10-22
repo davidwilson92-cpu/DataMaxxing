@@ -1,0 +1,32 @@
+/* Light creation/work screens retain the compact header and focus behaviour. */
+.app-body,.app-body .library-workspace,.app-body .analytics-workspace,.app-body .app-topbar{background:#fff}
+.simple-chat .conversation-topbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;height:72px;padding:8px 24px;align-items:center}
+.simple-chat .studio-header-actions{margin:0;display:flex;gap:8px;align-items:center}
+.simple-chat #newChatBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #dcd2e5;font-size:14px;padding:8px 12px;min-height:44px;width:auto}
+.simple-chat .studio-header-actions #newChatBtn::after{content:none}
+.simple-chat #newChatBtn .new-post-plus{font-size:24px;line-height:1}
+.simple-chat .studio-brand-context{margin:0;max-width:100%;min-width:0}
+.simple-chat .studio-brand-context button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#65596f;font-size:13px}
+.simple-chat .studio-header-actions .next-move-launch{min-height:44px;padding:9px 14px;font-size:14px;border-radius:14px;background:linear-gradient(115deg,#120d1b,#2b173e);border:1px solid #62417e;color:#fff}
+.simple-chat .next-move-launch .next-move-sparkle{width:21px;height:21px}
+.simple-chat:has(#brief:focus) .welcome-message,.simple-chat.composer-keyboard-open .welcome-message,
+.simple-chat:has(#brief:focus) .studio-watermark,.simple-chat.composer-keyboard-open .studio-watermark{display:none}
+.app-body .library-topbar>.button{gap:6px}
+@media(max-width:760px){
+ .simple-chat .conversation-topbar{grid-template-columns:minmax(0,1fr) auto;height:auto;min-height:64px;padding:4px 12px;gap:0 8px}
+ .simple-chat .chat-brand{grid-row:1;grid-column:1;gap:4px}
+ .simple-chat .chat-brand a{font-size:21px}
+ .simple-chat .studio-brand-context{grid-row:2;grid-column:1/-1;max-width:100%;justify-self:start}
+ .simple-chat .studio-brand-context button{padding:0 2px;min-height:24px;font-size:12px}
+ .simple-chat .studio-header-actions{grid-row:1;grid-column:2;gap:7px}
+ .simple-chat #newChatBtn{font-size:12px;padding:8px;gap:4px}
+ .simple-chat .studio-header-actions .next-move-launch{font-size:13px;padding:9px 10px;gap:5px}
+ .simple-chat .work-summary{margin-top:0}
+ .simple-chat.composer-keyboard-open .work-summary{display:none}
+}
+.simple-chat .conversation-topbar .chat-brand,.simple-chat .conversation-topbar .studio-header-actions{align-self:center}
+.simple-chat .conversation-topbar .studio-header-actions>button{height:44px;box-sizing:border-box;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.simple-chat .conversation-topbar .chat-brand>a{min-height:44px}
+.simple-chat .conversation-topbar .next-move-launch:hover{color:#fff;background:linear-gradient(115deg,#191022,#43215e)}
+.ios-shell .conversation-topbar{padding-top:4px}
+@media(max-width:360px){.simple-chat #newChatBtn .new-post-label{display:none}.simple-chat #newChatBtn{min-width:44px}.simple-chat .studio-header-actions{gap:5px}}

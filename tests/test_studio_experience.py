@@ -47,3 +47,24 @@ def test_connection_alone_does_not_claim_voice_is_learned():
     page=client.get('/onboarding/writing-style')
     assert 'No voice profile is saved yet' in page.text
     assert 'already started analysing' not in page.text
+
+
+def test_pending_message_round_trip_keeps_unsent_input_separate():
+    client,*_=account()
+    other,*_=account()
+    draft=client.post('/api/drafts',json={}).json()
+    workspace={'conversation':[{'role':'user','content':'Draft a TikTok partnership caption'}],
+               'pending_message':'Draft a TikTok partnership caption','composer':'My next thought',
+               'selected_platforms':['tiktok'],'platform_selection_explicit':True}
+    body={'revision':draft['revision'],'workspace':workspace}
+    assert client.patch(f'/api/drafts/{draft["id"]}',json=body).status_code==200
+    saved=client.get(f'/api/drafts/{draft["id"]}').json()
+    assert saved['workspace']['pending_message']==workspace['pending_message']
+    assert saved['workspace']['composer']=='My next thought'
+    assert other.get(f'/api/drafts/{draft["id"]}').status_code==404
+    body['revision']=saved['revision']
+    body['workspace']['pending_message']='not in this conversation'
+    assert client.patch(f'/api/drafts/{draft["id"]}',json=body).status_code==400
+    body['workspace']['pending_message']=''
+    assert client.patch(f'/api/drafts/{draft["id"]}',json=body).status_code==200
+    assert client.get(f'/api/drafts/{draft["id"]}').json()['workspace']['pending_message']==''
