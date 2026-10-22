@@ -78,7 +78,8 @@ for this server dependency change.
 - Owner chose `david@zova-social.com` for beta operational contact/test alerts.
   The authorised clearly labelled manual test alert was sent through the deployed
   application mailer. Resend message `01a162d9-354b-7cb1-9a8a-dd7ef6080e8d`
-  reports Delivered. Inbox acknowledgement is pending. This proves the manual
+  reports Delivered and the owner confirms receipt in the chosen forwarded inbox.
+  The delivery/receipt check is complete. This proves the manual
   delivery route only, not an active automatic incident-alert service.
 - Recovery email for the separate account is Delivered, Resend message
   `01a162d7-4bb8-7bf3-bf53-0efa41c37ad5`; the token was opened from the visible
@@ -87,11 +88,31 @@ for this server dependency change.
   session remained valid. Completion is not inferred: owner was asked to finish
   the actual new-password submission. Apple's reviewer password is unchanged.
 
+## Evening reconciliation — 22 October
+
+The owner now reports "Password updated" and a completed Apple sign-in. Fresh
+read-only checks at approximately 21:57 UTC do not yet match those reports:
+
+- The deployed service is still exact `bcd260e` using PostgreSQL. The separate
+  recovery account has auth_version 0 and one unused reset record, expired at
+  09:15:38 UTC. No token, hash or credential is copied into the evidence.
+- A newly opened protected Account page accepts the pre-reset browser session
+  and shows the exact recovery-test email. Old-session rejection has not passed.
+- All accessible Apple tabs show login; navigating directly to the intended
+  external group still redirects to login. No public-link creation is observed.
+- A clarification asks whether the steps were completed in the side browser or
+  another browser/phone. Reconcile that answer before asking for repeated actions;
+  do not infer a successful reset from the reported message alone or access to an
+  Apple session from a sign-in in a different browser.
+- Live database/schema readiness passes. Billing is off, checkout and enforcement
+  false; worker idle and no overdue/stuck jobs, failed/stuck mail or recent AI
+  failures. Full status correctly retains the historical unknown publication and
+  49 unpriced AI calls. No new code, deployment, paid monitor or credentials changed.
+
 ## Remaining acceptance
 
 - Complete the separate recovery account's actual email reset and new login;
   verify used-link and old-session rejection. Never reset Apple's reviewer.
-- Acknowledge the delivered manual test alert in the chosen inbox.
 - Create and verify the capped TestFlight invitation link after those checks.
 
 The earlier logical recovery receipt remains valid evidence for the database,

@@ -9,9 +9,12 @@ and current native CI passed. Customer charges remain off. The owner reports the
 requested phone checks passed and explicitly declines the separate paid monitor.
 That service's approval is no longer a prerequisite; automatic independent
 application monitoring remains a recorded beta limitation. The chosen operational
-contact is david@zova-social.com. Live recovery acceptance and acknowledgement of
-the delivered manual alert are being completed. Public-link save returned to
-Apple login; do not infer a link exists until confirmed after sign-in.
+contact is david@zova-social.com; the owner confirms the delivered manual alert
+arrived. Live recovery acceptance remains unverified: the reported "Password
+updated" message does not match the 21:57 UTC record, which is still unused with
+auth_version 0 and a valid old session. Accessible Apple tabs remain signed out
+despite the reported sign-in. Browser/account clarification is pending; do not
+repeat credential steps blindly or infer a saved public link.
 
 The tables below describe the 20 October starting state; use the newer acceptance
 record and main handoff for current status, rather than re-asking settled choices.

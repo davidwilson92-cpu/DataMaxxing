@@ -38,17 +38,31 @@ Owner decisions on 22 October:
   limitation; do not request the same approval again or claim alert automation.
 - Use **david@zova-social.com** for beta operational contact. Authorised manual
   test alert `01a162d9-354b-7cb1-9a8a-dd7ef6080e8d` is Delivered in Resend;
-  inbox acknowledgement requested. Existing support forwarding remains intact.
+  the owner now confirms receipt in the forwarded inbox. Manual delivery and
+  receipt are verified; automatic monitoring remains inactive by choice.
+  Existing support forwarding remains intact.
 - Created the separate **Zova Recovery Check** account. Its actual reset email
   `01a162d7-4bb8-7bf3-bf53-0efa41c37ad5` is Delivered. After the first completion
   reply, database/UI evidence still showed an unused reset/auth_version 0 and a
   valid old session. Owner was asked to finish the password submission. Do not
   mark reset/revocation passed until evidenced; never reset Apple's reviewer.
 
+Follow-up at **21:57 UTC on 22 October**: the owner reports seeing "Password
+updated" and signing back into Apple. A fresh read of the live PostgreSQL account
+still finds auth_version 0 and its sole reset token unused (expired at 09:15 UTC).
+A newly opened Account page still accepts that account's existing session. The
+accessible Apple tabs remain signed out, including after navigating directly to
+the external group. These reports and observations are not reconciled. Ask which
+browser/account was used before repeating credential steps; a clarification is
+already pending. Do not claim live reset/revocation or a saved invitation link.
+Live bcd260e readiness still passes, billing/checkout/enforcement remain off,
+worker idle and no overdue/stuck jobs or failed/stuck mail. The historical unknown
+publication and 49 unpriced AI calls remain visible, unchanged.
+
 TestFlight public-link form was prepared with **10 testers**. Saving on 22 October
 returned to Apple login because the session expired; **no link creation is
-confirmed**. Apple sign-in and reset completion are already requested
-asynchronously. Finish them, verify old-session rejection/new login, then create
+confirmed**. Reconcile the reported sign-in/reset with the observed sessions,
+verify old-session rejection/new login, then create
 and verify the limited invitation link. Do not send invitations to others.
 
 See **docs/beta/BETA_ACCEPTANCE_20261021.md** for exact evidence and limits.
