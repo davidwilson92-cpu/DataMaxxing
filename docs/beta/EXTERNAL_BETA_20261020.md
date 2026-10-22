@@ -1,5 +1,21 @@
 # External beta release checklist — 20 October 2026
 
+## Latest acceptance update — 22 October
+
+This document retains the original release checklist and historical receipts.
+Current evidence is in `BETA_ACCEPTANCE_20261021.md`: Apple build 10 is approved
+and Testing; security patch bcd260e is live with 590 SQLite / 591 PostgreSQL checks
+and current native CI passed. Customer charges remain off. The owner reports the
+requested phone checks passed and explicitly declines the separate paid monitor.
+That service's approval is no longer a prerequisite; automatic independent
+application monitoring remains a recorded beta limitation. The chosen operational
+contact is david@zova-social.com. Live recovery acceptance and acknowledgement of
+the delivered manual alert are being completed. Public-link save returned to
+Apple login; do not infer a link exists until confirmed after sign-in.
+
+The tables below describe the 20 October starting state; use the newer acceptance
+record and main handoff for current status, rather than re-asking settled choices.
+
 ## Release boundary
 
 The owner authorises tested updates on Render and preparation of external TestFlight.

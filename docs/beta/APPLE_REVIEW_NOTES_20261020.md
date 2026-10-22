@@ -1,5 +1,11 @@
 # Zova Social — submitted external TestFlight review
 
+Update 21 October: Apple's external group now shows **0.1.0 (10) — Testing**,
+confirming Beta App Review approval. The historical submission record below
+remains preserved. On 22 October the session expired while saving the prepared
+ten-tester public link; fresh sign-in is requested and link creation is not yet
+confirmed. This is not a public App Store release.
+
 Status: **Waiting for Review**, observed in Apple's external group on 20 October
 2026 (record checked at 19:47 UTC). The owner completed the review form; on
 resuming, submission had already completed. Build 0.1.0 (10), bundle

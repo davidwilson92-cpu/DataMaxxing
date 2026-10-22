@@ -1,4 +1,4 @@
-# External beta acceptance — 21 October 2026
+# External beta acceptance — 21–22 October 2026
 
 ## Verified starting state
 
@@ -32,20 +32,67 @@ installer. Required PostgreSQL, recovery, image-smoke and scope checks remain.
 Primary release reference:
 https://pillow.readthedocs.io/en/stable/releasenotes/13.0.0.html
 
-Validation and deployment are pending. Native app source, database schema,
+Native app source, database schema,
 authentication, provider connections and billing settings are unchanged.
 Build 10 remains Apple's approved binary; no replacement native build is needed
 for this server dependency change.
 
-## Owner acceptance still needed
+## Validated and deployed
 
-- Complete separate recovery-test signup, actual email reset and new login;
+- Exact candidate `bcd260e25d92b41101f31073e2a626588195c65d` passed required
+  application/PostgreSQL CI `39679616727`: 590 SQLite tests / 2 skipped,
+  591 PostgreSQL tests / 1 skipped, 18 client tests/groups plus Studio, synthetic
+  recovery, hosting-image smoke and the exact limited-beta scope.
+- Both the test environment and actual hosting-image package inventory have no
+  known findings in the fresh dependency audit. Six new decoder checks cover
+  JPEG/PNG/GIF/WebP, phone EXIF orientation/metadata removal and truthful animated
+  image first-frame coverage. A separate fresh local environment passed 72
+  focused checks plus the six new checks and `pip check`.
+- Native CI `39679616901` passed 16 unit tests, one UI test and iPhone release
+  compilation. The duplicate application run `39679609151` also passed.
+- Render deploy `dep-dbcj1pvb9u1s73bree8g` became Live at 21:39:52 UTC on
+  21 October, instance `n7s4s`. Live runtime independently confirms the exact
+  commit, Pillow 13.0.0, pip 26.2, billing mode off, checkout false and
+  subscription enforcement false. No schema or customer credential migration.
+- On 22 October at 09:02 UTC readiness reports database reachable and required
+  schema available. Worker is embedded/idle; no overdue/stuck publication,
+  failed/stuck mail, old reservation or recent AI failure. Full status remains
+  attention for one historical unknown publication and now 49 unpriced AI calls.
+  The zero estimate is incomplete, not evidence that AI usage costs nothing.
+- The existing reviewer session survived deployment. The owner subsequently
+  created the separate recovery account; its onboarding and Drafts show its own
+  identity, no connections and no drafts, without the reviewer's draft36.
+- Screenshot receipt: `social-proof/beta-security-render-live-20261021.png`
+  (ignored). No actual social posts or provider grants changed.
+
+## Owner acceptance and operational decisions
+
+- Owner reports the requested build 10 attachment/draft reload and Facebook/X/
+  TikTok cancellation/return checks passed. Device/iOS details were not supplied;
+  record this as owner acceptance, not an observed automated physical-device run.
+  Instagram return was previously confirmed separately.
+- Owner explicitly chose **Leave the monitor inactive** on 22 October. No new
+  Render cron, recurring hosting charge or read-only credential was created.
+  This supersedes approval of that proposed service as an invitation prerequisite;
+  independent automatic application monitoring remains an accepted beta limitation.
+- Owner chose `david@zova-social.com` for beta operational contact/test alerts.
+  The authorised clearly labelled manual test alert was sent through the deployed
+  application mailer. Resend message `01a162d9-354b-7cb1-9a8a-dd7ef6080e8d`
+  reports Delivered. Inbox acknowledgement is pending. This proves the manual
+  delivery route only, not an active automatic incident-alert service.
+- Recovery email for the separate account is Delivered, Resend message
+  `01a162d7-4bb8-7bf3-bf53-0efa41c37ad5`; the token was opened from the visible
+  email and removed from the form URL. After the first owner completion reply,
+  read-only checks still showed an unused token/auth_version 0 and the existing
+  session remained valid. Completion is not inferred: owner was asked to finish
+  the actual new-password submission. Apple's reviewer password is unchanged.
+
+## Remaining acceptance
+
+- Complete the separate recovery account's actual email reset and new login;
   verify used-link and old-session rejection. Never reset Apple's reviewer.
-- Physical build 10 attachment/draft reload and Facebook/X/TikTok cancellation
-  return, including phone/iOS details. Instagram return was previously confirmed.
-- Approve the prepared independent monitor's $1/month minimum and separate
-  health-only credential, then prove delivery and acknowledgement of an alert.
-- Confirm support inbox coverage. Gmail delivery was verified previously.
+- Acknowledge the delivered manual test alert in the chosen inbox.
+- Create and verify the capped TestFlight invitation link after those checks.
 
 The earlier logical recovery receipt remains valid evidence for the database,
 encrypted values and 16 available uploads; four missing August files remain
@@ -55,3 +102,13 @@ Managed PITR and independently stored key recovery are not inferred.
 Do not present Apple approval, synthetic tests or an invitation URL as completion
 of these remaining checks. Keep customer charges disabled and retain all 79
 commercial findings. Do not deploy the unfinished broader migration.
+
+## Rollback
+
+No schema change is involved. Keep database, uploads, encryption/session keys,
+mail settings and publication receipts. Revert an affected application change
+while retaining the patched Pillow/installer versions where possible. The prior
+`7048c35` deployment is a continuity fallback only: it has the newly documented
+dependency findings and is not a security-equivalent release. If it must be used
+for an emergency outage, pause new invitations and reapply the dependency patch
+before resuming. Never restore stale production data or replay unknown posts.

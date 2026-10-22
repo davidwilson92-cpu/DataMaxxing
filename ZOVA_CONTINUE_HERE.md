@@ -1,3 +1,65 @@
+# Approved TestFlight beta and security update — 22 October 2026
+
+Apple approved **0.1.0 (10)**: its external group was observed as **Testing** on
+21 October, with zero external testers. The app source is unchanged; no new
+binary is needed for this server dependency patch. This is TestFlight approval,
+not a public App Store release or commercial certification.
+
+Fresh dependency checks found newly disclosed problems in the live image's
+Pillow 12.3.0 and pip 25.0.1. Exact reviewed candidate
+**bcd260e25d92b41101f31073e2a626588195c65d** pins Pillow 13.0.0 and pip 26.2.0,
+tests image orientation/decoding and now audits the actual hosting-image package
+inventory as well as the test runner. It is **live on Render**, deploy
+**dep-dbcj1pvb9u1s73bree8g**, instance **n7s4s**, since 21:39:52 UTC on 21 October.
+Effective runtime confirms patched versions, billing off, checkout false and
+subscription enforcement false. No schema, keys, grants or customer data change.
+
+Required CI **39679616727** passed: **590 SQLite tests / 2 skipped,
+591 PostgreSQL tests / 1 skipped**, client groups/Studio, synthetic restore,
+hosting-image smoke/audit and exact scope. Native CI **39679616901** passed
+**16 unit tests / 1 UI test / iPhone release compilation**. The fresh test and
+hosting-image dependency audits report no known vulnerabilities. The previous
+day's clean scan does not supersede the new findings or this patch.
+
+Live readiness on 22 October at 09:02 UTC: database/schema available, embedded
+worker idle, no overdue/stuck jobs, failed/stuck mail, old reservations or recent
+AI failures. Full status correctly remains attention for one historical unknown
+Instagram publication and **49 unpriced AI calls**. Do not invent outcomes/costs.
+The reviewer session survived deployment. The owner's new isolated recovery
+account has its own identity, no connections and no drafts; draft36 is not leaked.
+
+Owner decisions on 22 October:
+
+- Reports build 10 draft/attachment reload and Facebook/X/TikTok cancellation/
+  return checks passed. Phone/iOS details were not supplied. Instagram return
+  was separately confirmed earlier. Keep device reports distinct from CI proof.
+- **Leave the paid monitor inactive.** No cron, recurring hosting cost or new
+  monitor key was created. Independent automatic monitoring remains a beta
+  limitation; do not request the same approval again or claim alert automation.
+- Use **david@zova-social.com** for beta operational contact. Authorised manual
+  test alert `01a162d9-354b-7cb1-9a8a-dd7ef6080e8d` is Delivered in Resend;
+  inbox acknowledgement requested. Existing support forwarding remains intact.
+- Created the separate **Zova Recovery Check** account. Its actual reset email
+  `01a162d7-4bb8-7bf3-bf53-0efa41c37ad5` is Delivered. After the first completion
+  reply, database/UI evidence still showed an unused reset/auth_version 0 and a
+  valid old session. Owner was asked to finish the password submission. Do not
+  mark reset/revocation passed until evidenced; never reset Apple's reviewer.
+
+TestFlight public-link form was prepared with **10 testers**. Saving on 22 October
+returned to Apple login because the session expired; **no link creation is
+confirmed**. Apple sign-in and reset completion are already requested
+asynchronously. Finish them, verify old-session rejection/new login, then create
+and verify the limited invitation link. Do not send invitations to others.
+
+See **docs/beta/BETA_ACCEPTANCE_20261021.md** for exact evidence and limits.
+Retain all 79 commercial findings and the four historical missing August uploads.
+No AWS migration or customer charges. Keep data, disk, keys and publication
+receipts during rollback. Prefer a code revert that retains patched dependencies;
+old `7048c35` is an outage fallback with known dependency findings, not an equivalent
+security release. Never replay unknown posts or restore stale production data.
+
+---
+
 # Beta checks published; owner acceptance gates remain — 20 October 2026
 
 The owner asked to finish beta checks while Apple reviews build 10. The bounded
