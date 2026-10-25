@@ -122,7 +122,7 @@ struct ZovaRoot: View {
         }
         .task { await model.start() }
         .onReceive(model.pages[0].$failure) { if $0 != nil { launchFailed = true } }
-        .preferredColorScheme(darkScreen ? .dark : .light)
+        .preferredColorScheme(launchVisible || darkScreen ? .dark : .light)
         .onOpenURL { receiveReturn($0) }
         .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { receiveReturn(url) } }
         .onChange(of: scenePhase) { _, phase in

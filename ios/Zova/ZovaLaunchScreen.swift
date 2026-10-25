@@ -3,8 +3,10 @@ import SwiftUI
 /// App-owned animation after iOS's static launch screen. It never gates startup work.
 struct ZovaLaunchScreen: View {
     let ready: Bool
+    var motionOverride: Bool? = nil
     let finished: () -> Void
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    private var reduceMotion: Bool { motionOverride ?? systemReduceMotion }
     @State private var appeared = false
     @State private var departing = false
     @State private var zooming = false
@@ -88,14 +90,15 @@ struct LaunchScreenTestHost: View {
             Color.white.ignoresSafeArea()
             Text("Launch destination").foregroundStyle(.black).accessibilityIdentifier("launch-destination")
                 .accessibilityHidden(covered)
-            if covered { ZovaLaunchScreen(ready: ready) { covered = false } }
+            if covered {
+                ZovaLaunchScreen(ready: ready, motionOverride: ProcessInfo.processInfo.arguments.contains("--launch-reduce-motion")) { covered = false }
+            }
         }
         .task {
             guard !ProcessInfo.processInfo.arguments.contains("--launch-never-ready") else { return }
             try? await Task.sleep(for: .seconds(4))
             ready = true
         }
-        .environment(\.accessibilityReduceMotion, ProcessInfo.processInfo.arguments.contains("--launch-reduce-motion"))
     }
 }
 #endif
