@@ -1,9 +1,26 @@
-.social-connect-list .connection-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; }
-.social-connect-list .connection-row>div { min-width:0; grid-template-columns:28px minmax(0,1fr); gap:5px 10px; }
-.social-connect-list .connection-row small { white-space:normal; overflow-wrap:anywhere; line-height:1.5; }
-.social-connect-list .connection-row form { grid-column:2; justify-self:start; }
-.social-connect-list .mini-button { min-width:90px; max-width:145px; text-align:center; }
-.social-connect-list .connected-label { white-space:nowrap; }
+/* Compact identities; destructive actions stay inside the named Manage disclosure. */
+.social-connect-list .compact-social-row{position:relative;display:block;padding:16px 0;min-height:84px;border-bottom:1px solid #dcd6e5}
+.social-connect-list .connection-identity{display:grid;grid-template-columns:26px minmax(0,1fr);align-items:start;gap:4px 10px;min-width:0;padding-right:100px}
+.social-connect-list .connection-identity>:is(.platform-brand-icon,.instagram-glyph){width:24px;height:24px;grid-row:1/4}
+.social-connect-list .connection-identity>strong{font-size:16px;font-weight:650;line-height:1.5}
+.social-connect-list .connection-identity>small{grid-column:2;font-size:13px;line-height:1.45;overflow-wrap:anywhere;color:#6b6176}
+.social-connect-list .connection-state{display:block;font-size:12px;color:#477460;margin-top:2px}
+.social-connect-list .connection-action,.social-connect-list .connection-manage>summary{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;box-sizing:border-box;padding:8px 4px;border:0;border-radius:6px;background:transparent;color:#6d28d9;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer}
+.social-connect-list .connection-primary-action,.social-connect-list .connection-manage>summary{position:absolute;top:12px;right:0;min-width:88px}
+.social-connect-list .connection-manage>summary{list-style:none}
+.social-connect-list .connection-manage>summary::-webkit-details-marker{display:none}
+.social-connect-list .connection-manage[open]>summary>span{transform:rotate(180deg)}
+.social-connect-list .connection-management{margin:12px 0 0 36px;padding-top:10px;border-top:1px solid #dcd6e5}
+.social-connect-list .connection-management .connection-action{justify-content:flex-start}
+.social-connect-list .connection-management form{margin:0}
+.social-connect-list .connection-management .link-danger{min-height:44px;padding:8px 4px;text-align:left;font-size:14px;overflow-wrap:anywhere}
+.social-connect-list .connection-unlink-note{font-size:12px;line-height:1.45;color:#6b6176;margin:2px 4px 6px}
+.social-connect-list :is(a,button,summary):focus-visible{outline:2px solid #9564d6;outline-offset:3px}
+:is(.account-flow-body,.voice-body) .social-connect-list .connection-action,:is(.account-flow-body,.voice-body) .social-connect-list .connection-manage>summary{color:#c6a4fb}
+:is(.account-flow-body,.voice-body) .social-connect-list .connection-state{color:#9ac9af}
+:is(.account-flow-body,.voice-body) .social-connect-list .connection-unlink-note{color:#b7adca}
+:is(.account-flow-body,.voice-body) .social-connect-list .connection-management{border-color:#3a3048}
+@media(max-width:360px){.social-connect-list .connection-identity{padding-right:84px;gap:4px 8px}.social-connect-list .connection-primary-action,.social-connect-list .connection-manage>summary{min-width:76px;font-size:13px}.social-connect-list .connection-management{margin-left:34px}}
 .social-connect-copy h1 { font-size:clamp(36px,4.5vw,60px); }
 .connection-explainer { max-width:740px; margin:30px auto; padding:clamp(24px,5vw,48px); background:rgba(255,255,255,.75); border:1px solid rgba(90,65,135,.15); border-radius:24px; }
 .connection-explainer h1 { font-size:clamp(32px,5vw,48px); letter-spacing:-.04em; }
@@ -15,6 +32,4 @@
 .connection-methods h2 { font-size:22px; margin:0; }
 @media(max-width:600px) {
   .connection-methods { grid-template-columns:minmax(0,1fr); }
-  .social-connect-list .connection-row { grid-template-columns:minmax(0,1fr); gap:12px; }
-  .social-connect-list .mini-button,.social-connect-list .connected-label { justify-self:start; margin-left:38px; }
 }

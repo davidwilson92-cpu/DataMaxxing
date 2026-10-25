@@ -200,7 +200,7 @@ def test_instagram_facebook_is_explicit_and_connects_only_instagram(signed_in, m
         rows=db.scalars(select(SocialConnection).where(SocialConnection.user_id==user_id)).all()
         assert len(rows)==1 and rows[0].platform=="instagram"
         assert rows[0].username=="correct_instagram"
-    assert "Connection options" in client.get("/account").text
+    assert 'aria-label="Manage Instagram connection"' in client.get("/account").text
 
 
 def test_instagram_facebook_requires_linked_account_and_preserves_direct(signed_in, monkeypatch):
