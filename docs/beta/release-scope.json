@@ -30,7 +30,7 @@
     "ios/Zova/ZovaLaunchScreen.swift": "a0cfe7a179dd5cce52bcf6ec0d16ed2b8efb3cdf8942ef4164ff5850d6f2d0bf",
     "ios/ZovaTests/NativeProtocolTests.swift": "464596cc9056c6868b732640f09d47848e390e48cae6d3b35f510c7ee9f4b69f",
     "ios/ZovaTests/WebKitHandoffTests.swift": "e44dde8a203575a41258bcb8bbd19e9df63900b90c1474f4f40c8b46353ba481",
-    "ios/ZovaUITests/ZovaUITests.swift": "4690d79166492d35b17be0ded19cec78b2f39141fa1c89f66cfccdeaca7e083b",
+    "ios/ZovaUITests/ZovaUITests.swift": "6d12bf5bd0327868a29d276446d1a401dcf1eccdc6140b6fe459705a66a45b85",
     "ios/project.yml": "1a43c93f2e76d2300b51a070eab696fab89f6a6d28bec75fd2720de79cd27086",
     "nova/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "nova/access_logging.py": "a1afa4c607f2ce1e42e8f01cd69b844d87d91e5ef16074c18b5682658d949156",

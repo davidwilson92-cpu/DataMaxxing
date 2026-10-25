@@ -46,7 +46,8 @@ final class ZovaUITests: XCTestCase {
         defer { XCUIDevice.shared.orientation = .portrait }
         app.launch()
         XCTAssertTrue(app.otherElements["zova-launch"].waitForExistence(timeout: 2))
-        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        // Full framebuffer avoids XCTest's stale application crop after rotation.
+        let screenshot = XCTAttachment(screenshot: XCUIDevice.shared.screenshot())
         screenshot.name = "Zova branded launch landscape"; screenshot.lifetime = .keepAlways
         add(screenshot)
         XCTAssertTrue(app.staticTexts["launch-completed"].waitForExistence(timeout: 12))
