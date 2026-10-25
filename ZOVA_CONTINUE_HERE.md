@@ -1,3 +1,24 @@
+# Stripe sandbox / AWS migration preparation — 25 October 2026
+
+Owner now requests Stripe tester payments and migration of the shared web/iPhone
+backend to AWS **before publishing**. This supersedes Render as the intended final
+host, not the earlier Free-plan/cost decision or disabled customer charging.
+Existing Stripe integration reviewed; dummy-card help added for configured test
+checkout only. Use sandbox card 4242 4242 4242 4242; beta remains free without it.
+
+Prepared zero-task CloudFormation, AWS secret-loading entrypoint and deployment/
+rollback runbook under infra/aws. Encrypted RDS/EFS preserves historical upload
+paths; one embedded-worker task maximum, unchanged public domain and iOS origin.
+Scope hashing includes infrastructure. No new resources, DNS, charges or releases.
+AWS/Stripe side-browser sign-in is pending; both currently show login screens.
+No local AWS CLI identity or Stripe configuration was found in this checkout.
+Source DB version/storage/settings inventory, Free-plan/credit and cost/access
+approvals, hosted Stripe tests and actual migration are still required.
+See docs/beta/STRIPE_AWS_PREPARATION_20261025.md and infra/aws/README.md.
+Live remains d3bc09d on Render; TestFlight remains 0.1.0 (11). All 79 gaps retained.
+
+---
+
 # Studio intro and selected landing message — 25 October 2026
 
 Candidate `9f912b825327e3f967e9b79d41f7e513ffb644d6` implements the owner's

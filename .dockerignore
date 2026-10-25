@@ -10,3 +10,9 @@ __pycache__/
 docs/validation/
 ios/
 social-proof/
+.validation-tmp*/
+ios-build/
+*.p8
+*.p12
+*.mobileprovision
+*.dump

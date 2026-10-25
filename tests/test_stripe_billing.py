@@ -41,6 +41,19 @@ def checkout(client):
     return client.post('/billing/checkout',data={'plan':'monthly'},follow_redirects=False)
 
 
+def test_dummy_card_help_is_only_shown_for_enabled_test_checkout(stripe, monkeypatch):
+    client,*_=account()
+    page=client.get('/subscribe')
+    assert page.status_code==200 and '4242 4242 4242 4242' in page.text
+    assert 'Your beta access stays free' in page.text
+    monkeypatch.setenv('STRIPE_MODE','live')
+    monkeypatch.setenv('STRIPE_SECRET_KEY','sk_live_synthetic')
+    monkeypatch.setenv('STRIPE_LIVE_CHECKOUT_ENABLED','false')
+    page=client.get('/subscribe')
+    assert '4242 4242 4242 4242' not in page.text
+    assert 'Free beta access. No card required.' in page.text
+
+
 def subscription(customer,status='active',**extra):
     return {'id':'sub_synthetic','customer':customer,'status':status,'livemode':False,'created':1,'items':{'data':[{'price':{'id':'price_monthly'},'current_period_end':1900000000}]},**extra}
 

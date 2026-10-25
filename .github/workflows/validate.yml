@@ -3,6 +3,18 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  aws-infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install cfn-lint==1.58.0
+      - run: |
+          python infra/aws/build_template.py
+          git diff --exit-code -- infra/aws/beta.template.json
+          cfn-lint infra/aws/beta.template.json --regions eu-west-2
   synthetic-tests:
     runs-on: ubuntu-latest
     steps:

@@ -1,0 +1,944 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Zova beta candidate. No DNS changes. Zero tasks until verified restore and cutover. Budget alerts do not cap spend.",
+  "Parameters": {
+    "CertificateArn": {
+      "Type": "String",
+      "AllowedPattern": "arn:aws:acm:.*:certificate/.*",
+      "Description": "Existing validated certificate for zova-social.com in this region"
+    },
+    "SettingsSecretArn": {
+      "Type": "String",
+      "AllowedPattern": "arn:aws:secretsmanager:.*:secret:.*",
+      "Description": "Existing same-region AWS-managed-key secret with preserved application settings and restored runtime DB URL"
+    },
+    "ImageDigestUri": {
+      "Type": "String",
+      "AllowedPattern": ".*\\.dkr\\.ecr\\..*\\.amazonaws\\.com/.*@sha256:[a-f0-9]{64}",
+      "Description": "Immutable reviewed image in the repository created by this stack; update after build"
+    },
+    "PostgresVersion": {
+      "Type": "String",
+      "AllowedPattern": "17\\.[0-9]+",
+      "Description": "Select an available supported PostgreSQL 17 minor version after source dump compatibility check"
+    },
+    "DesiredCount": {
+      "Type": "Number",
+      "Default": 0,
+      "AllowedValues": [
+        0,
+        1
+      ]
+    },
+    "SchedulerMode": {
+      "Type": "String",
+      "Default": "disabled",
+      "AllowedValues": [
+        "disabled",
+        "embedded"
+      ]
+    },
+    "MonthlyBudgetUsd": {
+      "Type": "Number",
+      "Default": 75,
+      "MinValue": 1
+    }
+  },
+  "Resources": {
+    "Network": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.84.0.0/16",
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true
+      }
+    },
+    "Gateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {}
+    },
+    "GatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Network"
+        },
+        "InternetGatewayId": {
+          "Ref": "Gateway"
+        }
+      }
+    },
+    "Routes": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Network"
+        }
+      }
+    },
+    "InternetRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "Routes"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "Gateway"
+        }
+      },
+      "DependsOn": "GatewayAttachment"
+    },
+    "Public0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Network"
+        },
+        "CidrBlock": "10.84.0.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": false
+      }
+    },
+    "Private0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Network"
+        },
+        "CidrBlock": "10.84.10.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": false
+      }
+    },
+    "PublicRoute0": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Public0"
+        },
+        "RouteTableId": {
+          "Ref": "Routes"
+        }
+      }
+    },
+    "Public1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Network"
+        },
+        "CidrBlock": "10.84.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": false
+      }
+    },
+    "Private1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Network"
+        },
+        "CidrBlock": "10.84.11.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": false
+      }
+    },
+    "PublicRoute1": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Public1"
+        },
+        "RouteTableId": {
+          "Ref": "Routes"
+        }
+      }
+    },
+    "FrontGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "HTTPS web entry; HTTP only redirects",
+        "VpcId": {
+          "Ref": "Network"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "AppGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Application only from load balancer",
+        "VpcId": {
+          "Ref": "Network"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 10000,
+            "ToPort": 10000,
+            "SourceSecurityGroupId": {
+              "Ref": "FrontGroup"
+            }
+          }
+        ]
+      }
+    },
+    "DatabaseGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Private application access only",
+        "VpcId": {
+          "Ref": "Network"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 5432,
+            "ToPort": 5432,
+            "SourceSecurityGroupId": {
+              "Ref": "AppGroup"
+            }
+          }
+        ]
+      }
+    },
+    "FilesGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Private application access only",
+        "VpcId": {
+          "Ref": "Network"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 2049,
+            "ToPort": 2049,
+            "SourceSecurityGroupId": {
+              "Ref": "AppGroup"
+            }
+          }
+        ]
+      }
+    },
+    "DatabaseSubnets": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupDescription": "Private database subnets; no internet route",
+        "SubnetIds": [
+          {
+            "Ref": "Private0"
+          },
+          {
+            "Ref": "Private1"
+          }
+        ]
+      }
+    },
+    "DatabaseParameters": {
+      "Type": "AWS::RDS::DBParameterGroup",
+      "Properties": {
+        "Description": "Require encrypted database sessions",
+        "Family": "postgres17",
+        "Parameters": {
+          "rds.force_ssl": "1"
+        }
+      }
+    },
+    "Database": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "Engine": "postgres",
+        "EngineVersion": {
+          "Ref": "PostgresVersion"
+        },
+        "DBInstanceClass": "db.t4g.micro",
+        "AllocatedStorage": "20",
+        "MaxAllocatedStorage": 40,
+        "StorageType": "gp3",
+        "StorageEncrypted": true,
+        "DBName": "zova",
+        "MasterUsername": "zova_owner",
+        "ManageMasterUserPassword": true,
+        "PubliclyAccessible": false,
+        "DBSubnetGroupName": {
+          "Ref": "DatabaseSubnets"
+        },
+        "DBParameterGroupName": {
+          "Ref": "DatabaseParameters"
+        },
+        "VPCSecurityGroups": [
+          {
+            "Ref": "DatabaseGroup"
+          }
+        ],
+        "BackupRetentionPeriod": 7,
+        "CopyTagsToSnapshot": true,
+        "DeletionProtection": true,
+        "AutoMinorVersionUpgrade": true,
+        "MultiAZ": false
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "Files": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {
+        "Encrypted": true,
+        "PerformanceMode": "generalPurpose",
+        "ThroughputMode": "bursting",
+        "BackupPolicy": {
+          "Status": "ENABLED"
+        },
+        "FileSystemPolicy": {
+          "Statement": [
+            {
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "elasticfilesystem:*",
+              "Resource": "*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "FilesMount0": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "Files"
+        },
+        "SubnetId": {
+          "Ref": "Private0"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "FilesGroup"
+          }
+        ]
+      }
+    },
+    "FilesMount1": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "Files"
+        },
+        "SubnetId": {
+          "Ref": "Private1"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "FilesGroup"
+          }
+        ]
+      }
+    },
+    "Uploads": {
+      "Type": "AWS::EFS::AccessPoint",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "Files"
+        },
+        "PosixUser": {
+          "Uid": "10001",
+          "Gid": "10001"
+        },
+        "RootDirectory": {
+          "Path": "/uploads",
+          "CreationInfo": {
+            "OwnerUid": "10001",
+            "OwnerGid": "10001",
+            "Permissions": "0750"
+          }
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "Images": {
+      "Type": "AWS::ECR::Repository",
+      "Properties": {
+        "ImageTagMutability": "IMMUTABLE",
+        "ImageScanningConfiguration": {
+          "ScanOnPush": true
+        },
+        "EncryptionConfiguration": {
+          "EncryptionType": "AES256"
+        },
+        "EmptyOnDelete": false
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "Logs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "RetentionInDays": 30
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "ExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "ImageAndLogs",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "ecr:GetAuthorizationToken",
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "Images",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "Logs",
+                      "Arn"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AppRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "SettingsAndUploads",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "secretsmanager:GetSecretValue",
+                  "Resource": {
+                    "Ref": "SettingsSecretArn"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "elasticfilesystem:ClientMount",
+                    "elasticfilesystem:ClientWrite"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "Files",
+                      "Arn"
+                    ]
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "elasticfilesystem:AccessPointArn": {
+                        "Fn::GetAtt": [
+                          "Uploads",
+                          "Arn"
+                        ]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterSettings": [
+          {
+            "Name": "containerInsights",
+            "Value": "disabled"
+          }
+        ]
+      }
+    },
+    "Task": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Cpu": "256",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "ExecutionRole",
+            "Arn"
+          ]
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "AppRole",
+            "Arn"
+          ]
+        },
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64",
+          "OperatingSystemFamily": "LINUX"
+        },
+        "Volumes": [
+          {
+            "Name": "uploads",
+            "EFSVolumeConfiguration": {
+              "FilesystemId": {
+                "Ref": "Files"
+              },
+              "TransitEncryption": "ENABLED",
+              "AuthorizationConfig": {
+                "AccessPointId": {
+                  "Ref": "Uploads"
+                },
+                "IAM": "ENABLED"
+              }
+            }
+          }
+        ],
+        "ContainerDefinitions": [
+          {
+            "Name": "zova",
+            "Essential": true,
+            "Image": {
+              "Ref": "ImageDigestUri"
+            },
+            "User": "10001:10001",
+            "Command": [
+              "python",
+              "scripts/aws_beta_entrypoint.py"
+            ],
+            "StopTimeout": 120,
+            "PortMappings": [
+              {
+                "ContainerPort": 10000
+              }
+            ],
+            "MountPoints": [
+              {
+                "SourceVolume": "uploads",
+                "ContainerPath": "/app/uploads",
+                "ReadOnly": false
+              }
+            ],
+            "Environment": [
+              {
+                "Name": "ZOVA_AWS_SETTINGS_SECRET_ARN",
+                "Value": {
+                  "Ref": "SettingsSecretArn"
+                }
+              },
+              {
+                "Name": "AWS_DEFAULT_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "PUBLIC_BASE_URL",
+                "Value": "https://zova-social.com"
+              },
+              {
+                "Name": "PORT",
+                "Value": "10000"
+              },
+              {
+                "Name": "UPLOAD_DIR",
+                "Value": "/app/uploads"
+              },
+              {
+                "Name": "ZOVA_SCHEDULER_MODE",
+                "Value": {
+                  "Ref": "SchedulerMode"
+                }
+              },
+              {
+                "Name": "ZOVA_SCHEMA_MODE",
+                "Value": "verify"
+              },
+              {
+                "Name": "ZOVA_WEB_REPLICAS",
+                "Value": "1"
+              },
+              {
+                "Name": "STRIPE_MODE",
+                "Value": "test"
+              },
+              {
+                "Name": "STRIPE_LIVE_CHECKOUT_ENABLED",
+                "Value": "false"
+              },
+              {
+                "Name": "REQUIRE_SUBSCRIPTION",
+                "Value": "false"
+              },
+              {
+                "Name": "PLAN_LIMITS_ENABLED",
+                "Value": "false"
+              }
+            ],
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "Logs"
+                },
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                },
+                "awslogs-stream-prefix": "web"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "Balancer": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Type": "application",
+        "Scheme": "internet-facing",
+        "Subnets": [
+          {
+            "Ref": "Public0"
+          },
+          {
+            "Ref": "Public1"
+          }
+        ],
+        "SecurityGroups": [
+          {
+            "Ref": "FrontGroup"
+          }
+        ],
+        "LoadBalancerAttributes": [
+          {
+            "Key": "routing.http.drop_invalid_header_fields.enabled",
+            "Value": "true"
+          },
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "true"
+          }
+        ]
+      }
+    },
+    "Targets": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Port": 10000,
+        "Protocol": "HTTP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Ref": "Network"
+        },
+        "HealthCheckPath": "/health",
+        "Matcher": {
+          "HttpCode": "200"
+        },
+        "TargetGroupAttributes": [
+          {
+            "Key": "deregistration_delay.timeout_seconds",
+            "Value": "120"
+          }
+        ]
+      }
+    },
+    "Https": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "Balancer"
+        },
+        "Port": 443,
+        "Protocol": "HTTPS",
+        "SslPolicy": "ELBSecurityPolicy-TLS13-1-2-2021-06",
+        "Certificates": [
+          {
+            "CertificateArn": {
+              "Ref": "CertificateArn"
+            }
+          }
+        ],
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "Targets"
+            }
+          }
+        ]
+      }
+    },
+    "Http": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "Balancer"
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+        "DefaultActions": [
+          {
+            "Type": "redirect",
+            "RedirectConfig": {
+              "Protocol": "HTTPS",
+              "Port": "443",
+              "StatusCode": "HTTP_301"
+            }
+          }
+        ]
+      }
+    },
+    "Service": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "LaunchType": "FARGATE",
+        "PlatformVersion": "1.4.0",
+        "TaskDefinition": {
+          "Ref": "Task"
+        },
+        "DesiredCount": {
+          "Ref": "DesiredCount"
+        },
+        "EnableExecuteCommand": false,
+        "HealthCheckGracePeriodSeconds": 90,
+        "DeploymentConfiguration": {
+          "MinimumHealthyPercent": 0,
+          "MaximumPercent": 100,
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true
+          }
+        },
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "ENABLED",
+            "Subnets": [
+              {
+                "Ref": "Public0"
+              },
+              {
+                "Ref": "Public1"
+              }
+            ],
+            "SecurityGroups": [
+              {
+                "Ref": "AppGroup"
+              }
+            ]
+          }
+        },
+        "LoadBalancers": [
+          {
+            "ContainerName": "zova",
+            "ContainerPort": 10000,
+            "TargetGroupArn": {
+              "Ref": "Targets"
+            }
+          }
+        ]
+      },
+      "DependsOn": [
+        "Https",
+        "FilesMount0",
+        "FilesMount1"
+      ]
+    },
+    "Budget": {
+      "Type": "AWS::Budgets::Budget",
+      "Properties": {
+        "Budget": {
+          "BudgetName": {
+            "Fn::Sub": "${AWS::StackName}-monthly"
+          },
+          "BudgetType": "COST",
+          "TimeUnit": "MONTHLY",
+          "BudgetLimit": {
+            "Amount": {
+              "Ref": "MonthlyBudgetUsd"
+            },
+            "Unit": "USD"
+          }
+        },
+        "NotificationsWithSubscribers": [
+          {
+            "Notification": {
+              "NotificationType": "ACTUAL",
+              "ComparisonOperator": "GREATER_THAN",
+              "Threshold": 80,
+              "ThresholdType": "PERCENTAGE"
+            },
+            "Subscribers": [
+              {
+                "SubscriptionType": "EMAIL",
+                "Address": "david@zova-social.com"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "LoadBalancerHost": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Balancer",
+          "DNSName"
+        ]
+      }
+    },
+    "RepositoryUri": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Images",
+          "RepositoryUri"
+        ]
+      }
+    },
+    "DatabaseHost": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "Endpoint.Address"
+        ]
+      }
+    },
+    "DatabaseAdminSecretArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "MasterUserSecret.SecretArn"
+        ]
+      }
+    },
+    "UploadsFileSystemId": {
+      "Value": {
+        "Ref": "Files"
+      }
+    },
+    "UploadsAccessPointId": {
+      "Value": {
+        "Ref": "Uploads"
+      }
+    },
+    "ClusterArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Cluster",
+          "Arn"
+        ]
+      }
+    },
+    "ApplicationService": {
+      "Value": {
+        "Ref": "Service"
+      }
+    }
+  }
+}
