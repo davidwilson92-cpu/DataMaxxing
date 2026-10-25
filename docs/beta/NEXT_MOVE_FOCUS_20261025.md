@@ -1,7 +1,7 @@
 # Next Move: focused proposal and two-box strategy
 
-Candidate prepared on 25 October 2026. **Not deployed.** The live server remains
-d15f619; TestFlight 0.1.0 (11) remains the published binary. This change affects
+Prepared and **published on 25 October 2026**. The live server is
+d3bc09d; TestFlight 0.1.0 (11) remains the published binary. This change affects
 the shared web experience and backend, not native code or signing.
 
 ## Owner feedback addressed
@@ -88,3 +88,25 @@ No schema migration, native change, provider grant, real social post, customer
 deletion, billing activation, paid monitor or hosting move. All 79 broader gaps
 remain in the retained register. This does not resolve or re-score the full
 tester workbook, certify all provider journeys or certify commercial readiness.
+
+
+## Publication verification
+
+User requested Publish after reviewing the candidate. Render deployment
+`dep-dbf26n8ae00c73eh33ng` of exact validated `d3bc09d` succeeded in 48.0s,
+starting 25 October 2026 15:42:21 UTC and live at 15:43:09 UTC.
+
+Public health/login/Help returned 200. Public strategy JS/CSS matched candidate
+bytes. Existing signed-in browser session loaded the two-box strategy editor,
+Next Move entry and strategy callout navigation. The browser account has no
+saved strategy; no production test strategy/content was saved. Save/edit/fresh
+batch/draft checks are the isolated validation above, not live-provider claims.
+
+Authenticated readiness confirms database and required schema available; billing
+OFF, checkout false and subscription enforcement false. Worker idle, zero overdue
+jobs/stuck publications/pending deletion requests. One historical unknown
+publication remains; operational status is attention, not falsely certified green.
+
+Evidence: [live strategy](evidence/20261025/strategy-focus-live.png) and
+[Render deployment](evidence/20261025/render-live-d3bc09d.png). No native build,
+new TestFlight submission, customer charge, paid monitor or migration.

@@ -1,3 +1,29 @@
+# Next Move focus published — 25 October 2026, 15:43 UTC
+
+Owner requested publication. **d3bc09dec27039786c2291af86de8de5ffbdf52a is LIVE**
+on https://zova-social.com. Render deployment **dep-dbf26n8ae00c73eh33ng** started
+15:42:21 UTC and succeeded in 48.0 seconds. Exact tested commit; auto-deploy stays
+off. TestFlight remains 0.1.0 (11); no native changes or new binary were needed.
+The existing app loads the updated shared screens after closing/reopening.
+
+Post-release: exact commit and public strategy.js/CSS bytes verified; health,
+login and Help return 200; database/required schema ready. Existing signed-in
+session survived. New two-box Strategy, Next Move entry and Your strategy
+navigation load live. Current browser test account has no saved strategy: no
+production idea generation, strategy save or real post was performed. Full
+save/edit/regeneration/draft flow passed in isolated tests on the exact commit.
+Billing mode OFF, checkout false, subscription enforcement false. Worker idle,
+zero overdue/stuck publications and zero pending deletion cases. Historical
+unknown publication remains 1 and operational status honestly stays attention;
+no resend or history change. No paid monitor, migration, grant or deletion.
+
+Evidence: docs/beta/evidence/20261025/render-live-d3bc09d.png and
+strategy-focus-live.png. All 79 gaps and prior QA acceptance limits remain.
+The following candidate notes are historical; this publication supersedes their
+not-published status. No broad commercial-readiness certification.
+
+---
+
 # Next Move focus candidate — 25 October 2026, after published build 11
 
 **Implemented and validated, NOT published.** Runtime candidate
