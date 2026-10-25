@@ -39,6 +39,7 @@ jobs:
           curl --silent --fail http://127.0.0.1:8784/health > /dev/null
           NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/studio_mobile_layout.cjs
           NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/next_move_focus_browser.cjs
+          NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/studio_intro_browser.cjs
       - run: python -m pip_audit --format json -o dependency-audit.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -92,7 +93,7 @@ jobs:
           docker run -d --name zova-smoke -p 8772:10000 -e DATABASE_URL=sqlite:////tmp/synthetic.db -e PUBLIC_BASE_URL=http://localhost:8772 -e SESSION_SECRET=synthetic-ci-only -e CREDENTIAL_ENCRYPTION_KEY=eV7ZGbkgONCU5t6fVtxgBMvCKx6-4UlAHWVHN2LoflE= -e REQUIRE_SUBSCRIPTION=false zova-release
           for attempt in $(seq 1 30); do if curl --fail http://localhost:8772/health; then break; fi; sleep 2; done
           curl --fail http://localhost:8772/health
-          curl --fail http://localhost:8772/ | grep 'One idea.'
+          curl --fail http://localhost:8772/ | grep 'Because content'
           for file in studio studio-state studio-publish studio-experience brand-context readiness; do node --check "nova/static/$file.js"; done
       - uses: actions/upload-artifact@v4
         if: always()

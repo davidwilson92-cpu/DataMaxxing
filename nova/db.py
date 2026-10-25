@@ -116,6 +116,8 @@ class User(Base):
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # New ORM-created accounts get a tour; existing accounts migrate as seen.
+    studio_intro_pending: Mapped[bool] = mapped_column(Boolean, default=True, server_default='false')
     stripe_customer_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     subscription_status: Mapped[str] = mapped_column(String(40), default='none')

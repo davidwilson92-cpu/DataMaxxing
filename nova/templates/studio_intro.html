@@ -1,0 +1,12 @@
+<script id="studioIntroConfig" type="application/json">{{ {'pending': user.studio_intro_pending} | tojson }}</script>
+<dialog id="studioIntro" class="studio-intro" aria-labelledby="introTitle" aria-describedby="introText">
+  <div class="intro-highlight" aria-hidden="true"></div>
+  <section class="intro-bubble" data-side="above">
+    <header><span class="intro-count" aria-live="polite"></span><button type="button" class="intro-skip">Skip intro</button></header>
+    <span class="intro-icon" aria-hidden="true"></span>
+    <div aria-live="polite" aria-atomic="true"><h2 id="introTitle"></h2><p id="introText"></p></div>
+    <footer><a href="/guide">Open Guide</a><div><button type="button" class="intro-back" aria-label="Previous tip">←</button><button type="button" class="intro-next">Next →</button></div></footer>
+  </section>
+</dialog>
+<link rel="stylesheet" href="/static/studio-intro.css?v=20261025">
+<script defer src="/static/studio-intro.js?v=20261025"></script>

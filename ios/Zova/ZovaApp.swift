@@ -152,9 +152,8 @@ struct ZovaRoot: View {
                     Image("ZovaMark").resizable().scaledToFit().frame(width: 48, height: 48)
                     Text("Zova").font(.system(size: 32, weight: .bold))
                 }.padding(.top, 48)
-                Text("Your AI social media manager.").font(.headline).foregroundStyle(readableAccent)
-                Text("Your ideas.\nStill you.").font(.system(size: 48, weight: .bold, design: .rounded)).minimumScaleFactor(0.65)
-                Text("Shape your next post, plan your socials and share in your voice.")
+                Text("Because content\nis the fun part.").font(.system(size: 48, weight: .bold, design: .rounded)).minimumScaleFactor(0.65)
+                Text("Turn your ideas into captions and a content plan with Zova, your AI social media manager.")
                     .font(.title3).foregroundStyle(readableSecondary).fixedSize(horizontal: false, vertical: true)
                 Button { Task { await model.login() } } label: {
                     HStack { Spacer(); if model.working { ProgressView().tint(.white) }; Text(model.working ? "Opening sign-in…" : "Continue to Zova").fontWeight(.semibold); Spacer() }

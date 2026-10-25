@@ -215,7 +215,7 @@ document.getElementById('brief').addEventListener('input',scheduleAutosave);
 document.getElementById('linkUrl').addEventListener('input',()=>{scheduleAutosave();renderMessageRetry();});
 document.querySelectorAll('.platform-check input,#threadLength,#instagramFormat').forEach(node=>node.addEventListener('change',()=>{if(node.matches('.platform-check input'))platformSelectionExplicit=true;scheduleAutosave();}));
 window.addEventListener('beforeunload',event=>{if(savedSerial!==changeSerial||mediaUploading||sendingMessage){event.preventDefault();event.returnValue='';}});
-window.addEventListener('DOMContentLoaded',()=>{renderReadiness();loadRequestedDraft();});
+window.addEventListener('DOMContentLoaded',()=>{renderReadiness();loadRequestedDraft().then(()=>window.dispatchEvent(new Event('zova:studio-ready')));});
 
 async function switchStudioBrand(event){
  event.preventDefault();

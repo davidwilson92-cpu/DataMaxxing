@@ -558,6 +558,14 @@ def studio(request:Request,db:Session=Depends(get_db)):
         connections.setdefault(row.platform,[]).append(row.username or row.account_id or "Connected account")
     return templates.TemplateResponse(request, "studio.html",template_context(request,user,subscription_blocked=not billing.has_access(user),studio_connections=connections,studio_prefs=get_preferences(db,user.id)))
 
+@app.post('/api/studio/intro/claim')
+def claim_studio_intro(request: Request, db: Session = Depends(get_db)):
+    user = current_user(request)
+    # Atomic across tabs/devices; no analytics or content is recorded.
+    result = db.execute(update(User).where(User.id == user.id, User.studio_intro_pending.is_(True)).values(studio_intro_pending=False))
+    db.commit()
+    return {'show': result.rowcount == 1}
+
 @app.get("/drafts",response_class=HTMLResponse)
 def drafts_page(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
@@ -1285,6 +1293,7 @@ def legacy_publish(body:LegacyPostRequest,creator:Creator=Depends(require_legacy
     if body.approved is not True:raise HTTPException(400,"Publication requires approved=true after explicit user confirmation")
     result=publish_legacy_creator(body.text,creator,db);return {"success":True,"post_id":result["post_id"],"url":result["url"],"text":body.text,"account":f"@{creator.x_username}"}
 
+@app.get("/guide",response_class=HTMLResponse)
 @app.get("/help",response_class=HTMLResponse)
 def help_page(request:Request):
     # Help is also linked from the native welcome screen, before authentication.

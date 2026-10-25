@@ -31,7 +31,7 @@ strategy.model_json=mocked_json
 trends.discover=lambda themes,uid:{'topics':[{'id':'source-1','title':'Synthetic example: diners discuss restaurant menus' if 'restaurant' in themes.lower() else 'Synthetic example: beginners discuss pottery','summary':'A mocked public discussion for visual testing only','url':'https://example.org/restaurants' if 'restaurant' in themes.lower() else 'https://example.org/pottery','published_at':datetime.now(timezone.utc).date().isoformat(),'checked_at':datetime.now(timezone.utc).isoformat(),'kind':'public_social'}],'checked_at':datetime.now(timezone.utc).isoformat(),'note':'Synthetic preview: source cards are mocked. No real web or social search was made.'}
 ai.generate_variants=lambda **kw:{p:{'posts':['Come behind the scenes at our restaurant. Fresh ingredients, carefully prepared. What would you order first?' if 'restaurant' in (kw.get('brief','')+kw.get('instruction','')).lower() else 'New to pottery? Start with a small piece of clay and give yourself time to learn. What would you like to try making?']} for p in kw['platforms']}
 with SessionLocal() as db:
-    user=User(email='strategy@example.test',display_name='Synthetic creator',password_hash=hash_password('Synthetic-preview-2026!'));db.add(user);db.commit()
+    user=User(email='strategy@example.test',studio_intro_pending=False,display_name='Synthetic creator',password_hash=hash_password('Synthetic-preview-2026!'));db.add(user);db.commit()
     from PIL import Image
     from nova.storage import UPLOAD_DIR
     UPLOAD_DIR.mkdir(parents=True,exist_ok=True)
