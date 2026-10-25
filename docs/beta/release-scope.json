@@ -220,7 +220,7 @@
     "tests/test_connection_confirmation.py": "166b70a1dc8f7387d3799a13925e94bf81e845c595216813ab543f5732918f07",
     "tests/test_connection_lifecycle.py": "baac3141b390e12f22d682947eb6dfa2b3e709703cba4ca1919e836630a96657",
     "tests/test_conversation_intent.py": "bd2e8f8f269264a9103c72db1adee5a3f802efcf42da410e0f2e90ab876439f2",
-    "tests/test_deletion_operator.py": "4315c98d571f08ef40210f4fd573b7096b90b173041aab74cad3cd6cbf0833b0",
+    "tests/test_deletion_operator.py": "ec1bbc912d9b0db6f8dca440d963a3d52a4c27b5aba069171c74d41a0ff4e94f",
     "tests/test_instagram_audio.py": "4b14c35e7b1cb9a0e7288e36a4adc402e1c526d4a1b192246f87c7bfcf3381de",
     "tests/test_instagram_beta.py": "57cef0a1062a2f555e7e9e0aa69d8ddef2660a91803ac28c4c5c88be90916a1f",
     "tests/test_instagram_formats.py": "4dec61e71263fdf24d484fb9b4ebf80f37071d1f0a6faae855c4111cde39a09d",

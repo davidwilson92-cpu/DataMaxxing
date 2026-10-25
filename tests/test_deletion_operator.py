@@ -3,7 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from fastapi.testclient import TestClient
 from nova import app as app_module, data_lifecycle
 from nova.account_deletion import initiate
@@ -14,6 +14,41 @@ from nova.db import (AICall, BillingAccount, DeletionRequest, Draft, MediaAsset,
 from nova.security import encrypt, hash_api_key
 from nova.storage import UPLOAD_DIR
 from test_account_integrity import account
+
+
+@pytest.fixture(autouse=True)
+def isolate_operator_global_state():
+    """These tests commit deliberately; restore process-wide worker/queue state.
+
+    The shared test database may already contain a worker heartbeat. It must not
+    masquerade as a worker running during this test's synthetic maintenance
+    window. Conversely, refusal cases must not leave deliverable jobs for later
+    scheduler tests or synthetic failures in the operations counters.
+    """
+    observed = (ScheduledPost, Publication, AICall, DeletionRequest)
+    with SessionLocal() as db:
+        existing = {model: set(db.scalars(select(model.__mapper__.primary_key[0])))
+                    for model in observed}
+        heartbeat = db.get(WorkerHeartbeat, 'publishing')
+        saved_heartbeat = ({column.key: getattr(heartbeat, column.key)
+                            for column in WorkerHeartbeat.__table__.columns}
+                           if heartbeat is not None else None)
+        if heartbeat is not None:
+            db.delete(heartbeat)
+        db.commit()
+    try:
+        yield
+    finally:
+        with SessionLocal() as db:
+            for model, keys in existing.items():
+                primary_key = model.__mapper__.primary_key[0]
+                new_keys = set(db.scalars(select(primary_key))) - keys
+                if new_keys:
+                    db.execute(delete(model).where(primary_key.in_(new_keys)))
+            db.execute(delete(WorkerHeartbeat).where(WorkerHeartbeat.role == 'publishing'))
+            if saved_heartbeat is not None:
+                db.add(WorkerHeartbeat(**saved_heartbeat))
+            db.commit()
 
 
 def requested():
