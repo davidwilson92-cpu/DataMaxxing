@@ -274,3 +274,59 @@ A fresh pre-release read at 14:34 UTC confirms live server bcd260e, PostgreSQL/s
 Render completed a fresh managed database export dated 25 October 14:36 UTC; it remains in Render. Its three-day point-in-time recovery window was observed. No restore or credential change was performed. Screenshot: evidence/20261025/render-pre-release-backup.png.
 
 The existing Codemagic signing workflow started at 14:36 UTC on fully validated source 43f4f47, build ID 6ade13d14a72334e32e50660, workflow counter10. Native files are unchanged by the subsequent server-only deletion operations work. Upload/Apple distribution and final server deployment must be verified separately below before claiming delivery.
+
+
+## Published release and verification — 25 October, 14:54 UTC
+
+This section supersedes the earlier candidate/preparation status above. It does
+not replace the tester's original case outcomes or scores.
+
+- **Web deployed:** exact `d15f619d30e430d1405164a8a58c08ea89d0ab17`, Render
+  `dep-dbf1ef67bikc73bra6b0`, 14:50:36 UTC start, 57.9s, Live. Auto-deploy remains
+  off; no main merge or AWS migration. [Render proof](evidence/20261025/render-live-d15f619.png).
+- **CI:** [push](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40203790190)
+  and [PR](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40203795510)
+  passed 675 SQLite / 676 PostgreSQL tests (2 / 1 database-specific skips), 29 client
+  tests/groups, Studio and real-browser viewport checks, synthetic backup recovery,
+  actual-image package audit and smoke, exact beta scope. No known package findings;
+  not a claim that the app has no security risk.
+- **Review iteration:** earlier ccf0f69 full CI failed because new deletion tests
+  inherited a publishing heartbeat and leaked synthetic jobs into later tests.
+  d15f619 isolates/restores test state; production drain and reconciliation checks
+  remain intact. Local functional rerun passed 671 with two skips, followed by the
+  complete manifest-inclusive CI above. Prior failures are not hidden or waived.
+- **Native:** [final native CI](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40203795378)
+  passed. Signed build 11 uses previously fully validated 43f4f47; its native source
+  and signing workflow are identical to d15f619. Codemagic 6ade13d14a72334e32e50660
+  uploaded 0.1.0 (11), Apple receipt 45dbc386-8d7c-4163-be3a-02e6b4f9d91e.
+  Both existing tester groups assigned; external status **Testing** after review
+  submission, automatic notification enabled. Build 10 preserved. Public link
+  https://testflight.apple.com/join/BxawFPCu remains capped at ten testers.
+  [Apple proof](evidence/20261025/testflight-11-external-testing.png).
+- **Live readback:** exact server SHA, database/schema ready, worker embedded/idle,
+  billing off, checkout/enforcement false, account-erasure maintenance false.
+  Public health/login/Help returned 200. Existing signed-in session still works;
+  Studio, calendar, Account rows, separate Strategy description and immediate
+  Next Move entry loaded without changing customer content.
+  [Live calendar](evidence/20261025/schedule-live-20261025.png).
+- **Preservation:** pre/post counts identical: 19 users, 46 drafts, 21 connections,
+  29 media references, ten publications, one schedule. All 25 previously available
+  files remain; four historical missing references unchanged. Seventeen encrypted
+  access/refresh values remain decryptable, aggregate ciphertext digest unchanged
+  (`826033052d31b01c190f985806bc6ce8d728472218a0b20d41d6719092d094fe`).
+- **Operations:** no pending/overdue deletions; zero stuck/overdue jobs or mail
+  failures. AI failure count now correctly zero. One historical unknown publication
+  and 108 unpriced AI calls remain, so the overall operations status still says
+  attention. No reset/resend or invented zero-cost claim. Fresh database export
+  completed 14:36 UTC with three-day PITR available.
+- **Deletion decision:** David is the manual operator, seven-day target, daily
+  queue review. Runbook and guarded operator enforce actual maintenance/drain,
+  provider/billing/retention reconciliation and post-cleanup verification before
+  receipt completion. No real customer account was erased during this release.
+
+Still requiring real acceptance: install build 11 and rerun changed phone journeys;
+Facebook Page connection/confirmation/app return; eligible Instagram audio grant
+and delivery; original tester schedule reconciliation; exposed test-credential
+rotation/redaction; customer reassessment. Original 57 cases and 5.9 score remain
+baseline. All 79 wider findings remain tracked. Customer charges and paid monitor
+remain disabled. This is a released limited beta, not commercial certification.

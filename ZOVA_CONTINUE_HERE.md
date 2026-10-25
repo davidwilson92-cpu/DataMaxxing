@@ -1,42 +1,70 @@
-# Authorised publication in progress — 25 October 2026
+# Published beta update — 25 October 2026
 
-Owner requested publication and confirmed David as deletion owner with a seven-day
-target. See docs/beta/ACCOUNT_DELETION_RUNBOOK.md. The workflow is manual: daily
-queue review, actual maintenance/drain, provider/billing reconciliation and
-retention review are required. No real account was erased. Maintenance stays OFF
-for this release. Customer billing, checkout and enforcement stay off; Render
-remains the host and paid monitoring remains inactive.
+Web release **d15f619d30e430d1405164a8a58c08ea89d0ab17** is LIVE on
+https://zova-social.com, Render deployment **dep-dbf1ef67bikc73bra6b0**.
+It started 14:50:36 UTC and succeeded in 57.9 seconds. Specific-commit deployment;
+auto-deploy remains off. No merge to main or hosting migration was performed.
 
-Final server changes add the receipt-bound deletion operator, verified completion
-and overdue state, a nullable completion timestamp and a corrected AI health
-count. Both success and returned are successful outcomes. Independent review
-covered failures/retries and other-account preservation. Full exact-scope CI must
-pass before server deployment; final release receipts will be appended below.
+**TestFlight 0.1.0 (11) is Testing in the existing external group.** Both existing
+internal and external groups were assigned, with automatic tester notification.
+The public invite is unchanged: https://testflight.apple.com/join/BxawFPCu
+(ten-tester cap). Build 10 remains available; nothing was expired. Apple accepted
+build 11 through the review submission flow immediately; do not say it is still
+waiting for review. On-device acceptance of 11 is still pending; Apple’s internal tester row reports Installed (11), which is not proof the changed journeys pass.
 
-Native source 43f4f47 passed application/native CI and is unchanged by the later
-server-only changes. Codemagic 6ade13d14a72334e32e50660 built and uploaded
-0.1.0 (11) in 2m 54s. Apple accepted it at 14:39:11 UTC, delivery
-45dbc386-8d7c-4163-be3a-02e6b4f9d91e. Apple is processing; this does not yet mean
-available to external testers. Build 10 remains Testing in both groups. The
-existing public invite remains unchanged.
+Signed native source **43f4f47e4723d622d428a144640ece539affb68b** passed its own
+application/native checks and is identical in ios/ and codemagic.yaml to the
+released server. Codemagic **6ade13d14a72334e32e50660** uploaded in 2m54s;
+Apple receipt **45dbc386-8d7c-4163-be3a-02e6b4f9d91e**, 14:39:11 UTC.
 
-Pre-release live bcd260e: 19 users, 46 drafts, 21 social connections, 29 media
-references (25 files; four known historical missing files), ten publications and
-one scheduled record. Database/schema ready, worker idle, zero overdue/stuck jobs
-or mail failures. One historical unknown publication and 108 unpriced AI calls
-remain. The 18 reported AI failures were all success rows; the health correction
-does not rewrite history. A fresh Render database export completed on 25 October
-at 14:36 UTC; three-day point-in-time recovery is available. Backup stays in Render.
+Final server validation: application CI **40203790190** and **40203795510** passed:
+675 SQLite tests (2 platform-specific skips), 676 PostgreSQL (1 platform-specific
+skip), 29 client checks/groups, Studio/real-browser viewport checks, synthetic
+PostgreSQL recovery, hosting-image smoke, package audits and exact scope gate.
+Native CI **40203795378** also passed. Earlier ccf0f69 full CI exposed test fixture
+heartbeat/queued-job leakage; d15f619 fixes fixture isolation without weakening
+production deletion guards. Those failed runs are retained as evidence, not waived.
 
-Facebook still needs a real account/Page connection and final return check.
-Eligible Instagram audio grant/music delivery, replacement-phone retest, tester
-credential rotation/redaction and original tester schedule cleanup remain external.
-Do not claim the tester has rerun all 57 cases or raise their original scores.
+Post-release at 14:52 UTC: exact d15f619, schema/database ready, embedded worker
+idle; billing OFF, checkout false, subscription enforcement false; maintenance
+OFF. Public health/login/Help returned 200. Existing signed-in browser session
+survived; Studio, Schedule calendar, Account, Strategy and Next Move entry loaded.
+No production content was changed or posted during these checks.
 
-Rollback: retain current data, keys, sessions, uploads, ledger and all additive
-columns. Prefer a bounded forward fix. Before reverting to bcd260e, pause new
-format/music work before an old worker resumes. Never resend unknown posts or
-restore stale production data. Native distribution rollback is independent.
+Counts match pre-release: 19 users, 46 drafts, 21 social connections, 29 media
+references, ten publications, one schedule; 25 existing media files remain.
+The four known historical missing files are unchanged. All 17 encrypted access/
+refresh values remain decryptable with an unchanged ciphertext digest. Zero
+pending/overdue deletion cases, stuck/overdue jobs or mail failures. Corrected AI
+failure count is zero. The historical unknown publication and 108 unpriced AI
+calls remain honest operational warnings, not release regressions or zero cost.
+Fresh managed database export: 25 October 14:36 UTC; three-day PITR observed.
+No restore, customer erasure, token/grant change, charge or paid monitor activation.
+
+Deletion decision recorded: **David owns manual requests with a seven-day target**.
+Read docs/beta/ACCOUNT_DELETION_RUNBOOK.md; daily queue review, actual service drain,
+provider/billing reconciliation and retention review remain required. Completion
+is shown only after verified cleanup. This release does not erase any real account.
+
+Next acceptance: install build 11; rerun all failed/blocked/untested spreadsheet
+cases plus changed journeys. Facebook: Account → Social accounts → Facebook,
+sign in to the Facebook account that manages the intended Page, select that Page,
+confirm its identity in Zova and verify automatic return to the app. No real post
+is needed for that connection check. Eligible Instagram audio grant/music delivery,
+tester credential rotation/redaction, original tester schedule reconciliation and
+fresh customer scores remain unverified. Do not claim all 57 cases were rerun or
+raise the original 5.9 average. All 79 broader findings remain in the gap register.
+
+Evidence/report: docs/beta/QA_REMEDIATION_20261025.md and
+ docs/beta/evidence/20261025/{render-live-d15f619,schedule-live-20261025,
+ testflight-11-external-testing}.png. PR34 remains open; these are explicit beta
+releases from the reviewed branch, not a broad main-branch release.
+
+Rollback: retain data, uploads, keys, sessions, ledgers and additive columns.
+Prefer a bounded forward fix; pause new format/music work before an old worker
+runs. Never resend unknown posts or restore stale production data. Native group
+assignment/rollback is separate. Keep Render, customer charges OFF and paid
+monitor inactive. Broader commercial readiness is not certified.
 
 ---
 
