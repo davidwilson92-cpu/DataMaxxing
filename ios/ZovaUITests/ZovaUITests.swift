@@ -11,5 +11,46 @@ final class ZovaUITests: XCTestCase {
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Zova iPhone welcome"; screenshot.lifetime = .keepAlways
         add(screenshot)
+        XCTAssertFalse(app.otherElements["zova-launch"].exists)
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(app.buttons["continue-zova"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.otherElements["zova-launch"].exists, "Resuming must not replay the launch sequence")
+    }
+
+    func testBrandedLaunchWaitsForDestinationThenRevealsIt() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--test-launch-screen"]
+        app.launch()
+        XCTAssertTrue(app.otherElements["zova-launch"].waitForExistence(timeout: 2))
+        XCTAssertFalse(app.staticTexts["launch-destination"].exists, "Covered content must not receive VoiceOver focus")
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Zova branded launch portrait"; screenshot.lifetime = .keepAlways
+        add(screenshot)
+        XCTAssertTrue(app.staticTexts["launch-destination"].waitForExistence(timeout: 6))
+        XCTAssertFalse(app.otherElements["zova-launch"].exists)
+    }
+
+    func testReducedMotionLaunchStillReachesDestination() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--test-launch-screen", "--launch-reduce-motion"]
+        app.launch()
+        XCTAssertTrue(app.otherElements["zova-launch"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["launch-destination"].waitForExistence(timeout: 6))
+        XCTAssertFalse(app.otherElements["zova-launch"].exists)
+    }
+
+    func testSlowLaunchReleasesCoverWithoutHidingRecovery() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--test-launch-screen", "--launch-never-ready"]
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        app.launch()
+        XCTAssertTrue(app.otherElements["zova-launch"].waitForExistence(timeout: 2))
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Zova branded launch landscape"; screenshot.lifetime = .keepAlways
+        add(screenshot)
+        XCTAssertTrue(app.staticTexts["launch-destination"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.otherElements["zova-launch"].exists)
     }
 }

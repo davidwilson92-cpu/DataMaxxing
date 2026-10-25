@@ -89,6 +89,8 @@ struct ZovaRoot: View {
     @State private var browserBusy = false
     @State private var navigationGeneration = 0
     @State private var socialSignIn = NativeSignIn()
+    @State private var launchVisible = true
+    @State private var launchFailed = false
     private let titles = ["Studio", "Schedule", "Performance", "Account"]
     private let icons = ["square.and.pencil", "calendar", "chart.bar", "person.crop.circle"]
     private let purple = Color(red: 0.486, green: 0.227, blue: 0.929)
@@ -98,17 +100,28 @@ struct ZovaRoot: View {
     var body: some View {
         ZStack {
             (darkScreen ? Color(red: 0.031, green: 0.024, blue: 0.059) : Color.white).ignoresSafeArea()
-            switch model.phase {
-            case .opening: ProgressView("Opening Zova…").tint(purple)
-            case .signedOut: welcome
-            case .studio: studio
+            Group {
+                switch model.phase {
+                case .opening: ProgressView("Opening Zova…").tint(readableAccent)
+                case .signedOut: welcome
+                case .studio: studio
+                }
+            }
+            .accessibilityHidden(launchVisible)
+            .allowsHitTesting(!launchVisible)
+            if launchVisible {
+                ZovaLaunchScreen(ready: model.phase == .signedOut || model.cookieReady || launchFailed) {
+                    launchVisible = false
+                }.zIndex(1)
             }
             if scenePhase != .active {
                 Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
-                Image("ZovaMark").resizable().scaledToFit().frame(width: 72, height: 72).accessibilityHidden(true)
+                    .zIndex(2)
+                Image("ZovaMark").resizable().scaledToFit().frame(width: 72, height: 72).accessibilityHidden(true).zIndex(3)
             }
         }
         .task { await model.start() }
+        .onReceive(model.pages[0].$failure) { if $0 != nil { launchFailed = true } }
         .preferredColorScheme(darkScreen ? .dark : .light)
         .onOpenURL { receiveReturn($0) }
         .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { receiveReturn(url) } }
@@ -278,5 +291,17 @@ private struct ObservedStudioPage<Content: View>: View {
 
 @main
 struct ZovaApp: App {
-    var body: some Scene { WindowGroup { ZovaRoot() } }
+    var body: some Scene {
+        WindowGroup {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--test-launch-screen") {
+                LaunchScreenTestHost()
+            } else {
+                ZovaRoot()
+            }
+            #else
+            ZovaRoot()
+            #endif
+        }
+    }
 }
