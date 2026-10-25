@@ -1,0 +1,35 @@
+{
+  "mode": "test",
+  "live_checkout": "false",
+  "subscription_required": false,
+  "plan_limits": "false",
+  "account_status": "canceled",
+  "live_user_status": "none",
+  "replayed_event_rows": 1,
+  "test_subscriptions": [
+    {
+      "id": "sub_1UUYUdCpb4pF4cGHr9h1MtYT",
+      "status": "canceled",
+      "live": false,
+      "price": "price_1UGlC4Cpb4pF4cGHY6mNntds"
+    },
+    {
+      "id": "sub_1UUYTHCpb4pF4cGHPgFqibWN",
+      "status": "canceled",
+      "live": false,
+      "price": "price_1UGlC4Cpb4pF4cGHvlXXtra9"
+    },
+    {
+      "id": "sub_1UUYSZCpb4pF4cGHBtxFhC96",
+      "status": "canceled",
+      "live": false,
+      "price": "price_1UGlAnCpb4pF4cGH1jG8NUa1"
+    },
+    {
+      "id": "sub_1UUYLlCpb4pF4cGHpQkCL37r",
+      "status": "canceled",
+      "live": false,
+      "price": "price_1UGlAnCpb4pF4cGHGEvcPxYi"
+    }
+  ]
+}

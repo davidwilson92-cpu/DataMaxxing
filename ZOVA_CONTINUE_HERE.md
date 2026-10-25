@@ -1,24 +1,35 @@
-# Render retained; continue Stripe sandbox — 25 October 2026
+# Render retained; Stripe test acceptance - 25 October 2026
 
-Owner explicitly chose to stay on Render after reviewing actual billing and
-capacity. This supersedes the AWS migration request below. Do not provision AWS,
-upgrade its plan, transfer data/secrets or change DNS. Keep the prepared AWS
-candidate dormant for possible future review. Continue Stripe TEST configuration
-on Render; customer charges, subscription enforcement and plan limits stay off.
-The dummy card is 4242 4242 4242 4242; tester access remains free without checkout.
+Owner chose to remain on Render, superseding the AWS migration request below.
+Do not provision AWS, upgrade its plan, move data/secrets or change DNS. Customer
+charges, subscription enforcement and plan limits remain OFF. Beta needs no card.
 
-Render billing observed: August $0.74 paid; September $13.36 paid; October $16.67
-accrued and $20.80 projected. Database accounts for $5.05 accrued, about $6.30
-monthly including 1 GB storage. These are observations, not fixed future quotes.
-Latest native CI 40224884915 completed successfully. Application PR CI
-40224884932 passed; duplicate push CI 40224880571 exposed a browser-test race:
-the strategy field was asserted before its GET completed. The test now awaits
-the existing aria-busy=false completion state before reading persisted inputs.
-Required candidate validation must pass again before release.
+Owner approved the test webhook and storing existing Stripe test credentials in
+Render. Webhook we_1UUYEsCpb4pF4cGHJMTv5HMk now exists at /billing/webhook with
+10 events and API 2026-07-29.dahlia. Existing four GBP test prices and portal
+bpc_1UGlMsCpb4pF4cGHYn0UJjMu reused. Portal return fixed to production /subscribe.
+Secrets saved through Render UI only; never place them in source or evidence.
 
-Stripe tab reopened at sign-in; owner action requested. No hosted Stripe setup,
-new deployment or TestFlight release is claimed. Live remains d3bc09d / build 11.
-All 79 commercial gaps remain retained. Prior AWS notes below are historical.
+4f2089a deployed successfully (dep-dbf6ll0m7kps73fva070), after fresh 20:44 UTC
+managed DB export and passing mandatory CI. All four hosted test plan checkouts,
+return, period-end cancellation and duplicate webhook replay passed. All four
+synthetic subscriptions now canceled; final mode/charge/access safety check passed.
+Only Zova Recovery Check user 18 was used. See docs/beta/STRIPE_RENDER_ACCEPTANCE_20261025.md.
+
+Hosted testing caught pale text on white billing cards and an incorrect future
+end date after immediate cancellation. d090e6e fixes both and is now LIVE on
+Render (dep-dbf6s4gm7kps73fvufh0, 21:01 UTC). Final PR/push application CI
+40233227548/40233225307 passed: 689 SQLite / 690 PostgreSQL tests, browser,
+restore, image and scope checks. Twenty focused Stripe tests pass. Live page
+and /health, landing, Guide and CSS verified. Native repeat 40233227576 remains
+in progress; unchanged native source already passed at 4f2089a.
+TestFlight remains 0.1.0 (11); new native launch/welcome changes need a replacement
+signed build. Do not claim a new TestFlight binary from a server deployment.
+
+Tester web route: /subscribe -> Optional Stripe test checkout, dummy card
+4242 4242 4242 4242, future expiry, any 3-digit CVC. iPhone beta stays free with no
+external Stripe purchase flow. Portal legal links and live activation work remain.
+All 79 commercial findings retained. Prior AWS notes below are historical.
 
 ---
 
