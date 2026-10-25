@@ -35,7 +35,8 @@ def test_intro_claim_is_once_across_tabs_and_is_account_scoped():
 
 def test_intro_requires_session_and_rejects_cross_site_claims():
     _, cookies = account()
-    client = TestClient(app)
+    # The full suite intentionally exhausts the shared anonymous test IP.
+    client = TestClient(app, client=('127.0.0.177', 50000))
     assert client.post('/api/studio/intro/claim', follow_redirects=False).status_code in {303, 401}
     assert client.post('/api/studio/intro/claim', cookies=cookies, headers={'Origin': 'https://other.example'}).status_code == 403
     assert client.post('/api/studio/intro/claim', cookies=cookies).json() == {'show': True}

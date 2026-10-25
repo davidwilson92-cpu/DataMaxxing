@@ -261,7 +261,7 @@
     "tests/test_studio_clarity_client.py": "e6ba01f2d393889c5aa7890cfc96dc58ccc58ee60301a6aa4af2ed0901556297",
     "tests/test_studio_experience.py": "9ea543d03dfde64fe336326ea3064f84b8e756de2e1a41a116529c5dcf75c1ad",
     "tests/test_studio_fork_pending.py": "3e7f8021fa99cc8a1c2b0a0ea98c3f876d5c40526f10b90a94d7efcfab636187",
-    "tests/test_studio_intro.py": "c322ebdc27839287b94fb54124a3d27f6d74f8a5140df27adf68df733b46c84e",
+    "tests/test_studio_intro.py": "1a29c0928ca19d827f60a9366ad6ada110cf4a3f929b23bce0c172f1b2d8911e",
     "tests/test_studio_message_media.py": "e3ed23f75f5de7dc133563d679b6aff3b8455b21e53295e6409c8b08816ba24f",
     "tests/test_synthetic_recovery.py": "9a67c6a5b25f82e5fb9f98b6f7a2c33b768828b25c30ecd16177960f46d47bfe",
     "tests/test_tiktok_direct_post.py": "1a50fa5819f7ffdf5e4bbaa8fdf2b58f5baab315b6f34a5770c581c3c67744af",
