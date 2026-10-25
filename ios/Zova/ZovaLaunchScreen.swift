@@ -90,6 +90,7 @@ struct LaunchScreenTestHost: View {
             Color.white.ignoresSafeArea()
             Text("Launch destination").foregroundStyle(.black).accessibilityIdentifier("launch-destination")
                 .accessibilityHidden(covered)
+            if !covered { Text("Ready").accessibilityIdentifier("launch-completed") }
             if covered {
                 ZovaLaunchScreen(ready: ready, motionOverride: ProcessInfo.processInfo.arguments.contains("--launch-reduce-motion")) { covered = false }
             }
@@ -99,6 +100,7 @@ struct LaunchScreenTestHost: View {
             try? await Task.sleep(for: .seconds(4))
             ready = true
         }
+        .preferredColorScheme(covered ? .dark : .light)
     }
 }
 #endif

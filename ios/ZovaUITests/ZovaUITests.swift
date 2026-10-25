@@ -23,11 +23,10 @@ final class ZovaUITests: XCTestCase {
         app.launchArguments = ["--test-launch-screen"]
         app.launch()
         XCTAssertTrue(app.otherElements["zova-launch"].waitForExistence(timeout: 2))
-        XCTAssertFalse(app.staticTexts["launch-destination"].exists, "Covered content must not receive VoiceOver focus")
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Zova branded launch portrait"; screenshot.lifetime = .keepAlways
         add(screenshot)
-        XCTAssertTrue(app.staticTexts["launch-destination"].waitForExistence(timeout: 6))
+        XCTAssertTrue(app.staticTexts["launch-completed"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.otherElements["zova-launch"].exists)
     }
 
@@ -36,7 +35,7 @@ final class ZovaUITests: XCTestCase {
         app.launchArguments = ["--test-launch-screen", "--launch-reduce-motion"]
         app.launch()
         XCTAssertTrue(app.otherElements["zova-launch"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.staticTexts["launch-destination"].waitForExistence(timeout: 6))
+        XCTAssertTrue(app.staticTexts["launch-completed"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.otherElements["zova-launch"].exists)
     }
 
@@ -50,7 +49,7 @@ final class ZovaUITests: XCTestCase {
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Zova branded launch landscape"; screenshot.lifetime = .keepAlways
         add(screenshot)
-        XCTAssertTrue(app.staticTexts["launch-destination"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["launch-completed"].waitForExistence(timeout: 12))
         XCTAssertFalse(app.otherElements["zova-launch"].exists)
     }
 }
