@@ -31,11 +31,53 @@ def test_monitor_credential_cannot_dispatch_or_read_customer_cohorts(monkeypatch
     assert client.get('/internal/ready',headers=headers).status_code==200
     assert client.get('/internal/status',headers=headers).status_code==200
     assert client.get('/internal/cohorts',headers=headers).status_code==401
+    assert client.get('/internal/deletions',headers=headers).status_code==401
     assert client.post('/internal/run-due',headers=headers).status_code==401
     assert client.get('/internal/status').status_code==401
     monkeypatch.delenv('MONITOR_READ_TOKEN')
     assert client.get('/internal/status',headers=headers).status_code==401
     assert client.get('/internal/status',headers={'Authorization':'Bearer synthetic-dispatch-secret'}).status_code==200
+
+
+def test_pending_deletion_queue_is_read_only_bounded_and_private(monkeypatch):
+    import secrets
+    from nova.db import DeletionRequest
+    from nova.operations import deletion_summary
+    from test_account_integrity import account
+    client,*_=account()
+    monkeypatch.setenv('SCHEDULER_SECRET','synthetic-operator')
+    monkeypatch.setenv('MONITOR_READ_TOKEN','synthetic-monitor')
+    operator={'Authorization':'Bearer synthetic-operator'}
+    monitor={'Authorization':'Bearer synthetic-monitor'}
+    prefix=secrets.token_hex(8)
+    with SessionLocal() as db:
+        before=deletion_summary(db)['pending_deletion_requests']
+        for i in range(53):
+            db.add(DeletionRequest(code=f'{prefix}-{i:03}',subject_hash='private-subject-hash',
+                status=('received','access_revoked','erasing')[i%3],scope='Private customer details must not be returned'))
+        for status in ('connection_removed','active_store_erased'):
+            db.add(DeletionRequest(code=prefix+'-'+status,subject_hash='private-subject-hash',status=status))
+        db.commit()
+    assert client.get('/internal/deletions').status_code==401
+    assert client.get('/internal/deletions',headers=monitor).status_code==401
+    status=client.get('/internal/status',headers=monitor).json()
+    assert status['pending_deletion_requests']==before+53 and status['oldest_pending_deletion_at']
+    assert 'pending_deletion_requests' in check({**healthy(),**{k:status[k] for k in ('pending_deletion_requests','oldest_pending_deletion_at')}})['reasons']
+    all_requests=[]
+    for page in range(1,10):
+        response=client.get('/internal/deletions',params={'page':page},headers=operator)
+        assert response.status_code==200
+        assert 'private-subject-hash' not in response.text and 'Private customer details' not in response.text
+        data=response.json();assert len(data['requests'])<=50
+        all_requests.extend(data['requests'])
+        if not data['has_more']:break
+    codes=[row['code'] for row in all_requests]
+    assert len(codes)==len(set(codes))==before+53
+    assert {f'{prefix}-{i:03}' for i in range(53)}<=set(codes)
+    assert prefix+'-active_store_erased' not in codes and prefix+'-connection_removed' not in codes
+    assert client.get('/internal/deletions?page=0',headers=operator).status_code==422
+    assert client.post('/internal/deletions',headers=operator).status_code==405
+    with SessionLocal() as db:assert deletion_summary(db)['pending_deletion_requests']==before+53
 
 
 @pytest.mark.parametrize('url',['http://example.test','https://user:pass@example.test',

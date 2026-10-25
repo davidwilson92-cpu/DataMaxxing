@@ -6,6 +6,7 @@ The browser receives a revocable cookie bound to the originating device session.
 import hashlib
 import hmac
 import html
+import json
 import os
 import re
 import secrets
@@ -215,6 +216,22 @@ def browser_recovery(ticket=None, status=401):
     return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Continue your connection | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Let’s resume your connection</h1><p>This browser confirmation is no longer current. Your saved work and existing connections are unchanged.</p>{action}</main></body></html>''', status_code=status)
 
 
+def provider_bridge(response, start):
+    """Complete the same-origin form before starting provider GET navigation.
+
+    Safari applies form-action to the POST's whole redirect chain. A 303 to our
+    OAuth endpoint followed by a provider redirect can therefore stall under
+    form-action 'self'. Keep that policy and use a standalone GET navigation.
+    Tokens remain HttpOnly; the fixed local target contains no credentials.
+    """
+    safe = html.escape(start, quote=True)
+    bridge = HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Connecting | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Opening secure sign-in…</h1><p role="status">You’ll return to Zova to confirm the account.</p><a href="{safe}">Continue</a></main><script>location.replace({json.dumps(start)});</script></body></html>''')
+    for name, value in response.raw_headers:
+        if name.lower() == b'set-cookie':
+            bridge.raw_headers.append((name, value))
+    return bridge
+
+
 @router.get('/mobile/browser/{ticket}', include_in_schema=False)
 def browser_prompt(ticket: str, request: Request):
     require_enabled()
@@ -237,7 +254,7 @@ def browser_prompt(ticket: str, request: Request):
         if platform in options:
             option = options[platform]
             def button(label, method='direct'):
-                return f'<form method="post"><input type="hidden" name="proof" value="{proof}"><button name="method" value="{method}">{label}</button></form>'
+                return f'<form method="post" data-connection-form><input type="hidden" name="proof" value="{proof}"><button name="method" value="{method}">{label}</button></form>'
             choices = ''
             if platform == 'instagram':
                 choices = '<p>Requires a public Instagram Creator or Business account.</p>'
@@ -249,8 +266,8 @@ def browser_prompt(ticket: str, request: Request):
                 choices = button('Continue to ' + option['name'])
             if not choices or not option['ready']:
                 choices += '<p>Connection setup is not available yet. Your saved work is unchanged.</p>'
-            return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Connect {option['name']} | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Connect {option['name']}</h1><p>Zova account: {html.escape(user.email)}</p>{choices}<p>Sign in, check the profile, then confirm. Nothing publishes during setup.</p><form method="post"><input type="hidden" name="proof" value="{proof}"><button name="decision" value="cancel">This isn’t my Zova account</button></form></main></body></html>''')
-        return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Continue in your browser | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261019-dark"></head><body><main><h1>Continue as {html.escape(user.display_name or 'you')}</h1><p>{html.escape(user.email)}</p><p>This opens the account from your iPhone app. Only continue if this is your Zova email. Your Instagram login is separate.</p><form method="post"><input type="hidden" name="proof" value="{proof}"><button>Continue to your account</button></form><p>When finished, close this browser and return to Zova to refresh your connections.</p><form method="post"><input type="hidden" name="proof" value="{proof}"><button name="decision" value="cancel">This isn’t my Zova account</button></form></main></body></html>''')
+            return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Connect {option['name']} | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261025-connect"><script defer src="/static/mobile-connect.js?v=20261025"></script></head><body><main><h1>Connect {option['name']}</h1><p>Zova account: {html.escape(user.email)}</p>{choices}<p>Sign in, check the profile, then confirm. Nothing publishes during setup.</p><form method="post" data-connection-form><input type="hidden" name="proof" value="{proof}"><button name="decision" value="cancel">This isn’t my Zova account</button></form></main></body></html>''')
+        return HTMLResponse(f'''<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Continue in your browser | Zova</title><link rel="stylesheet" href="/static/mobile-auth.css?v=20261025-connect"><script defer src="/static/mobile-connect.js?v=20261025"></script></head><body><main><h1>Continue as {html.escape(user.display_name or 'you')}</h1><p>{html.escape(user.email)}</p><p>This opens the account from your iPhone app. Only continue if this is your Zova email. Your Instagram login is separate.</p><form method="post" data-connection-form><input type="hidden" name="proof" value="{proof}"><button>Continue to your account</button></form><p>When finished, close this browser and return to Zova to refresh your connections.</p><form method="post" data-connection-form><input type="hidden" name="proof" value="{proof}"><button name="decision" value="cancel">This isn’t my Zova account</button></form></main></body></html>''')
 
 
 @router.post('/mobile/browser/{ticket}', include_in_schema=False)
@@ -286,7 +303,10 @@ def browser_accept(ticket: str, request: Request, proof: str = Form(...), decisi
             start = ('/oauth/instagram/facebook/start' if method == 'facebook' and platform == 'instagram'
                      else options[platform]['start'])
             if method and options[platform]['ready']:
-                response.headers['location'] = start + ('?' + target.query if target.query else '')
+                start += ('?' + target.query if target.query else '')
+                if request.query_params.get('return_to_app') == '1':
+                    return provider_bridge(response, start)
+                response.headers['location'] = start
         return response
     except HTTPException:
         return browser_recovery()

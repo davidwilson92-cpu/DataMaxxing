@@ -10,6 +10,8 @@ function fixture(attachments=false){
  return {ctx,node,inputs,run:s=>vm.runInContext(s,ctx)};
 }
 (async()=>{
+ const scheduled=fixture();scheduled.run("currentDraftId=12;currentDraftStatus='scheduled';variants={instagram:{posts:['Saved caption']}};currentPlatform='instagram';publicationStates={}");
+ assert.match(scheduled.run('draftWorkspace()'),/Manage schedule/);assert.match(scheduled.run('draftWorkspace()'),/drafts\?draft=12&amp;workspace=7|drafts\?draft=12&workspace=7/);assert.match(scheduled.run('draftWorkspace()'),/Checking publication status/);assert.doesNotMatch(scheduled.run('draftWorkspace()'),/Not submitted/);
  const f=fixture();f.ctx.row={id:1,revision:2,status:'draft',platforms:['x','instagram','facebook','tiktok'],variants:{x:{posts:['x']},instagram:{posts:['ig']},facebook:{posts:['fb']},tiktok:{posts:['tt']}},workspace:{selected_platforms:[]}};
  f.run('api=async()=>row');await f.run('loadRequestedDraft()');assert.equal(f.inputs.filter(n=>n.checked).length,4,'legacy empty selection restores actual versions');
  f.ctx.row.workspace={selected_platforms:[],platform_selection_explicit:true};await f.run('loadRequestedDraft()');assert.equal(f.inputs.filter(n=>n.checked).length,0,'intentional deselection survives reload');

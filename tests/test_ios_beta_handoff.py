@@ -19,29 +19,29 @@ from test_account_integrity import account
 CALLBACK = 'https://zova-social.com/mobile/callback'
 
 
-def test_account_deletion_request_is_authenticated_idempotent_and_truthful():
-    web, uid, _, _ = account()
+def test_account_deletion_request_is_authenticated_and_truthful():
+    web, uid, token, _ = account()
     assert TestClient(app).post('/account/deletion', data={'confirmation': 'DELETE'}).status_code == 401
-    assert web.get('/account/deletion').status_code == 200
-    assert web.post('/account/deletion', data={'confirmation': 'other'}).status_code == 400
-    response = web.post('/account/deletion', data={'confirmation': 'DELETE'}, follow_redirects=False)
-    assert response.status_code == 303
-    assert web.post('/account/deletion', data={'confirmation': 'DELETE'}, follow_redirects=False).headers['location'] == response.headers['location']
-    page = web.get(response.headers['location'])
+    page=web.get('/account/deletion')
+    proof=re.search(r'name="proof" value="([^"]+)"',page.text)[1]
+    data={'confirmation':'DELETE','current_password':'old-password-123','proof':proof}
+    assert web.post('/account/deletion',data={**data,'confirmation':'other'}).status_code==400
+    response=web.post('/account/deletion',data=data,follow_redirects=False)
+    assert response.status_code==303
+    assert user_from_session(token) is None
+    page=TestClient(app).get(response.headers['location'])
     assert 'Deletion request received' in page.text
-    assert 'have not yet been deleted' in page.text
+    assert 'not yet been erased' in page.text
     assert 'Platform connection removed' not in page.text
     with SessionLocal() as db:
-        row = db.get(DeletionRequest, response.headers['location'].rsplit('/', 1)[1])
-        assert row.status == 'received'
-        assert row.subject_hash == hash_api_key(f'account:{uid}')
-        assert db.get(User, uid).active
-    other, _, _, _ = account()
-    assert other.post('/account/deletion', data={'confirmation': 'DELETE'}, follow_redirects=False).headers['location'] != response.headers['location']
+        row=db.get(DeletionRequest,response.headers['location'].rsplit('/',1)[1])
+        assert row.status=='access_revoked'
+        assert row.subject_hash==hash_api_key(f'account:{uid}')
+        assert not db.get(User,uid).active
     from nova.data_lifecycle import erase_local_account
     with SessionLocal() as db:
-        erase_local_account(db, uid, 'synthetic-ios-deletion-case', writes_paused=True)
-    finished = TestClient(app).get(response.headers['location'])
+        erase_local_account(db,uid,'synthetic-ios-deletion-case',writes_paused=True)
+    finished=TestClient(app).get(response.headers['location'])
     assert 'Active account data erased' in finished.text
     assert 'awaiting processing' not in finished.text
 

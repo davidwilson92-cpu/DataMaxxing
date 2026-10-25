@@ -2,6 +2,27 @@ import XCTest
 @testable import Zova
 
 final class NativeProtocolTests: XCTestCase {
+    func testNativeTabRoutingRequiresAnExactOwnedTabPath() throws {
+        let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
+        for (index, path) in ["/studio?draft=7&workspace=2", "/drafts?workspace=2", "/analytics", "/account#voice"].enumerated() {
+            XCTAssertEqual(configuration.tabIndex(for: URL(string: "https://zova-social.com" + path)!), index)
+        }
+        for value in ["http://zova-social.com/drafts", "https://evil.test/drafts", "https://zova-social.com.evil.test/drafts", "https://user@zova-social.com/drafts", "https://zova-social.com:443/drafts", "https://zova-social.com/drafts/other", "https://zova-social.com/account/deletion"] {
+            XCTAssertNil(configuration.tabIndex(for: URL(string: value)!))
+        }
+    }
+    func testScheduleReselectReturnsToListWithoutLosingWorkspaceOrAccountEdits() throws {
+        let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
+        let current = URL(string: "https://zova-social.com/studio?draft=7&workspace=12&token=private#caption")!
+        XCTAssertEqual(configuration.tabRefreshURL("/drafts", from: current)?.absoluteString, "https://zova-social.com/drafts?workspace=12")
+        XCTAssertEqual(configuration.tabRefreshURL("/analytics", from: current)?.absoluteString, "https://zova-social.com/analytics?workspace=12")
+        for path in ["/studio", "/account", "/account/deletion", "//evil.test"] {
+            XCTAssertNil(configuration.tabRefreshURL(path, from: current))
+        }
+        for source in ["https://evil.test/drafts?workspace=12", "https://zova-social.com/drafts?workspace=other", "https://zova-social.com/drafts?workspace="] {
+            XCTAssertEqual(configuration.tabRefreshURL("/drafts", from: URL(string: source)!)?.absoluteString, "https://zova-social.com/drafts")
+        }
+    }
     func testSocialReturnChecksAttemptPlatformHostAndOutcome() throws {
         let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
         let state = NativeProof.ticketState("synthetic-ticket")

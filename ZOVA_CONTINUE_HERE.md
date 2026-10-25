@@ -1,3 +1,45 @@
+# Tester remediation candidate — 25 October 2026
+
+Current work is on `codex/ios-beta-20261019` in the existing iOS beta checkout.
+Read **docs/beta/QA_REMEDIATION_20261025.md** for all57 tester cases, seven bugs,
+five UX observations and seven owner requests. The workbook is unchanged.
+
+Implemented: Schedule calendar/saved posts with guarded reschedule/cancel/edit;
+separate immediate Next Move and saved description-based Strategy; corrected
+voice persistence and consent-gated approved-caption memory; public Help/auth
+spacing; native tab ownership/save guards and browser connection progress;
+conditional Instagram Reel music and private media export for finishing
+Story/photo music inside Instagram. A new iPhone binary is required for native
+navigation/export changes. This candidate is not yet installed by testers.
+
+No live social publication, grant change, deletion, charge or migration in this
+remediation. Keep Render, billing/checkout/enforcement off and the paid monitor
+inactive. Do not change Apple's reviewer credentials. All79 commercial findings
+remain; do not revive the unfinished broad RLS/service migration.
+
+Local browser checks use disposable accounts, blocked external providers and a
+worker-disabled fixture. They cover calendar time changes/cancellation, pausing
+all destinations before caption edit, reload persistence, saved Strategy and
+pottery-to-restaurant replacement. Tests exposed and fixed a transient stale-card
+flash. Mocked search/AI evidence is not live-provider or model-quality evidence.
+
+Still external: true erasure processing/deadline; Facebook's recorded provider
+login; an eligible Meta audio grant and actual delivery; original tester schedule
+cleanup; replacement iPhone acceptance. Tester source recording contains an
+exposed test credential: restrict/redact it and rotate it; no value is retained
+in this report. Original scores stay baseline until the tester reassesses.
+
+Rollback: revert this code without restoring old production data. Retain new
+nullable/defaulted voice-memory/audio-grant columns, encryption keys, uploads,
+existing sessions and immutable publication ledgers. Roll back native and server
+separately; existing builds/routes remain supported. Never replay unknown posts.
+The previously verified live server is bcd260e, TestFlight0.1.0(10); records below
+are historical live evidence, not proof this candidate has shipped.
+
+Exact final CI/native/deployment evidence is appended to the remediation report.
+
+---
+
 # Approved TestFlight beta and security update — 22 October 2026
 
 **TestFlight invitation is now active:**

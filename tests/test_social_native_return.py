@@ -1,5 +1,7 @@
 """Synthetic OAuth grants only; no real accounts or posts."""
+import json
 import re
+from http.cookies import SimpleCookie
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
@@ -49,6 +51,8 @@ def test_combined_instagram_prompt_keeps_identity_and_both_routes(monkeypatch):
     path = '/mobile/browser/' + handoff(native, '/connect/instagram?workspace=0', 'browser')
     page = browser.get(path)
     assert 'public Instagram Creator or Business' in page.text
+    assert '<script defer src="/static/mobile-connect.js?v=20261025"></script>' in page.text
+    assert page.text.count('data-connection-form') == 3  # Both provider routes and identity cancellation.
     assert 'Continue to Instagram' in page.text and 'Continue with Facebook' in page.text
     assert 'This isn’t my Zova account' in page.text
     proof = re.search(r'name="proof" value="([a-f0-9]+)"', page.text)[1]
@@ -57,6 +61,35 @@ def test_combined_instagram_prompt_keeps_identity_and_both_routes(monkeypatch):
     assert 'zova_social_return' not in accepted.cookies  # Older binaries retain their flow.
     repeat = browser.post(path, data={'proof': proof, 'method': 'facebook'}, follow_redirects=False)
     assert repeat.headers['location'] == '/connect/instagram?workspace=0'  # Never restart OAuth on replay.
+
+
+def test_native_bridge_preserves_secure_cookies_and_one_use_receipt(monkeypatch):
+    from nova.db import MobileHandoff
+    native, *_ = sign_in()
+    ticket = handoff(native, '/connect/instagram?workspace=0', 'browser')
+    monkeypatch.setenv('PUBLIC_BASE_URL', 'https://zova-social.com')
+    monkeypatch.setenv('INSTAGRAM_APP_ID', 'synthetic')
+    monkeypatch.setenv('INSTAGRAM_APP_SECRET', 'synthetic')
+    browser = TestClient(app, base_url='https://zova-social.com')
+    path = '/mobile/browser/' + ticket + '?return_to_app=1'
+    proof = re.search(r'name="proof" value="([a-f0-9]+)"', browser.get(path).text)[1]
+    accepted = browser.post(path, data={'proof': proof, 'method': 'direct'}, follow_redirects=False)
+    assert accepted.status_code == 200
+    cookies = SimpleCookie()
+    for header in accepted.headers.get_list('set-cookie'):
+        cookies.load(header)
+    for name in ['nova_session', 'zova_social_return']:
+        assert cookies[name]['secure'] and cookies[name]['httponly']
+        assert cookies[name]['samesite'].lower() == 'lax'
+    assert 'zova_brand' in cookies and cookies['zova_brand']['max-age'] == '0'
+    with SessionLocal() as db:
+        assert db.get(MobileHandoff, hash_api_key(ticket)).used
+    repeated = browser.post(path, data={'proof': proof, 'method': 'direct'}, follow_redirects=False)
+    assert repeated.status_code == 303
+    assert repeated.headers['location'] == '/connect/instagram?workspace=0'
+    assert not repeated.headers.get_list('set-cookie')
+    stranger = TestClient(app, base_url='https://zova-social.com')
+    assert stranger.post(path, data={'proof': proof, 'method': 'direct'}).status_code == 401
 
 
 @pytest.mark.parametrize('route,platform', [('instagram', 'instagram'), ('instagram/facebook', 'instagram'), ('meta', 'facebook'), ('x', 'x'), ('tiktok', 'tiktok')])
@@ -75,7 +108,36 @@ def test_provider_callback_requires_final_confirmation_before_returning_to_app(m
     path = '/mobile/browser/' + ticket + '?return_to_app=1'
     proof = re.search(r'name="proof" value="([a-f0-9]+)"', browser.get(path).text)[1]
     accepted = browser.post(path, data={'proof': proof, 'method': 'facebook' if route == 'instagram/facebook' else 'direct'}, follow_redirects=False)
-    start = browser.get(accepted.headers['location'], follow_redirects=False)
+    # Finish the same-origin POST before beginning OAuth's GET redirect chain.
+    # Safari applies form-action to the entire POST redirect chain otherwise.
+    assert accepted.status_code == 200
+    assert accepted.headers['content-type'].startswith('text/html')
+    assert 'location' not in accepted.headers
+    match = re.search(r'location\.replace\(("[^\n]+")\);', accepted.text)
+    assert match, 'The bridge must navigate after the form response completes'
+    destination = json.loads(match[1])
+    expected_route = 'instagram/facebook' if route == 'instagram/facebook' else route
+    assert destination == '/oauth/' + expected_route + '/start?workspace=0'
+    assert urlsplit(destination).netloc == '' and destination.startswith('/oauth/')
+    assert f'href="{destination}"' in accepted.text  # Manual fallback uses the same trusted route.
+    assert accepted.headers['cache-control'] == 'no-store'
+    assert accepted.headers['referrer-policy'] == 'same-origin'
+    policy = accepted.headers['content-security-policy']
+    directives = {part.strip().split(' ', 1)[0]: part.strip().split(' ', 1)[1]
+                  for part in policy.split(';') if ' ' in part.strip()}
+    assert directives['form-action'] == "'self'"
+    assert directives['connect-src'] == "'self'"
+    assert directives['frame-ancestors'] == "'none'"
+    cookies = SimpleCookie()
+    for header in accepted.headers.get_list('set-cookie'):
+        cookies.load(header)
+    for name in ['nova_session', 'zova_social_return']:
+        assert cookies[name]['httponly']
+        assert cookies[name]['samesite'].lower() == 'lax'
+        assert cookies[name]['path'] == '/'
+        assert cookies[name].value not in accepted.text
+        assert browser.cookies[name] == cookies[name].value
+    start = browser.get(destination, follow_redirects=False)
     state = parse_qs(urlsplit(start.headers['location']).query)['state'][0]
     callback = '/oauth/' + ('meta' if route == 'instagram/facebook' else route) + '/callback'
     pending = browser.get(callback, params={'state': state, 'code': 'synthetic'}, follow_redirects=False)

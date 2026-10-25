@@ -1,0 +1,16 @@
+.music-dialog{max-width:520px;width:calc(100% - 32px);max-height:85dvh;overflow-y:auto}
+.music-dialog header{display:flex;align-items:center;justify-content:space-between}
+.music-dialog header h2{font-size:22px;margin:0}
+.music-dialog #instagramMusicSearch{display:flex;gap:10px;margin:20px 0}
+.music-dialog input[type=search]{min-width:0;flex:1}
+.music-track{display:flex;align-items:center;gap:12px;border-bottom:1px solid #e8dfef;padding:8px 0}
+.music-track button{flex:1;min-width:0;text-align:left;background:none;color:#21152e;border:0;padding:10px 4px;min-height:48px}
+.music-track strong,.music-track span{display:block;overflow-wrap:anywhere}
+.music-track span{color:#70637e;font-size:13px;margin-top:4px}
+.music-track a{font-size:13px;white-space:nowrap;min-height:44px;display:flex;align-items:center}
+.music-volumes{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.music-volumes label{font-size:13px}.music-volumes input{display:block;width:100%;min-height:44px;margin-top:6px}
+.music-dialog #instagramFinish{border-top:1px solid #e8dfef;padding:16px 0;margin-top:20px}
+.music-dialog summary{min-height:44px;cursor:pointer;font-weight:600}
+.music-exports{display:grid;gap:8px;margin-bottom:12px}.music-exports a{overflow-wrap:anywhere}
+.music-dialog>button:last-child{display:block;width:100%;margin-top:16px}

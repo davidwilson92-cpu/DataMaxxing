@@ -1,7 +1,7 @@
 <aside class="studio-nav-rail" aria-label="Workspace navigation">
   <a class="rail-brand" href="/studio" aria-label="Zova Studio">{% with logo_id='rail-brand-gradient' %}{% include 'logo_mark.html' %}{% endwith %}<span class="rail-label">Zova</span></a>
   <nav aria-label="Workspace">
-  {% for href,icon,label in [('/studio','+','Studio'),('/drafts','▤','Drafts'),('/analytics','↗','Performance'),('/account#voice','◌','Voice'),('/account#socials','◎','Socials'),('/account','○','Account'),('/help','?','Help'),('/security','◇','Security')] %}
+  {% for href,icon,label in [('/studio','+','Studio'),('/drafts','▤','Schedule'),('/analytics','↗','Performance'),('/account#voice','◌','Voice'),('/account#socials','◎','Socials'),('/account','○','Account'),('/help','?','Help'),('/security','◇','Security')] %}
     <a href="{{ href }}" aria-label="{{ label }}" title="{{ label }}" {% if request.url.path == href %}aria-current="page"{% endif %}><span class="rail-icon" aria-hidden="true">{% include 'ui_icon.html' %}</span><span class="rail-label" aria-hidden="true">{{ label }}</span></a>
   {% endfor %}
   </nav>

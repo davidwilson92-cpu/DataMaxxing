@@ -1,0 +1,10 @@
+<dialog id="instagramMusic" class="post-settings music-dialog" aria-labelledby="instagramMusicTitle">
+<header><h2 id="instagramMusicTitle">Instagram music</h2><button type="button" class="quiet-button" aria-label="Close music" onclick="this.closest('dialog').close()">×</button></header>
+<p id="instagramMusicStatus" role="status"></p>
+<label id="instagramMusicAccountLabel" for="instagramMusicAccount" hidden>Instagram account<select id="instagramMusicAccount"></select></label>
+<section id="instagramMusicSelected" hidden><strong id="instagramMusicName"></strong><div class="music-volumes"><label for="instagram_audio_volume">Music volume<input id="instagram_audio_volume" type="number" min="1" max="100" value="100"></label><label for="instagram_video_volume">Original audio<input id="instagram_video_volume" type="number" min="1" max="100" value="100"></label></div><button type="button" class="quiet-button" onclick="zovaInstagramMusic.clear()">Remove music</button><p class="support-note">Instagram cannot preview the combined audio before publishing.</p></section>
+<form id="instagramMusicSearch"><label class="visually-hidden" for="instagramMusicQuery">Search music</label><input id="instagramMusicQuery" type="search" maxlength="120" placeholder="Song or artist"><button id="instagramMusicSearchButton" type="submit" class="button primary">Search</button></form>
+<div id="instagramMusicResults" class="music-results"></div>
+<details id="instagramFinish"><summary>Finish in Instagram</summary><p>Save your media, then add music and publish in Instagram. Not scheduled in Zova.</p><div id="instagramMusicMedia" class="music-exports"></div><button id="instagramCopyCaption" class="button quiet" type="button">Copy caption</button><a class="button quiet" href="https://www.instagram.com/" target="_blank" rel="noopener">Open Instagram ↗</a></details>
+<button class="button primary" type="button" onclick="this.closest('dialog').close()">Done</button>
+</dialog>

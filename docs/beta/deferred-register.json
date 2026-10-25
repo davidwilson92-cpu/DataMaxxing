@@ -2536,5 +2536,11 @@
       "reviewed_by": null,
       "reviewed_at": null
     }
-  ]
+  ],
+  "qa_followup_20261025": {
+    "evidence": "QA_REMEDIATION_20261025.md",
+    "scope": "Tester7bugs/5UX and owner Schedule, Strategy, NextMove, Voice, Instagram music feedback; all79 sections retained.",
+    "implementation": "Bounded shared-web/backend and native navigation fixes; additive encrypted music grant and voice-memory fields.",
+    "remaining": "Actual erasure operations, real Facebook/eligible music tests, original tester schedule cleanup, replacement iPhone acceptance. Customer billing off; Render retained."
+  }
 }

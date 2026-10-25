@@ -59,6 +59,13 @@ def confirm(code:str,request:Request,choice:int=Form(...),action:str=Form('conne
         # Keep an existing direct Instagram grant when the linked-Page route returns it.
         preserve=existing and candidate['platform']=='instagram' and 'instagram_business_basic' in (existing.scope or '') and candidate.get('metadata',{}).get('auth_provider')=='facebook_login'
         if not preserve:upsert_connection(db,user_id=user.id,**candidate)
+        elif candidate.get('audio_user_token'):
+            # Same owner, brand and exact Instagram account ID were matched
+            # above. Retain the working direct grant; music uses its separate
+            # explicitly confirmed Facebook User grant and original scopes.
+            from .social import attach_instagram_audio_grant
+            attach_instagram_audio_grant(existing,candidate['audio_user_token'],
+                candidate.get('audio_user_token_expires_in'),candidate.get('scope',''))
     db.commit()
     if action=='switch':return RedirectResponse(f'/connect/{row.platform}?switch_account=1&workspace={row.brand_id}',303)
     from .mobile_shell import social_return

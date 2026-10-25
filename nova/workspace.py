@@ -120,6 +120,18 @@ def clean_workspace(value, db, user_id, *, previous_workspace=None):
     if not isinstance(value,dict): raise HTTPException(400,'Invalid workspace')
     instagram_format=value.get('instagram_format','post')
     if instagram_format not in ('post','story'): raise HTTPException(400,'Choose Instagram Post or Story.')
+    audio=value.get('instagram_audio')
+    if audio is not None:
+        # A saved choice is not approval: eligibility and canonical track details
+        # are rechecked against Meta when the immutable review is created.
+        import re
+        if (not isinstance(audio,dict) or not isinstance(audio.get('audio_id'),str)
+                or not re.fullmatch(r'\d{1,40}',audio['audio_id'])
+                or type(audio.get('connection_id')) is not int or audio['connection_id']<=0
+                or any(type(audio.get(k)) is not int or not 1<=audio[k]<=100 for k in ('audio_volume','video_volume'))):
+            raise HTTPException(400,'Choose a valid Instagram music track and volume.')
+        audio={k:audio[k] for k in ('audio_id','connection_id','audio_volume','video_volume')}
+        audio.update(title=str(value['instagram_audio'].get('title',''))[:160],artist=str(value['instagram_audio'].get('artist',''))[:160])
     assets,messages=_workspace_media(value,db,user_id,previous_workspace=previous_workspace)
     pending=str(value.get('pending_message') or '')[:12000]
     if pending and not any(m['role']=='user' and m['content']==pending for m in messages):
@@ -142,7 +154,7 @@ def clean_workspace(value, db, user_id, *, previous_workspace=None):
             if pending_link and not pending_link.startswith(('https://','http://')):raise HTTPException(400,'Use an http or https source link.')
             retry_context['pending_link_url']=pending_link
     return {'media_asset_ids':[a['id'] for a in assets],'media':assets,'media_kind':('video' if any(a['kind']=='video' for a in assets) else 'image') if assets else None,
-            'instagram_format':instagram_format, 'video_duration':max(0,min(duration,36000)), 'link_url':link,'conversation':messages,
+            'instagram_format':instagram_format, 'instagram_audio':audio, 'video_duration':max(0,min(duration,36000)), 'link_url':link,'conversation':messages,
             'text_history':clean_text_history(value.get('text_history',[])), 'composer':str(value.get('composer',''))[:12000], 'selected_platforms':[p for p in selected if p in PLATFORMS][:4],
             'platform_selection_explicit':explicit, 'pending_message':pending, **retry_context,
             'active_platform':value.get('active_platform') if value.get('active_platform') in PLATFORMS else 'x'}

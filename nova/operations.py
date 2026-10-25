@@ -2,12 +2,20 @@
 import hmac
 import os
 from datetime import timedelta
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Query
 from sqlalchemy import func, select, text
-from .db import SessionLocal, ScheduledPost, Publication, BillingEvent, BillingAccount, UsageEntry, MailDelivery, AICall, utcnow
+from .db import SessionLocal, ScheduledPost, Publication, BillingEvent, BillingAccount, UsageEntry, MailDelivery, AICall, DeletionRequest, utcnow
 from .readiness import spend_summary, cohort_report
 
 router=APIRouter()
+PENDING_DELETION_STATUSES=('received','access_revoked','erasing')
+
+
+def deletion_summary(db):
+    count,oldest=db.execute(select(func.count(DeletionRequest.code),func.min(DeletionRequest.created_at)).where(
+        DeletionRequest.status.in_(PENDING_DELETION_STATUSES))).one()
+    return {'pending_deletion_requests':count,
+            'oldest_pending_deletion_at':oldest.isoformat()+('Z' if oldest.tzinfo is None else '') if oldest else None}
 
 
 def require_operations(authorization, *, monitor=False):
@@ -70,10 +78,24 @@ def status(authorization: str | None = Header(default=None)):
         mail_failures=db.scalar(select(func.count()).select_from(MailDelivery).where(MailDelivery.status=='failed',MailDelivery.created_at>utcnow()-timedelta(days=1)))
         mail_stuck=db.scalar(select(func.count()).select_from(MailDelivery).where(MailDelivery.status=='sending',MailDelivery.created_at<utcnow()-timedelta(minutes=5)))
         ai_failures=db.scalar(select(func.count()).select_from(AICall).where(AICall.status!='returned',AICall.created_at>utcnow()-timedelta(days=1)))
-        attention=bool(ai_failures or overdue or uncertain or stuck or spend['threshold_exceeded'] or spend['unpriced_calls'] or stale_billing or reservations or mail_failures or mail_stuck or not mail_configured or worker['status'] not in {'running','idle'})
+        deletion=deletion_summary(db)
+        attention=bool(deletion['pending_deletion_requests'] or ai_failures or overdue or uncertain or stuck or spend['threshold_exceeded'] or spend['unpriced_calls'] or stale_billing or reservations or mail_failures or mail_stuck or not mail_configured or worker['status'] not in {'running','idle'})
         return {'status':'attention' if attention else 'ok','database':'reachable','overdue_jobs':overdue,'uncertain_publications':uncertain,'stuck_publications':stuck,
                 'stale_billing_accounts':stale_billing,'last_billing_event':latest.isoformat() if latest else None,
-                'ai_failures_24h':ai_failures,'old_usage_reservations':reservations,'mail_failures_24h':mail_failures,'stuck_mail':mail_stuck,'recovery_email_configured':mail_configured,'ai_spend':spend,'worker':worker,'checked_at':utcnow().isoformat()}
+                'ai_failures_24h':ai_failures,'old_usage_reservations':reservations,'mail_failures_24h':mail_failures,'stuck_mail':mail_stuck,'recovery_email_configured':mail_configured,'ai_spend':spend,'worker':worker,'checked_at':utcnow().isoformat(),**deletion}
+
+
+@router.get('/internal/deletions',include_in_schema=False)
+def pending_deletions(authorization:str|None=Header(default=None),page:int=Query(1,ge=1,le=100000)):
+    """Read-only manual work queue; never claim email delivery or perform erasure."""
+    require_operations(authorization)  # Read-only monitor credentials receive counts, not case receipts.
+    with SessionLocal() as db:
+        rows=db.scalars(select(DeletionRequest).where(DeletionRequest.status.in_(PENDING_DELETION_STATUSES))
+            .order_by(DeletionRequest.created_at,DeletionRequest.code).offset((page-1)*50).limit(51)).all()
+        return {**deletion_summary(db),'page':page,'has_more':len(rows)>50,
+                'requests':[{'code':row.code,'status':row.status,
+                    'created_at':row.created_at.isoformat()+('Z' if row.created_at.tzinfo is None else '')} for row in rows[:50]],
+                'processing':'Manual verification and reconciliation are required before active-store erasure. No email notification is implied.'}
 
 
 @router.get('/internal/cohorts')

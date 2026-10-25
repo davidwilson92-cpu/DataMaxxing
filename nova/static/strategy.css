@@ -129,3 +129,47 @@
 .simple-chat .studio-header-actions .next-move-launch{background:linear-gradient(115deg,#100c18 0%,#21132f 62%,#43215e 100%);border-color:#4d3265;box-shadow:0 4px 16px #32184a26,inset 0 1px 0 #d6b6ff24}
 .simple-chat .studio-header-actions .next-move-launch:hover{background:linear-gradient(115deg,#191022,#321b48 62%,#573079);border-color:#78509c}
 .strategy-panel #nextMoveSettings[hidden],.strategy-panel #strategyActions[hidden]{display:none!important}
+
+/* A description and one review replace the setup questionnaire. */
+.strategy-panel #nextMoveSettings{border:0;padding:0}
+.strategy-panel .strategy-description>label{margin-top:0;font-size:16px;font-weight:650;color:#2a2034}
+.strategy-panel .strategy-description textarea,.strategy-panel .move-empty textarea,.strategy-panel #strategyAdvanced textarea{border:1px solid #d8cce4;border-radius:12px;background:#fff;padding:12px;color:#2a2034;min-height:104px;line-height:1.5}
+.strategy-panel .strategy-description .support-note{color:#716579;font-size:13px;margin:8px 0}
+.strategy-panel .strategy-examples{display:flex;gap:14px;margin:0 0 12px}
+.strategy-panel .strategy-examples button{border:0;background:transparent;color:#6d28d9;font:inherit;font-size:13px;padding:4px 0;min-height:44px;text-decoration:underline;text-underline-offset:4px}
+.strategy-panel .strategy-description>.primary,.strategy-panel #strategyForm>.primary,.strategy-panel .move-empty>.primary{width:100%;border-radius:12px;min-height:48px}
+.strategy-panel #strategyManualEdit{display:block;margin:4px auto 0}
+.strategy-panel #strategyManualEdit[hidden]{display:none}
+.strategy-panel .strategy-saved-state{font-size:13px;color:#416647;line-height:1.5;margin:0 0 16px}
+.strategy-panel #strategyForm{margin-top:8px;padding-top:0;border-top:0}
+.strategy-panel #strategyReviewHeading{margin:12px 0;font-size:19px;letter-spacing:-.4px}
+.strategy-panel .strategy-summary{border-left:3px solid #8140df;padding-left:16px;display:grid;gap:12px;margin:16px 0}
+.strategy-panel .strategy-summary strong{font-size:12px;color:#786585;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.strategy-panel .strategy-summary p{margin:3px 0 0;color:#302537;line-height:1.5}
+.strategy-panel .strategy-summary-platforms{display:flex;gap:14px;align-items:center}
+.strategy-panel .strategy-revise{padding:0;color:#6d28d9;font-size:13px}
+.strategy-panel #strategyAdvanced{margin:12px 0;padding-top:0}
+.strategy-panel #strategyAdvanced summary{font-size:14px;color:#6d28d9;display:flex;justify-content:space-between}
+.strategy-panel #strategyAdvanced summary:after{content:'+';font-size:21px;font-weight:400}
+.strategy-panel #strategyAdvanced[open] summary:after{content:'−'}
+.strategy-panel .strategy-search-disclosure{padding:0;background:none;font-size:12px;color:#766a7d;margin:12px 0 16px}
+.strategy-panel .move-open-section h4{margin:16px 0 10px;font-size:14px;color:#302537;letter-spacing:0}
+.strategy-panel .move-detail-body{padding:0 0 8px}
+.strategy-panel .move-detail-body>p{margin-bottom:8px}
+.strategy-panel .move-feedback-input{display:flex;gap:8px;align-items:center}
+.strategy-panel .move-feedback-input input{margin:0;flex:1;min-width:0}
+.strategy-panel .move-feedback-input button{flex:none;min-width:44px;height:44px;background:#efe7fa;color:#6528a8;border-radius:10px;font-size:22px}
+.strategy-panel .move-feedback>.quiet-button{padding-left:0;font-size:13px}
+.strategy-panel .recommendation-help{border-top:1px solid #eee8f2;margin-top:8px;padding-top:0}
+.strategy-panel .recommendation-help>summary{font-size:12px;color:#75637d}
+.strategy-panel .strategy-edit-link{display:block;margin:0 auto;font-size:13px;color:#6d28d9}
+.strategy-panel .strategy-edit-link[hidden]{display:none}
+.strategy-panel #seriesDetails[hidden],.strategy-panel #strategyForm[hidden]{display:none}
+.strategy-panel .move-empty{padding:8px 0 16px}
+.strategy-panel .move-empty>h3{font-size:23px!important;line-height:1.25!important;margin-bottom:18px!important}
+.strategy-panel .move-empty fieldset{padding:8px 10px;margin-bottom:16px}
+.strategy-panel .move-empty .inline-choice{margin-right:16px}
+.strategy-panel input[type=radio]{position:static;appearance:auto;width:18px;min-height:18px;height:18px;opacity:1;margin:0;accent-color:#7c3aed}
+.strategy-panel .move-hero{padding:20px}.strategy-panel .move-meta{margin-bottom:16px}.strategy-panel #strategyActions h3{font-size:26px;line-height:1.18;margin-bottom:22px;letter-spacing:-.7px}
+.strategy-panel[aria-busy=true] .move-pager button{opacity:.45;pointer-events:none}
+@media(max-width:480px){.strategy-panel .move-hero{padding:18px}.strategy-panel #strategyActions h3{font-size:24px}.strategy-panel .strategy-description textarea{min-height:120px}.strategy-panel .move-pager{padding:0}.strategy-panel .move-open-section h4{margin-top:12px}}

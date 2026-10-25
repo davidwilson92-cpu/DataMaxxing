@@ -140,10 +140,15 @@ def test_draft_pagination_keeps_older_work_accessible():
     with SessionLocal() as db:
         for index in range(32): db.add(Draft(user_id=uid, brief=f'Synthetic idea {index}'))
         db.commit()
-    first = client.get('/drafts').text
-    second = client.get('/drafts?page=2').text
-    assert 'Older drafts' in first and 'Newer drafts' in second
-    assert first.count('class="draft-card"') == 30 and second.count('class="draft-card"') == 2
+    first = client.get('/drafts?view=saved').text
+    second = client.get('/drafts?view=saved&page=2').text
+    assert '/drafts?view=saved&page=2&status=all&q=' in first and 'Older →' in first
+    assert '/drafts?view=saved&page=1&status=all&q=' in second and '← Newer' in second
+    assert first.count('class="saved-post draft-card"') == 30 and second.count('class="saved-post draft-card"') == 2
+    import re
+    first_ids=set(re.findall(r'<label for="title-(\d+)">',first))
+    second_ids=set(re.findall(r'<label for="title-(\d+)">',second))
+    assert len(first_ids|second_ids)==32 and not first_ids.intersection(second_ids)
 
 
 @pytest.mark.parametrize('phase,expected', [('container_created', 'failed'), ('publish_requested', 'unknown'), ('published', 'published')])

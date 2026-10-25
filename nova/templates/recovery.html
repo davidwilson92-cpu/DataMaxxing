@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Account recovery | Zova{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/account-access.css?v=20261025">{% endblock %}
 {% block body %}
 <main class="legal-wrap">
   <h1>{{ 'Choose a new password' if reset else 'Recover your account' }}</h1>
   {% if reset %}
-  <form method="post" action="/reset-password" data-security-form>
+  <form method="post" action="/reset-password" data-security-form class="recovery-form">
     <input id="recoveryToken" type="hidden" name="token" value="{{ token }}">
     <label for="resetPassword">New password</label>
     <input id="resetPassword" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="256" required>
@@ -25,7 +26,7 @@
   <p role="status">If recovery is available for that account, a reset link has been sent. Check your inbox and spam folder. The link expires in 15 minutes.</p>
   {% elif ready %}
   <p>We will email a link to your Zova account address.</p>
-  <form method="post" action="/forgot-password" data-security-form>
+  <form method="post" action="/forgot-password" data-security-form class="recovery-form">
     <label for="recoveryEmail">Zova email</label>
     <input id="recoveryEmail" name="email" type="email" autocomplete="email" required>
     <button type="submit" class="button primary">Send reset link</button>
@@ -35,7 +36,7 @@
   <p>Email recovery is not available yet. Contact support to request verified account recovery. Your password and social connections will not change until your identity is verified.</p>
   {% endif %}
   {% include "support_link.html" %}
-  <p><a href="/login">Back to login</a></p>
+  <p><a class="recovery-back" href="/login">Back to login</a></p>
 </main>
 <script defer src="/static/security-forms.js?v=20261020"></script>
 {% endblock %}

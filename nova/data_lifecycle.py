@@ -21,8 +21,8 @@ EXPORT = {
     models.SeriesOccurrence: ['series_id','brand_id','draft_id','due_at','status'],
     models.User: ['id','email','display_name','country_code','created_at'],
     models.Brand: ['id','name'],
-    models.CreatorPreferences: ['writing_tone','audience','topics','things_to_avoid','example_posts','timezone'],
-    models.BrandVoice: ['brand_id','writing_tone','audience','topics','things_to_avoid','example_posts','timezone'],
+    models.CreatorPreferences: ['writing_tone','audience','topics','things_to_avoid','example_posts','learned_json','timezone'],
+    models.BrandVoice: ['brand_id','writing_tone','audience','topics','things_to_avoid','example_posts','learned_json','timezone'],
     models.Draft: ['id','brand_id','title','brief','instruction','variants_json','workspace_json','status'],
     models.MediaAsset: ['id','brand_id','filename','mime_type','analysis_json'],
     models.SocialConnection: ['brand_id','platform','account_id','username','active'],
@@ -85,7 +85,7 @@ def erase_local_account(db, uid, verified_case, *, writes_paused=False):
         db.add(request)
     receipts = db.scalars(select(models.DeletionRequest).where(
         models.DeletionRequest.subject_hash == hash_api_key(f'account:{uid}'),
-        models.DeletionRequest.status.in_(('received', 'erasing')))).all()
+        models.DeletionRequest.status.in_(('received', 'access_revoked', 'erasing')))).all()
     for receipt in receipts:
         receipt.status='erasing';receipt.scope=plan['retained']
     request.status='erasing';db.commit()  # Revoke access before storage operations.
@@ -98,20 +98,21 @@ def erase_local_account(db, uid, verified_case, *, writes_paused=False):
         # Derived observations and fingerprints are customer content, even without a file.
         asset.analysis_json='{}'
     fields={
-        models.CreatorPreferences:['writing_tone','audience','topics','things_to_avoid','example_posts'],
-        models.BrandVoice:['writing_tone','audience','topics','things_to_avoid','example_posts'],
+        models.CreatorPreferences:['writing_tone','audience','topics','things_to_avoid','example_posts','learned_json'],
+        models.BrandVoice:['writing_tone','audience','topics','things_to_avoid','example_posts','learned_json'],
         models.Brand:['name'],
         models.Draft:['title','brief','instruction','variants_json','workspace_json'],
         models.PublishReview:['payload_json'],
         models.Activity:['text','error','url','platform_post_id','metrics_json'],
         models.Publication:['result_json'],
         models.ScheduledPost:['content_json','error','post_url','platform_post_id'],
-        models.SocialConnection:['account_id','username','display_name','encrypted_access_token','encrypted_refresh_token','metadata_json','scope'],
+        models.SocialConnection:['account_id','username','display_name','encrypted_access_token','encrypted_refresh_token','encrypted_audio_user_token','metadata_json','scope'],
     }
     for cls,names in fields.items():
         for row in rows(db,cls,uid):
             for name in names:setattr(row,name,'{}' if name.endswith('_json') else '')
             if cls is models.SocialConnection:row.active=False
+            if cls is models.SocialConnection:row.audio_user_token_expires_at=None
             if cls is models.PublishReview:row.status='erased'
     for cls in [models.AIConsent,models.SeriesApproval,models.SeriesOccurrence,models.ContentSeries,models.StrategyAction,models.Strategy,models.PerformanceSnapshot,models.AuthIdentity,models.RecoveryToken,models.EmailVerification,models.OAuthState,models.PendingConnection,models.ProductEvent]:
         db.execute(delete(cls).where(cls.user_id==uid))

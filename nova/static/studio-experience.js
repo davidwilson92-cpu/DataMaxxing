@@ -59,6 +59,7 @@ function renderReadiness(){
   document.querySelectorAll('[name=instagramFormatChoice]').forEach(input=>{input.checked=input.value===instagramFormat();input.disabled=document.getElementById('instagramFormat').disabled;});
   document.querySelectorAll('.composer-platforms input').forEach(input=>{input.closest('.platform-check').classList.toggle('is-selected',input.checked);input.closest('.platform-check').classList.toggle('is-connected',Boolean(connectionData[input.value]?.length));input.title=connectionData[input.value]?.length?'Connected':'Connect to publish; drafting is available';});
   document.getElementById('threadLength').disabled=!platforms.includes('x')||sendingMessage||!editableDraft();
+  window.zovaInstagramMusic?.update();
 }
 function openReview(){document.body.classList.add('review-active');document.getElementById('postSettings').close();const host=reviewHost();document.getElementById('chatFeed').append(host);host.scrollIntoView({block:'start',behavior:'smooth'});const heading=host.querySelector('.chat-confirmation:last-child h3');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}}
 function publicationStatus(status){return {unknown:'Outcome unconfirmed — check the destination; do not resend until resolved',pending:'Waiting for platform processing',publishing:'Sending — awaiting a result',scheduled:'Scheduled',published:'Published',failed:'Failed — review before retrying',cancelled:'Cancelled'}[status]||status;}

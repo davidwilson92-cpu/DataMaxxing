@@ -141,6 +141,7 @@ def meta_exchange(code: str, *, include_instagram: bool = False) -> list[dict[st
     if r.status_code >= 400:
         raise RuntimeError("Meta token exchange failed. Try again or reconnect the account.")
     user_token = r.json()["access_token"]
+    audio_expires_in = r.json().get('expires_in')
     # Prefer a long-lived user token when the app supports the exchange.
     long_r = httpx.get(
         f"https://graph.facebook.com/{version}/oauth/access_token",
@@ -149,6 +150,7 @@ def meta_exchange(code: str, *, include_instagram: bool = False) -> list[dict[st
     )
     if long_r.status_code < 400 and long_r.json().get("access_token"):
         user_token = long_r.json()["access_token"]
+        audio_expires_in = long_r.json().get('expires_in')
     pages_r = httpx.get(
         f"https://graph.facebook.com/{version}/me/accounts",
         params={"fields": "name,access_token,tasks" + (",instagram_business_account{id,username,name,profile_picture_url}" if include_instagram else ""), "access_token": user_token},
@@ -157,15 +159,19 @@ def meta_exchange(code: str, *, include_instagram: bool = False) -> list[dict[st
     if pages_r.status_code >= 400:
         raise RuntimeError("Could not read managed Facebook Pages. Try again or reconnect the account.")
     pages = pages_r.json().get("data", [])
-    if not include_instagram:
-        granted = httpx.get(f'https://graph.facebook.com/{version}/me/permissions',
-            params={'access_token': user_token}, timeout=30.0)
-        if granted.status_code >= 400:
-            raise RuntimeError('Could not verify Facebook permissions. Reconnect Facebook.')
-        scope = ','.join(p['permission'] for p in granted.json().get('data', [])
-                         if p.get('status') == 'granted' and isinstance(p.get('permission'), str))
-        for page in pages:
-            page['granted_scope'] = scope
+    granted = httpx.get(f'https://graph.facebook.com/{version}/me/permissions',
+        params={'access_token': user_token}, timeout=30.0)
+    if granted.status_code >= 400:
+        raise RuntimeError('Could not verify Facebook permissions. Reconnect Facebook.')
+    scope = ','.join(p['permission'] for p in granted.json().get('data', [])
+                     if p.get('status') == 'granted' and isinstance(p.get('permission'), str))
+    for page in pages:
+        page['granted_scope'] = scope
+        if include_instagram:
+            # Staged candidates are encrypted by connection_review; these
+            # private fields never enter profile metadata or API responses.
+            page['_audio_user_token'] = user_token
+            page['_audio_user_token_expires_in'] = audio_expires_in
     return pages
 
 
@@ -363,6 +369,19 @@ def selected_connection(db, user_id, platform, connection_id=None):
     return conn
 
 
+def attach_instagram_audio_grant(conn,token,expires_in,scope):
+    """Attach an explicitly confirmed, same-account Facebook User grant only."""
+    conn.encrypted_audio_user_token=None
+    conn.audio_user_token_expires_at=None
+    metadata=json_meta(conn)
+    metadata.pop('audio_auth_provider',None);metadata.pop('audio_scope',None)
+    if conn.platform=='instagram' and token and type(expires_in) is int and expires_in>60:
+        conn.encrypted_audio_user_token=encrypt(token)
+        conn.audio_user_token_expires_at=utcnow()+timedelta(seconds=expires_in-60)
+        metadata.update(audio_auth_provider='facebook_login',audio_scope=scope)
+    save_meta(conn,metadata)
+
+
 def upsert_connection(
     db: Session,
     *, user_id: int,
@@ -375,6 +394,8 @@ def upsert_connection(
     expires_in: int | None = None,
     scope: str = "",
     metadata: dict[str, Any] | None = None,
+    audio_user_token: str | None = None,
+    audio_user_token_expires_in: int | None = None,
 ) -> SocialConnection:
     from .allowances import lock, connection_slot
     lock(db,user_id)
@@ -396,6 +417,7 @@ def upsert_connection(
     conn.active = True
     if metadata is not None:
         save_meta(conn, metadata)
+    attach_instagram_audio_grant(conn,audio_user_token if (metadata or {}).get('auth_provider')=='facebook_login' else None,audio_user_token_expires_in,scope)
     db.commit(); db.refresh(conn)
     from .readiness import event
     event(user_id,'connected',conn.id)
@@ -483,9 +505,14 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
     if not assets:
         raise RuntimeError("Instagram publishing requires an image or video")
     if len(assets)!=1: raise RuntimeError('Choose one Instagram image or video.')
+    audio=None
+    if (options or {}).get('audio'):
+        from .instagram_audio import validate_selection
+        try:audio=validate_selection(conn,options['audio'],assets,placement)
+        except ValueError as exc:raise RuntimeError(str(exc)) from None
     if placement=='story': instagram_story_eligibility(db,conn)
-    token = access_token(conn, db)
-    graph = instagram_graph_base(conn)
+    token = decrypt(conn.encrypted_audio_user_token) if audio else access_token(conn, db)
+    graph = f"https://graph.facebook.com/{os.environ.get('META_GRAPH_VERSION','v23.0')}" if audio else instagram_graph_base(conn)
     caption = posts[0] if posts else ''
     if link_url and link_url not in caption:
         caption = (caption + "\n\n" + link_url).strip()
@@ -498,6 +525,8 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
         create_data.update({"media_type": "REELS", "video_url": media_url, "share_to_feed": "true"})
     else:
         create_data["image_url"] = media_url
+    if audio:
+        create_data['audio_configuration']=json.dumps({key:audio[key] for key in ('audio_id','audio_volume','video_volume')})
     create = httpx.post(f"{graph}/{conn.account_id}/media", data=create_data, timeout=45.0)
     if create.status_code >= 400:
         raise RuntimeError("Instagram could not prepare this media. Check the file and connection.")

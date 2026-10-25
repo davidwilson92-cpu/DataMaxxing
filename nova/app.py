@@ -86,15 +86,12 @@ def learn_voice_from_socials(db: Session, user_id: int) -> dict[str, Any] | None
         return None
     with allowances.ai_action(db, user_id):
         profile = ai.infer_voice_profile("\n\n--- POST ---\n\n".join(posts))
+        from .voice_memory import save_learning, snapshot, lock_active_owner
+        lock_active_owner(db, user_id)
         prefs = get_preferences(db, user_id)
-        prefs.writing_tone = profile["writing_tone"][:5000]
-        prefs.audience = profile["audience"][:5000]
-        prefs.topics = profile["topics"][:5000]
-        prefs.things_to_avoid = profile["things_to_avoid"][:5000]
-        prefs.example_posts = "\n\n".join(posts)[:12000]
-        prefs.preferred_post_length = profile["preferred_post_length"]
+        save_learning(prefs, profile, posts)
         db.commit()
-        return {**profile, "posts_scanned": len(posts)}
+        return {**profile, **snapshot(prefs), "posts_scanned": len(posts)}
 
 
 def _state_row(db: Session, raw_state: str, platform: str) -> OAuthState:
@@ -503,26 +500,25 @@ def data_deletion_instructions(request:Request):
 @app.get("/account/deletion", response_class=HTMLResponse)
 def account_deletion(request: Request):
     user = current_user(request)
-    return templates.TemplateResponse(request, "account_deletion.html", template_context(request, user))
+    from .account_deletion import proof_for
+    return templates.TemplateResponse(request, "account_deletion.html", template_context(request, user,proof=proof_for(request.cookies.get('nova_session',''))))
 
 @app.post("/account/deletion")
-def request_account_deletion(request: Request, confirmation: Annotated[str, Form()], db: Session = Depends(get_db)):
+def request_account_deletion(request: Request, confirmation: Annotated[str, Form()]='', current_password: Annotated[str, Form()]='', proof: Annotated[str, Form()]=''):
     user = current_user(request)
-    if confirmation.strip() != "DELETE":
-        raise HTTPException(400, "Type DELETE to request account deletion")
-    # Stable opaque receipt makes repeated requests idempotent without exposing identity.
-    code = hmac.new(session_secret().encode(), f"account-deletion:{user.id}".encode(), hashlib.sha256).hexdigest()
-    row = db.get(DeletionRequest, code)
-    if row is None:
-        db.add(DeletionRequest(code=code, subject_hash=hash_api_key(f"account:{user.id}"), status="received",
-                               scope="Full Zova account deletion requested by the signed-in owner; operator processing pending"))
-        try:
-            db.commit()
-        except IntegrityError:
-            db.rollback()
-            if db.get(DeletionRequest, code) is None:
-                raise
-    return RedirectResponse(f"/data-deletion/status/{code}", status_code=303)
+    from .account_deletion import check_proof, initiate
+    if not allowed_request(f'account-deletion:{user.id}',5,900):
+        raise HTTPException(429,'Please wait before trying account deletion again.')
+    if not check_proof(request.cookies.get('nova_session',''),proof):
+        raise HTTPException(400,'This confirmation expired. Reopen Delete account and try again.')
+    if confirmation.strip() != 'DELETE':
+        raise HTTPException(400,'Type DELETE to confirm account deletion.')
+    with SessionLocal() as account_db:
+        code=initiate(account_db,user.id,current_password)
+    response=RedirectResponse(f'/data-deletion/status/{code}',303)
+    response.delete_cookie('nova_session',path='/')
+    response.delete_cookie('zova_brand',path='/')
+    return response
 
 @app.post("/data-deletion/callback")
 async def meta_data_deletion_callback(request:Request,db:Session=Depends(get_db)):
@@ -540,6 +536,7 @@ async def meta_data_deletion_callback(request:Request,db:Session=Depends(get_db)
     rows=db.scalars(select(SocialConnection).where(SocialConnection.account_id==external_id,SocialConnection.platform.in_(("instagram","facebook")))).all()
     for row in rows:
         row.active=False;row.encrypted_access_token="";row.encrypted_refresh_token=None
+        row.encrypted_audio_user_token=None;row.audio_user_token_expires_at=None
     confirmation=secrets.token_urlsafe(24)
     db.add(DeletionRequest(code=confirmation,subject_hash=hash_api_key(external_id),status="connection_removed"))
     db.commit()
@@ -632,7 +629,8 @@ def onboarding_complete(request: Request):
 def account(request:Request,db:Session=Depends(get_db)):
     user=current_user(request); prefs=get_preferences(db,user.id); rows=db.scalars(select(SocialConnection).where(SocialConnection.user_id==user.id,SocialConnection.active.is_(True)).order_by(SocialConnection.id.desc())).all(); by={}
     for r in rows: by.setdefault(r.platform,[]).append(r)
-    response=templates.TemplateResponse(request, "account.html",template_context(request,user,prefs=prefs,by_platform=by,billing_ready=billing.configured()))
+    from .voice_memory import memory
+    response=templates.TemplateResponse(request, "account.html",template_context(request,user,prefs=prefs,voice_memory=memory(prefs),by_platform=by,billing_ready=billing.configured()))
     response.delete_cookie("zova_onboarding",path="/")
     return response
 
@@ -678,10 +676,22 @@ def admin_users(request: Request, q: str = "", subscription: str = "", country: 
 
 @app.post("/account/preferences")
 def save_preferences(request:Request,writing_tone:Annotated[str,Form()]="",audience:Annotated[str,Form()]="",topics:Annotated[str,Form()]="",things_to_avoid:Annotated[str,Form()]="",example_posts:Annotated[str,Form()]="",preferred_post_length:Annotated[int,Form()]=220,timezone_name:Annotated[str,Form(alias="timezone")]="Europe/London",next_url:Annotated[str,Form(alias="next")]="",db:Session=Depends(get_db)):
-    user=current_user(request); prefs=get_preferences(db,user.id)
+    from .voice_memory import mark_edits, lock_active_owner
+    user=current_user(request); lock_active_owner(db,user.id); prefs=get_preferences(db,user.id)
     try:ZoneInfo(timezone_name)
     except Exception:timezone_name="Europe/London"
-    prefs.writing_tone=writing_tone[:5000]; prefs.audience=audience[:5000]; prefs.topics=topics[:5000]; prefs.things_to_avoid=things_to_avoid[:5000]; prefs.example_posts=example_posts[:12000]; prefs.preferred_post_length=max(30,min(preferred_post_length,4000)); prefs.timezone=timezone_name; db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=voice",303)
+    mark_edits(prefs,dict(writing_tone=writing_tone[:5000],audience=audience[:5000],topics=topics[:5000],things_to_avoid=things_to_avoid[:5000],example_posts=example_posts[:12000],preferred_post_length=max(30,min(preferred_post_length,4000)),timezone=timezone_name))
+    db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=voice",303)
+
+@app.post('/account/voice/clear-examples')
+def clear_voice_examples(request:Request, db:Session=Depends(get_db)):
+    from .voice_memory import memory, lock_active_owner
+    uid=current_user(request).id
+    lock_active_owner(db,uid); prefs=get_preferences(db,uid)
+    state=memory(prefs); state['approved_examples']=[]; state.pop('approved_at',None)
+    prefs.learned_json=json.dumps(state,ensure_ascii=False)
+    db.commit()
+    return RedirectResponse('/account?saved=voice#voice',303)
 
 @app.post("/account/profile")
 async def update_profile(request: Request, display_name: Annotated[str, Form()] = "", guidance: Annotated[str | None, Form()] = None, next_url: Annotated[str, Form(alias="next")] = "", db: Session = Depends(get_db)):
@@ -689,7 +699,9 @@ async def update_profile(request: Request, display_name: Annotated[str, Form()] 
     try: user.display_name = normalize_name(display_name)
     except ValueError: return RedirectResponse("/account?error=profile", 303)
     profile_form=await request.form()
-    if 'guidance' in profile_form: prefs.things_to_avoid = str(profile_form['guidance']).strip()[:5000]
+    if 'guidance' in profile_form:
+        from .voice_memory import mark_edits
+        mark_edits(prefs,{'things_to_avoid':str(profile_form['guidance']).strip()[:5000]})
     db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=profile", 303)
 
 @app.post("/account/password")
@@ -714,7 +726,9 @@ def scan_social_voice(request: Request, db: Session = Depends(get_db)):
     except Exception:
         log.warning("Social voice scan failed")
         raise HTTPException(502, "Zova could not scan recent posts. Your saved voice is unchanged. Try again.") from None
-    if not profile: return {"status": "waiting", "message": "Connect a social account so Zova can learn from recent posts."}
+    if not profile:
+        connected=db.scalar(select(SocialConnection.id).where(SocialConnection.user_id==user.id,SocialConnection.active.is_(True)).limit(1))
+        return {"status": "waiting", "message": "No readable captions were returned. Your voice is unchanged; add writing examples below or try again later." if connected else "Connect a social account, or add writing examples below."}
     return {"status": "learned", **profile}
 
 @app.post("/account/connections/{connection_id}/unlink")
@@ -814,7 +828,7 @@ def oauth_meta_callback(request:Request,code:str|None=None,state:str|None=None,e
         if not page.get('access_token') or not page.get('id'):continue
         if instagram_intent:
             ig=page['instagram_business_account']
-            candidates.append(dict(platform='instagram',account_id=str(ig['id']),username=ig.get('username','') or '',display_name=ig.get('name','') or ig.get('username','') or '',access=page['access_token'],scope=INSTAGRAM_FACEBOOK_SCOPES,metadata={'auth_provider':'facebook_login','facebook_page_id':str(page['id']),'profile_picture_url':ig.get('profile_picture_url')}))
+            candidates.append(dict(platform='instagram',account_id=str(ig['id']),username=ig.get('username','') or '',display_name=ig.get('name','') or ig.get('username','') or '',access=page['access_token'],scope=page.get('granted_scope', INSTAGRAM_FACEBOOK_SCOPES),metadata={'auth_provider':'facebook_login','facebook_page_id':str(page['id']),'profile_picture_url':ig.get('profile_picture_url')},audio_user_token=page.get('_audio_user_token'),audio_user_token_expires_in=page.get('_audio_user_token_expires_in')))
         else:
             candidates.append(dict(platform='facebook',account_id=str(page['id']),username='',display_name=page.get('name',''),access=page['access_token'],scope=page.get("granted_scope",""),metadata={'tasks':page.get('tasks',[])}))
     from .connection_review import stage
@@ -960,15 +974,15 @@ def learn_voice(payload: VoiceLearnRequest, request: Request, db: Session = Depe
         except Exception:
             log.warning("Voice learning failed")
             raise HTTPException(502, "Zova could not analyse that sample. Your saved voice is unchanged. Try again.") from None
+        from .voice_memory import save_learning, snapshot, lock_active_owner
+        lock_active_owner(db,user.id)
         prefs = get_preferences(db, user.id)
-        prefs.writing_tone = profile["writing_tone"][:5000]
-        prefs.audience = profile["audience"][:5000]
-        prefs.topics = profile["topics"][:5000]
-        prefs.things_to_avoid = profile["things_to_avoid"][:5000]
-        prefs.example_posts = payload.content[:12000]
-        prefs.preferred_post_length = profile["preferred_post_length"]
+        try:
+            save_learning(prefs,profile,[payload.content])
+        except (ValueError, TypeError, KeyError):
+            raise HTTPException(502, "Zova could not analyse that sample. Your saved voice is unchanged. Try again.") from None
         db.commit()
-        return profile
+        return {**profile, **snapshot(prefs)}
 
 
 def _validate_platforms(values:list[str])->list[str]:
@@ -1272,7 +1286,10 @@ def legacy_publish(body:LegacyPostRequest,creator:Creator=Depends(require_legacy
 
 @app.get("/help",response_class=HTMLResponse)
 def help_page(request:Request):
-    return templates.TemplateResponse(request, "help.html",template_context(request,current_user(request)))
+    # Help is also linked from the native welcome screen, before authentication.
+    from .security import user_from_session
+    user = user_from_session(request.cookies.get('nova_session'))
+    return templates.TemplateResponse(request, "help.html", template_context(request, user))
 
 from .operations import router as operations_router
 app.include_router(operations_router)
@@ -1292,6 +1309,10 @@ def media_preview(asset_id:int,request:Request,db:Session=Depends(get_db)):
 
 from .connection_review import router as connection_review_router
 app.include_router(connection_review_router)
+from .media_export import router as media_export_router
+app.include_router(media_export_router)
+from .instagram_audio import router as instagram_audio_router
+app.include_router(instagram_audio_router)
 
 # Native authority is disabled by default; the existing Studio stays shared.
 from .mobile_auth import router as mobile_auth_router

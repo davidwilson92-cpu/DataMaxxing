@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from fastapi import HTTPException
 from sqlalchemy import select,update
 from sqlalchemy.exc import IntegrityError
-from .db import Draft,MediaAsset,SocialConnection,PublishReview,Publication,ScheduledPost,Activity,get_preferences,utcnow
+from .db import Draft,MediaAsset,SocialConnection,PublishReview,Publication,ScheduledPost,Activity,User,get_preferences,utcnow
 from .workspace import EDITABLE,PLATFORMS
 from .social import selected_connection,publishing_context,publish_platform
 from . import allowances
@@ -112,6 +112,15 @@ def prepare_review(db,uid,body):
             if problem:raise HTTPException(400,problem)
             context=publishing_context(db,uid,p,conn.id)
         except RuntimeError:raise HTTPException(400,f'Connect or reconnect {p} before publishing.')
+        if p=='instagram' and instagram_options.get('audio'):
+            from .instagram_audio import validate_selection
+            try:
+                checked_audio=validate_selection(conn,instagram_options['audio'],media,instagram_format)
+            except ValueError as exc:raise HTTPException(400,str(exc)) from None
+            # Exact metadata and volume controls are included in the immutable
+            # review. A different track cannot be substituted at confirmation.
+            if instagram_options['audio']!=checked_audio:
+                raise HTTPException(400,'Choose the track and both audio volumes before reviewing.')
         if story:
             from .social import instagram_story_eligibility
             try:instagram_story_eligibility(db,conn)
@@ -265,6 +274,11 @@ def dispatch(db,publication,payload,publisher=publish_platform):
 
 
 def confirm_review(db,uid,body,mode,publisher=publish_platform):
+    # Serialise with account deletion before claiming any approval or job.
+    # A request authenticated just before revocation must not queue new sends.
+    allowances.lock(db,uid)
+    if not db.scalar(select(User.id).where(User.id==uid,User.active.is_(True))):
+        db.rollback();raise HTTPException(401,'This account is no longer active.')
     review=db.get(PublishReview,body.review_token) if body.review_token else None
     if not review or review.user_id!=uid or review.draft_id!=body.draft_id:raise HTTPException(400,'Review this draft before confirming publication.')
     if review.status=='cancelled':raise HTTPException(409,'This review is no longer valid. Review the current draft and destination again.')
@@ -294,6 +308,8 @@ def confirm_review(db,uid,body,mode,publisher=publish_platform):
             row.status='scheduled' if mode=='schedule' else 'queued';row.connection_id=target['connection_id'];row.review_code=review.code;row.result_json='{}';db.flush();jobs.append(row)
             allowances.reserve(db,uid,'publications',f'publication:{row.id}',max(1,len(target['posts'])))
             if mode=='schedule':db.add(ScheduledPost(user_id=uid,draft_id=draft.id,platform=platform,connection_id=target['connection_id'],content_json=json.dumps({'review_code':review.code,'publication_id':row.id,'posts':target['posts']}),media_asset_ids_json=json.dumps(payload['media_asset_ids']),scheduled_at=datetime.fromisoformat(payload['scheduled_utc']),status='scheduled'))
+        from .voice_memory import remember_approved
+        remember_approved(db,uid,payload)
         db.commit()
     except HTTPException:
         db.rollback();raise

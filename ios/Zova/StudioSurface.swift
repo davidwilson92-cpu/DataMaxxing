@@ -38,6 +38,20 @@ final class StudioPage: ObservableObject {
         guard let url = webView?.url, ZovaConfiguration.bundled.owns(url) else { return }
         webView?.evaluateJavaScript("if(typeof refreshNativeConnections==='function'){refreshNativeConnections();}", completionHandler: nil)
     }
+    func saveBeforeNavigation(_ configuration: ZovaConfiguration) async throws -> Bool {
+        guard let webView, let url = webView.url, configuration.owns(url), url.path == "/studio" else { return true }
+        let safe = try await webView.callAsyncJavaScript("""
+            if (typeof studioLoading !== 'undefined' && studioLoading) return false;
+            if ((typeof mediaUploading !== 'undefined' && mediaUploading) ||
+                (typeof sendingMessage !== 'undefined' && sendingMessage)) return false;
+            if (typeof saveDraftNow === 'function' && typeof savedSerial !== 'undefined' &&
+                savedSerial !== changeSerial) await saveDraftNow();
+            return !(typeof mediaUploading !== 'undefined' && mediaUploading) &&
+                !(typeof sendingMessage !== 'undefined' && sendingMessage) &&
+                !(typeof savedSerial !== 'undefined' && savedSerial !== changeSerial);
+            """, arguments: [:], in: nil, contentWorld: .page)
+        return safe as? Bool == true
+    }
 }
 
 struct StudioSurface: UIViewRepresentable {
@@ -48,6 +62,9 @@ struct StudioSurface: UIViewRepresentable {
     var browser: (String) -> Void
     var external: (URL) -> Void
     var share: (URL) -> Void
+    var navigate: (URL) -> Void = { _ in }
+    var exportEpoch: Int? = nil
+    var exportAuthority: () -> Int? = { nil }
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> WKWebView {
         let settings = WKWebViewConfiguration()
@@ -78,7 +95,20 @@ struct StudioSurface: UIViewRepresentable {
         var parent: StudioSurface
         var loaded: UUID?
         private var downloads: [ObjectIdentifier: URL] = [:]
-        init(_ parent: StudioSurface) { self.parent = parent }
+        private let initialExportAuthority: Int?
+        init(_ parent: StudioSurface) {
+            self.parent = parent
+            // Capture the owning session even while its first page is loading.
+            // Readiness is checked separately at destination and completion.
+            initialExportAuthority = parent.exportEpoch
+        }
+        private var canExport: Bool {
+            initialExportAuthority != nil && initialExportAuthority == parent.exportAuthority()
+        }
+        func finishExport(_ url: URL) {
+            guard canExport else { StudioExport.remove(url); return }
+            parent.share(url)
+        }
         func webView(_ view: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             parent.page.loading = true
         }
@@ -120,6 +150,10 @@ struct StudioSurface: UIViewRepresentable {
                     parent.page.failure = "Purchases are unavailable in the iPhone beta."
                     decisionHandler(.cancel); return
                 }
+                if action.targetFrame?.isMainFrame != false,
+                   parent.configuration.tabIndex(for: url) != nil, url.path != parent.page.path {
+                    decisionHandler(.cancel); parent.navigate(url); return
+                }
                 decisionHandler(.allow); return
             }
             if url.absoluteString == "about:blank" { decisionHandler(.allow); return }
@@ -148,7 +182,10 @@ struct StudioSurface: UIViewRepresentable {
         func webView(_ view: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
             guard let url = action.request.url else { return nil }
             if let destination = parent.configuration.browserDestination(url) { parent.browser(destination) }
-            else if parent.configuration.owns(url) { view.load(action.request) }
+            else if parent.configuration.owns(url) {
+                if parent.configuration.tabIndex(for: url) != nil && url.path != parent.page.path { parent.navigate(url) }
+                else { view.load(action.request) }
+            }
             else if url.scheme == "https" { parent.external(url) }
             return nil
         }
@@ -171,7 +208,7 @@ struct StudioSurface: UIViewRepresentable {
         func webView(_ view: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) { download.delegate = self }
         func webView(_ view: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) { download.delegate = self }
         func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String, completionHandler: @escaping (URL?) -> Void) {
-            guard let url = response.url, parent.configuration.owns(url) || url.scheme == "blob" else { completionHandler(nil); return }
+            guard canExport, let url = response.url, parent.configuration.owns(url) || url.scheme == "blob" else { completionHandler(nil); return }
             let name = URL(fileURLWithPath: suggestedFilename).lastPathComponent
                 .replacingOccurrences(of: "[^A-Za-z0-9._ -]", with: "_", options: .regularExpression)
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent("zova-export-" + UUID().uuidString)
@@ -183,12 +220,22 @@ struct StudioSurface: UIViewRepresentable {
             } catch { completionHandler(nil); parent.page.failure = "This file couldn’t be saved. Please try again." }
         }
         func downloadDidFinish(_ download: WKDownload) {
-            if let url = downloads.removeValue(forKey: ObjectIdentifier(download)) { parent.share(url) }
+            if let url = downloads.removeValue(forKey: ObjectIdentifier(download)) { finishExport(url) }
         }
         func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
-            if let url = downloads.removeValue(forKey: ObjectIdentifier(download)) { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
-            parent.page.failure = "The download didn’t finish. Please try again."
+            if let url = downloads.removeValue(forKey: ObjectIdentifier(download)) { StudioExport.remove(url) }
+            if canExport { parent.page.failure = "The download didn’t finish. Please try again." }
         }
+    }
+}
+
+enum StudioExport {
+    static func remove(_ file: URL) {
+        let folder = file.deletingLastPathComponent().standardizedFileURL
+        let temporary = FileManager.default.temporaryDirectory.standardizedFileURL
+        guard folder.deletingLastPathComponent() == temporary,
+              folder.lastPathComponent.hasPrefix("zova-export-") else { return }
+        try? FileManager.default.removeItem(at: folder)
     }
 }
 

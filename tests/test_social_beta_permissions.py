@@ -17,7 +17,7 @@ def test_requested_permissions_do_not_change_instagram(monkeypatch):
 
 
 @pytest.mark.parametrize('include_instagram', [False, True])
-def test_meta_reads_actual_grants_only_for_facebook(monkeypatch, include_instagram):
+def test_meta_reads_actual_grants_for_page_and_instagram_connections(monkeypatch, include_instagram):
     calls=[]
     def get(url, **kwargs):
         calls.append(url)
@@ -31,9 +31,9 @@ def test_meta_reads_actual_grants_only_for_facebook(monkeypatch, include_instagr
             {'permission':'pages_manage_posts','status':'declined'}]})
     monkeypatch.setattr(social.httpx,'get',get)
     rows=social.meta_exchange('synthetic',include_instagram=include_instagram)
-    assert len(calls)==(3 if include_instagram else 4)
-    if not include_instagram:
-        assert rows[0]['granted_scope']=='pages_show_list'
+    assert len(calls)==4
+    assert rows[0]['granted_scope']=='pages_show_list'
+    assert ('_audio_user_token' in rows[0]) is include_instagram
 
 
 def test_x_text_remains_available_without_media_grant():

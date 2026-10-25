@@ -10,6 +10,8 @@ def unlink_local(db, connection):
     connection.active = False
     connection.encrypted_access_token = ''
     connection.encrypted_refresh_token = None
+    connection.encrypted_audio_user_token = None
+    connection.audio_user_token_expires_at = None
     draft_ids = set()
     jobs = db.scalars(select(ScheduledPost).where(
         ScheduledPost.user_id == uid, ScheduledPost.connection_id == cid,

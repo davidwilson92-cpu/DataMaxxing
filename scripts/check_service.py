@@ -18,6 +18,11 @@ def check(payload, *, now=None):
         value=payload.get(key)
         if type(value) is not int or value<0:incomplete=True
         elif value:reasons.append(key)
+    # Optional for older deployed status endpoints during a rolling release.
+    if 'pending_deletion_requests' in payload:
+        value=payload['pending_deletion_requests']
+        if type(value) is not int or value<0:incomplete=True
+        elif value:reasons.append('pending_deletion_requests')
     spend=payload.get('ai_spend')
     if not isinstance(spend,dict):
         incomplete=True

@@ -1,5 +1,28 @@
 # Beta known gaps and required follow-up
 
+## Tester and owner remediation — 25 October 2026
+
+The candidate addresses the supplied 57-case QA tracker (7 observed defects,
+5 UX issues) and owner feedback. See QA_REMEDIATION_20261025.md for every case,
+original scores and evidence. Schedule, saved Strategy, immediate Next Move,
+voice persistence, signed-out Help, auth spacing and native tab routing have
+bounded fixes. Instagram Reel music is conditional on Meta's supported
+Facebook User grant; photos/Stories finish in Instagram. No new grants or
+real posts were made.
+
+Account deletion can now be initiated in the app, revokes access and cancels
+unsent jobs, but safe final erasure/retention and an operational deadline remain
+open. Facebook provider login, actual music publication, original tester job
+cleanup and replacement-build device acceptance remain external evidence gaps.
+Do not turn implemented or mocked-tested features into live-provider claims.
+The public tester recording exposes a credential; redact/restrict it and rotate
+the affected test password. Do not reproduce its value.
+
+All 79 commercial findings remain retained. Existing recovery discrepancies,
+missing legacy media, unpriced calls and unknown publication remain recorded.
+Render, disabled customer charges and inactive paid monitoring remain unchanged.
+
+
 ## External beta acceptance — 21 October 2026
 
 Apple now shows build 0.1.0 (10) as Testing in the external beta group, with

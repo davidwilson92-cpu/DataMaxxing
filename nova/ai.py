@@ -141,7 +141,8 @@ def generate_variants(
 ) -> dict[str, Any]:
     selected = [p for p in platforms if p in PLATFORM_GUIDANCE]
     guidance = "\n".join(PLATFORM_GUIDANCE[p] for p in selected)
-    examples = (getattr(preferences, "example_posts", "") or "")[:7000]
+    from .voice_memory import generation_examples
+    examples = generation_examples(preferences)
     prompt = f"""You are Zova, a social publishing editor. Produce platform-native drafts from one source brief.
 
 Return ONLY valid JSON. No markdown fences and no commentary.

@@ -30,7 +30,8 @@ def test_incomplete_accounts_do_not_become_a_winner_or_fake_zero():
 def test_help_points_to_current_controls_and_clear_account_information():
     client,*_=account()
     help=client.get('/help').text
-    assert 'Post options → Your plan &amp; recurring drafts' in help
+    assert 'href="/studio?strategy=1"' in help and 'describe your goal' in help
+    assert 'href="/drafts"' in help and 'edit its content or cancel' in help
     assert 'A snoozed suggestion returns after 24 hours' not in help
     page=client.get('/account#security').text
     assert 'id="aiPrivacyChoice"' in page

@@ -11,7 +11,7 @@ final class ZovaSession: ObservableObject {
     let configuration = ZovaConfiguration.bundled
     lazy var api = NativeAPI(configuration: configuration)
     let signIn = NativeSignIn()
-    private var authorityEpoch = 0
+    @Published private(set) var authorityEpoch = 0
     let pages = [StudioPage("/studio"), StudioPage("/drafts"), StudioPage("/analytics"), StudioPage("/account")]
     func start() async {
         #if DEBUG
@@ -87,9 +87,10 @@ struct ZovaRoot: View {
     @State private var exported: LinkSheet?
     @State private var exportToRemove: URL?
     @State private var browserBusy = false
+    @State private var navigationGeneration = 0
     @State private var socialSignIn = NativeSignIn()
-    private let titles = ["Studio", "Drafts", "Performance", "Account"]
-    private let icons = ["square.and.pencil", "doc.on.doc", "chart.bar", "person.crop.circle"]
+    private let titles = ["Studio", "Schedule", "Performance", "Account"]
+    private let icons = ["square.and.pencil", "calendar", "chart.bar", "person.crop.circle"]
     private let purple = Color(red: 0.486, green: 0.227, blue: 0.929)
     private let readableAccent = Color(red: 0.73, green: 0.56, blue: 1)
     private let readableSecondary = Color(red: 0.72, green: 0.68, blue: 0.79)
@@ -113,6 +114,10 @@ struct ZovaRoot: View {
         .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { receiveReturn(url) } }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active && model.cookieReady { model.pages.forEach { $0.refreshConnections() } }
+        }
+        .onChange(of: model.authorityEpoch) { _, _ in
+            exported = nil
+            clearExport()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboard = true }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboard = false }
@@ -165,7 +170,7 @@ struct ZovaRoot: View {
             if !keyboard {
                 HStack(spacing: 0) {
                     ForEach(titles.indices, id: \.self) { index in
-                        Button { selected = index } label: {
+                        Button { selectTab(index) } label: {
                             VStack(spacing: 5) {
                                 Image(systemName: icons[index]).font(.system(size: 21, weight: .medium))
                                 Text(titles[index]).font(.caption2.weight(.medium))
@@ -183,7 +188,38 @@ struct ZovaRoot: View {
             StudioSurface(page: model.pages[index], configuration: model.configuration,
                           ready: { model.loaded() }, signedOut: { Task { await model.didSignOut() } },
                           browser: { destination in Task { await openAccount(destination) } },
-                          external: openExternal, share: { exportToRemove = $0; exported = LinkSheet(url: $0) })
+                          external: openExternal, share: { clearExport(); exportToRemove = $0; exported = LinkSheet(url: $0) }, navigate: navigate,
+                          exportEpoch: model.authorityEpoch,
+                          exportAuthority: { model.phase == .studio && model.cookieReady ? model.authorityEpoch : nil })
+        }
+    }
+    private func selectTab(_ index: Int) {
+        navigationGeneration += 1
+        selected = index
+        // Schedule and Performance return to their lists, including a second tap.
+        // Keep the Studio conversation and unfinished Account edits intact.
+        guard let url = model.configuration.tabRefreshURL(model.pages[index].path, from: model.pages[index].webView?.url) else { return }
+        model.pages[index].load(URLRequest(url: url))
+    }
+    private func navigate(_ url: URL) {
+        guard let index = model.configuration.tabIndex(for: url) else { return }
+        navigationGeneration += 1
+        let generation = navigationGeneration
+        let authority = model.authorityEpoch
+        Task { @MainActor in
+            do {
+                let saved = try await model.pages[index].saveBeforeNavigation(model.configuration)
+                guard generation == navigationGeneration, authority == model.authorityEpoch, model.phase == .studio, model.cookieReady else { return }
+                guard saved else {
+                    model.pages[selected].failure = "Finish the upload or caption request in Studio, then open this post."
+                    return
+                }
+                model.pages[index].load(URLRequest(url: url))
+                selected = index
+            } catch {
+                guard generation == navigationGeneration, authority == model.authorityEpoch, model.phase == .studio, model.cookieReady else { return }
+                model.pages[selected].failure = "Your Studio changes couldn’t be saved. Return to Studio and retry saving before opening another post."
+            }
         }
     }
     private func openLegal(_ path: String) { if let url = try? model.configuration.endpoint(path) { browser = LinkSheet(url: url) } }
@@ -215,9 +251,7 @@ struct ZovaRoot: View {
     private func clearExport() {
         // Export files live in a per-download temporary directory; never delete user uploads.
         guard let file = exportToRemove else { return }
-        let directory = file.deletingLastPathComponent().standardizedFileURL
-        if directory.deletingLastPathComponent() == FileManager.default.temporaryDirectory.standardizedFileURL,
-           directory.lastPathComponent.hasPrefix("zova-export-") { try? FileManager.default.removeItem(at: directory) }
+        StudioExport.remove(file)
         exportToRemove = nil
     }
 }
