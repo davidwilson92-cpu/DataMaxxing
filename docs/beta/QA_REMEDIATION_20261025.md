@@ -233,3 +233,33 @@ Final application/native CI results and candidate identity are recorded here aft
 Native validation at `bf6cc07`: [macOS/iPhone CI](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40177228592) passed **20 unit/WebKit tests and one UI test**, plus iPhone release compilation. The subsequent viewport and locale fixes do not change `ios/`; this is simulator/build evidence, not a signed TestFlight release or actual social login acceptance.
 
 Additional visual evidence: [short viewport Studio](evidence/20261025/studio-short-viewport.png), [full-height composer](evidence/20261025/layout-844-plain.png), [short viewport with attachment](evidence/20261025/layout-350-attachments.png), and [Instagram manual music finish](evidence/20261025/instagram-finish-mobile.png).
+
+### Exact candidate application result
+
+Code candidate **`1a77f43bbd07cb44de41364a3b3b2b127f6c4af6`** passed the [push validation](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40177854317) and [PR validation](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40177859348):
+
+- SQLite: **652 passed, 2 platform-specific skips**. PostgreSQL: **653 passed, 1 platform-specific skip**. The SQLite run skips PostgreSQL advisory-lock and migration tests; the PostgreSQL run skips the SQLite backup test and instead runs its own dump/restore.
+- Client checks: **29 passing tests/groups**, plus the separate Studio clarity script and real-browser mobile viewport regression.
+- Synthetic PostgreSQL recovery verifies passwords, encrypted credentials, sessions/revocation, unknown publication preservation, AI choice and media.
+- Built hosting image smoke checks and exact beta-scope gate passed.
+- Fresh test-environment and actual-hosting-image dependency audits: **zero known findings**. This is a package audit, not an assertion that the application has no security risks.
+
+No real post, provider permission, customer deletion, subscription charge, paid monitor or hosting migration was performed. No deployed server or signed TestFlight build contains this candidate yet. A new native build must be signed/uploaded before the tester can verify the tab and export changes.
+
+### Next acceptance run
+
+Use the replacement TestFlight build and record its number, iPhone model and iOS version. Prioritise:
+
+1. Schedule → post → Schedule → another post, reschedule, edit with fresh approval, then cancel. Inspect the original tester job before any authorised cleanup; never replay an unknown result.
+2. Replace the saved business strategy, fully reopen, then generate a relevant post from Next Move. Separately request a one-off idea without changing the saved strategy.
+3. Scan real readable captions, verify voice fields immediately and after reopening, then edit/clear them and check those choices remain.
+4. One-tap Facebook connection through eligible Page selection and final Zova confirmation, then automatic app return. Repeat cancellation for all providers.
+5. Keyboard-open Studio with multiple selected platforms and an attachment; text, Send and format choices must remain reachable. Verify media export/share and logout during an export.
+6. Eligible Reel audio search/selection and final review; separately follow the clearly manual Story/photo path. Do not perform a live publication without explicit approval.
+7. Public Help and recovery targets while signed out. Validate deletion completion only after an operator/deadline and reconciled erasure process are established.
+
+Request fresh usability scores and time-to-first-useful-caption. Retain the original assessment until real retesting supplies new evidence.
+
+Final native PR run on the same code candidate **1a77f43** also passed: [iOS validation 40177859386](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40177859386), **20 unit/WebKit tests, one UI test and iPhone release compilation**. All mandatory application and native checks for this runtime candidate are green. Any following documentation-only commit does not change the validated runtime, native source or exact-scope manifest.
+
+Rollback remains separate for server and native: retain current data/uploads/keys, the new additive voice/audio columns, encrypted credentials and immutable publication history. Revert application behavior without restoring stale database snapshots; do not replay or reset an uncertain provider outcome. The previous verified live server `bcd260e` and approved TestFlight build 10 remain the recorded live baseline, not deployments of this candidate.

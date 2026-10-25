@@ -1,7 +1,7 @@
 # Tester remediation candidate — 25 October 2026
 
 Current work is on `codex/ios-beta-20261019` in the existing iOS beta checkout.
-Read **docs/beta/QA_REMEDIATION_20261025.md** for all57 tester cases, seven bugs,
+Read **docs/beta/QA_REMEDIATION_20261025.md** for all 57 tester cases, seven bugs,
 five UX observations and seven owner requests. The workbook is unchanged.
 
 Implemented: Schedule calendar/saved posts with guarded reschedule/cancel/edit;
@@ -14,7 +14,7 @@ navigation/export changes. This candidate is not yet installed by testers.
 
 No live social publication, grant change, deletion, charge or migration in this
 remediation. Keep Render, billing/checkout/enforcement off and the paid monitor
-inactive. Do not change Apple's reviewer credentials. All79 commercial findings
+inactive. Do not change Apple's reviewer credentials. All 79 commercial findings
 remain; do not revive the unfinished broad RLS/service migration.
 
 Local browser checks use disposable accounts, blocked external providers and a
@@ -33,10 +33,23 @@ Rollback: revert this code without restoring old production data. Retain new
 nullable/defaulted voice-memory/audio-grant columns, encryption keys, uploads,
 existing sessions and immutable publication ledgers. Roll back native and server
 separately; existing builds/routes remain supported. Never replay unknown posts.
-The previously verified live server is bcd260e, TestFlight0.1.0(10); records below
+The previously verified live server is bcd260e, TestFlight 0.1.0 (10); records below
 are historical live evidence, not proof this candidate has shipped.
 
-Exact final CI/native/deployment evidence is appended to the remediation report.
+Code candidate 1a77f43 passed application CI 40177854317 and PR CI 40177859348:
+652 SQLite / 653 PostgreSQL, 29 client checks/groups plus Studio and real-browser
+viewport checks, synthetic recovery, image smoke, exact scope and clean package
+audits. Native source at bf6cc07 passed CI 40177228592 (20 unit/WebKit + 1 UI,
+iPhone Release compilation); ios/ is identical in 1a77f43. Final native PR CI
+40177859386 also passed on 1a77f43: 20 unit/WebKit tests, 1 UI test and iPhone
+Release compilation. Screenshots and full test/provider boundaries
+are in the remediation report. No new deployment/TestFlight release yet.
+
+The final small-screen review found and fixed nested composer height caps that
+hid Send. Text/Send now remain visible at 350/500/844px with long text, attachments
+and four platforms, with reachable formats. The regression is required in CI.
+A full operations-only deletion queue and health count are available, but no
+automated notification/erasure or owner-approved completion deadline is claimed.
 
 ---
 
