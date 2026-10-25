@@ -1,3 +1,12 @@
+# Strapline corrected — 25 October 2026
+
+Owner specified “Your AI social media manager.” Applied to native launch/VoiceOver,
+welcome, shared web landing and sign-in. Copy assertions updated. No publication.
+The validated animation candidate below predates this wording-only correction;
+use the new checked candidate for release. Earlier screenshots retain old copy.
+
+---
+
 # Branded iPhone launch candidate — 25 October 2026
 
 Owner requested a Zova logo/strapline loading screen and expanding-Z reveal.

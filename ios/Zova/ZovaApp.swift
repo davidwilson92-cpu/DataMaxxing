@@ -152,7 +152,7 @@ struct ZovaRoot: View {
                     Image("ZovaMark").resizable().scaledToFit().frame(width: 48, height: 48)
                     Text("Zova").font(.system(size: 32, weight: .bold))
                 }.padding(.top, 48)
-                Text("Your AI social manager.").font(.headline).foregroundStyle(readableAccent)
+                Text("Your AI social media manager.").font(.headline).foregroundStyle(readableAccent)
                 Text("Your ideas.\nStill you.").font(.system(size: 48, weight: .bold, design: .rounded)).minimumScaleFactor(0.65)
                 Text("Shape your next post, plan your socials and share in your voice.")
                     .font(.title3).foregroundStyle(readableSecondary).fixedSize(horizontal: false, vertical: true)

@@ -1,10 +1,19 @@
 # Branded iPhone launch — 25 October 2026
 
+## Wording correction
+
+The owner clarified “social media manager” after the original render review.
+The loading screen, accessibility announcement, native welcome, web landing and
+sign-in straplines now use that wording consistently. Existing copy assertions
+were updated. The earlier screenshots show the previous wording; they remain
+animation/layout evidence, not a preview of the corrected copy. Updated candidate
+validation is required before publication.
+
 ## Scope and release status
 
 Owner requested a logo/strapline loading screen, followed by the Z magnifying
 out of the screen as the app loads. Implemented in the native iPhone shell.
-Uses the established Zova mark and existing strapline, “Your AI social manager.”
+Uses the established Zova mark and owner-corrected strapline, “Your AI social media manager.”
 The near-black background has a restrained purple glow. The system's static
 launch background now matches, avoiding the previous white opening flash.
 
