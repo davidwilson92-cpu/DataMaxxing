@@ -45,6 +45,13 @@
   next.addEventListener('click',() => { if(step === steps.length-1) dialog.close(); else {step++;render();} });
   back.addEventListener('click',() => {if(step>0){step--;render();} });
   dialog.querySelector('.intro-skip').addEventListener('click',() => dialog.close());
+  dialog.addEventListener('keydown',event => {
+    if(event.key !== 'Tab') return;
+    const controls = [...dialog.querySelectorAll('button,a[href]')].filter(el => !el.disabled && !el.hidden && el.getClientRects().length);
+    const first = controls[0], last = controls[controls.length-1];
+    if(event.shiftKey && document.activeElement === first){event.preventDefault();last?.focus();}
+    else if(!event.shiftKey && document.activeElement === last){event.preventDefault();first?.focus();}
+  });
   dialog.addEventListener('close',() => {
     window.removeEventListener('resize',position);window.visualViewport?.removeEventListener('resize',position);
     // Do not summon the keyboard just because an introduction ended.

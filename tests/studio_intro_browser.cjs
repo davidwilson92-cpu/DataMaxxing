@@ -18,6 +18,10 @@ const out = path.resolve('docs/beta/evidence/20261025');
   await page.locator('#studioIntro[open]').waitFor();
   assert.equal(await page.locator('#introTitle').innerText(),'Start with an idea');
   assert.equal(await page.locator('#studioIntro .intro-count').innerText(),'1 of 3');
+  for(let i=0;i<10;i++){
+   await page.keyboard.press('Tab');
+   assert.ok(await page.evaluate(()=>Boolean(document.activeElement.closest('#studioIntro'))),'Keyboard focus stays in the introduction');
+  }
   fs.mkdirSync(out,{recursive:true});
   await page.screenshot({path:path.join(out,'studio-intro-first.png')});
   await page.locator('.intro-skip').click();
