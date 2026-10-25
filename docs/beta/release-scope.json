@@ -4,6 +4,7 @@
   "external_beta_authorised_on": "2026-10-20",
   "files": {
     ".dockerignore": "51c4771bdeb44187f3a945240540f3bbb48e5ecc2f3807c143c4b768e74da6bb",
+    ".gitattributes": "64fcd23fa58cbdc3fcf7764de36a61437f2c59f1b1546b98966715c42165fe33",
     ".github/workflows/ios-beta.yml": "fed9551dd7024dc1411da8fd511ff3984344464b0546d929cc78571a9f48941d",
     ".github/workflows/validate.yml": "af6ffd87ae28fda73d5328f97371e6d4545066caa24aaa8f2e487c1e960fd2e9",
     "AGENTS.md": "8d238a8ffd7a11b1b00b8ff3e196a171d5316d646ec0653c2fa83d3d196817ae",
@@ -191,7 +192,7 @@
     "render.yaml": "e68ad33acf543f3d4db45b9977ee624fc518a653e632039ed33f7bb769610031",
     "requirements.txt": "2044175daf9731a64fe32561f981c7796a29373f9fbc2e5f496c08f160e36940",
     "scripts/aws_beta_entrypoint.py": "9474c1a6a3ebd9e4260d2105dab2a916ec0129b8a3336fa44f536117cd875221",
-    "scripts/check_beta_release.py": "e07f04785a8253b352d57793cc1847e46021953977cce5ac5f4130579edb8fbc",
+    "scripts/check_beta_release.py": "1bba9f8491ea5a64ffe70a8d47b9a9ea591d63d87a8ca2620b8ebd022a89753f",
     "scripts/check_ios_archive.py": "5ba26013f7ffc8577672dca6e4b3015e843e5aa7cc2221235f55b49fa1adfdb0",
     "scripts/check_service.py": "a6091ee36f129ac3763b6095f3cda4b8c71fef2f934dc15971bc81951f4c6ce4",
     "scripts/check_synthetic_restore.py": "4a1e753330ebd898cda8f7cd29c58efc62064db82d1f46c0604b8043144af95d",
