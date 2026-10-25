@@ -20,6 +20,11 @@ Complete settings/sequence inventory, Free-plan/credit and cost/access approvals
 hosted Stripe tests and actual migration are still required.
 See docs/beta/STRIPE_AWS_PREPARATION_20261025.md and infra/aws/README.md.
 Live remains d3bc09d on Render; TestFlight remains 0.1.0 (11). All 79 gaps retained.
+Runtime d22f72a application PR CI **40224884932 passed**: 689 SQLite / 690
+PostgreSQL tests, clients/browser, restore, image smoke/audit, CloudFormation and
+scope/production guards. Native source/signing unchanged from validated 7c691ea;
+repeat native run 40224884915 still in progress at this note. Render confirms a
+persistent 1 GB uploads disk; no source settings/data were changed.
 
 ---
 

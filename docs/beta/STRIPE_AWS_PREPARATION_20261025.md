@@ -70,3 +70,21 @@ Prepared London estimate is roughly US$60–75/month before credits/tax/variable
 usage, not a guarantee or hard cap. No awarded cloud credits are assumed.
 
 All 79 known commercial findings remain retained. Commercial readiness is false.
+
+## Validation evidence
+
+Runtime candidate `d22f72a8739609c1100945d207d548fb0147202f`:
+application PR CI **40224884932 passed**, including 689 SQLite tests / 690 real
+PostgreSQL tests (2 / 1 platform-specific skips), client/browser regressions,
+synthetic backup/restore, hosting image smoke/audit, generated CloudFormation
+schema validation and exact-scope production guardrails. Local targeted migration,
+erasure, runtime and Stripe regression run: 54 passed, one PostgreSQL-only skip.
+Earlier local full run before the final proxy/freeze additions: 687 passed,
+two skips; do not substitute it for the final CI evidence.
+
+Native source/project/signing are byte-identical to validated 7c691ea (native
+CI 40222432355 passed). Repeat native CI 40224884915 was still running when this
+note was written. Neither result proves real AWS/iPhone/provider cutover.
+
+Read-only Render Disk UI also confirms a persistent **1 GB** disk mounted at
+`/app/uploads`, with daily snapshots. No snapshot was restored or disk changed.
