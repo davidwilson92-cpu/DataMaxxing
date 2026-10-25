@@ -16,6 +16,7 @@ PROTECTED = {
     'S3_BUCKET', 'S3_PUBLIC_BASE_URL', 'S3_ENDPOINT_URL',
 }
 PREFIXES = ('AWS_', 'PYTHON', 'LD_', 'DYLD_', 'ZOVA_AWS_')
+TRUSTED_PROXIES = '10.84.0.0/24,10.84.1.0/24'
 
 
 def configuration(raw):
@@ -57,7 +58,8 @@ def main():
         raise SystemExit('AWS application settings could not be loaded; startup stopped.') from None
     os.environ.update(values)
     os.execv(sys.executable, [sys.executable, '-m', 'uvicorn', 'app:app',
-                            '--host', '0.0.0.0', '--port', os.environ.get('PORT', '10000')])
+                            '--host', '0.0.0.0', '--port', os.environ.get('PORT', '10000'),
+                            '--proxy-headers', '--forwarded-allow-ips', TRUSTED_PROXIES])
 
 
 if __name__ == '__main__':

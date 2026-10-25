@@ -87,6 +87,11 @@ The bundled CA comes from AWS's official London trust store; its SHA-256 is
 Root filesystem is writable but the container runs as UID/GID 10001, has no
 shell/SSH ingress or ECS Exec, and mounts uploads using encrypted IAM-authorized
 EFS. No application IAM permission can read the RDS master secret.
+Forwarded client headers are trusted only from the two ALB subnet ranges; task
+ingress itself is restricted to the ALB security group. The current proposal is
+direct DNS to the ALB. If Cloudflare proxying is retained, separately verify its
+origin restriction and forwarded-client chain before cutover; otherwise rate
+limits may group visitors by edge IP. Never solve this by trusting every source.
 
 ## Required execution and evidence, in order
 

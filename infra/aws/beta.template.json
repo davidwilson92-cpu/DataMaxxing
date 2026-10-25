@@ -44,6 +44,23 @@
       "MinValue": 1
     }
   },
+  "Rules": {
+    "LondonOnly": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Equals": [
+              {
+                "Ref": "AWS::Region"
+              },
+              "eu-west-2"
+            ]
+          },
+          "AssertDescription": "This reviewed template and database trust store require London."
+        }
+      ]
+    }
+  },
   "Resources": {
     "Network": {
       "Type": "AWS::EC2::VPC",

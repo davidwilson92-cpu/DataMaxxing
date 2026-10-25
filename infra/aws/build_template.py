@@ -74,6 +74,7 @@ def template():
             'DesiredCount':{'Type':'Number','Default':0,'AllowedValues':[0,1]},
             'SchedulerMode':{'Type':'String','Default':'disabled','AllowedValues':['disabled','embedded']},
             'MonthlyBudgetUsd':{'Type':'Number','Default':75,'MinValue':1}},
+        'Rules':{'LondonOnly':{'Assertions':[{'Assert':{'Fn::Equals':[ref('AWS::Region'),'eu-west-2']},'AssertDescription':'This reviewed template and database trust store require London.'}]}},
         'Resources':r,'Outputs':{'LoadBalancerHost':{'Value':attr('Balancer','DNSName')},'RepositoryUri':{'Value':attr('Images','RepositoryUri')},'DatabaseHost':{'Value':attr('Database','Endpoint.Address')},'DatabaseAdminSecretArn':{'Value':attr('Database','MasterUserSecret.SecretArn')},'UploadsFileSystemId':{'Value':ref('Files')},'UploadsAccessPointId':{'Value':ref('Uploads')},'ClusterArn':{'Value':attr('Cluster','Arn')},'ApplicationService':{'Value':ref('Service')}}}
 
 

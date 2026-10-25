@@ -66,3 +66,18 @@ def test_settings_load_failure_does_not_disclose_secret(monkeypatch):
     monkeypatch.setattr(boto3,'client',unavailable)
     with pytest.raises(SystemExit) as failure:main()
     assert str(failure.value)=='AWS application settings could not be loaded; startup stopped.'
+
+
+def test_only_load_balancer_peers_supply_the_real_client_and_ignore_spoofed_prefixes():
+    import asyncio
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+    from scripts.aws_beta_entrypoint import TRUSTED_PROXIES
+    observed=[]
+    async def capture(scope, receive, send):observed.append(scope)
+    middleware=ProxyHeadersMiddleware(capture,trusted_hosts=TRUSTED_PROXIES)
+    for peer,expected,scheme in [('10.84.0.20','203.0.113.8','https'),('10.84.1.20','203.0.113.8','https'),('198.51.100.4','198.51.100.4','http')]:
+        scope={'type':'http','client':(peer,1000),'scheme':'http','headers':[
+            (b'x-forwarded-for',b'192.0.2.99, 203.0.113.8'),(b'x-forwarded-proto',b'https')]}
+        asyncio.run(middleware(scope,None,None))
+        assert observed[-1]['client'][0]==expected
+        assert observed[-1]['scheme']==scheme
