@@ -38,6 +38,7 @@ jobs:
           done
           curl --silent --fail http://127.0.0.1:8784/health > /dev/null
           NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/studio_mobile_layout.cjs
+          NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/next_move_focus_browser.cjs
       - run: python -m pip_audit --format json -o dependency-audit.json
       - uses: actions/upload-artifact@v4
         if: always()

@@ -1,64 +1,57 @@
 /* Strategy is saved per brand; Next move is a separate, immediate action. */
 let hasConfirmedStrategy=false;
-let moveItems=[],moveIndex=0;
+let moveItems=[],moveIndex=0,moveOffset=0;
+let strategyData={},strategyInputSnapshot="";
 const movePlatform=p=>window.zovaPlatformLabel?window.zovaPlatformLabel(p):esc(platformName(p));
 let strategyRevision=0,strategyLoaded=false,strategyPending=false,seriesRequestKey=null,seriesPreviewBody=null;
-let strategyViewEpoch=0,strategyOperation=0,strategyPlanning=false,strategyDescription='',strategyFilledValues='',quickMoveRequest=null;
-const strategyKeys=['goal','audience','offer','voice','themes','rhythm','resources','avoid'];
+let strategyViewEpoch=0,strategyOperation=0,strategyPlanning=false,strategyDescription='',quickMoveRequest=null;
 const strategyStatus=text=>{document.getElementById('strategyStatus').textContent=text;};
-function strategySnapshot(){return Object.fromEntries(strategyKeys.map(k=>[k,document.getElementById('strategy_'+k).value]));}
+function strategySnapshot(){return {...strategyData};}
+function conciseCopy(text,limit=32){
+ const clean=String(text||'').replace(/\s+/g,' ').trim(),words=clean.split(' ');
+ return words.length>limit?words.slice(0,limit).join(' ').replace(/[,;:]$/,'')+'…':clean;
+}
+function strategyInputs(){return {brief:document.getElementById('strategyBrief').value.trim(),content_direction:document.getElementById('strategyDirection').value.trim()};}
 function strategySummary(){
- const data=strategySnapshot(),rows=[['Goal',data.goal],['Audience',data.audience],['Content',data.themes],['Rhythm',data.rhythm]];
- const platforms=Array.from(document.querySelectorAll('[name=strategy_platform]:checked'),n=>movePlatform(n.value)).join(' ');
- document.getElementById('strategySummary').innerHTML=rows.filter(([,value])=>value).map(([label,value])=>`<div><strong>${label}</strong><p>${esc(value)}</p></div>`).join('')+(platforms?`<div><strong>Platforms</strong><p class="strategy-summary-platforms">${platforms}</p></div>`:'');
+ const data=strategyData,rows=[['Aim',data.goal],['Post about',data.themes],['Pace',data.rhythm]];
+ document.getElementById('strategySummary').innerHTML=rows.filter(([,value])=>value).map(([label,value])=>`<div><strong>${label}</strong><p>${esc(conciseCopy(value,18))}</p></div>`).join('')+(data.platforms?.length?`<div class="strategy-summary-platforms">${data.platforms.map(movePlatform).join(' ')}</div>`:'');
 }
 function fillStrategy(data){
- strategyKeys.forEach(k=>document.getElementById('strategy_'+k).value=data[k]||'');
- document.querySelectorAll('[name=strategy_platform]').forEach(n=>n.checked=(data.platforms||[]).includes(n.value));
- strategyFilledValues=JSON.stringify(strategySnapshot());
- strategyDescription=data.description||'';
- document.getElementById('strategyBrief').value=data.description||[data.goal,data.audience&&'Audience: '+data.audience,data.themes&&'Content: '+data.themes,data.rhythm&&'Rhythm: '+data.rhythm].filter(Boolean).join('\n');
+ strategyData={...data};
+ strategyDescription=data.description||[data.goal,data.audience&&'Audience: '+data.audience,data.offer&&'Offer: '+data.offer].filter(Boolean).join('\n');
+ document.getElementById('strategyBrief').value=strategyDescription;
+ document.getElementById('strategyDirection').value=data.content_direction??[data.themes,data.rhythm,data.resources,data.avoid&&'Avoid: '+data.avoid].filter(Boolean).join('\n');
+ strategyInputSnapshot=JSON.stringify(strategyInputs());
  updateStrategySearchPreview();strategySummary();
 }
-function updateStrategySearchPreview(){document.getElementById('strategySearchPreview').textContent=document.getElementById('strategy_themes').value.trim()||'No topics — evergreen ideas only';}
+function updateStrategySearchPreview(){document.getElementById('strategySearchPreview').textContent=strategyData.themes||'No topics — evergreen ideas only';}
 function setStrategySaved(saved){
- document.getElementById('strategyConfirmedState').textContent=saved?'Saved to this brand. Edit whenever your direction changes.':'';
+ document.getElementById('strategyConfirmedState').textContent=saved?'Saved to your brand':'';
  document.getElementById('saveStrategyButton').hidden=saved;
  document.getElementById('strategyNextMoveButton').hidden=!saved;
  document.getElementById('strategyReviewHeading').textContent=saved?'Your strategy':'Your proposed strategy';
- document.getElementById('buildStrategyButton').textContent=hasConfirmedStrategy?'Update my strategy':'Build my strategy';
+ document.getElementById('buildStrategyButton').textContent=hasConfirmedStrategy?'Update my strategy':'Shape my strategy ✦';
 }
-function showStrategyEditor(){
- document.getElementById('strategyQuickStart').hidden=true;
- document.getElementById('strategyReviseButton').hidden=false;
- document.getElementById('strategyForm').hidden=false;
- document.getElementById('strategyAdvanced').open=true;
- document.getElementById('strategy_goal').focus();setStrategySaved(false);
-}
-function editStrategyDescription(){
- document.getElementById('strategyQuickStart').hidden=false;
+function strategyStepHint(){document.getElementById('strategyStepHint').textContent='';}
+function strategyInputChanged(){
+ document.getElementById('strategyConfirmedState').textContent='Unsaved changes';
  document.getElementById('strategyForm').hidden=true;
- document.getElementById('strategyReviseButton').hidden=true;
- document.getElementById('strategyBrief').focus();strategyStatus('');
+ document.getElementById('buildStrategyButton').hidden=false;
 }
-function strategyStepHint(state){document.getElementById('strategyStepHint').textContent=state==='proposal'?'Review, then save your strategy.':'';}
-function chooseStrategyGoal(goal){
- const field=document.getElementById('strategyBrief');
- if(field.value.trim()){field.focus();strategyStatus('Edit your description here. Your existing text is kept.');return;}
- field.value=goal;field.focus();strategyStatus('');
+function chooseStrategyGoal(topic){
+ const field=document.getElementById('strategyDirection');
+ if(!field.value.toLowerCase().includes(topic.toLowerCase()))field.value=[field.value.trim(),topic].filter(Boolean).join(' · ');
+ field.focus();strategyInputChanged();strategyStatus('');
 }
 document.querySelectorAll('[data-strategy-goal]').forEach(button=>button.addEventListener('click',()=>chooseStrategyGoal(button.dataset.strategyGoal)));
 function strategyProposalBrief(){
- const brief=document.getElementById('strategyBrief').value.trim();
+ const brief=strategyInputs().brief;
  if(brief.length<3){document.getElementById('strategyBrief').focus();throw Error('Describe your business or goal first.');}
  if(brief.length>20000)throw Error('Please shorten your description to 20,000 characters. Your text is still here.');
  return brief;
 }
-document.getElementById('strategy_themes').addEventListener('input',updateStrategySearchPreview);
-document.querySelectorAll('#strategyForm textarea, #strategyForm input').forEach(field=>field.addEventListener('input',()=>{setStrategySaved(false);strategySummary();}));
-document.getElementById('strategyBrief').addEventListener('input',()=>{
- document.getElementById('strategyConfirmedState').textContent='Changes are not saved. Update your strategy to apply them.';
-});
+['strategyBrief','strategyDirection'].forEach(id=>document.getElementById(id).addEventListener('input',strategyInputChanged));
+
 document.getElementById('strategyPanel').addEventListener('close',()=>{strategyViewEpoch++;strategyPending=false;});
 async function strategyTask(button,work){
  if(strategyPending)return;
@@ -78,7 +71,7 @@ function setPlanningView(planning){
  document.getElementById('strategyStepHint').hidden=!planning;
  document.getElementById('strategyEditLink').hidden=planning;
  document.getElementById('recommendationHelp').hidden=true;
- document.getElementById('recommendButton').hidden=planning||!(hasConfirmedStrategy||quickMoveRequest);
+ document.getElementById('recommendButton').hidden=planning||moveItems.length>0||!(hasConfirmedStrategy||quickMoveRequest);
 }
 function clearNextMoveDisplay(){
  document.getElementById('strategyActions').innerHTML='';
@@ -93,14 +86,15 @@ async function openNextMove(planning=false){
  await strategyTask(null,async epoch=>{
   const data=await api('/api/strategy');if(epoch!==strategyViewEpoch)return;
   const reloadPlan=!strategyLoaded||data.revision!==strategyRevision;
-  if(data.revision!==strategyRevision){moveItems=[];moveIndex=0;quickMoveRequest=null;}
+  if(data.revision!==strategyRevision){moveItems=[];moveIndex=0;moveOffset=0;quickMoveRequest=null;}
   strategyRevision=data.revision;hasConfirmedStrategy=Boolean(data.confirmed.goal);
   const proposal=data.proposal.strategy;
   document.getElementById('strategyForm').hidden=!(proposal||hasConfirmedStrategy);
   if(reloadPlan)fillStrategy(proposal||data.confirmed.goal&&data.confirmed||data.defaults);
-  if(reloadPlan){setStrategySaved(hasConfirmedStrategy&&!proposal);document.getElementById('strategyQuickStart').hidden=Boolean(proposal||hasConfirmedStrategy);document.getElementById('strategyReviseButton').hidden=!(proposal||hasConfirmedStrategy);}
+  if(reloadPlan){setStrategySaved(hasConfirmedStrategy&&!proposal);document.getElementById('buildStrategyButton').hidden=Boolean(proposal||hasConfirmedStrategy);}
   showStrategyAssumptions(data.proposal.assumptions||[]);
-  document.getElementById('strategyManualEdit').hidden=Boolean(proposal||hasConfirmedStrategy);
+
+  if(!reloadPlan&&JSON.stringify(strategyInputs())!==strategyInputSnapshot)strategyInputChanged();
   strategyLoaded=true;setPlanningView(planning);
   if(planning){strategyStatus('');return;}
   const items=await loadNextMoves(epoch);if(epoch!==strategyViewEpoch||!items)return;
@@ -112,36 +106,29 @@ async function openNextMove(planning=false){
  });
 }
 document.getElementById('seriesDetails').addEventListener('toggle',event=>{if(event.target.open&&!event.target.hidden)strategyTask(null,loadSeries);});
-function showStrategyAssumptions(items){document.getElementById('strategyAssumptions').innerHTML=items.length?'<p class="support-note"><strong>Please check:</strong> '+items.map(esc).join(' ')+'</p>':'';}
+function showStrategyAssumptions(items){document.getElementById('strategyAssumptions').innerHTML=items.length?'<p class="support-note"><strong>Check:</strong> '+items.slice(0,2).map(item=>esc(conciseCopy(item,16))).join(' ')+'</p>':'';}
 async function proposeStrategy(button){await strategyTask(button,async epoch=>{
- const brief=strategyProposalBrief();
- const r=await api('/api/strategy/propose',{method:'POST',headers,body:JSON.stringify({brief,revision:strategyRevision})});
+ const brief=strategyProposalBrief(),input={...strategyInputs(),brief},snapshot=JSON.stringify(input);
+ const r=await api('/api/strategy/propose',{method:'POST',headers,body:JSON.stringify({...input,revision:strategyRevision})});
  if(epoch!==strategyViewEpoch)return;
- strategyRevision=r.revision;moveItems=[];moveIndex=0;quickMoveRequest=null;clearNextMoveDisplay();
- if(document.getElementById('strategyBrief').value.trim()!==brief){strategyLoaded=false;strategyStatus('A proposal was saved. Your newer description is kept; update again when ready.');return;}
- fillStrategy({...r.proposal.strategy,description:brief});showStrategyAssumptions(r.proposal.assumptions||[]);
- document.getElementById('strategyQuickStart').hidden=true;document.getElementById('strategyReviseButton').hidden=false;
- document.getElementById('strategyForm').hidden=false;document.getElementById('strategyAdvanced').open=false;
- document.getElementById('strategyReviewHeading').focus();document.getElementById('strategyManualEdit').hidden=true;setStrategySaved(false);strategyStatus('');
+ strategyRevision=r.revision;moveItems=[];moveIndex=0;moveOffset=0;quickMoveRequest=null;clearNextMoveDisplay();
+ if(JSON.stringify(strategyInputs())!==snapshot){strategyLoaded=false;strategyStatus('Your newer text is kept. Update again to include it.');return;}
+ fillStrategy({...r.proposal.strategy,description:brief,content_direction:input.content_direction});showStrategyAssumptions(r.proposal.assumptions||[]);
+ document.getElementById('strategyForm').hidden=false;document.getElementById('buildStrategyButton').hidden=true;
+ document.getElementById('strategyReviewHeading').focus();setStrategySaved(false);strategyStatus('');
 });}
 async function confirmStrategy(event){event.preventDefault();await strategyTask(event.submitter,async epoch=>{
- const strategy=strategySnapshot();strategy.description=strategyDescription;
- strategy.platforms=Array.from(document.querySelectorAll('[name=strategy_platform]:checked'),n=>n.value);
- // A changed description must be applied before an older AI proposal can be saved.
- if(strategyDescription&&document.getElementById('strategyBrief').value.trim()!==strategyDescription)throw Error('Update your strategy first to include your latest description.');
- if(JSON.stringify(strategySnapshot())!==strategyFilledValues){
-  strategy.description=strategyKeys.filter(key=>strategy[key]).map(key=>key==='goal'?strategy[key]:key[0].toUpperCase()+key.slice(1)+': '+strategy[key]).join('\n')+'\nPlatforms: '+strategy.platforms.join(', ');
- }
+ if(JSON.stringify(strategyInputs())!==strategyInputSnapshot)throw Error('Update your strategy first to include your latest description.');
+ const snapshot=strategyInputSnapshot,strategy={...strategyData,description:strategyInputs().brief,content_direction:strategyInputs().content_direction};
  const r=await api('/api/strategy/confirm',{method:'POST',headers,body:JSON.stringify({strategy,revision:strategyRevision})});
  if(epoch!==strategyViewEpoch)return;
- strategyRevision=r.revision;hasConfirmedStrategy=true;moveItems=[];moveIndex=0;quickMoveRequest=null;clearNextMoveDisplay();
- fillStrategy(r.confirmed||strategy);showStrategyAssumptions([]);strategyStepHint('confirmed');setStrategySaved(true);
- document.getElementById('strategyQuickStart').hidden=true;document.getElementById('strategyReviseButton').hidden=false;
- document.getElementById('strategyAdvanced').open=false;strategyStatus('Strategy saved.');
+ strategyRevision=r.revision;hasConfirmedStrategy=true;moveItems=[];moveIndex=0;moveOffset=0;quickMoveRequest=null;clearNextMoveDisplay();
+ if(JSON.stringify(strategyInputs())!==snapshot){strategyLoaded=false;strategyStatus('Strategy saved. Your newer text is not saved yet.');return;}
+ fillStrategy(r.confirmed||strategy);showStrategyAssumptions([]);setStrategySaved(true);strategyStatus('Strategy saved.');
 });}
-function recommendationBody(){return {revision:strategyRevision,...(quickMoveRequest||{})};}
-async function requestMoves(epoch=strategyViewEpoch){
- const data=await api('/api/strategy/recommend',{method:'POST',headers,body:JSON.stringify(recommendationBody())});
+function recommendationBody(fresh=false){return {revision:strategyRevision,post_only:true,fresh,...(quickMoveRequest||{})};}
+async function requestMoves(epoch=strategyViewEpoch,fresh=false){
+ const data=await api('/api/strategy/recommend',{method:'POST',headers,body:JSON.stringify(recommendationBody(fresh))});
  if(epoch!==strategyViewEpoch)return;
  if(Array.isArray(data.items))return applyNextMoves(data,epoch);
  return loadNextMoves(epoch);
@@ -152,7 +139,7 @@ async function quickNextMove(button){await strategyTask(button,async epoch=>{
  if(brief.length<3){field.focus();throw Error('Add a short topic for your next post.');}
  if(!platforms.length)throw Error('Choose a platform.');
  quickMoveRequest={brief,platforms};strategyStatus('Finding your next post…');
- await requestMoves(epoch);if(epoch===strategyViewEpoch){document.getElementById('recommendButton').hidden=false;strategyStatus('');}
+ await requestMoves(epoch);if(epoch===strategyViewEpoch){document.getElementById('recommendButton').hidden=true;strategyStatus('');}
 });}
 async function openSeriesPanel(){
  strategyViewEpoch++;strategyPending=false;setPlanningView(false);
@@ -173,28 +160,34 @@ function nextMoveSource(a){
 function moveReason(text){return String(text||'').replace(/\s*\(strategy:[^)]*\)/gi,'').trim();}
 function linkedDraftId(value){const id=Number(value);return Number.isSafeInteger(id)&&id>0?id:0;}
 function nextMoveCard(a){
- const review=a.kind==='review',draftId=linkedDraftId(a.draft_id),stale=a.stale&&!draftId;
- const label=draftId?'Open draft':stale?'Refresh idea':review?'See steps':'Draft post';
- const action=draftId?`draftNextMove(${a.id},this,${draftId})`:stale?'refreshStrategyActions(this)':review?`showMoveSteps(${a.id})`:`draftNextMove(${a.id},this)`;
+ const draftId=linkedDraftId(a.draft_id),stale=a.stale&&!draftId;
+ const label=draftId?'Open draft':stale?'Refresh idea':'Draft post';
+ const action=draftId?`draftNextMove(${a.id},this,${draftId})`:stale?'refreshStrategyActions(this)':`draftNextMove(${a.id},this)`;
  return `<article class="next-move next-move-featured">
- <div class="move-hero">
- <div class="move-meta"><span class="move-platform">${movePlatform(a.platform)}${a.platform==='instagram'?' · '+esc(a.format==='story'?'Story':'Post'):''}</span></div>
- <h3 tabindex="-1">${esc(a.title)}</h3>
- ${stale?'<p class="move-stale">Refresh the source before drafting.</p>':''}
- <div class="move-actions"><button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true">→</span></button></div>
- </div>
- <div class="move-pager" role="group" aria-label="Browse ideas"><button type="button" onclick="changeMove(-1)" aria-label="Previous idea" ${moveItems.length<2?'disabled':''}>←</button><span role="status">${moveIndex+1} of ${moveItems.length}</span><button type="button" onclick="changeMove(1)" aria-label="Next idea" ${moveItems.length<2?'disabled':''}>→</button></div>
- <section class="move-context move-open-section" id="moveDetails${a.id}" aria-labelledby="moveDetailsHeading${a.id}"><h4 id="moveDetailsHeading${a.id}" tabindex="-1">Details</h4>
- <div class="move-detail-body">${review?`<div class="move-review-steps"><p>${esc(a.brief)}</p><button class="quiet-button" onclick="actionFeedback(${a.id},'complete',this)">Mark done</button></div>`:''}<p>${esc(moveReason(a.reason))}</p>${a.needs?`<p><strong>To make it:</strong> ${esc(a.needs)}</p>`:''}${a.source?nextMoveSource(a):'<details class="source-evidence"><summary class="source-kind">'+(a.strategy_context?.one_off?'Based on your topic':'Based on your strategy')+' · not a live trend</summary>'+moveEvidenceNotes()+'</details>'}</div></section>
- <section class="move-feedback move-open-section" aria-labelledby="moveFeedbackHeading${a.id}"><h4 id="moveFeedbackHeading${a.id}">Change this idea</h4><div class="move-feedback-input"><input id="moveFeedback${a.id}" aria-label="What to change about this idea" maxlength="80" placeholder="Less filming, more tips…"><button class="quiet-button" onclick="refineMove(${a.id},this)" aria-label="Apply your feedback">→</button></div><button class="quiet-button" onclick="actionFeedback(${a.id},'dismissed',this)">Skip idea</button></section>
+ <div class="move-hero"><div class="move-meta"><span class="move-platform">${movePlatform(a.platform)}${a.platform==='instagram'?' · '+esc(a.format==='story'?'Story':'Post'):''}</span><span class="move-eyebrow">POST PROPOSAL</span></div>
+ <h3 tabindex="-1">${esc(conciseCopy(a.title,14))}</h3>
+ ${stale?'<p class="move-stale">Check the source before drafting.</p>':''}
+ <div class="move-actions"><button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true">→</span></button></div></div>
+ <section class="move-recommendation" aria-labelledby="moveRecommendation${a.id}"><h4 id="moveRecommendation${a.id}">✦ AI recommendation</h4><p>${esc(conciseCopy(moveReason(a.reason),32))}</p>${a.source?nextMoveSource(a):'<small>Based on your '+(a.strategy_context?.one_off?'topic':'strategy')+'</small>'}</section>
+ <div class="move-pager" role="group" aria-label="Browse ideas"><button type="button" onclick="changeMove(-1,this)" aria-label="Previous idea" ${moveIndex===0?'disabled':''}>←</button><span role="status">Idea ${moveOffset+moveIndex+1}</span><button class="move-next" type="button" onclick="changeMove(1,this)" aria-label="Next idea">Next idea <span aria-hidden="true">→</span></button></div>
  </article>`;
 }
-function showMoveSteps(id){const details=document.getElementById('moveDetails'+id);details.querySelector('h4')?.focus();details.scrollIntoView({block:'nearest'});}
 function renderNextMove(){
  moveIndex=Math.max(0,Math.min(moveIndex,moveItems.length-1));
  document.getElementById('strategyActions').innerHTML=moveItems.length?nextMoveCard(moveItems[moveIndex]):(hasConfirmedStrategy?'<div class="move-empty"><h3>Your next post starts here</h3><button class="button primary" onclick="refreshStrategyActions(this)">Find an idea</button></div>':`<div class="move-empty"><h3>What are you posting about?</h3><label for="quickMoveBrief" class="visually-hidden">Topic for your next post</label><textarea id="quickMoveBrief" rows="3" maxlength="2000" placeholder="A new product, a useful tip, a day behind the scenes…">${esc(quickMoveRequest?.brief||'')}</textarea><fieldset><legend>Platform</legend>${['instagram','tiktok','x','facebook'].map(p=>`<label class="inline-choice"><input type="radio" name="quick_move_platform" value="${p}" ${(quickMoveRequest?.platforms||[]).includes(p)?'checked':''}>${movePlatform(p)}</label>`).join('')}</fieldset><button class="button primary" onclick="quickNextMove(this)">Find my next post</button></div>`);
 }
-function changeMove(direction){if(strategyPending||moveItems.length<2)return;moveIndex=(moveIndex+direction+moveItems.length)%moveItems.length;renderNextMove();document.querySelector('#strategyActions h3')?.focus();}
+async function changeMove(direction,button){
+ if(strategyPending||!moveItems.length)return;
+ if(direction<0){if(moveIndex===0)return;moveIndex--;renderNextMove();}
+ else if(moveIndex<moveItems.length-1){moveIndex++;renderNextMove();}
+ else {await strategyTask(button,async epoch=>{
+  const offset=moveOffset+moveItems.length;strategyStatus('Finding fresh ideas…');
+  const items=await requestMoves(epoch,true);if(epoch!==strategyViewEpoch)return;
+  if(!items?.length)throw Error('No fresh ideas yet. Try Next idea again.');
+  moveOffset=offset;moveIndex=0;renderNextMove();strategyStatus('');
+ });}
+ document.querySelector('#strategyActions h3')?.focus();
+}
 function applyNextMoves(data,epoch=strategyViewEpoch){
  if(epoch!==strategyViewEpoch)return;
  if(Number.isInteger(data.revision)&&data.revision!==strategyRevision){moveItems=[];moveIndex=0;renderNextMove();strategyLoaded=false;const error=Error('Your strategy changed. Reopen Next move to see the latest ideas.');error.status=409;throw error;}
@@ -202,17 +195,17 @@ function applyNextMoves(data,epoch=strategyViewEpoch){
  const note=document.getElementById('strategyPerformanceNote');note.hidden=!data.performance_note;
  note.innerHTML=data.performance_note?esc(data.performance_note)+' <a href="/analytics">View performance</a>':'';
  const currentId=moveItems[moveIndex]?.id;
- const items=[...data.items].sort((a,b)=>(a.kind==='review')-(b.kind==='review'));
+ const items=data.items.filter(a=>a.kind!=='review');
  const context=items[0]?.strategy_context;
  if(context?.one_off)quickMoveRequest={brief:context.goal,platforms:context.platforms};
  moveItems=items;const kept=items.findIndex(a=>a.id===currentId);moveIndex=kept<0?0:kept;renderNextMove();
  document.getElementById('recommendationHelp').hidden=true;
- document.getElementById('recommendButton').hidden=strategyPlanning||!(hasConfirmedStrategy||quickMoveRequest);
+ document.getElementById('recommendButton').hidden=strategyPlanning||moveItems.length>0||!(hasConfirmedStrategy||quickMoveRequest);
  document.getElementById('recommendButton').setAttribute('aria-label',items.length?'Refresh ideas':'Find post ideas');
  return items;
 }
 async function loadNextMoves(epoch=strategyViewEpoch){const data=await api('/api/strategy/actions');return applyNextMoves(data,epoch);}
-async function refreshStrategyActions(button){await strategyTask(button,async epoch=>{strategyStatus('Finding your next post…');await requestMoves(epoch);if(epoch===strategyViewEpoch)strategyStatus('');});}
+async function refreshStrategyActions(button){await strategyTask(button,async epoch=>{strategyStatus('Finding your next post…');await requestMoves(epoch,true);if(epoch===strategyViewEpoch){moveOffset=0;strategyStatus('');renderNextMove();}});}
 async function actionFeedback(id,status,button,extra={}){await strategyTask(button,async epoch=>{
  await api(`/api/strategy/actions/${id}/feedback`,{method:'POST',headers,body:JSON.stringify({status,reason:'',...extra})});
  if(epoch!==strategyViewEpoch)return;

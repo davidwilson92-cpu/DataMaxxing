@@ -147,3 +147,56 @@ def test_unavailable_discovery_still_returns_honest_strategy_led_ideas(monkeypat
     assert response.status_code==200,response.text
     assert 'unavailable' in response.json()['source_note']
     assert all(item['source'] is None for item in response.json()['items'])
+
+
+def test_two_box_strategy_round_trips_content_direction(monkeypatch):
+    c,uid,*_=account()
+    revision=c.get('/api/strategy').json()['revision']
+    captured=[]
+    def model(uid,instruction,data):
+        captured.append(data)
+        return {'strategy':RESTAURANT,'assumptions':[]}
+    monkeypatch.setattr(strategy,'model_json',model)
+    body={'brief':'My restaurant serves local diners','content_direction':'Quick lunch ideas. One video weekly. No discounts.','revision':revision}
+    proposed=c.post('/api/strategy/propose',json=body)
+    assert proposed.status_code==200,proposed.text
+    proposal=proposed.json()
+    assert captured[0]['content_direction']==body['content_direction']
+    assert c.post('/api/strategy/confirm',json={'strategy':proposal['proposal']['strategy'],'revision':proposal['revision']}).status_code==200
+    saved=c.get('/api/strategy').json()['confirmed']
+    assert saved['description']==body['brief'] and saved['content_direction']==body['content_direction']
+
+
+def test_fresh_batch_keeps_existing_draft_but_does_not_pin_it(monkeypatch):
+    c,uid,old=setup_strategy(monkeypatch)
+    monkeypatch.setattr(ai,'generate_variants',lambda **kw:{'instagram':{'posts':['Keep this saved draft.']}})
+    drafted=c.post(f'/api/strategy/actions/{old[0]["id"]}/draft',json={}).json()['draft_id']
+    for batch in range(4):
+        monkeypatch.setattr(strategy,'model_json',lambda *args:ideas(f'Fresh batch {batch}'))
+        result=c.post('/api/strategy/recommend',json={'revision':1,'post_only':True,'fresh':True})
+        assert result.status_code==200,result.text
+        assert len(result.json()['items'])==3
+        assert all(a['title'].startswith(f'Fresh batch {batch}') for a in result.json()['items'])
+        assert all(a['kind']=='draft' for a in result.json()['items'])
+    assert c.get('/api/drafts/'+str(drafted)).json()['variants']['instagram']['posts']==['Keep this saved draft.']
+    assert c.post(f'/api/strategy/actions/{old[0]["id"]}/draft',json={}).json()['draft_id']==drafted
+
+
+def test_fresh_duplicate_or_admin_action_repairs_without_erasing_previous(monkeypatch):
+    c,uid,old=setup_strategy(monkeypatch)
+    calls=[]
+    def model(uid,instruction,data):
+        calls.append(data)
+        return {'actions':[{k:v for k,v in a.items() if k in strategy.ActionText.model_fields} for a in old]}
+    monkeypatch.setattr(strategy,'model_json',model)
+    result=c.post('/api/strategy/recommend',json={'post_only':True,'fresh':True})
+    assert result.status_code==502 and len(calls)==2
+    assert [a['id'] for a in c.get('/api/strategy/actions').json()['items']]==[a['id'] for a in old]
+    def repaired(uid,instruction,data):
+        output=ideas('Fresh useful')
+        if 'previous_response' not in data:output['actions'][0]['kind']='review'
+        return output
+    monkeypatch.setattr(strategy,'model_json',repaired)
+    result=c.post('/api/strategy/recommend',json={'post_only':True,'fresh':True})
+    assert result.status_code==200,result.text
+    assert all(a['kind']=='draft' for a in result.json()['items'])

@@ -44,7 +44,7 @@ const plan={goal:'Restaurant bookings',platforms:['instagram'],description:'I ru
  context.api=async()=>({revision:4,confirmed:plan,proposal:{},defaults:{}});
  await context.openNextMove(true);
  resolveProposal({revision:4,proposal:{strategy:{goal:'Old gym'},assumptions:[]}});await proposalPending;
- assert.equal(node('strategy_goal').value,'Restaurant bookings');
+ assert.equal(context.strategySnapshot().goal,'Restaurant bookings');
  // Saving is distinct from generating: a saved strategy is not reported as failed because ideas are unavailable.
  let calls=[];
  node('strategyActions').innerHTML='<article class="next-move-featured">Gym workout</article>';

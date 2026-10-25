@@ -14,7 +14,7 @@ const idea={id:9,title:'Show how you make a mug',reason:'Help beginners get star
  if(url==='/api/strategy/recommend'){if(fail)throw Error('Could not find ideas. Try again.');ready=true;return {};}
  throw Error('Unexpected request '+url);};
  await c.openNextMove();assert.equal(calls.filter(x=>x.endsWith('/recommend')).length,1);assert.match(node('strategyActions').innerHTML,/Draft post/);assert.equal(node('strategyStatus').textContent,'');
- node('strategy_goal').value='My unfinished edit';calls.length=0;await c.openNextMove();assert.equal(node('strategy_goal').value,'My unfinished edit');assert.equal(calls.filter(x=>x.endsWith('/recommend')).length,0);assert.ok(!calls.some(x=>x.includes('series')));
+ node('strategyBrief').value='My unfinished edit';calls.length=0;await c.openNextMove();assert.equal(node('strategyBrief').value,'My unfinished edit');assert.equal(calls.filter(x=>x.endsWith('/recommend')).length,0);assert.ok(!calls.some(x=>x.includes('series')));
  ready=false;fail=true;await c.openNextMove();assert.match(node('strategyStatus').textContent,/Try again/);assert.equal(node('recommendButton').hidden,false);
  c.saveDraftNow=async()=>{throw Error('Save failed');};calls.length=0;await vm.runInContext('draftNextMove(9,{})',c);assert.equal(calls.length,0);assert.equal(navigations.length,0);assert.match(node('strategyStatus').textContent,/Save failed/);
  // Opening saved work must not call the AI-generating endpoint or require new AI consent.
@@ -28,10 +28,18 @@ const idea={id:9,title:'Show how you make a mug',reason:'Help beginners get star
  navigations.length=0;c.saveDraftNow=async()=>{c.workspaceEpoch++;};await vm.runInContext('draftNextMove(9,{},41)',c);assert.equal(navigations.length,0);
  c.saveDraftNow=async()=>{};c.api=async()=>({draft_id:42});await vm.runInContext('draftNextMove(9,{})',c);assert.deepEqual(navigations,['/studio?draft=42&workspace=7']);
  navigations.length=0;c.api=async()=>{c.workspaceEpoch++;return {draft_id:43};};await vm.runInContext('draftNextMove(9,{})',c);assert.equal(navigations.length,0);assert.match(node('strategyStatus').textContent,/current chat is unchanged/);
- c.api=async()=>({items:[{...idea,id:1,kind:'review',brief:'Read recent questions'},idea]});await c.loadNextMoves();assert.match(node('strategyActions').innerHTML,/Show how you make a mug/);assert.doesNotMatch(node('strategyActions').innerHTML,/Read recent questions/);assert.match(node('strategyActions').innerHTML,/1 of 2/);
- c.changeMove(1);assert.match(node('strategyActions').innerHTML,/Read recent questions/);assert.doesNotMatch(node('strategyActions').innerHTML,/Made for your plan|Quick check|Behind the idea|You’ll need|more ideas/);assert.match(node('strategyActions').innerHTML,/2 of 2/);
- c.changeMove(1);assert.match(node('strategyActions').innerHTML,/1 of 2/);c.changeMove(-1);assert.match(node('strategyActions').innerHTML,/2 of 2/);
- assert.equal(c.moveReason('Help beginners book (strategy: reduce friction).'),'Help beginners book.');const card=c.nextMoveCard(idea);assert.ok(!card.includes('Reason (optional)'));assert.match(card,/Change this idea/);assert.doesNotMatch(card,/Remind me|More options/);c.setPlanningView(false);assert.equal(node("nextMoveSettings").hidden,true);assert.equal(node("strategyActions").hidden,false);c.setPlanningView(true);assert.equal(node("nextMoveSettings").hidden,false);assert.equal(node("strategyActions").hidden,true);
+ c.api=async()=>({items:[{...idea,id:1,kind:'review',brief:'Read recent questions'},idea]});await c.loadNextMoves();assert.match(node('strategyActions').innerHTML,/Show how you make a mug/);assert.doesNotMatch(node('strategyActions').innerHTML,/Read recent questions/);assert.match(node('strategyActions').innerHTML,/Idea 1/);
+ assert.equal(c.moveReason('Help beginners book (strategy: reduce friction).'),'Help beginners book.');const card=c.nextMoveCard(idea);assert.match(card,/AI recommendation/);assert.doesNotMatch(card,/Change this idea|To make it|Mark done|Details|Remind me/);c.setPlanningView(false);assert.equal(node('nextMoveSettings').hidden,true);c.setPlanningView(true);assert.equal(node('nextMoveSettings').hidden,false);
+ // Browsing generates only at the end of a batch. Double taps share one request;
+ // failures and late responses cannot erase the current suggestion or new view.
+ c.applyNextMoves({items:[idea,{...idea,id:10},{...idea,id:11}]});
+ let nextCalls=0,resolveNext;c.api=(url,options)=>{nextCalls++;assert.equal(JSON.parse(options.body).fresh,true);assert.equal(JSON.parse(options.body).post_only,true);return new Promise(resolve=>resolveNext=resolve);};
+ await c.changeMove(1,{});await c.changeMove(1,{});assert.equal(nextCalls,0);assert.match(node('strategyActions').innerHTML,/Idea 3/);
+ const generating=c.changeMove(1,{});await c.changeMove(1,{});assert.equal(nextCalls,1);
+ resolveNext({items:[{...idea,id:12,title:'Fresh fourth idea'},{...idea,id:13},{...idea,id:14}]});await generating;
+ assert.match(node('strategyActions').innerHTML,/Fresh fourth idea/);assert.match(node('strategyActions').innerHTML,/Idea 4/);
+ await c.changeMove(1,{});await c.changeMove(1,{});const kept=node('strategyActions').innerHTML;c.api=async()=>{throw Error('Try again in a moment');};await c.changeMove(1,{});assert.equal(node('strategyActions').innerHTML,kept);assert.match(node('strategyStatus').textContent,/Try again/);
+ c.api=()=>new Promise(resolve=>resolveNext=resolve);const late=c.changeMove(1,{});vm.runInContext('strategyViewEpoch++',c);resolveNext({items:[{...idea,id:30,title:'Late wrong view'}]});await late;assert.doesNotMatch(node('strategyActions').innerHTML,/Late wrong view/);vm.runInContext('strategyPending=false',c);
  let remaining=[idea,{...idea,id:10}],feedbackCalls=[],generated=0;
  c.api=async(url,options)=>{if(url.includes('/feedback')){feedbackCalls.push(JSON.parse(options.body));remaining.shift();return {};}
  if(url==='/api/strategy/actions')return {items:remaining};
