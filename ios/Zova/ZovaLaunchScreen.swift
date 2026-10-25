@@ -30,7 +30,7 @@ struct ZovaLaunchScreen: View {
                         .accessibilityHidden(true)
                     VStack(spacing: 8) {
                         Text("Zova").font(.system(size: 36, weight: .bold)).foregroundStyle(.white)
-                        Text("Your AI social media manager.").font(.system(size: 17, weight: .medium))
+                        Text("Because content is the fun part.").font(.system(size: 17, weight: .medium))
                             .foregroundStyle(Color(red: 0.80, green: 0.74, blue: 0.89))
                     }.opacity(appeared && !departing ? 1 : 0)
                 }.padding(24).frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -44,7 +44,7 @@ struct ZovaLaunchScreen: View {
         }
         .ignoresSafeArea()
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Zova. Your AI social media manager. Loading.")
+        .accessibilityLabel("Zova. Because content is the fun part. Loading.")
         .accessibilityIdentifier("zova-launch")
         .task {
             started = .now

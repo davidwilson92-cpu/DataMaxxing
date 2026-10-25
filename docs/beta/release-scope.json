@@ -27,7 +27,7 @@
     "ios/Zova/PrivacyInfo.xcprivacy": "ac92e13a35d9ba189e36b24f5a1be8eebf310344f4d1c1d12fc0c0ecd71901ac",
     "ios/Zova/StudioSurface.swift": "5765818d49204a3fd79335bc277483f153074ab9fa4a5885fa351995b82fccf5",
     "ios/Zova/ZovaApp.swift": "4f7cd93fd888a3bbaaea28cfacc21e910e4b6f90b00a816fab9bc57006dc6431",
-    "ios/Zova/ZovaLaunchScreen.swift": "69341799ce0010c0886adcd5832d91cf59b945126aca8470bd1bbc6d07315f64",
+    "ios/Zova/ZovaLaunchScreen.swift": "c29dd20453cdba02d7ecdddd3e649fb8267d5a0752c3bc0175b9be64190fb9d0",
     "ios/ZovaTests/NativeProtocolTests.swift": "464596cc9056c6868b732640f09d47848e390e48cae6d3b35f510c7ee9f4b69f",
     "ios/ZovaTests/WebKitHandoffTests.swift": "e44dde8a203575a41258bcb8bbd19e9df63900b90c1474f4f40c8b46353ba481",
     "ios/ZovaUITests/ZovaUITests.swift": "b040c7cba9eac8538b32170ac0cc11315527abd77bbb063ad4cf4fe7b9c137cc",
