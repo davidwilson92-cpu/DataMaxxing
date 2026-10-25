@@ -1,3 +1,25 @@
+# Branded iPhone launch candidate — 25 October 2026
+
+Owner requested a Zova logo/strapline loading screen and expanding-Z reveal.
+Native candidate `f9626885f72a44e336c61d6a40ae4e62cb3a4836` implements this;
+validation passed. See docs/beta/BRANDED_LAUNCH_20261025.md.
+
+Exact-candidate application push/PR checks 40212709293 / 40212712444 passed:
+678 SQLite / 679 PostgreSQL, client/browser regressions, synthetic restore,
+image smoke/audit and scope gate. Native run 40212709229 passed 20 unit/WebKit
+and four UI tests plus iPhone release compilation. Portrait and landscape renders
+inspected; evidence saved alongside the report. Physical-device animation feel
+remains acceptance after the new TestFlight build, not a claimed phone test.
+
+**NOT published.** Live remains d3bc09d; TestFlight remains 0.1.0 (11).
+Unlike the compact social rows below, this change needs a new native build.
+No deployment, signing/upload or Apple submission was requested this turn.
+The compact connections update below is also still pending publication.
+Keep customer charges OFF, Render retained, paid monitoring inactive, and
+all 79 broader gaps visible. Do not bypass application/PostgreSQL/native checks.
+
+---
+
 # Compact social connections candidate — 25 October 2026
 
 **Ready, NOT published.** Exact runtime candidate
