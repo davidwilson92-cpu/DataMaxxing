@@ -1,3 +1,34 @@
+# Next Move focus candidate — 25 October 2026, after published build 11
+
+**Implemented and validated, NOT published.** Runtime candidate
+`d3bc09dec27039786c2291af86de8de5ffbdf52a` is on the existing reviewed branch/PR34.
+The live Render server remains **d15f619** and TestFlight remains **0.1.0 (11)**.
+Auto-deploy is off. No native source/signing change or new binary in this update.
+
+Read **docs/beta/NEXT_MOVE_FOCUS_20261025.md**. Owner's latest screenshots prompted:
+consistent post proposal + short purple AI recommendation + enticing Your strategy;
+removed Details/admin checklists/change-idea clutter; two input boxes for strategy
+creation AND editing with appendable suggestions; saved description/content
+constraints; continuous on-demand three-idea batches after the third item. Latest
+batches cannot be pinned behind old drafted actions; saved drafts remain intact.
+Exact recent duplicate titles/admin actions receive bounded repair; generation
+failure retains usable current ideas. Existing usage limits and source truth remain.
+
+Candidate application checks **40207508948 / 40207513086 passed**: 678 SQLite,
+679 PostgreSQL (2 / 1 platform-specific skips), 29 client tests/groups, isolated
+browser strategy/save/reload/edit/next-batch/draft journeys, mobile composer,
+synthetic restore, image smoke/audit and exact-scope guardrail. Local 320px/desktop
+and enlarged-body-text layout checks passed. Screenshot content is synthetic.
+Benchmark uses official Buffer/Later/Hootsuite documentation; cleaner UX is not
+proof of market-leading recommendation quality or retention.
+
+Next: publish this exact validated runtime candidate only when requested, then
+check live rendering with the existing iPhone shell. Retain all 79 broader gaps,
+original QA scores and unverified provider/phone acceptance. Keep Render, customer
+charges OFF and paid monitor inactive. No live content/provider changes were made.
+
+---
+
 # Published beta update — 25 October 2026
 
 Web release **d15f619d30e430d1405164a8a58c08ea89d0ab17** is LIVE on

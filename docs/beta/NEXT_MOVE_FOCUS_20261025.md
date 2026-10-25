@@ -45,8 +45,21 @@ or real trend evidence:
 Client tests cover duplicate clicks, failed requests and stale view responses.
 Backend tests cover both saved input fields, repeated fresh batches, preserved
 drafts, duplicate rejection/repair and post-only repair. Existing mobile composer
-layout tests remain in place. Final application/PostgreSQL results are recorded
-below after validation; no production acceptance is implied.
+layout tests remain in place. Final application/PostgreSQL validation passed for candidate
+`d3bc09dec27039786c2291af86de8de5ffbdf52a`:
+
+- [Application push checks](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40207508948)
+  and [PR checks](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40207513086)
+  both passed.
+- 678 SQLite tests (two platform-specific skips); 679 PostgreSQL tests (one
+  platform-specific skip); 29 client tests/groups plus Studio clarity tests.
+- The new real-browser Next Move journey and existing mobile composer regression
+  passed. Additional local checks covered 320/390/1440px widths and enlarged body
+  text, including reachable strategy navigation and no horizontal overflow.
+- Synthetic PostgreSQL restore, hosting-image smoke, exact-scope beta gate and
+  package audits passed. Audits reported no known package vulnerabilities; this
+  is not proof that the application has no security defects.
+- No production acceptance or real recommendation-quality claim is implied.
 
 ## Comparison with current tools
 
