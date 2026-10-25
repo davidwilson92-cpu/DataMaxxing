@@ -65,10 +65,16 @@ The immutable image parameter may be a not-yet-built same-account ECR URI while
 DesiredCount=0; update it to the successfully tested image digest after the stack's
 repository exists and before starting any task. Never start a placeholder image.
 
-The initial template selects PostgreSQL 17 family. **Read the production server
-version first.** Select its supported minor version; if production uses a newer
-major, update the template family/version constraint and revalidate instead of
-downgrading. Check extension support, encoding, timezone and connection limits.
+Read-only source inventory confirmed PostgreSQL **18.6**. The template now pins
+18.6 / postgres18; AWS documents support for this version. Confirm actual London
+account availability before provisioning. Never downgrade the source major.
+Check extension support, encoding, timezone and connection limits.
+
+The same read-only inventory found a 12,244,671-byte database, 29 local media
+records under `/app/uploads`, no paths outside that root, four already-missing
+files, zero size mismatches among present files and no S3 configuration. Stripe
+mode is off with no configured key; outgoing email is configured. No credential,
+customer-content or file-name values were printed or copied.
 
 The AWS entrypoint imports preserved settings from the scoped secret; it refuses
 static AWS credentials, execution-setting replacement, SQLite, live Stripe keys
@@ -129,17 +135,24 @@ limits may group visitors by edge IP. Never solve this by trusting every source.
    association endpoints and iOS API/session refresh. Test Stripe sandbox checkout,
    verified webhook sync, repeated return, portal/cancel and preserved free access.
 8. Schedule a short write-freeze. **Do not run two independent writer databases.**
+   Deploy the tested migration freeze capability before the window. Set
+   `ZOVA_MAINTENANCE_MODE=cloud-migration` and `ZOVA_SCHEDULER_MODE=disabled` on
+   Render, replace/drain the old instance and confirm the protected maintenance
+   status. The freeze blocks all customer routes, OAuth callbacks, writes and
+   provider webhooks with retryable 503s; health and protected operational reads
+   remain. It does not authorise erasure or prove external services are drained.
    Drain requests; pause Render's web writes and publishing process, then take the
    final consistent database/upload copy and verify it. Do not reuse the
-   account-erasure maintenance flag as a migration mode. The implementation of a
-   migration-specific write freeze remains an execution prerequisite, not an
-   existing feature. Track in-flight provider outcomes and never blindly resend.
+   account-erasure maintenance flag. Track in-flight provider outcomes and never
+   blindly resend. The capability is prepared/tested but is not on the live server
+   until its reviewed deployment; current live d3bc09d cannot confirm this mode.
 9. With Render writers stopped, start one AWS task with scheduling disabled,
    validate health/protected readiness, TLS, restored data and upload permissions.
    Change Cloudflare origin for `zova-social.com` only after verification. Keep
    callbacks, webhook URL and iOS server origin unchanged. Inspect all DNS records
    (including email and Apple association paths); do not replace the zone.
-10. Verify web and installed iPhone app across real OAuth returns, existing/new
+10. Clear AWS `MaintenanceMode` only after the final copy and source-writer drain.
+    Verify web and installed iPhone app across real OAuth returns, existing/new
     sessions, reviewer access, media, scheduling and payment sandbox webhooks.
     Enable the AWS embedded scheduler only after confirming Render's is stopped.
     Record evidence/time/revision for every result. Watch errors and scheduled work.
@@ -152,7 +165,7 @@ limits may group visitors by edge IP. Never solve this by trusting every source.
 ## Outstanding external gates
 
 AWS/Stripe sign-in, current Free/Paid plan and credits, spending/access approvals,
-source inventory, database-major confirmation, build/restore/copy rehearsal,
-migration write-freeze implementation, protected readiness, DNS cutover and real
+complete settings/sequence inventory, build/restore/copy rehearsal,
+deployment of the migration write freeze, protected readiness, DNS cutover and real
 device/provider checks are **not completed**. This template is reviewed preparation,
 not evidence that AWS hosts Zova or that billing is live.

@@ -107,6 +107,7 @@ def maintenance_status(authorization:str|None=Header(default=None)):
     from .maintenance import account_erasure_mode, STARTED_AT
     from .runtime import scheduler_mode
     return {'account_erasure_mode':account_erasure_mode(),'scheduler_mode':scheduler_mode(),
+            'maintenance_mode':os.environ.get('ZOVA_MAINTENANCE_MODE',''),
             'started_at':STARTED_AT.isoformat(),'services_drained':'operator_confirmation_required'}
 
 

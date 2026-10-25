@@ -31,6 +31,9 @@ def test_infrastructure_starts_without_a_writer_and_keeps_customer_stores_privat
     assert stack['Parameters']['DesiredCount']['Default']==0
     assert stack['Parameters']['DesiredCount']['AllowedValues']==[0,1]
     assert stack['Parameters']['SchedulerMode']['Default']=='disabled'
+    assert stack['Parameters']['MaintenanceMode']['Default']=='cloud-migration'
+    assert stack['Parameters']['PostgresVersion']['Default']=='18.6'
+    assert resources['DatabaseParameters']['Properties']['Family']=='postgres18'
     db=resources['Database']['Properties']
     assert db['PubliclyAccessible'] is False and db['StorageEncrypted'] is True
     assert db['DeletionProtection'] and db['BackupRetentionPeriod']>=7
@@ -81,3 +84,31 @@ def test_only_load_balancer_peers_supply_the_real_client_and_ignore_spoofed_pref
         asyncio.run(middleware(scope,None,None))
         assert observed[-1]['client'][0]==expected
         assert observed[-1]['scheme']==scheme
+
+
+def test_cloud_copy_freeze_blocks_oauth_and_writes_without_authorising_erasure(monkeypatch):
+    from test_account_integrity import account
+    from nova.db import SessionLocal, User
+    from nova.maintenance import account_erasure_mode
+    from nova.runtime import validate_runtime
+    client,uid,*_=account()
+    monkeypatch.setenv('ZOVA_MAINTENANCE_MODE','cloud-migration')
+    monkeypatch.setenv('ZOVA_SCHEDULER_MODE','disabled')
+    assert validate_runtime()=='disabled' and not account_erasure_mode()
+    for method,path in [('post','/account/profile'),('post','/api/media'),
+                        ('post','/billing/webhook'),('get','/callback/instagram'),
+                        ('get','/callback/facebook'),('get','/callback/x'),
+                        ('get','/callback/tiktok'),('post','/mobile/web-session')]:
+        response=getattr(client,method)(path)
+        assert response.status_code==503 and response.headers['Cache-Control']=='no-store'
+    assert client.get('/health').status_code==200
+    assert client.get('/internal/maintenance').status_code==401
+    monkeypatch.setenv('SCHEDULER_SECRET','synthetic-operator')
+    status=client.get('/internal/maintenance',headers={'Authorization':'Bearer synthetic-operator'}).json()
+    assert status['maintenance_mode']=='cloud-migration' and not status['account_erasure_mode']
+    assert status['services_drained']=='operator_confirmation_required'
+    with SessionLocal() as db:assert db.get(User,uid).display_name=='Original'
+    monkeypatch.setenv('ZOVA_SCHEDULER_MODE','embedded')
+    with pytest.raises(ValueError,match='disabled scheduling'):validate_runtime()
+    monkeypatch.delenv('ZOVA_MAINTENANCE_MODE')
+    assert client.get('/studio').status_code==200

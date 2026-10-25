@@ -28,10 +28,10 @@ def scheduler_mode():
 def validate_runtime():
     mode = scheduler_mode()
     maintenance=os.environ.get('ZOVA_MAINTENANCE_MODE','')
-    if maintenance not in {'','account-erasure'}:
+    if maintenance not in {'','account-erasure','cloud-migration'}:
         raise ValueError('Unknown maintenance mode')
     if maintenance and mode!='disabled':
-        raise ValueError('Account erasure maintenance requires disabled scheduling')
+        raise ValueError('Maintenance requires disabled scheduling')
     replicas = integer('ZOVA_WEB_REPLICAS',1,1,100)
     if replicas > 1 and mode != 'external':
         raise ValueError('Multiple web instances require an external scheduler')

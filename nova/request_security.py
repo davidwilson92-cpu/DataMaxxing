@@ -37,8 +37,8 @@ def allowed_request(key, maximum, seconds):
 class SecurityMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         path = request.url.path
-        from .maintenance import account_erasure_mode, permits_request
-        if account_erasure_mode() and not permits_request(path, request.method):
+        from .maintenance import maintenance_mode, permits_request
+        if maintenance_mode() and not permits_request(path, request.method):
             return JSONResponse({'detail':'Zova is briefly unavailable for scheduled maintenance. Your saved work is safe. Please try again later.'},503,
                                 headers={'Retry-After':'300','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'})
         external_callback = path in {'/billing/webhook','/data-deletion/callback','/auth/apple/callback'}

@@ -34,7 +34,7 @@ def template():
     for name, port in [('DatabaseGroup',5432), ('FilesGroup',2049)]:
         add(name, 'EC2::SecurityGroup', dict(GroupDescription='Private application access only', VpcId=ref('Network'), SecurityGroupIngress=[dict(IpProtocol='tcp', FromPort=port, ToPort=port, SourceSecurityGroupId=ref('AppGroup'))]))
     add('DatabaseSubnets', 'RDS::DBSubnetGroup', dict(DBSubnetGroupDescription='Private database subnets; no internet route', SubnetIds=[ref('Private0'),ref('Private1')]))
-    add('DatabaseParameters', 'RDS::DBParameterGroup', dict(Description='Require encrypted database sessions', Family='postgres17', Parameters={'rds.force_ssl':'1'}))
+    add('DatabaseParameters', 'RDS::DBParameterGroup', dict(Description='Require encrypted database sessions', Family='postgres18', Parameters={'rds.force_ssl':'1'}))
     add('Database', 'RDS::DBInstance', dict(Engine='postgres', EngineVersion=ref('PostgresVersion'), DBInstanceClass='db.t4g.micro', AllocatedStorage='20', MaxAllocatedStorage=40, StorageType='gp3', StorageEncrypted=True, DBName='zova', MasterUsername='zova_owner', ManageMasterUserPassword=True, PubliclyAccessible=False, DBSubnetGroupName=ref('DatabaseSubnets'), DBParameterGroupName=ref('DatabaseParameters'), VPCSecurityGroups=[ref('DatabaseGroup')], BackupRetentionPeriod=7, CopyTagsToSnapshot=True, DeletionProtection=True, AutoMinorVersionUpgrade=True, MultiAZ=False), retain=True)
     add('Files', 'EFS::FileSystem', dict(Encrypted=True, PerformanceMode='generalPurpose', ThroughputMode='bursting', BackupPolicy={'Status':'ENABLED'}, FileSystemPolicy={'Statement':[{'Effect':'Deny','Principal':'*','Action':'elasticfilesystem:*','Resource':'*','Condition':{'Bool':{'aws:SecureTransport':'false'}}}]}), retain=True)
     for i in (0,1):
@@ -57,6 +57,7 @@ def template():
         'ZOVA_AWS_SETTINGS_SECRET_ARN':ref('SettingsSecretArn'), 'AWS_DEFAULT_REGION':ref('AWS::Region'),
         'PUBLIC_BASE_URL':'https://zova-social.com', 'PORT':'10000','UPLOAD_DIR':'/app/uploads',
         'ZOVA_SCHEDULER_MODE':ref('SchedulerMode'),'ZOVA_SCHEMA_MODE':'verify','ZOVA_WEB_REPLICAS':'1',
+        'ZOVA_MAINTENANCE_MODE':ref('MaintenanceMode'),
         'STRIPE_MODE':'test','STRIPE_LIVE_CHECKOUT_ENABLED':'false','REQUIRE_SUBSCRIPTION':'false','PLAN_LIMITS_ENABLED':'false'
     }.items()], LogConfiguration={'LogDriver':'awslogs','Options':{'awslogs-group':ref('Logs'),'awslogs-region':ref('AWS::Region'),'awslogs-stream-prefix':'web'}})]))
     add('Balancer', 'ElasticLoadBalancingV2::LoadBalancer', dict(Type='application', Scheme='internet-facing', Subnets=[ref('Public0'),ref('Public1')], SecurityGroups=[ref('FrontGroup')], LoadBalancerAttributes=[{'Key':'routing.http.drop_invalid_header_fields.enabled','Value':'true'},{'Key':'deletion_protection.enabled','Value':'true'}]))
@@ -70,11 +71,12 @@ def template():
             'CertificateArn':{'Type':'String','AllowedPattern':'arn:aws:acm:.*:certificate/.*','Description':'Existing validated certificate for zova-social.com in this region'},
             'SettingsSecretArn':{'Type':'String','AllowedPattern':'arn:aws:secretsmanager:.*:secret:.*','Description':'Existing same-region AWS-managed-key secret with preserved application settings and restored runtime DB URL'},
             'ImageDigestUri':{'Type':'String','AllowedPattern':'.*\\.dkr\\.ecr\\..*\\.amazonaws\\.com/.*@sha256:[a-f0-9]{64}','Description':'Immutable reviewed image in the repository created by this stack; update after build'},
-            'PostgresVersion':{'Type':'String','AllowedPattern':'17\\.[0-9]+','Description':'Select an available supported PostgreSQL 17 minor version after source dump compatibility check'},
+            'PostgresVersion':{'Type':'String','Default':'18.6','AllowedValues':['18.6'],'Description':'Matches the read-only verified Render PostgreSQL 18.6 source; confirm London availability before provisioning'},
             'DesiredCount':{'Type':'Number','Default':0,'AllowedValues':[0,1]},
             'SchedulerMode':{'Type':'String','Default':'disabled','AllowedValues':['disabled','embedded']},
+            'MaintenanceMode':{'Type':'String','Default':'cloud-migration','AllowedValues':['','cloud-migration']},
             'MonthlyBudgetUsd':{'Type':'Number','Default':75,'MinValue':1}},
-        'Rules':{'LondonOnly':{'Assertions':[{'Assert':{'Fn::Equals':[ref('AWS::Region'),'eu-west-2']},'AssertDescription':'This reviewed template and database trust store require London.'}]}},
+        'Rules':{'LondonOnly':{'Assertions':[{'Assert':{'Fn::Equals':[ref('AWS::Region'),'eu-west-2']},'AssertDescription':'This reviewed template and database trust store require London.'}]},'MaintenanceRequiresStoppedScheduler':{'Assertions':[{'Assert':{'Fn::Or':[{'Fn::Equals':[ref('MaintenanceMode'),'']},{'Fn::Equals':[ref('SchedulerMode'),'disabled']}]},'AssertDescription':'Publishing must be disabled while cloud migration maintenance is active.'}]}},
         'Resources':r,'Outputs':{'LoadBalancerHost':{'Value':attr('Balancer','DNSName')},'RepositoryUri':{'Value':attr('Images','RepositoryUri')},'DatabaseHost':{'Value':attr('Database','Endpoint.Address')},'DatabaseAdminSecretArn':{'Value':attr('Database','MasterUserSecret.SecretArn')},'UploadsFileSystemId':{'Value':ref('Files')},'UploadsAccessPointId':{'Value':ref('Uploads')},'ClusterArn':{'Value':attr('Cluster','Arn')},'ApplicationService':{'Value':ref('Service')}}}
 
 

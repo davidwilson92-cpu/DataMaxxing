@@ -12,8 +12,12 @@ paths; one embedded-worker task maximum, unchanged public domain and iOS origin.
 Scope hashing includes infrastructure. No new resources, DNS, charges or releases.
 AWS/Stripe side-browser sign-in is pending; both currently show login screens.
 No local AWS CLI identity or Stripe configuration was found in this checkout.
-Source DB version/storage/settings inventory, Free-plan/credit and cost/access
-approvals, hosted Stripe tests and actual migration are still required.
+Read-only source inventory: PostgreSQL 18.6, 12,244,671-byte DB, 29 local assets
+under /app/uploads, four already missing, zero present-file size mismatches, no
+S3, Stripe off/unconfigured, outgoing email configured. Template now matches
+18.6 and uses a separate tested cloud-migration write freeze (not yet deployed).
+Complete settings/sequence inventory, Free-plan/credit and cost/access approvals,
+hosted Stripe tests and actual migration are still required.
 See docs/beta/STRIPE_AWS_PREPARATION_20261025.md and infra/aws/README.md.
 Live remains d3bc09d on Render; TestFlight remains 0.1.0 (11). All 79 gaps retained.
 

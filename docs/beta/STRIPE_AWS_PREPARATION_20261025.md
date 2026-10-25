@@ -44,10 +44,26 @@ Infrastructure is now included in the exact release-scope hash. A separate CI
 job validates generated CloudFormation and its London resource schemas.
 
 **Not yet verified:** AWS account/credit/Free-plan status, permission and budget
-approval, actual source DB major, provider settings and source storage inventory,
+approval, complete provider/settings/sequence inventory,
 image startup with real EFS/UID permissions, backup/restore/copy manifests,
 migration write freeze, DNS, real hosted payment and device/provider journeys.
 No AWS migration or billing activation should be described as completed.
+
+Read-only Render inventory subsequently confirmed PostgreSQL 18.6, database size
+12,244,671 bytes, 29 local media records under `/app/uploads`, no path escapes,
+four already-missing files and no size mismatch among present files. No S3 is
+configured; hosted Stripe is off/unconfigured and outgoing email is configured.
+The template now matches PostgreSQL 18.6 / postgres18; AWS's official release
+notes confirm support. Actual London account provisioning remains unverified.
+The separate cloud-migration write freeze is implemented without granting
+account-erasure authority. It requires disabled scheduling, blocks OAuth and
+customer/provider writes, keeps health/protected status available and defaults
+on in the zero-task AWS template. It is not yet deployed to Render. Visitor
+identity is taken only from the trusted ALB subnet chain; a forged leading IP
+does not bypass rate limits. Cloudflare proxy-chain acceptance remains a gate
+if proxying is retained rather than direct ALB DNS.
+
+https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-versions.html
 
 The current Free-plan decision is still in force until the owner changes it.
 Prepared London estimate is roughly US$60–75/month before credits/tax/variable
