@@ -1,5 +1,5 @@
 {% extends 'base.html' %}{% block title %}Your plan | Zova{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/membership.css?v=1">{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/membership.css?v=20261025-contrast">{% endblock %}
 {% block body %}<main class="billing-shell"><header><div class="eyebrow">ZOVA MEMBERSHIP</div><h1>More room for your ideas.</h1><p>Your brands, your voice. A clear plan to keep you creating.</p></header>
 {% if billing_info.mode=='test' %}<div class="alert">Stripe test mode. No real payments.</div>{% if billing_info.checkout_enabled %}<details class="test-payment-help"><summary>Test a payment</summary><p>Use card <strong>4242 4242 4242 4242</strong>, any future expiry and any three-digit security code in Stripe checkout. Use a made-up billing address. Never enter a real card.</p><p>Checkout is optional. Your beta access stays free, even after the test trial ends or you cancel.</p></details>{% endif %}{% endif %}
 {% if not subscription_required %}<p class="testing-note">Free beta access. No card required. Using the beta does not start a subscription or an automatic charge.</p>{% if billing_info.status not in ['none','canceled'] %}<p>Any existing subscription keeps its own renewal terms. Manage it below.</p>{% endif %}{% endif %}
