@@ -1,5 +1,10 @@
 # AWS beta migration candidate — not deployed
 
+**Deferred by owner on 25 October 2026:** remain on Render. This is a dormant
+candidate, not the current release destination. Do not execute the migration or
+provision resources without a new owner decision. The prior preparation below
+is retained as reference only; no AWS credits or resources have been activated.
+
 Prepared 25 October 2026. Production remains on Render. The owner requested AWS
 migration; the earlier Free-plan decision has not yet been replaced by a paid-plan
 or spending approval. No credits have been assumed or awarded in this work.

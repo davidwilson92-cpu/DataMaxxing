@@ -1,3 +1,27 @@
+# Render retained; continue Stripe sandbox — 25 October 2026
+
+Owner explicitly chose to stay on Render after reviewing actual billing and
+capacity. This supersedes the AWS migration request below. Do not provision AWS,
+upgrade its plan, transfer data/secrets or change DNS. Keep the prepared AWS
+candidate dormant for possible future review. Continue Stripe TEST configuration
+on Render; customer charges, subscription enforcement and plan limits stay off.
+The dummy card is 4242 4242 4242 4242; tester access remains free without checkout.
+
+Render billing observed: August $0.74 paid; September $13.36 paid; October $16.67
+accrued and $20.80 projected. Database accounts for $5.05 accrued, about $6.30
+monthly including 1 GB storage. These are observations, not fixed future quotes.
+Latest native CI 40224884915 completed successfully. Application PR CI
+40224884932 passed; duplicate push CI 40224880571 exposed a browser-test race:
+the strategy field was asserted before its GET completed. The test now awaits
+the existing aria-busy=false completion state before reading persisted inputs.
+Required candidate validation must pass again before release.
+
+Stripe tab reopened at sign-in; owner action requested. No hosted Stripe setup,
+new deployment or TestFlight release is claimed. Live remains d3bc09d / build 11.
+All 79 commercial gaps remain retained. Prior AWS notes below are historical.
+
+---
+
 # Stripe sandbox / AWS migration preparation — 25 October 2026
 
 Owner now requests Stripe tester payments and migration of the shared web/iPhone

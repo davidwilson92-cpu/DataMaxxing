@@ -10,6 +10,7 @@ const base='http://127.0.0.1:8784';
   await page.route('**/*',route=>route.request().url().startsWith(base+'/')?route.continue():route.abort());
   await page.goto(base+'/login');await page.locator('#email').fill('strategy@example.test');await page.locator('#password').fill('Synthetic-preview-2026!');await page.locator('button[type=submit]').click();await page.waitForURL('**/studio');
   await page.goto(base+'/studio?strategy=1');await page.locator('#strategyBrief').waitFor({state:'visible'});
+  await page.locator('#strategyPanel[aria-busy="false"]').waitFor({state:'visible'});
   assert.equal(await page.locator('#nextMoveSettings textarea').count(),2);
   await page.locator('#strategyBrief').fill('I run a pottery studio for local beginners. Help me fill weekend classes.');
   await page.locator('#strategyDirection').fill('');
@@ -26,6 +27,9 @@ const base='http://127.0.0.1:8784';
   await page.locator('#saveStrategyButton').waitFor({state:'visible'});
   await page.locator('#saveStrategyButton').click();await page.locator('#strategyNextMoveButton').waitFor({state:'visible'});
   await page.reload();await page.locator('#strategyBrief').waitFor({state:'visible'});
+  // The dialog appears before its saved strategy arrives. Assert persistence
+  // after the loading operation finishes, rather than racing the GET response.
+  await page.locator('#strategyPanel[aria-busy="false"]').waitFor({state:'visible'});
   assert.match(await page.locator('#strategyBrief').inputValue(),/pottery studio/);
   assert.equal(await page.locator('#strategyDirection').inputValue(),direction);
   await page.locator('#strategyDirection').fill('Only one photo a week. No videos.');
