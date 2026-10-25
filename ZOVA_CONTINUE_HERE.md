@@ -1,3 +1,29 @@
+# Compact social connections candidate — 25 October 2026
+
+**Ready, NOT published.** Exact runtime candidate
+`69f49bc07dc8547983164bd3552a8864bdc1e339` is on the current branch/PR34.
+Live remains d3bc09d / TestFlight 0.1.0 (11). No new native binary is needed.
+
+Owner requested the proposed cleanup: compact icon/name/status rows; aligned
+Connect or Manage; Unlink inside Manage; less explanatory copy and no large pill
+buttons. Shared onboarding list stays consistent and exposes no unlink controls.
+Multiple Page names and exact form targets remain distinct; public deletion guide
+now points to Manage. No connection endpoint, permission, backend/schema or native
+change. No real connection or post was changed; tests used disposable local data.
+
+See docs/beta/SOCIAL_CONNECTIONS_COMPACT_20261025.md and screenshot evidence.
+Application push/PR CI **40209922826 / 40209926428 passed**: 678 SQLite / 679
+PostgreSQL tests (2 / 1 skips), clients, browser regressions, restore, hosting image,
+package audits and scope gate. Additional manual browser checks cover keyboard,
+320/390/1440 widths, long/multiple names, ready/unavailable setup states, onboarding
+and synthetic unlink preserving other connections. All 79 broader gaps retained.
+
+Next: publish exact validated candidate when requested, then check live Account.
+Keep Render and customer charges OFF. The owner's Facebook screenshot confirms
+the UI reports Connected; live publication/permissions are not verified by it.
+
+---
+
 # Next Move focus published — 25 October 2026, 15:43 UTC
 
 Owner requested publication. **d3bc09dec27039786c2291af86de8de5ffbdf52a is LIVE**
