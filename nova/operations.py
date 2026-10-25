@@ -14,7 +14,9 @@ PENDING_DELETION_STATUSES=('received','access_revoked','erasing')
 def deletion_summary(db):
     count,oldest=db.execute(select(func.count(DeletionRequest.code),func.min(DeletionRequest.created_at)).where(
         DeletionRequest.status.in_(PENDING_DELETION_STATUSES))).one()
-    return {'pending_deletion_requests':count,
+    from .deletion_policy import OWNER, TARGET_DAYS
+    overdue=db.scalar(select(func.count(DeletionRequest.code)).where(DeletionRequest.status.in_(PENDING_DELETION_STATUSES),DeletionRequest.created_at<utcnow()-timedelta(days=TARGET_DAYS)))
+    return {'pending_deletion_requests':count,'overdue_deletion_requests':overdue,'deletion_owner':OWNER,'deletion_target_days':TARGET_DAYS,
             'oldest_pending_deletion_at':oldest.isoformat()+('Z' if oldest.tzinfo is None else '') if oldest else None}
 
 
@@ -77,7 +79,7 @@ def status(authorization: str | None = Header(default=None)):
         latest=db.scalar(select(func.max(BillingEvent.processed_at)))
         mail_failures=db.scalar(select(func.count()).select_from(MailDelivery).where(MailDelivery.status=='failed',MailDelivery.created_at>utcnow()-timedelta(days=1)))
         mail_stuck=db.scalar(select(func.count()).select_from(MailDelivery).where(MailDelivery.status=='sending',MailDelivery.created_at<utcnow()-timedelta(minutes=5)))
-        ai_failures=db.scalar(select(func.count()).select_from(AICall).where(AICall.status!='returned',AICall.created_at>utcnow()-timedelta(days=1)))
+        ai_failures=db.scalar(select(func.count()).select_from(AICall).where(~AICall.status.in_(('returned','success')),AICall.created_at>utcnow()-timedelta(days=1)))
         deletion=deletion_summary(db)
         attention=bool(deletion['pending_deletion_requests'] or ai_failures or overdue or uncertain or stuck or spend['threshold_exceeded'] or spend['unpriced_calls'] or stale_billing or reservations or mail_failures or mail_stuck or not mail_configured or worker['status'] not in {'running','idle'})
         return {'status':'attention' if attention else 'ok','database':'reachable','overdue_jobs':overdue,'uncertain_publications':uncertain,'stuck_publications':stuck,
@@ -89,13 +91,23 @@ def status(authorization: str | None = Header(default=None)):
 def pending_deletions(authorization:str|None=Header(default=None),page:int=Query(1,ge=1,le=100000)):
     """Read-only manual work queue; never claim email delivery or perform erasure."""
     require_operations(authorization)  # Read-only monitor credentials receive counts, not case receipts.
+    from .deletion_policy import timing
     with SessionLocal() as db:
         rows=db.scalars(select(DeletionRequest).where(DeletionRequest.status.in_(PENDING_DELETION_STATUSES))
             .order_by(DeletionRequest.created_at,DeletionRequest.code).offset((page-1)*50).limit(51)).all()
         return {**deletion_summary(db),'page':page,'has_more':len(rows)>50,
                 'requests':[{'code':row.code,'status':row.status,
-                    'created_at':row.created_at.isoformat()+('Z' if row.created_at.tzinfo is None else '')} for row in rows[:50]],
+                    'created_at':row.created_at.isoformat()+('Z' if row.created_at.tzinfo is None else ''),**timing(row)} for row in rows[:50]],
                 'processing':'Manual verification and reconciliation are required before active-store erasure. No email notification is implied.'}
+
+
+@router.get('/internal/maintenance',include_in_schema=False)
+def maintenance_status(authorization:str|None=Header(default=None)):
+    require_operations(authorization)
+    from .maintenance import account_erasure_mode, STARTED_AT
+    from .runtime import scheduler_mode
+    return {'account_erasure_mode':account_erasure_mode(),'scheduler_mode':scheduler_mode(),
+            'started_at':STARTED_AT.isoformat(),'services_drained':'operator_confirmation_required'}
 
 
 @router.get('/internal/cohorts')

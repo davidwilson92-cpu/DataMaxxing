@@ -1,3 +1,45 @@
+# Authorised publication in progress — 25 October 2026
+
+Owner requested publication and confirmed David as deletion owner with a seven-day
+target. See docs/beta/ACCOUNT_DELETION_RUNBOOK.md. The workflow is manual: daily
+queue review, actual maintenance/drain, provider/billing reconciliation and
+retention review are required. No real account was erased. Maintenance stays OFF
+for this release. Customer billing, checkout and enforcement stay off; Render
+remains the host and paid monitoring remains inactive.
+
+Final server changes add the receipt-bound deletion operator, verified completion
+and overdue state, a nullable completion timestamp and a corrected AI health
+count. Both success and returned are successful outcomes. Independent review
+covered failures/retries and other-account preservation. Full exact-scope CI must
+pass before server deployment; final release receipts will be appended below.
+
+Native source 43f4f47 passed application/native CI and is unchanged by the later
+server-only changes. Codemagic 6ade13d14a72334e32e50660 built and uploaded
+0.1.0 (11) in 2m 54s. Apple accepted it at 14:39:11 UTC, delivery
+45dbc386-8d7c-4163-be3a-02e6b4f9d91e. Apple is processing; this does not yet mean
+available to external testers. Build 10 remains Testing in both groups. The
+existing public invite remains unchanged.
+
+Pre-release live bcd260e: 19 users, 46 drafts, 21 social connections, 29 media
+references (25 files; four known historical missing files), ten publications and
+one scheduled record. Database/schema ready, worker idle, zero overdue/stuck jobs
+or mail failures. One historical unknown publication and 108 unpriced AI calls
+remain. The 18 reported AI failures were all success rows; the health correction
+does not rewrite history. A fresh Render database export completed on 25 October
+at 14:36 UTC; three-day point-in-time recovery is available. Backup stays in Render.
+
+Facebook still needs a real account/Page connection and final return check.
+Eligible Instagram audio grant/music delivery, replacement-phone retest, tester
+credential rotation/redaction and original tester schedule cleanup remain external.
+Do not claim the tester has rerun all 57 cases or raise their original scores.
+
+Rollback: retain current data, keys, sessions, uploads, ledger and all additive
+columns. Prefer a bounded forward fix. Before reverting to bcd260e, pause new
+format/music work before an old worker resumes. Never resend unknown posts or
+restore stale production data. Native distribution rollback is independent.
+
+---
+
 # Tester remediation candidate — 25 October 2026
 
 Current work is on `codex/ios-beta-20261019` in the existing iOS beta checkout.

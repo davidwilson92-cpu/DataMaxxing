@@ -10,9 +10,15 @@ bounded fixes. Instagram Reel music is conditional on Meta's supported
 Facebook User grant; photos/Stories finish in Instagram. No new grants or
 real posts were made.
 
-Account deletion can now be initiated in the app, revokes access and cancels
-unsent jobs, but safe final erasure/retention and an operational deadline remain
-open. Facebook provider login, actual music publication, original tester job
+The owner approved David as deletion owner with a seven-day target on 25 October.
+Authenticated initiation revokes access and cancels unsent jobs. The bounded
+operator procedure now provides a receipt-based plan, explicit full-service
+maintenance/drain, blocked unresolved delivery/billing/storage cases, committed
+cleanup verification and an honest completion receipt. It is manual: David must
+check the queue daily; automatic monitoring remains inactive. No real customer
+erasure or universal provider/backup erasure is claimed. Retention decisions,
+backup deletion replay and actual operational execution remain external evidence.
+See ACCOUNT_DELETION_RUNBOOK.md. Facebook provider login, actual music publication, original tester job
 cleanup and replacement-build device acceptance remain external evidence gaps.
 Do not turn implemented or mocked-tested features into live-provider claims.
 The public tester recording exposes a credential; redact/restrict it and rotate

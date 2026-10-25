@@ -158,6 +158,7 @@ class DeletionRequest(Base):
     status: Mapped[str] = mapped_column(String(30), default='received')
     scope: Mapped[str] = mapped_column(Text, default='Platform connection credentials')
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class AuthIdentity(Base):

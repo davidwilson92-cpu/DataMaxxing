@@ -546,7 +546,8 @@ async def meta_data_deletion_callback(request:Request,db:Session=Depends(get_db)
 def data_deletion_status(request:Request,confirmation_code:str,db:Session=Depends(get_db)):
     row=db.get(DeletionRequest,confirmation_code)
     if not row: raise HTTPException(404,"Deletion request not found")
-    return templates.TemplateResponse(request, "data_deletion_status.html",template_context(request,None,confirmation_code=row.code,deletion=row))
+    from .deletion_policy import timing
+    return templates.TemplateResponse(request, "data_deletion_status.html",template_context(request,None,confirmation_code=row.code,deletion=row,deletion_timing=timing(row)))
 
 @app.get("/studio",response_class=HTMLResponse)
 def studio(request:Request,db:Session=Depends(get_db)):
