@@ -207,6 +207,29 @@ Every original TC ID appears below. “Retest” means replacement build/device 
 6. **Credential exposure in public recording:** the supplied public tester material includes credential exposure. Do not reproduce values in docs, screenshots or logs. Owner/tester should rotate exposed credentials, revoke affected sessions where appropriate and remove/redact the public material; removal/rotation is not confirmed by this remediation.
 7. **Customer reassessment:** ask the tester to rerun failed/blocked/untested cases and the changed journeys. Obtain fresh scores, time to first useful caption, understanding of Next Move versus Strategy, and confidence in Schedule. Original positives and original 5.9 average remain the baseline.
 
-## Final release verification — to be completed by release owner
+## Review iterations and visual evidence
 
-This section intentionally contains no fabricated run totals, deployed commit, production health assertion or TestFlight availability. Append the final automated suite results, platform-specific runs, visual review, CI status, deployment evidence, Apple build/review state and outstanding device/provider checks here when verified. Existing handoff, release manifest and known-gap registers are maintained separately.
+1. Reproduced the reported failure patterns against code and all linked tester recordings; preserved original results and distinguished provider-controlled failures from application defects.
+2. Implemented compatible changes and ran focused ownership, persistence, scheduling, native return, publishing and UI regressions.
+3. Exercised a disposable browser account through reschedule, cancellation, pause-all-before-edit, caption edit/reload, strategy save/reload, pottery-to-restaurant replacement, voice edit/reload and private media download. External provider calls were blocked and the worker disabled. This found and fixed a transient old-idea flash between requests.
+4. Rechecked mobile/desktop proportions. A final keyboard-height check found the Send control below the visible area with all platforms selected; the conflicting height limits were replaced with one visual-viewport budget. Browser checks now pass at 390×844, 390×500, 390×350 and a 350px visual viewport inside an 844px layout viewport. Text and Send stay fully reachable, including long input, attachments and all platforms. Format controls remain accessible, and ordinary-height controls are not clipped. This regression runs in CI.
+5. First exact-candidate CI passed 652 SQLite tests (2 skipped) and 653 PostgreSQL tests (1 skipped), synthetic PostgreSQL recovery, image smoke and actual-image dependency audit (no known findings). A client assertion assumed UK date order; CI's US locale exposed it. The assertion now checks the actual focused day/month without imposing the operating system's presentation order. A fresh full candidate run remains required.
+
+Synthetic browser screenshots, not production/customer or iPhone acceptance:
+
+- [Schedule on desktop](evidence/20261025/schedule-desktop.png) and [rescheduled post on mobile](evidence/20261025/schedule-rescheduled-mobile.png).
+- [Editing a previously scheduled post](evidence/20261025/edited-scheduled-post-mobile.png).
+- [Concise strategy proposal](evidence/20261025/strategy-proposal-mobile.png) and [replacement restaurant recommendation](evidence/20261025/restaurant-next-move-mobile.png).
+- [Account rows](evidence/20261025/account-mobile.png) and [public Help](evidence/20261025/help-mobile.png).
+
+Music capability was checked against Meta's [Audio API documentation](https://developers.facebook.com/docs/instagram-platform/content-publishing/audio-api/). Its eligible Facebook-login Reel path is separate from the manual photo/Story finish flow. A documented API and synthetic payload tests are not proof that the production account has an eligible grant or that a licensed track was delivered.
+
+Deletion receipts now appear in a paginated operations-only queue, with pending counts in health status. The monitor credential cannot read case receipts. This gives an operator visibility; it does not send a notification or complete erasure automatically.
+
+## Final release verification
+
+Final application/native CI results and candidate identity are recorded here after the last layout iteration. No production deployment or new TestFlight build has been performed in this remediation. The existing approved build remains 0.1.0 (10); it does not contain these native changes. Customer charges and the paid monitor remain disabled, and hosting remains on Render.
+
+Native validation at `bf6cc07`: [macOS/iPhone CI](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40177228592) passed **20 unit/WebKit tests and one UI test**, plus iPhone release compilation. The subsequent viewport and locale fixes do not change `ios/`; this is simulator/build evidence, not a signed TestFlight release or actual social login acceptance.
+
+Additional visual evidence: [short viewport Studio](evidence/20261025/studio-short-viewport.png), [full-height composer](evidence/20261025/layout-844-plain.png), [short viewport with attachment](evidence/20261025/layout-350-attachments.png), and [Instagram manual music finish](evidence/20261025/instagram-finish-mobile.png).

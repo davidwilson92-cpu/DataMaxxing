@@ -60,7 +60,9 @@ vm.runInContext(fs.readFileSync('nova/static/drafts.js','utf8'),context);
  assert.match(focusRequests[0],/\/api\/schedules\?draft_id=44&workspace=7/);
  assert.match(focusRequests[1],/from=2027-02-01/);
  assert.match(node('scheduledJobs').innerHTML,/A later post/);
- assert.match(node('scheduleListTitle').textContent,/10 February/);
+ // Both UK and US hosts must show the focused day; date order follows the device locale.
+ assert.match(node('scheduleListTitle').textContent,/\b10\b/);
+ assert.match(node('scheduleListTitle').textContent,/February/);
 
  vm.runInContext(`scheduleHasMore=true;scheduleRows=[]`,context);context.renderAgenda();assert.match(node('scheduledJobs').innerHTML,/latest 100/);
  const pending=[];context.fetch=url=>new Promise(resolve=>pending.push({url,resolve}));

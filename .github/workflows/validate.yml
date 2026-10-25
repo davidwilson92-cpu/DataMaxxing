@@ -25,6 +25,19 @@ jobs:
           node --test tests/ios_shell_client.cjs tests/analytics_commercial.test.cjs tests/ai_privacy_client.test.cjs
           node --test tests/security_forms_client.test.cjs
           for file in strategy analytics drafts; do node --check "nova/static/$file.js"; done
+      - name: Check mobile composer in an isolated browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/zova-browser" --no-audit --no-fund playwright@1.62.1
+          node "$RUNNER_TEMP/zova-browser/node_modules/playwright/cli.js" install --with-deps chromium
+          python tests/strategy_preview.py > "$RUNNER_TEMP/zova-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8784/health > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --silent --fail http://127.0.0.1:8784/health > /dev/null
+          NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/studio_mobile_layout.cjs
       - run: python -m pip_audit --format json -o dependency-audit.json
       - uses: actions/upload-artifact@v4
         if: always()

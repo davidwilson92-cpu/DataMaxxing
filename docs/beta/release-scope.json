@@ -5,7 +5,7 @@
   "files": {
     ".dockerignore": "c27d53b64f8406ee3a2d71aa78fb11cb20af34eb5d2781511e19bc45f140c53d",
     ".github/workflows/ios-beta.yml": "fed9551dd7024dc1411da8fd511ff3984344464b0546d929cc78571a9f48941d",
-    ".github/workflows/validate.yml": "ea28002c50765689f57c5c9f5e68612988a6e468e24bd2e2a285c62c28fa10d2",
+    ".github/workflows/validate.yml": "a7d821e9870edbd2cb27219533f4e3a426c29b7a2b27048999022ae02dcd3458",
     "AGENTS.md": "8d238a8ffd7a11b1b00b8ff3e196a171d5316d646ec0653c2fa83d3d196817ae",
     "Dockerfile": "7b0b7c205cdb3ba441f835057bc8019bb0dbb949330c12f14d276317446680ea",
     "app.py": "da8ca0fb649af377ecfa1cec44ee559897beb8afcd1180d2c79f3aca9d198d51",
@@ -108,7 +108,7 @@
     "nova/static/studio-design.css": "b6e7656067a204f782949653012325ccb40c0b1b33d0225e53b998b731f2f45c",
     "nova/static/studio-experience.css": "3c9de5ab34945ed51af8bb85ed6966c2da87d69774dc62194418d657b6b38ca9",
     "nova/static/studio-experience.js": "83cb4584f91c86d51ef31bb6936a2ab072a0d05c5af47518f1a5dced2d5b3b15",
-    "nova/static/studio-layout.css": "207813b3ae85abb52406b6d0475f9ca5e704e9f226f6148510826700b27c728a",
+    "nova/static/studio-layout.css": "f0d1ae9a8cc19377ab773332bb75ddcf91a117ea5e3469f2e369b22102c41b28",
     "nova/static/studio-publish.js": "e06c098363c1dbf7d35f7c30d1238dedbb9d869af890510c58d83f37ddb6b0a2",
     "nova/static/studio-state.js": "956f1728bf6d108e92264670f8868a7ad4aa5cf062f920d21f2c16b4f851cfd3",
     "nova/static/studio.js": "ecc76fca9f22adb478fdf0d9bb239a2f267c633b47a5b4d10724fb72d7d1e66b",
@@ -128,7 +128,7 @@
     "nova/templates/analytics.html": "3cf7cd2ff81f174ad4a644f9333136d27bb9c1a1cdd5e3294097902becbe349e",
     "nova/templates/app_nav.html": "beb14e5c2fdb7806ca8ea5f4959abfa89787b83da25e1756aaee6fae3da5f5b4",
     "nova/templates/auth.html": "2ccf43f8a9513408e9552f3cfd8ae8db9a089b0636048d578a121393ec3c8fdf",
-    "nova/templates/base.html": "1929278669f6ac4e29f584490697321919adecbcb539230035df0c0a79a91493",
+    "nova/templates/base.html": "56653c9e3afdf47e11ca538850295ddd37c7bb3d4b887ad5e06983c51ed33108",
     "nova/templates/brand_switch.html": "965868c7544e11f3b19ac6fabcbb652a3465c4723b20d8a2c515f103c1bbd3c4",
     "nova/templates/brands.html": "de02eda8faa5f7bb82726da18d6e434f3220eda806241cea9e4db75ff73aea5a",
     "nova/templates/connect.html": "8c774a4be3c17d0dfb21e8f359a3b8bc4f6d46d80b9e08f18a140ed6d96cc9c3",
@@ -196,11 +196,12 @@
     "tests/mobile_connect_client.test.cjs": "5693f358ffab98f1c0a972bf42953d9240c290de02a561c271e8e93b3645a1b5",
     "tests/next_move_journey.test.cjs": "507be9921bc61df52715d846676f9631edd118ad65d59573d69b77d595e006d5",
     "tests/next_move_revision.test.cjs": "849fff8cdabde2a115cc0ef14d0684ed9251c0ceb16a7a970fc563f264953ac1",
-    "tests/schedule_agenda.test.cjs": "826ba47c5018fb61dccb4d9cd7494851c3109a465ba93d9c031577a6628c32b9",
+    "tests/schedule_agenda.test.cjs": "51804302a9b35980f91a4a3ff7f61a31039c735e141208c7ea68e7ab2b6dac4f",
     "tests/security_forms_client.test.cjs": "e84599cca1adf294265a936b8b6e42bc034ed5e5cfe960e2d354019ce6b00a9b",
     "tests/strategy_onboarding.test.cjs": "68bca98c37a411311ce6b27feebd748ff477c28d10dc760fde6dc8953a194f6d",
     "tests/strategy_preview.py": "6aa7a46a0eb3a68d0fc5018ef3ede4cb6d99686aa59802409f80095f42294916",
     "tests/studio_clarity_client.cjs": "25b3c0b9a80d918864ca078394ea134a1d6c520aa96713607fa1e4c0ef74cd51",
+    "tests/studio_mobile_layout.cjs": "13493977ceb62259573c3cca93caeb6a3eb07d97dd1a9394dcc4f7c7d0903c2d",
     "tests/test_account_integrity.py": "311f4feb31739b6f2ceb757e85bea786a7d93f974762b27b6731d3a724061108",
     "tests/test_account_qa_20261025.py": "fdd8875188a8993e60adbd9e2c8e6d258248627be86b55e45b63454f59be379c",
     "tests/test_account_sections.py": "46339c8167a992020f60a0db4c6e44ffc8c2e15a5ca1ccbd0c7f1f6b2167523b",
@@ -261,6 +262,6 @@
     "tests/test_workspace_persistence.py": "8cce3a676c81c504d65424b90a14ca719d88407b4b8033ef8afa0490f2ccde61"
   },
   "release_class": "limited-beta",
-  "reviewed_update": "2026-10-25: tester and owner remediation: Schedule calendar and guarded edit/cancel/reschedule; separate saved Strategy and Next Move; voice persistence with consent-gated caption memory; account deletion initiation and protected operator queue; public Help/auth spacing; native routing/save/export authority guards; provider return progress; conditional Instagram Reel audio with explicit immutable review and private Story/photo export. Additive nullable/defaulted voice/audio columns only. No provider grants, public posts, billing activation, paid monitor or cloud migration. Full SQLite/PostgreSQL/restore/image audits and native macOS validation required. Real provider/device acceptance and operational erasure remain open; all 79 commercial findings retained.",
+  "reviewed_update": "2026-10-25: tester and owner remediation: Schedule calendar and guarded edit/cancel/reschedule; separate saved Strategy and Next Move; voice persistence with consent-gated caption memory; account deletion initiation and protected operator queue; public Help/auth spacing; native routing/save/export authority guards; provider return progress; conditional Instagram Reel audio with explicit immutable review and private Story/photo export. Additive nullable/defaulted voice/audio columns only. No provider grants, public posts, billing activation, paid monitor or cloud migration. Full SQLite/PostgreSQL/restore/image audits and native macOS validation required. Real provider/device acceptance and operational erasure remain open; all 79 commercial findings retained. Follow-up review: fix keyboard-height composer so text/Send remain visible with long input, four destinations and attachments; add isolated real-browser viewport regression; make focused-calendar-date assertion locale-order independent.",
   "source_candidate": "e2822d9 plus reviewed tester and owner remediation of 2026-10-25"
 }

@@ -30,3 +30,15 @@
 .simple-chat .conversation-topbar .next-move-launch:hover{color:#fff;background:linear-gradient(115deg,#191022,#43215e)}
 .ios-shell .conversation-topbar{padding-top:4px}
 @media(max-width:360px){.simple-chat #newChatBtn .new-post-label{display:none}.simple-chat #newChatBtn{min-width:44px}.simple-chat .studio-header-actions{gap:5px}}
+/* One height budget follows the visual viewport, including the iPhone keyboard.
+   Text and Send stay reachable while media and destination controls can scroll. */
+@media(max-width:760px){
+ .simple-chat .composer-wrap{display:flex;flex-direction:column;min-height:0;max-height:100%;flex:0 1 auto;overflow:visible}
+ .simple-chat .composer-wrap:has(.save-recovery:not([hidden])){max-height:100%;overflow:visible}
+ .simple-chat .chat-composer{flex:0 1 auto;min-height:124px;max-height:none;overflow-y:auto;grid-auto-rows:max-content;overscroll-behavior:contain;scroll-padding-block:70px;isolation:isolate}
+ .simple-chat #brief{grid-row:1;position:sticky;top:0;z-index:3;background:#fcfbfd;min-height:44px;max-height:clamp(44px,calc(var(--chat-height,100dvh) * .12),96px)}
+ .simple-chat .composer-toolbar{position:sticky;bottom:0;z-index:4;background:#fcfbfd;min-height:44px;box-shadow:0 -3px 0 #fcfbfd}
+ .simple-chat .composer-format select{width:125px;min-width:0}
+ .simple-chat .composer-footnote,.simple-chat .response-status{flex-shrink:0}
+ .simple-chat .save-recovery{flex:0 1 auto;min-height:0;overflow-y:auto}
+}
