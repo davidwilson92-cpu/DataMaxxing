@@ -1,6 +1,7 @@
 # Next Move intelligence — 26 October 2026
 
-Status: implementation complete, release validation in progress; NOT deployed.
+Status: shared web/iOS Studio release candidate f6d43dcc8a42040afc4d9ea712b2963a2213de64
+passes both mandatory application runs and native validation; NOT deployed.
 Scope: shared web/iOS Studio UI and recommendation service. No native binary,
 provider permissions, schema migration, billing change or public post.
 
@@ -39,10 +40,29 @@ provider permissions, schema migration, billing change or public post.
 4. Feedback stores the complete bounded request in existing JSON and an 80-character
    summary in the legacy field; no database schema change is required.
 
+## Final application validation
+- Exact candidate f6d43dcc8a42040afc4d9ea712b2963a2213de64.
+- PR application CI 40396580350: PASS.
+- Push application CI 40396577140: PASS.
+- SQLite: 719 passed / 2 skipped. PostgreSQL: 720 passed / 1 skipped.
+- 30 client tests plus Studio clarity, full mobile browser checks and Next Move
+  strategy save/reload/refine/history/draft handoff passed.
+- Synthetic PostgreSQL restore, hosting image smoke, constrained password-work
+  probe, installed-image dependency audit and exact beta-scope guard passed.
+- Both dependency audits found no known vulnerabilities in their tested inventories.
+- Native CI40396580393: PASS, including iPhone simulator tests and release compilation. No native source changed.
+- No production deployment, new TestFlight binary or real social publication.
+
 ## Evidence and limitations
+The first full run caught stale source checked_at metadata when an identical idea
+was regenerated. The fix preserves the idea ID and explicit feedback while updating
+its evidence. Corrected exact-candidate full runs pass. Final prompt-memory review
+also removed repeated strategy/voice snapshots from prior-action input; current
+strategy and voice are still supplied once, with concise creative history.
+
 Focused initial regression: 42 strategy/series/performance tests passed. Expanded
-intelligence and product tests initially 14 passed; additional regressions and full
-required CI pending. Browser journey and mobile screenshot inspection passed using
+intelligence/product set initially passed 14 tests; final focused trends/intelligence
+set passed 32. Full exact-candidate CI results are recorded above. Browser journey and mobile screenshot inspection passed using
 explicitly synthetic AI/provider responses; these are not live generation-quality
 or platform availability claims. Screenshots: evidence/20261026-next-move/.
 
@@ -52,3 +72,12 @@ acceptance. Public search is not full social listening; no automatic publishing,
 asset selection, conversion attribution or guaranteed engagement improvement.
 All 79 broader commercial findings stay retained. Render remains the host, customer
 charges/plan enforcement stay disabled and paid monitoring stays inactive.
+
+
+## Publication handoff
+Deploy the validated runtime candidate f6d43dcc8a42040afc4d9ea712b2963a2213de64
+(or an identical validated runtime digest plus documentation only) only when the
+owner asks to publish. Follow the existing Render backup/release procedure, retain
+scrypt-v2 compatibility, then verify a controlled consenting test account's Next
+Move and draft handoff. Do not post publicly. No new iOS binary is produced by
+this shared Studio release; existing TestFlight state is unchanged.

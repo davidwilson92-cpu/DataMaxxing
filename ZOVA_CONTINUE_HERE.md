@@ -1,3 +1,22 @@
+# Next Move candidate ready for shared Studio publication — 26 October 2026
+
+User requested implementation, iteration and readiness to publish, not deployment.
+Candidate f6d43dcc8a42040afc4d9ea712b2963a2213de64 is pushed on the existing branch/PR34.
+Application PR CI40396580350 and pushCI40396577140 both PASS: 719 SQLite / 720
+PostgreSQL tests, client/mobile browser checks, synthetic recovery, image/audits
+and scoped beta guard. Native CI40396580393 also PASSED simulator tests and iPhone release
+compilation; no native source changed. See docs/beta/NEXT_MOVE_INTELLIGENCE_20261026.md for implementation,
+iteration evidence and limitations. Production remains a9fe5a7; no new TestFlight.
+
+Next Move preserves saved strategy for quick topics, uses full current voice and
+approved examples, automatically refreshes bounded performance, considers upcoming
+posts, retains recent idea history, and provides optional one-box refinement.
+Failures retain the original idea/input; no automatic posting or schedule changes.
+Provider/AI response tests are synthetic; live acceptance belongs after deployment.
+Keep Render, customer charges/limits OFF, paid monitor inactive, all79 broader gaps.
+
+---
+
 # Commercial assurance progress — 26 October 2026
 
 Read docs/privacy/IMPLEMENTATION_STATUS_20261026.md and docs/privacy/README.md.
