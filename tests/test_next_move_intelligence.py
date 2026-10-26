@@ -44,6 +44,8 @@ def test_every_path_receives_strategy_voice_performance_and_schedule(monkeypatch
     data=captured[0]
     assert data['strategy']['goal']==PROFILE['goal'] and data['strategy']['topic']=='A playful new angle'
     assert data['strategy']['audience']==PROFILE['audience']
+    assert 'strategy_context' not in data['feedback'][0]['action']
+    assert 'voice_context' not in data['feedback'][0]['action']
     assert data['voice']['writing_tone']=='Dry humour' and data['voice']['things_to_avoid']=='No hype'
     assert 'An approved caption.' in data['voice']['example_posts']
     assert len(data['performance']['evidence']['posts'])==8, 'Use the cohort, not only winning posts'
