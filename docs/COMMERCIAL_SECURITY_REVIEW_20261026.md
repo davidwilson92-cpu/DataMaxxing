@@ -17,6 +17,7 @@ customer routes/forms/assets, dependency inventory and native key storage.
 
 | Priority | Finding | Change and verification |
 | --- | --- | --- |
+| High | A reset racing with sign-in could let a checked old password mint a session at the newer credential version. | Conditional credential updates and session issuance bound to the verified version prevent both interleavings. New hashes use scrypt N=2^14/r=8/p=5; legacy hashes verify and upgrade on successful login. Existing sessions remain valid for work-factor-only upgrades. |
 | High | Local upload URLs were permanent bearer links; raw delivery did not check a registered asset or active owner. | Owner access or a filename-bound HMAC URL expiring within one hour is now required. Provider URLs are refreshed at dispatch. Check registered assets, active owners, file containment/type/size; reject symlinks and external-file reads. Tests cover anonymous/other-account access, expiry, tampering, substituted filenames and deactivated owners. |
 | Medium | Upload storage budget was filtered to the selected brand. | Sum the explicitly identified user's uploads across all brands under the existing user lock. Cross-brand exhaustion and another user's independent allowance tested. |
 | Medium | AI insights missed the stricter AI request bucket. | Use the same route classification for AI permission and AI rate limiting. Rejection tested before handler execution. |
@@ -26,7 +27,7 @@ customer routes/forms/assets, dependency inventory and native key storage.
 | Low | Local raw-media paths could be retained in application access logs. | Redact filenames as well as existing secret query strings. |
 | Low | Unused unrestricted remote-fetch helper and duplicated local file checks. | Remove the unused helper; share the managed-file boundary check. |
 
-No schema, provider permission, customer data, pricing enforcement or native
+No schema, provider permission, bulk customer-data migration, pricing enforcement or native
 runtime change is part of these bounded fixes. No real post was sent. S3 public
 base configuration remains a separate deployment concern; the current Render
 local-media protection must not be represented as a universal private-bucket audit.
@@ -49,8 +50,8 @@ local-media protection must not be represented as a universal private-bucket aud
 1. **Privacy decisions and evidence (owner/legal):** approve a data inventory with purposes/lawful bases, actual retention periods, supplier processing agreements and international-transfer safeguards. The current generic retention wording is not a completed retention programme. Implement approved purge periods and verify backup expiry/deletion replay. Do not invent legal assurances in the public notice.
 2. **Operational ownership (owner/engineering):** complete an incident/restore exercise with measured recovery targets and deletion queue ownership. Synthetic restore coverage and yesterday's backup are useful but do not prove a current production recovery drill. The owner declined the paid monitor; it remains inactive. Record a workable manual response arrangement or separately approve monitoring.
 3. **Security assurance (engineering/independent reviewer):** finish privileged-account MFA/least-privilege evidence, rotation inventory and independent penetration testing. Broad inline-script CSP, incomplete tamper-resistant security audit coverage, full dependency locking, upload metadata/scanning policy and load testing remain retained findings. These are not all evidence of an exploitable defect, but have not been closed by this review.
-4. **Exposed tester credential (owner):** the existing tracker records a credential in a tester recording. Restrict/redact the recording and rotate the affected password; do not put its value in evidence. This review does not assert that remediation occurred.
-5. **Release acceptance (engineering/tester):** run exact-candidate PostgreSQL/image/native checks; investigate any repeated native cookie failure. Verify signed local media fetching in the deployed environment without a real post. Confirm all legacy local-media URL origins match PUBLIC_BASE_URL. Before switching raw-media access rules, drain in-flight provider fetches and retain rollback evidence. A server deployment does not create a new TestFlight binary.
+4. **Exposed tester credential — owner-confirmed closed:** on 26 October the owner confirmed the password was changed and the recording secured. This is owner attestation, not independent inspection of the password or recording.
+5. **Release acceptance (engineering/tester):** run exact-candidate PostgreSQL/image/native checks; investigate any repeated native cookie failure. Verify signed local media fetching in the deployed environment without a real post. Confirm all legacy local-media URL origins match PUBLIC_BASE_URL. Before switching raw-media access rules, drain in-flight provider fetches and retain rollback evidence. A server deployment does not create a new TestFlight binary. Password hash upgrades are lazy on successful login/new credentials; rollback must retain support for scrypt-v2 hashes, never revert to a binary that only understands the old hash. Test the CPU profile on the Render-sized host before enabling the commercial workload.
 
 The 79-item historical register is retained unchanged; individual bounded fixes
 above do not automatically resolve those broader findings. Render remains the
@@ -60,6 +61,7 @@ host. Live charges, subscription enforcement and paid monitoring remain disabled
 
 - [OWASP ASVS 5 file handling](https://github.com/OWASP/ASVS/blob/master/5.0/en/0x14-V5-File-Handling.md)
 - [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html)
+- [OWASP password storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
 - [ICO: the right to be informed](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/individual-rights/right-to-be-informed/)
 
 These references inform the review, not an assertion of audited compliance.

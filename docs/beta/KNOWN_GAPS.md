@@ -6,12 +6,17 @@ See ../COMMERCIAL_SECURITY_REVIEW_20261026.md. The bounded candidate replaces
 permanent anonymous local-media links with owner access / expiring provider
 capabilities, checks registered media and active owners, applies storage limits
 across brands, fixes insights rate limits, unsafe recent-post links and signed-out
-page redirects, and corrects factual AI privacy disclosures. Exact-candidate
+page redirects, and corrects factual AI privacy disclosures. Sign-in/password
+updates now bind session issuance to the verified credential version; new hashes
+use a stronger scrypt profile and legacy hashes upgrade on successful sign-in.
+Rollback must keep scrypt-v2 verification support. The owner confirmed the exposed
+tester credential was changed and the recording secured on 26 October.
+Exact-candidate
 validation and release acceptance must be recorded before calling it live.
 The prior native CI cookie-delivery assertion failed; a fresh native result is
 required, and recurrence needs investigation. Privacy retention/DPA decisions,
-operational recovery evidence, independent security assurance, tester credential
-rotation and the 79 historical findings remain open where not evidenced.
+operational recovery evidence, independent security assurance and the 79 historical
+findings remain open where not evidenced.
 Customer charges and paid monitoring remain disabled. Do not migrate hosting.
 
 ## Tester and owner remediation — 25 October 2026

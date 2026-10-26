@@ -101,6 +101,8 @@ jobs:
         run: |
           docker run --rm --network none zova-release python -m pip freeze --all > runtime-requirements.txt
           python -m pip_audit --disable-pip --no-deps -r runtime-requirements.txt --format json -o runtime-dependency-audit.json
+      - name: Probe password work in the beta host resource budget
+        run: docker run --rm --network none --memory 512m --cpus 0.5 zova-release python scripts/check_password_budget.py
       - name: Smoke-test isolated hosting image
         run: |
           docker run -d --name zova-smoke -p 8772:10000 -e DATABASE_URL=sqlite:////tmp/synthetic.db -e PUBLIC_BASE_URL=http://localhost:8772 -e SESSION_SECRET=synthetic-ci-only -e CREDENTIAL_ENCRYPTION_KEY=eV7ZGbkgONCU5t6fVtxgBMvCKx6-4UlAHWVHN2LoflE= -e REQUIRE_SUBSCRIPTION=false zova-release

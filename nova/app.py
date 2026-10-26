@@ -73,9 +73,9 @@ def template_context(request: Request, user: User | None = None, **kwargs: Any) 
     return {"request": request, "user": user, "brand": brand, "native_shell": native_shell, "connections": connection_options(), **customer_service.context(), **kwargs}
 
 
-def set_user_cookie(response: RedirectResponse | JSONResponse, user: User) -> None:
+def set_user_cookie(response: RedirectResponse | JSONResponse, user: User, expected_auth_version: int | None = None) -> None:
     response.set_cookie(
-        "nova_session", make_user_session(user.id), max_age=30 * 86400, httponly=True,
+        "nova_session", make_user_session(user.id, expected_auth_version=expected_auth_version), max_age=30 * 86400, httponly=True,
         secure=base_url().startswith("https://"), samesite="lax", path="/",
     )
 
@@ -350,8 +350,17 @@ def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Fo
     user=db.scalar(select(User).where(User.email==email.strip().lower()))
     destination=safe_login_next(next)
     if not user or not user.active or not verify_password(password,user.password_hash): return RedirectResponse("/login?error=Incorrect+email+or+password&next="+quote_plus(destination),303)
-    user.last_login_at=utcnow(); db.commit()
-    resp=RedirectResponse(destination,303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
+    verified_version, verified_hash = user.auth_version, user.password_hash
+    values = {'last_login_at': utcnow()}
+    if verified_hash.startswith('scrypt$'):
+        values['password_hash'] = hash_password(password)
+    changed = db.execute(update(User).where(User.id == user.id, User.active.is_(True),
+        User.auth_version == verified_version, User.password_hash == verified_hash).values(**values).execution_options(synchronize_session=False))
+    if changed.rowcount != 1:
+        db.rollback()
+        return RedirectResponse('/login?error=Your+account+changed.+Sign+in+again.', 303)
+    db.commit()
+    resp=RedirectResponse(destination,303); set_user_cookie(resp,user,verified_version); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 
 @app.post("/logout")
 def logout(request: Request):
@@ -719,11 +728,16 @@ def change_password(request: Request, current_password: Annotated[str, Form()], 
     if not verify_password(current_password, user.password_hash): return RedirectResponse("/account?error=current_password", 303)
     if not 10 <= len(new_password) <= 256: return RedirectResponse("/account?error=password_length", 303)
     if new_password != new_password_confirmation: return RedirectResponse("/account?error=password_match", 303)
-    user.password_hash = hash_password(new_password)
-    user.auth_version += 1
+    verified_version = user.auth_version
+    changed = db.execute(update(User).where(User.id == user.id, User.active.is_(True),
+        User.auth_version == verified_version, User.password_hash == user.password_hash).values(
+            password_hash=hash_password(new_password), auth_version=User.auth_version + 1).execution_options(synchronize_session=False))
+    if changed.rowcount != 1:
+        db.rollback()
+        raise HTTPException(409, 'Your account changed. Sign in again before changing your password.')
     db.commit()
     response = RedirectResponse("/account?saved=password", 303)
-    set_user_cookie(response, user)
+    set_user_cookie(response, user, verified_version + 1)
     return response
 
 @app.post("/api/voice/scan-socials")
