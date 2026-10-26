@@ -80,7 +80,13 @@ web/API/iOS split, staging requirements, coverage exclusions, retest scope,
 evidence custody and terms. Owner selects supplier and budget before appointment.
 
 [NCSC penetration testing guidance](https://www.ncsc.gov.uk/guidance/penetration-testing).
-This brief has not been sent; no independent assessment has been completed.
+A scoped quotation message based on this brief was sent on 26 October 2026 to
+info@cobalt.io and info@kobalt.io after David explicitly approved quote requests.
+Resend reports both delivered. Replies go to david@zova-social.com; no testing,
+access, contract or purchase was authorised. See the
+[exact sent message](evidence/security-quote-message-20261026.txt) and
+[delivery evidence](evidence/security-quotes-delivered-20261026.png).
+No independent assessment has been completed.
 
 ## Quotation candidates (no endorsement or appointment)
 
@@ -95,4 +101,5 @@ Public service descriptions checked 26 October 2026:
 
 These are different companies. Compare named tester competence, manual effort,
 actual coverage, evidence protection, retest, total cost/tax and timing before
-selection. No price commitment, message, data upload or access grant was made.
+selection. Only the non-binding quote messages have been sent; no price commitment,
+credentials, customer data, private findings or access grant was provided.

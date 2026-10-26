@@ -1,7 +1,9 @@
 # Retention, deletion and processing inventory
 
 Version 1, 26 October 2026. Owner: David, Zova Social Limited.
-**Proposed for approval; new periods are not yet a live customer promise.**
+**Adopted as internal policy by David on 26 October 2026, version `2026-10-26-v1`.**
+New periods are not yet a verified live customer promise. Privacy review and
+implementation of other retention categories remain outstanding.
 The existing seven-day assisted account-deletion target is already owner-approved.
 No customer account or content is erased by preparing this document.
 
@@ -13,16 +15,16 @@ retain full content indefinitely because a billing or delivery identifier is nee
 Security metadata and pseudonymous IDs can still be personal data.
 
 UK GDPR does not set a single duration for all records. Each period below is an
-operational proposal requiring purpose/necessity review, not a statutory period.
+internal operational rule still requiring purpose/necessity review, not a statutory period.
 [ICO storage limitation](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/data-protection-principles/a-guide-to-the-data-protection-principles/storage-limitation/).
 
-| Category / actual stores | Purpose and proposed basis for review | Proposed rule | Current implementation / required work |
+| Category / actual stores | Purpose and proposed basis for review | Internal policy rule | Current implementation / required work |
 | --- | --- | --- | --- |
 | Account, identity, preferences; `nova_users`, `zova_auth_identities`, brands | Account service: contract; abuse controls: legitimate interests | While account is used; review inactive accounts after 12 months, notify before any closure; never delete solely from last-login age yet | Hashes and versioned sessions; assisted deletion scrubs identity. No inactivity notification/closure workflow exists |
 | Drafts, Studio conversation, reviews, schedules, recurring series, strategy/actions, voice/examples/learned style | User-requested creation/planning: contract; confirm treatment of third-party people in content | While account active or until user removal; active-store account erasure target seven days after a verified request, subject to reconciled blockers | Saved in owner/brand scope; eraser scrubs/deletes these categories. No arbitrary 30-day purge of working drafts |
 | Uploads, filenames, observations, performance snapshots, post excerpts | Media drafting, publishing and requested analytics: contract, with AI permission | Follow content/account lifecycle; remove derivatives with originals on erasure. Performance snapshot overwritten by refresh; expired usefulness is not automatic physical deletion | Original uploads can contain metadata; sampled frames go to AI when allowed. Four historical upload records have missing files. No content-scanning or universal metadata-stripping assurance |
 | Social IDs and encrypted access/refresh/audio credentials | Authorised platform connection: contract | Clear local credentials at unlink; erase with account after outcome reconciliation; provider grant revocation tracked separately | Local unlink clears credentials; account request blocks new use. Provider-held posts/grants are not automatically erased everywhere |
-| Web recovery and email-verification token hashes, OAuth/Apple state | Sign-in/security: contract and legitimate interests | Eligible for cleanup 24 hours after expiry; daily sweep would add up to 24 hours. OAuth/Apple state is eligible 24 hours after creation, beyond its existing 10/20-minute validity. Keep revocation evidence until its authority expires plus 24 hours | Expiry enforced now. Bounded operator helper prepared; daily execution is not activated or evidenced. Used state must not be made reusable |
+| Web recovery and email-verification token hashes, OAuth/Apple state | Sign-in/security: contract and legitimate interests | Eligible for cleanup 24 hours after expiry; daily sweep would add up to 24 hours. OAuth/Apple state is eligible 24 hours after creation, beyond its existing 10/20-minute validity. Keep revocation evidence until its authority expires plus 24 hours | Expiry enforced now. Approved bounded operator cleanup completed 26 October; daily execution is not activated or evidenced. Used state must not be made reusable |
 | Native sessions, refresh history, grants and browser handoff receipts | Secure iPhone access: contract and legitimate interests | Keep refresh-reuse evidence for entire session lifetime; remove expired session family. Preserve consumed browser receipts for their existing 20-minute navigation grace | Existing native cleanup supports expiry and browser-return grace; never prune a used refresh token while its session is valid |
 | Pending social confirmation encrypted payloads | User confirms correct account before connecting: contract | Ten-minute authority; remove expired payloads on worker cycle/next connection | Existing scheduler/connection cleanup. Verify worker health rather than promise instantaneous deletion |
 | Request-rate buckets | Abuse prevention: legitimate interests | Delete at window expiry; no permanent raw-IP history for this purpose | Existing request cleanup; hosting logs are separate |
@@ -70,10 +72,19 @@ proposal as though all purge jobs, contracts and backup controls already exist.
 
 ## Approval and evidence
 
-Policy owner decision/date: **pending**. Privacy review: **pending**. Business/service
-address: **pending**. New purge activation: **not enabled**. Implementation receipts,
-job cadence, exception review, sample erasure verification and backup reconciliation
-are required to close the relevant rows. Review quarterly during beta.
+Policy owner decision/date: **approved, 26 October 2026**, explicit chat reply:
+"Approve policy and expired-token cleanup". Privacy review: **pending**.
+Business/service address: **pending**. Only the tested operator cleanup was enabled
+for a single bounded invocation: 77 OAuth states, one email-verification token,
+three password-reset tokens and seven expired session-revocation records removed.
+The subsequent read-only audit found zero eligible records across all five tables.
+No active content, native session or refresh-reuse history was in scope.
+
+Daily scheduling is **not enabled**; other category purges remain pending
+implementation and legal review. Receipts are in
+[the implementation record](IMPLEMENTATION_STATUS_20261026.md). Job cadence,
+exception review, sample erasure verification and backup reconciliation are still
+required to close the relevant rows. Review quarterly during beta.
 
 ## Prepared technical control
 

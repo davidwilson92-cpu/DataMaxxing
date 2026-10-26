@@ -1,3 +1,28 @@
+# Commercial assurance progress — 26 October 2026
+
+Read docs/privacy/IMPLEMENTATION_STATUS_20261026.md and docs/privacy/README.md.
+Owner confirmed Zova Social Limited, approved internal retention policy
+2026-10-26-v1 and expired-token cleanup only. Bounded reviewed operator run removed
+88 expired records; follow-up read-only audit zero. No content/native sessions
+affected and no daily job enabled. Other category purges pending implementation
+and privacy review. Business/service address and personal Gmail vs Workspace
+clarification requested; never invent these details.
+
+Fresh component recovery: 44 tables/623 rows and 41 encrypted values verified;
+25 available files restored, four historical files still missing. Overall
+incomplete: managed-backup/key-recovery/journal/usable-app exercise still required.
+Scratch/tools removed, health200, charges off. No new hosting resources/deployment.
+
+Owner explicitly authorised non-binding quotes only from Cobalt and Kobalt. Scope
+emails delivered to info@cobalt.io and info@kobalt.io; reply-to david@zova-social.com.
+Do not resend just because no quote yet. No vendor access, purchase, terms or test
+authorisation. Delivery receipts and exact message saved in docs/privacy/evidence/.
+Candidate70713cf application CI40309377569 and nativeCI40309377558 passed. Runtime
+still a9fe5a7, Render retained, Stripe test-only, paid monitor inactive. Broader
+79-item register preserved; this is not full commercial or independent sign-off.
+
+---
+
 # Security update LIVE — 26 October 2026
 
 Owner requested publication. Render now runs a9fe5a7a4724231b3491517abed35224f3f8d011,

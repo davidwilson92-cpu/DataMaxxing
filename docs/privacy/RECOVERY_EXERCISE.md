@@ -77,6 +77,31 @@ previously owner-confirmed; the paid monitor remains inactive.
 
 ## Retained blockers
 
+### Fresh exercise, 26 October 2026
+
+Runtime: `a9fe5a7a4724231b3491517abed35224f3f8d011`. The existing reviewed
+rehearsal helper used a consistent read-only snapshot and private Unix-socket
+PostgreSQL 18 scratch target. Official signed PostgreSQL/Debian tools were extracted
+to a disposable directory, not installed as a service. No app, worker or network
+listener started; no provider calls or source writes occurred.
+
+- All 44 tables / 623 rows matched after restore; 41 encrypted values verified.
+- All 25 available files / 25,492,470 bytes passed copy/restore checks.
+- Four historical media records still had no source files. Overall **incomplete**.
+- Component operation took 4.67 seconds; this is **not** an end-to-end RTO.
+- Customer scratch copies and temporary tools removed; no recovery scratch remained.
+- Production health returned HTTP 200 after cleanup. Live charging remained off.
+
+The receipt and screenshot are stored in
+[recovery evidence](evidence/recovery-20261026.json) and
+[the recorded terminal result](evidence/recovery-20261026.png).
+This exercise used a fresh logical snapshot, not a managed backup/PITR restore.
+It used the current environment key, not independently recovered keys. No usable-app
+or external deletion-journal replay was claimed. It does not resolve the blockers
+below or supersede the need for a compatible historical DB/media backup exercise.
+
+### Still required
+
 - Four historical missing media files require originals/older backups or an honest
   irrecoverable-loss decision; do not fabricate files or delete records to pass.
 - Managed DB/disk restore and independent key access need their own evidence.

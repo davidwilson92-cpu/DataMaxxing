@@ -1,0 +1,18 @@
+Hello,
+
+Please route this to your application-security sales team. Zova Social Limited requests a NON-BINDING, fixed-price quote for an independent manual web/API and iOS security assessment, including one remediation retest. We are a self-funded startup preparing for commercial release.
+
+Product: https://zova-social.com, an AI social media manager, with a shared backend on Render and iOS app com.zovasocial.app distributed through TestFlight. Customer charges are disabled and Stripe is test-only.
+
+Please scope authenticated testing against relevant OWASP ASVS and MASVS requirements: cross-account/brand isolation; login, optional MFA, password recovery and session invalidation; social OAuth, account confirmation and iOS return flows; uploads and signed media URLs; XSS/CSRF/SSRF and unsafe links; AI data/prompt boundaries; publishing review, scheduled authorisation and duplicate/unknown-outcome prevention; test Stripe webhook authentication/replay; native storage, Keychain and link handling.
+
+Use isolated synthetic accounts/data and controlled provider fixtures. No customer data or credentials, destructive/load testing, public posts, real payments or testing of third-party infrastructure. Exact environment, build, dates, rate limits, tester IPs and a written authorisation must be agreed separately before any testing. This enquiry grants NO testing permission, access, purchase or contract commitment.
+
+Please include price/currency/tax, manual testing days, web/API/iOS breakdown, assumptions and exclusions, earliest availability, named tester qualifications/experience, insurance, evidence custody/deletion arrangements and retest terms. We need a report with reproducible findings, severity, remediation guidance and explicit coverage limitations. Please quote a one-off engagement; no subscription has been requested.
+
+Please reply by email to david@zova-social.com with your quote or scoping questions. Please do not add this address to marketing lists.
+
+Thank you,
+David Wilson
+Zova Social Limited
+david@zova-social.com
