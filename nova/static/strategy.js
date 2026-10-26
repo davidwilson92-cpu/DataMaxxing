@@ -238,7 +238,7 @@ async function refineMove(id,button){await strategyTask(button,async epoch=>{
  if(!refinement){field.focus();throw Error('Tell Zova what to change.');}
  moveRefinements.set(id,refinement);strategyStatus('Shaping your idea…');
  await requestMoves(epoch,true,true,{refine_action_id:id,refinement});
- if(epoch===strategyViewEpoch){moveRefinements.delete(id);strategyStatus('');}
+ if(epoch===strategyViewEpoch){if(moveRefinements.get(id)===refinement){moveRefinements.delete(id);strategyStatus('');}else strategyStatus('Your newer change is kept with the previous idea.');}
 });}
 async function openLinkedDraft(url,button,existingDraftId=0){
  if(sendingMessage||mediaUploading||studioLoading){strategyStatus('Finish the current upload or response first.');return;}

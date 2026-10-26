@@ -99,7 +99,12 @@ def recommendation_context(db, uid):
         feed = recent_posts_for_user(db,uid,limit=30,quick=True)
         if not feed.get('posts') and feed.get('unavailable'):
             raise ValueError('Provider sample unavailable')
-        accounts = {conn.platform:{'connected':True} for conn in connections}
+        db.expire_all()
+        latest_connections = db.scalars(select(SocialConnection).where(SocialConnection.user_id==uid,
+            SocialConnection.active.is_(True))).all()
+        if connection_stamp(latest_connections) != stamp:
+            return {'available':False,'note':'Connections changed during refresh. These ideas use your direction and voice.'}
+        accounts = {conn.platform:{'connected':True} for conn in latest_connections}
         view = dashboard(accounts,feed,window_days=30)
         record(db,uid,view)
         return current_context()

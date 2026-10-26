@@ -157,3 +157,26 @@ def test_changed_social_identity_invalidates_cached_performance(monkeypatch):
         monkeypatch.setattr(social,'recent_posts_for_user',lambda *a,**kw:(_ for _ in ()).throw(RuntimeError('unavailable')))
         result=performance.recommendation_context(db,uid)
         assert not result['available'] and 'evidence' not in result
+
+
+def test_missing_counters_are_not_performance_evidence(monkeypatch):
+    c,uid,*_=account();connect(uid)
+    empty=feed()
+    for post in empty['posts']:
+        for key in ('likes','comments','shares','views'):post[key]=None
+    monkeypatch.setattr(social,'recent_posts_for_user',lambda *a,**kw:empty)
+    with SessionLocal() as db:
+        result=performance.recommendation_context(db,uid)
+        assert not result['available'] and result['evidence']['posts']==[]
+
+
+def test_connection_changed_during_refresh_discards_the_sample(monkeypatch):
+    c,uid,*_=account();cid=connect(uid)
+    def changing(*args,**kwargs):
+        with SessionLocal() as other:
+            other.get(SocialConnection,cid).active=False;other.commit()
+        return feed()
+    monkeypatch.setattr(social,'recent_posts_for_user',changing)
+    with SessionLocal() as db:
+        assert not performance.recommendation_context(db,uid)['available']
+        assert db.scalar(select(PerformanceSnapshot).where(PerformanceSnapshot.user_id==uid)) is None
