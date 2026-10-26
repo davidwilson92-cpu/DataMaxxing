@@ -1,0 +1,108 @@
+[
+  {
+    "path": "/health",
+    "status": 200,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/",
+    "status": 200,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/login",
+    "status": 200,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/signup",
+    "status": 200,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/guide",
+    "status": 200,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/security",
+    "status": 200,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/privacy-policy",
+    "status": 200,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/terms-of-service",
+    "status": 200,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/refund-policy",
+    "status": 200,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/data-deletion",
+    "status": 200,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/studio",
+    "status": 303,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/drafts",
+    "status": 303,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/analytics",
+    "status": 303,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/account",
+    "status": 303,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/brands",
+    "status": 303,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/account/deletion",
+    "status": 303,
+    "frame_protection": "DENY",
+    "cache_control": "no-store"
+  },
+  {
+    "path": "/static/studio.js?v=20261026-links",
+    "status": 200,
+    "frame_protection": "DENY",
+    "cache_control": null
+  },
+  {
+    "path": "POST /api/media signed out",
+    "status": 401
+  }
+]

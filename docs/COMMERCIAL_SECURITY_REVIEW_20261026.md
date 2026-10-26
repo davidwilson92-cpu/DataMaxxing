@@ -1,5 +1,11 @@
 # Commercial engineering review — 26 October 2026
 
+**Publication update:** the owner subsequently authorised deployment. Runtime
+a9fe5a7 is now live on Render, with post-release checks passed. See
+[release acceptance](beta/SECURITY_RELEASE_20261026.md). The pre-release notes
+below remain the historical review; this deployment does not close the broader
+commercial-readiness conditions.
+
 ## Verdict
 
 Continue the controlled beta with customer charges disabled. Do not describe this

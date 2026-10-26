@@ -1,3 +1,22 @@
+# Security update LIVE — 26 October 2026
+
+Owner requested publication. Render now runs a9fe5a7a4724231b3491517abed35224f3f8d011,
+deployment dep-dbfieva9lscs73a97u80 (10:12:13 UTC start, 52.5 seconds).
+Fresh Render-managed DB export completed (listed 10:06 UTC). Both application CI
+runs and native CI passed. Live public/protected-route checks, signed media
+delivery/access rejection and existing test-account session passed. Account,
+Studio, loaded Schedule calendar and Performance work in the side browser.
+See docs/beta/SECURITY_RELEASE_20261026.md for exact evidence and retained gaps.
+
+Customer charges, subscription enforcement and plan limits stay OFF; Stripe is
+test-only, paid monitor inactive, hosting remains Render. No real social post or
+new TestFlight binary. TestFlight last known 0.1.0 (11). Preserve scrypt-v2
+verification in any rollback; old images alone cannot read newly upgraded hashes.
+The earlier NOT-deployed review entry below is historical and superseded by this
+release record. All broader commercial/QA findings remain retained.
+
+---
+
 # Security/privacy/functionality review — 26 October 2026
 
 Owner requested an engineering review while external testers handle UX. Read
