@@ -200,7 +200,7 @@
     "scripts/prepare_database.py": "b21a389bd63c442925231bcbad9538703cd5ff638c1e2f2ae3e30cd5c59102ae",
     "scripts/process_deletion.py": "2e86e35e2e47d143ecd787a183ea5156192cafb4ae5afb9899d18ba5fc678889",
     "scripts/rehearse_render_restore.py": "bfdb39c0fcbf48a2ec1f5b5f5332384607c0bcbb6eb09f678dc8ed967678b81b",
-    "scripts/synthetic_recovery.py": "0f3e4025d1374f565822bd206a0ef8080be8f7a36b750029d2d1ddc38f4f1a57",
+    "scripts/synthetic_recovery.py": "471cb7f57f3f3d6de40960d59a6dcadebbea9c8d157546d4cdef278ec4fe460d",
     "scripts/unit_economics.py": "0a8000a24aacf5eb089d1abf3313944b41db98ad0fb7dcadeb84340fa8e4cb45",
     "tests/account_voice_client.test.cjs": "3fdbc5d8f5fc19d1383020d87b3a5e65db291c64d5ca0590550cdd8b0bf520b5",
     "tests/ai_privacy_client.test.cjs": "e0b82e2e294b58eb628b0ae1357d2e921066dcebef709591fb1c4ef19505001f",

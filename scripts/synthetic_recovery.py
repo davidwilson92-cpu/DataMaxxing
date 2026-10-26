@@ -44,6 +44,7 @@ def run(mode):
         state = json.loads((root / 'private-state.json').read_text())
         url = url.set(database='zova_test_restored')
     os.environ.update(DATABASE_URL=url.render_as_string(hide_password=False),
+                      UPLOAD_DIR=str(root),
                       CREDENTIAL_ENCRYPTION_KEY=state['encryption_key'],
                       SESSION_SECRET=state['session_secret'],
                       ZOVA_SCHEDULER_MODE='disabled', ZOVA_WEB_REPLICAS='1',
