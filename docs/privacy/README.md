@@ -6,6 +6,11 @@ number have not been supplied or independently verified. Do not invent them or
 publish a private address. The current instruction authorises preparation and
 engineering, not signature of a supplier contract or purchase of a security test.
 
+Public support email: **support@zova-social.com**, confirmed by David on
+26 October. This confirms an email contact, not a business postal address or
+whether the receiving Gmail account is personal Gmail or Google Workspace.
+Security quote replies remain directed to david@zova-social.com as authorised.
+
 ## Owner's short version
 
 | Work | Deliverable | Closure requirement |

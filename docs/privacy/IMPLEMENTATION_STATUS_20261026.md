@@ -1,6 +1,9 @@
 # Commercial assurance implementation — 26 October 2026
 
 Client: Zova Social Limited. Owner: David, david@zova-social.com.
+David confirmed public support email support@zova-social.com. Business postal
+address and receiving Gmail account type remain unconfirmed; the email response
+does not supply those facts. Quote reply-to remains david@zova-social.com.
 
 ## Completed
 
