@@ -301,8 +301,10 @@ def recommend(request: Request, body: RecommendationRequest = RecommendationRequ
         identity['source_url'] = (a.get('source') or {}).get('url')
         key = hashlib.sha256((str(revision)+json.dumps(identity,sort_keys=True)).encode()).hexdigest()
         previous=db.scalar(select(StrategyAction).where(StrategyAction.action_key==key))
-        if previous and previous.status=='replaced':
-            previous.status='open'; previous.payload_json=json.dumps(a)
+        if previous and previous.status in ('open','replaced'):
+            retained_feedback = json.loads(previous.payload_json).get('creative_feedback')
+            previous.status='open'
+            previous.payload_json=json.dumps({**a,**({'creative_feedback':retained_feedback} if retained_feedback else {})})
         if not previous:
             db.add(StrategyAction(user_id=uid,action_key=key,strategy_revision=revision,payload_json=json.dumps(a)))
     db.commit()
