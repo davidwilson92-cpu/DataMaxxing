@@ -71,12 +71,13 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             if user and required() and uses_ai(path) and not await run_in_threadpool(permitted, user.id):
                 response = JSONResponse({'detail':'Choose whether to use AI before sending content. Your content has not been sent to AI.', 'code':'ai_permission_required'},403)
             identity = f'user:{user.id}' if user else f'ip:{request.client.host if request.client else "unknown"}'
-            maximum, seconds = (30,300) if path in {'/login','/signup','/forgot-password','/reset-password','/api/v1/auth/token','/api/v1/auth/refresh'} else (120,60)
+            auth_request = path in {'/login','/signup','/forgot-password','/reset-password','/api/v1/auth/token','/api/v1/auth/refresh'}
+            maximum, seconds = (30,300) if auth_request else (120,60)
             if path.startswith('/billing/'):maximum,seconds=10,60
             ai_request=uses_ai(path)
             if ai_request:maximum,seconds=20,60
             maximum *= max(1,int(os.environ.get('RATE_LIMIT_SCALE','1')))
-            if response is None and not await run_in_threadpool(allowed_request, f'{identity}:{"auth" if path in {"/login","/signup","/forgot-password","/reset-password"} else "ai" if ai_request else "mutations"}', maximum, seconds):
+            if response is None and not await run_in_threadpool(allowed_request, f'{identity}:{"auth" if auth_request else "ai" if ai_request else "mutations"}', maximum, seconds):
                 response = JSONResponse({'detail':'Too many requests. Please wait before trying again.'},429,headers={'Retry-After':str(seconds)})
         if response is None:
             response = await call_next(request)

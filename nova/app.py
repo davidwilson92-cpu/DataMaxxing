@@ -21,7 +21,7 @@ import jwt
 from oauthlib.oauth1 import Client as OAuth1Client
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from fastapi.exception_handlers import http_exception_handler
-from fastapi.responses import Response, FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import Response, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -42,7 +42,7 @@ from .social import (
     INSTAGRAM_SCOPES, INSTAGRAM_FACEBOOK_SCOPES, META_SCOPES, TIKTOK_SCOPES, X_SCOPES, analytics_for_user, instagram_authorize_url, instagram_exchange, meta_authorize_url, meta_exchange,
     publish_platform, publishing_context, recent_content_for_user, recent_posts_for_user, resolve_tiktok_post, tiktok_authorize_url, tiktok_exchange, upsert_connection, x_authorize_url, x_exchange,
 )
-from .storage import UPLOAD_DIR, save_bytes
+from .storage import save_bytes
 from .work_summary import draft_title, work_summary
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")

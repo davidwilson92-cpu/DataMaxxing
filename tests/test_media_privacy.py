@@ -80,3 +80,17 @@ def test_insights_uses_shared_ai_rate_limit(monkeypatch):
     monkeypatch.setenv('RATE_LIMIT_SCALE', '1')
     assert client.post('/api/insights', json={}).status_code == 429
     assert calls == [(f'user:{uid}:ai', 20, 60)]
+
+
+def test_native_auth_does_not_share_the_shorter_mutation_window(monkeypatch):
+    import nova.request_security as security
+    client, uid, *_ = account()
+    calls = []
+    def refuse(key, maximum, seconds):
+        calls.append((key, maximum, seconds))
+        return False
+    monkeypatch.setattr(security, 'allowed_request', refuse)
+    monkeypatch.setenv('RATE_LIMIT_SCALE', '1')
+    for path in ('/api/v1/auth/token', '/api/v1/auth/refresh'):
+        assert client.post(path, json={}).status_code == 429
+    assert calls == [(f'user:{uid}:auth', 30, 300)] * 2

@@ -71,7 +71,7 @@ def test_signup_routes_through_onboarding():
         assert user.subscription_status == "none"
         assert user.terms_accepted_at is not None
         assert user.marketing_consent is True
-        assert user.password_hash.startswith("scrypt$") and "long-password-1" not in user.password_hash
+        assert user.password_hash.startswith("scrypt-v2$") and "long-password-1" not in user.password_hash
 
 
 def test_signup_form_has_confirmation_and_client_validation():
@@ -196,5 +196,5 @@ def test_admin_dashboard_is_allowlisted_and_hides_secrets():
         else: os.environ["ADMIN_EMAILS"] = previous
     assert page.status_code == 200 and "ZOVA ADMIN" in page.text
     assert email in page.text and "Marketing: yes" in page.text
-    assert "password_hash" not in page.text and "scrypt$" not in page.text
+    assert "password_hash" not in page.text and "scrypt$" not in page.text and "scrypt-v2$" not in page.text
     assert filtered.status_code == 200 and "1 matching account" in filtered.text
