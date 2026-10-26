@@ -51,10 +51,8 @@ function contextualRefinements() {
 function showMediaInspection(results) {
   const notice=document.getElementById('groundingNotice');
   if(!notice)return;
-  notice.textContent=results.map(r=>r.coverage).join(' ');
-  notice.hidden=false;
-  const details=results.filter(r=>r.status==='inspected').map(r=>r.observations).join('\n\n');
-  const key=JSON.stringify(results);
-  if(details&&key!==mediaInspectionKey)addAssistantMessage('What I can see: '+details+'\n\nCorrect any detail I have misunderstood.');
-  mediaInspectionKey=key;
+  const incomplete=results.some(r=>r.status!=='inspected');
+  notice.textContent=incomplete?'Some media could not be inspected. Check the caption against your upload.':'Video frames and images inspected; audio is not analysed.';
+  notice.hidden=!incomplete;
+  mediaInspectionKey=JSON.stringify(results);
 }

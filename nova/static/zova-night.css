@@ -1,0 +1,126 @@
+/* Shared product palette: the landing page's near-black canvas and violet accent.
+   Loaded last so Studio, Account and the native web surfaces share one system. */
+:is(.app-body,.voice-body,.zova-product){
+ color-scheme:dark;--ink:#f5f2fa;--ink2:#ddd6e8;--paper:#08060f;--white:#15111d;
+ --muted:#b7adca;--line:#3a3048;--soft:#21172f;--danger:#ff9baa;
+ --zova-ink:#f5f2fa;--zova-muted:#b7adca;--zova-line:#3a3048;--zova-purple:#8b4de8;
+ background:#08060f;color:var(--ink);
+}
+:is(.app-body,.voice-body,.zova-product) :is(h1,h2,h3,h4,strong,b,label,summary){color:inherit}
+:is(.app-body,.voice-body,.zova-product) a{color:#c6a6ff}
+:is(.app-body,.voice-body,.zova-product) :is(input,textarea,select){background:#110d19;color:#f5f2fa;border-color:#4a3b5c}
+:is(.app-body,.voice-body,.zova-product) :is(input,textarea)::placeholder{color:#b2a5c0;opacity:1}
+:is(.app-body,.voice-body,.zova-product) :is(input,textarea,select):disabled{color:#b7adca;opacity:.75}
+:is(.app-body,.voice-body,.zova-product) :is(button,a,input,textarea,select,summary):focus-visible{outline:2px solid #c4a1ff;outline-offset:3px}
+:is(.app-body,.voice-body,.zova-product) :is(.button.primary,.generate-button){background:#7c3aed;color:#fff;border-color:#9d6cee}
+:is(.app-body,.voice-body,.zova-product) :is(.button.ghost,.button.quiet,.mini-button,.quiet-button){background:#21182e;color:#ddd2ef;border-color:#4a3b5c}
+:is(.app-body,.voice-body,.zova-product) .button:hover{filter:brightness(1.13)}
+:is(.app-body,.voice-body,.zova-product) :is(.site-header,.app-topbar,.app-workspace,.conversation-topbar,.conversation-workspace,.composer-wrap){background:#08060f;color:#f5f2fa;border-color:#302639}
+:is(.app-body,.voice-body,.zova-product) :is(.auth-card,.panel,.side-card,.analytics-panel,.analytics-ask,.analytics-answer,.analytics-kpi,.draft-card,.empty-library,.connection-explainer,.social-connect-list,.work-summary,.agenda-item,.schedule-card,.library-notice,.account-notice,.brand-card){background:#15111d;color:#f5f2fa;border-color:#3a3048;box-shadow:none;backdrop-filter:none}
+:is(.app-body,.voice-body,.zova-product) :is(.eyebrow,.fine,.support-note,.app-topbar p,.section-copy p,.panel-heading>span,.library-toolbar,.draft-card time,.draft-excerpt,.draft-scope,.format-note,.composer-footnote,.response-status,.voice-scan-status p,.source-kind){color:#b7adca}
+.app-body :is(.work-summary summary span,.analytics-period-control label,.analytics-error,.analytics-loading,.analytics-empty,.draft-rename summary,.draft-open,.connection-row small){color:#b7adca}
+.app-body .analytics-kpis>.analytics-empty{background:#15111d;color:#d3c6e2;border-color:#3a3048}
+.app-body .analytics-kpis>.analytics-empty h2{color:#f5f2fa}
+.app-body .analytics-period-control select{background:#15111d;color:#f5f2fa;border-color:#4a3b5c}
+.app-body .library-toolbar strong{color:#f5f2fa}
+.app-body .draft-search input[type=search]{background:#15111d;color:#f5f2fa;border-color:#4a3b5c}
+.app-body .draft-filters{background:#15111d;border-color:#4a3b5c}
+.app-body :is(.empty-library,.analytics-kpis>.analytics-empty){border-radius:18px;padding:24px}
+.app-body .empty-library h2{font-size:26px;line-height:1.25;color:#f5f2fa}
+.app-body .empty-library p{color:#b7adca}
+.app-body .library-topbar>.button{gap:6px}
+.app-body :is(.analytics-post,.analytics-recommendation,.analytics-prompts button,.draft-filters){background:#21182e;color:#e3d7f1;border-color:#4a3b5c}
+.app-body :is(.analytics-kpi span,.analytics-kpi small,.platform-performance-main>div:first-child span,.platform-performance dt,.analytics-post dt){color:#b7adca}
+.simple-chat .post-copy textarea:focus{background:#21182e;box-shadow:0 0 0 8px #21182e}
+:is(.app-body,.voice-body,.zova-product) :is(.draft-filters a,.draft-state,.draft-platform-list span,.analytics-prompts button,.starter-prompts button,.draft-tab,.platform-tab){background:#21182e;color:#d6c5ec;border-color:#4a3b5c}
+:is(.app-body,.voice-body,.zova-product) :is(.draft-filters a.active,.draft-tab.active,.platform-tab.active){background:#38204f;color:#fff;border-color:#b387f2}
+:is(.app-body,.voice-body,.zova-product) :is(.platform-brand-icon){filter:invert(1)}
+:is(.app-body,.voice-body,.zova-product) dialog{background:#15111d;color:#f5f2fa;border:1px solid #4a3b5c;box-shadow:0 24px 90px #0009}
+:is(.app-body,.voice-body,.zova-product) dialog::backdrop{background:#030108a8;backdrop-filter:blur(5px)}
+:is(.app-body,.voice-body,.zova-product) :is(.strategy-panel header,.post-settings header,.chat-navigation,.move-detail-body,.move-feedback-body){background:#15111d;color:#f5f2fa}
+:is(.app-body,.voice-body,.zova-product) :is(.move-context,.move-feedback,.move-need,.move-source,.source-detail,.review-account,.review-media,.chat-confirmation,.version-preview,.save-recovery,.attachment-card,.sent-attachment){background:#1b1426;color:#eee5f7;border-color:#4a3b5c}
+:is(.app-body,.voice-body,.zova-product) :is(.move-detail-body p,.move-effort,.move-context>summary,.move-feedback>summary,.sent-attachment figcaption,.review-disclaimer){color:#c5b8d5}
+.app-body .strategy-panel .move-hero{background:linear-gradient(125deg,#100c18,#28163b);color:#fff}
+.app-body .strategy-panel :is(.move-draft,.move-draft:hover){background:#7c3aed;color:#fff}
+.app-body :is(.studio-history-rail,.saved-history,.chat-navigation .saved-history){background:#100c17;border-color:#302639}
+.app-body .saved-history :is(a,small,header p){color:#bfb1ce}
+.app-body .saved-history a[aria-current=page]{background:#2c1b40;color:#fff;border-color:#a575ed}
+.simple-chat .chat-brand a{color:#f5f2fa}
+.simple-chat .chat-composer{background:#15111d;border-color:#4a3b5c;box-shadow:0 4px 24px #0002}
+.simple-chat .chat-composer:focus-within{border-color:#ad7bf1;box-shadow:0 0 0 2px #9a60ed22}
+.simple-chat #brief{background:transparent;color:#f5f2fa}
+.simple-chat #brief::placeholder{color:#b7adca}
+.simple-chat :is(.quiet-button,.composer-toolbar .quiet-button,.response-actions button,.response-actions summary){color:#d1c1e2}
+.simple-chat .quiet-button:hover{background:#2a1c39}
+.simple-chat .composer-platforms .platform-check label{background:#251c31;border-color:transparent}
+.simple-chat .composer-platforms .platform-check.is-selected label{background:#3a2252;border-color:#b184ee;box-shadow:inset 0 0 0 1px #b184ee}
+.simple-chat .composer-format select,.simple-chat .instagram-format-choices label{background:#21182e;color:#e3d7f1;border-color:#4a3b5c}
+.simple-chat .instagram-format-choices label:has(input:checked){background:#3a2252;color:#fff;border-color:#b184ee}
+.simple-chat .user-message .message-content{background:#261b35;color:#f5f2fa}
+.simple-chat .creator-welcome h1{color:#f5f2fa}
+.simple-chat .creator-welcome h1 span{color:#b58af6}
+.simple-chat .creator-welcome p{color:#b7adca}
+.simple-chat .starter-prompts button{background:#17111f;color:#ddd0ee;border-color:#51405f}
+.simple-chat :is(.composer-footnote,.draft-scope,#editingScope,.message-retry p){color:#b7adca}
+.simple-chat .studio-watermark{opacity:.025}
+.simple-chat .send-button{background:#8b4de8;color:#fff}
+.simple-chat .send-button:disabled{opacity:.45}
+/* One compact header; creation sits next to the brand rather than competing
+   with the recommendation button. Every action remains at least 44px. */
+.simple-chat .conversation-topbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;height:72px;padding:8px 24px;align-items:center}
+.simple-chat .studio-header-actions{margin:0;display:flex;gap:8px;align-items:center}
+.simple-chat #newChatBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid #4a3b5c;font-size:14px;padding:8px 12px;min-height:44px;width:auto}
+.simple-chat #newChatBtn::after{content:none}
+.simple-chat #newChatBtn .new-post-plus{font-size:24px;line-height:1}
+.simple-chat .studio-brand-context{margin:0;max-width:100%;min-width:0}
+.simple-chat .studio-brand-context button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#bfb1ce;font-size:13px}
+.simple-chat .studio-header-actions .next-move-launch{min-height:44px;padding:9px 14px;font-size:14px;border-radius:14px;background:linear-gradient(115deg,#120d1b,#2b173e);border:1px solid #62417e;color:#fff}
+.simple-chat .next-move-launch .next-move-sparkle{width:21px;height:21px}
+/* No clipped hero behind a focused composer. Sent messages stay visible. */
+.simple-chat:has(#brief:focus) .welcome-message,
+.simple-chat.composer-keyboard-open .welcome-message{display:none}
+.simple-chat:has(#brief:focus) .studio-watermark,
+.simple-chat.composer-keyboard-open .studio-watermark{display:none}
+/* Account is a short index first, with existing forms intact inside each group. */
+.account-flow-body .account-flow{max-width:960px;padding-top:24px}
+.account-group{border:0;border-bottom:1px solid #3a3048;border-radius:0;background:transparent;margin:0;overflow:hidden}
+.account-group>summary{list-style:none;display:flex;align-items:center;gap:14px;cursor:pointer;padding:18px 0;min-height:64px;box-sizing:border-box}
+.account-group>summary::-webkit-details-marker{display:none}
+.account-group>summary::after{content:none}
+.account-option-icon{width:22px;height:22px;flex:none;color:#bba4d5}
+.account-expand{margin-left:auto;font-size:22px;color:#bba4d5;line-height:1}
+.account-group[open] .account-expand{transform:rotate(180deg)}
+.account-group>summary strong{display:block;font-size:17px;font-weight:650}
+.account-group>summary small{display:block;color:#b7adca;font-size:13px;margin-top:4px;line-height:1.45}
+.account-group[open]>summary{border-bottom:1px solid #3a3048}
+.account-group .account-section{padding:24px;border:0;grid-template-columns:minmax(0,1fr);gap:18px}
+.account-group .section-number{display:none}
+.account-group .section-copy h2{font-size:20px;letter-spacing:-.3px}
+.account-group .section-copy p{margin:6px 0}
+.account-group .voice-edit{padding:0 24px 24px}
+.account-group :is(.account-form,.voice-edit form){max-width:640px;width:100%;margin:0}
+.account-group .connection-list{padding:0;background:transparent;backdrop-filter:none}
+.account-group .connection-row{border-color:#3a3048}
+.account-group .account-links{gap:16px}
+.account-group .account-form label{margin-top:14px}
+.account-group .voice-edit label{display:block;margin-top:16px}
+.account-flow .account-notice{margin:0 0 16px;padding:16px;border-radius:12px}
+@media(max-width:760px){
+ .simple-chat .conversation-topbar{grid-template-columns:minmax(0,1fr) auto;height:auto;min-height:80px;padding:6px 12px;gap:0 8px}
+ .simple-chat .chat-brand{grid-row:1;grid-column:1;gap:4px}
+ .simple-chat .chat-brand a{font-size:21px}
+ .simple-chat .studio-brand-context{grid-row:2;grid-column:1;max-width:100%}
+ .simple-chat .studio-brand-context button{padding:0 2px;min-height:32px;font-size:12px}
+ .simple-chat .studio-header-actions{grid-row:1/3;grid-column:2;gap:7px}
+ .simple-chat #newChatBtn{font-size:12px;padding:8px;gap:4px}
+ .simple-chat .studio-header-actions .next-move-launch{font-size:13px;padding:9px 10px;gap:5px}
+ .simple-chat .work-summary{margin-top:0}
+ .simple-chat.composer-keyboard-open .work-summary{display:none}
+ .account-flow-body .app-topbar{padding:20px 18px 10px;background:#08060f}
+ .account-flow-body .app-topbar h1{font-size:28px}
+ .account-flow-body .app-topbar>a{display:none}
+ .account-group>summary{padding:18px 0}
+ .account-group .account-section{padding:20px 18px}
+ .account-group .voice-edit{padding:0 18px 20px}
+}
+@media(max-width:360px){.simple-chat #newChatBtn .new-post-label{display:none}.simple-chat #newChatBtn{min-width:44px}.simple-chat .studio-header-actions{gap:5px}}

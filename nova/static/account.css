@@ -1,0 +1,12 @@
+.account-option-row{display:flex;align-items:center;gap:14px;min-height:64px;padding:18px 0;box-sizing:border-box;border-bottom:1px solid #3a3048;text-decoration:none;color:inherit}
+.account-option-row strong{font-size:17px;font-weight:650}
+.account-option-row:focus-visible{outline:2px solid #b58af6;outline-offset:4px}
+.account-delete-row{margin-top:16px;color:#e8bfca}
+.voice-examples{margin-top:22px;border-top:1px solid #3a3048;padding-top:16px}
+.voice-examples summary{cursor:pointer;min-height:44px}
+.voice-examples blockquote{margin:16px 0;padding:0 0 0 14px;border-left:2px solid #9564d6;white-space:pre-wrap;overflow-wrap:anywhere}
+.deletion-form{display:grid;gap:12px;max-width:560px}
+.deletion-form label{display:block;margin-top:8px}
+.deletion-form input{width:100%;box-sizing:border-box;min-height:48px}
+.deletion-form .form-error{color:#ffbac5;min-height:1.2em}
+.deletion-receipt{overflow-wrap:anywhere}

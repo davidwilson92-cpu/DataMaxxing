@@ -90,7 +90,7 @@ def _x_token(data: dict[str, str]) -> dict[str, Any]:
         data["client_id"] = client_id
     r = httpx.post("https://api.x.com/2/oauth2/token", data=data, auth=auth, timeout=30.0)
     if r.status_code >= 400:
-        raise RuntimeError(f"X OAuth token exchange failed: {r.text}")
+        raise RuntimeError("X OAuth token exchange failed. Try again or reconnect the account.")
     return r.json()
 
 
@@ -103,7 +103,7 @@ def x_exchange(code: str, verifier: str) -> tuple[dict[str, Any], dict[str, Any]
     })
     r = httpx.get("https://api.x.com/2/users/me", headers={"Authorization": f"Bearer {payload['access_token']}"}, params={"user.fields": "name,username,profile_image_url"}, timeout=30.0)
     if r.status_code >= 400:
-        raise RuntimeError(f"X user lookup failed: {r.text}")
+        raise RuntimeError("X user lookup failed. Try again or reconnect the account.")
     return payload, r.json()["data"]
 
 
@@ -139,8 +139,9 @@ def meta_exchange(code: str, *, include_instagram: bool = False) -> list[dict[st
     params = {"client_id": os.environ.get("META_APP_ID"), "client_secret": os.environ.get("META_APP_SECRET"), "redirect_uri": redirect, "code": code}
     r = httpx.get(f"https://graph.facebook.com/{version}/oauth/access_token", params=params, timeout=30.0)
     if r.status_code >= 400:
-        raise RuntimeError(f"Meta token exchange failed: {r.text}")
+        raise RuntimeError("Meta token exchange failed. Try again or reconnect the account.")
     user_token = r.json()["access_token"]
+    audio_expires_in = r.json().get('expires_in')
     # Prefer a long-lived user token when the app supports the exchange.
     long_r = httpx.get(
         f"https://graph.facebook.com/{version}/oauth/access_token",
@@ -149,23 +150,28 @@ def meta_exchange(code: str, *, include_instagram: bool = False) -> list[dict[st
     )
     if long_r.status_code < 400 and long_r.json().get("access_token"):
         user_token = long_r.json()["access_token"]
+        audio_expires_in = long_r.json().get('expires_in')
     pages_r = httpx.get(
         f"https://graph.facebook.com/{version}/me/accounts",
         params={"fields": "name,access_token,tasks" + (",instagram_business_account{id,username,name,profile_picture_url}" if include_instagram else ""), "access_token": user_token},
         timeout=30.0,
     )
     if pages_r.status_code >= 400:
-        raise RuntimeError(f"Could not read managed Facebook Pages: {pages_r.text}")
+        raise RuntimeError("Could not read managed Facebook Pages. Try again or reconnect the account.")
     pages = pages_r.json().get("data", [])
-    if not include_instagram:
-        granted = httpx.get(f'https://graph.facebook.com/{version}/me/permissions',
-            params={'access_token': user_token}, timeout=30.0)
-        if granted.status_code >= 400:
-            raise RuntimeError('Could not verify Facebook permissions. Reconnect Facebook.')
-        scope = ','.join(p['permission'] for p in granted.json().get('data', [])
-                         if p.get('status') == 'granted' and isinstance(p.get('permission'), str))
-        for page in pages:
-            page['granted_scope'] = scope
+    granted = httpx.get(f'https://graph.facebook.com/{version}/me/permissions',
+        params={'access_token': user_token}, timeout=30.0)
+    if granted.status_code >= 400:
+        raise RuntimeError('Could not verify Facebook permissions. Reconnect Facebook.')
+    scope = ','.join(p['permission'] for p in granted.json().get('data', [])
+                     if p.get('status') == 'granted' and isinstance(p.get('permission'), str))
+    for page in pages:
+        page['granted_scope'] = scope
+        if include_instagram:
+            # Staged candidates are encrypted by connection_review; these
+            # private fields never enter profile metadata or API responses.
+            page['_audio_user_token'] = user_token
+            page['_audio_user_token_expires_in'] = audio_expires_in
     return pages
 
 
@@ -188,7 +194,11 @@ def instagram_authorize_url(state: str) -> str:
         # Reauthenticate even when this browser already has an Instagram session.
         "force_reauth": "true",
     }
-    return "https://www.instagram.com/oauth/authorize?" + urlencode(params)
+    # Instagram's published apple-app-site-association excludes #weblink from
+    # app links. Keep OAuth in the browser rather than its failing native page.
+    # The fragment is not sent in the HTTP query; state/scopes/callback stay intact.
+    # Source: https://www.instagram.com/.well-known/apple-app-site-association
+    return "https://www.instagram.com/oauth/authorize?" + urlencode(params) + "#weblink"
 
 
 def instagram_exchange(code: str) -> dict[str, Any]:
@@ -203,7 +213,7 @@ def instagram_exchange(code: str) -> dict[str, Any]:
         timeout=30.0,
     )
     if token_r.status_code >= 400:
-        raise RuntimeError(f"Instagram token exchange failed: {token_r.text}")
+        raise RuntimeError("Instagram token exchange failed. Try again or reconnect the account.")
     short = token_r.json()
     # Meta documents a data envelope; retain compatibility with flat responses.
     if isinstance(short, dict) and isinstance(short.get('data'), list):
@@ -226,7 +236,7 @@ def instagram_exchange(code: str) -> dict[str, Any]:
         timeout=30.0,
     )
     if profile_r.status_code >= 400:
-        raise RuntimeError(f"Could not read the Instagram profile: {profile_r.text}")
+        raise RuntimeError("Could not read the Instagram profile. Try again or reconnect the account.")
     profile = profile_r.json()
     account_id = str(profile.get("user_id") or profile.get("id") or short.get("user_id") or "")
     if not account_id:
@@ -258,10 +268,10 @@ def _tiktok_token(data: dict[str, str]) -> dict[str, Any]:
     data = {**data, "client_key": os.environ.get("TIKTOK_CLIENT_KEY", ""), "client_secret": os.environ.get("TIKTOK_CLIENT_SECRET", "")}
     r = httpx.post("https://open.tiktokapis.com/v2/oauth/token/", data=data, headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=30.0)
     if r.status_code >= 400:
-        raise RuntimeError(f"TikTok token request failed: {r.text}")
+        raise RuntimeError("TikTok token request failed. Try again or reconnect the account.")
     payload = r.json()
     if payload.get("error") and not payload.get("access_token"):
-        raise RuntimeError(f"TikTok OAuth error: {payload}")
+        raise RuntimeError("TikTok could not authorise the connection. Try again from Account.")
     return payload
 
 
@@ -275,7 +285,7 @@ def tiktok_exchange(code: str) -> tuple[dict[str, Any], dict[str, Any]]:
         timeout=30.0,
     )
     if r.status_code >= 400:
-        raise RuntimeError(f"TikTok user lookup failed: {r.text}")
+        raise RuntimeError("TikTok user lookup failed. Try again or reconnect the account.")
     return payload, r.json()["data"]["user"]
 
 
@@ -359,6 +369,19 @@ def selected_connection(db, user_id, platform, connection_id=None):
     return conn
 
 
+def attach_instagram_audio_grant(conn,token,expires_in,scope):
+    """Attach an explicitly confirmed, same-account Facebook User grant only."""
+    conn.encrypted_audio_user_token=None
+    conn.audio_user_token_expires_at=None
+    metadata=json_meta(conn)
+    metadata.pop('audio_auth_provider',None);metadata.pop('audio_scope',None)
+    if conn.platform=='instagram' and token and type(expires_in) is int and expires_in>60:
+        conn.encrypted_audio_user_token=encrypt(token)
+        conn.audio_user_token_expires_at=utcnow()+timedelta(seconds=expires_in-60)
+        metadata.update(audio_auth_provider='facebook_login',audio_scope=scope)
+    save_meta(conn,metadata)
+
+
 def upsert_connection(
     db: Session,
     *, user_id: int,
@@ -371,6 +394,8 @@ def upsert_connection(
     expires_in: int | None = None,
     scope: str = "",
     metadata: dict[str, Any] | None = None,
+    audio_user_token: str | None = None,
+    audio_user_token_expires_in: int | None = None,
 ) -> SocialConnection:
     from .allowances import lock, connection_slot
     lock(db,user_id)
@@ -392,6 +417,7 @@ def upsert_connection(
     conn.active = True
     if metadata is not None:
         save_meta(conn, metadata)
+    attach_instagram_audio_grant(conn,audio_user_token if (metadata or {}).get('auth_provider')=='facebook_login' else None,audio_user_token_expires_in,scope)
     db.commit(); db.refresh(conn)
     from .readiness import event
     event(user_id,'connected',conn.id)
@@ -409,7 +435,7 @@ def _x_upload_image(token: str, asset: MediaAsset) -> str:
         timeout=60.0,
     )
     if r.status_code >= 400:
-        raise RuntimeError(f"X media upload failed: {r.text}")
+        raise RuntimeError("X media upload failed. Try again or reconnect the account.")
     return str(r.json()["data"]["id"])
 
 
@@ -435,7 +461,7 @@ def publish_x(db: Session, conn: SocialConnection, posts: list[str], assets: lis
             token = _x_refresh(conn, db)
             r = httpx.post("https://api.x.com/2/tweets", headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, json=body, timeout=30.0)
         if r.status_code >= 400:
-            raise RuntimeError(f"X publish failed: {r.text}")
+            raise RuntimeError("X could not confirm the post. Check the destination before retrying.")
         previous = str(r.json()["data"]["id"])
         ids.append(previous)
         urls.append(f"https://x.com/{conn.username or 'i'}/status/{previous}")
@@ -455,7 +481,7 @@ def publish_facebook(db: Session, conn: SocialConnection, posts: list[str], asse
             data["link"] = link_url
         r = httpx.post(f"https://graph.facebook.com/{version}/{conn.account_id}/feed", data=data, timeout=30.0)
     if r.status_code >= 400:
-        raise RuntimeError(f"Facebook publish failed: {r.text}")
+        raise RuntimeError("Facebook could not confirm the post. Check the destination before retrying.")
     post_id = r.json().get("post_id") or r.json().get("id")
     if not post_id:
         raise RuntimeError('Facebook did not confirm the post identifier. Check the destination before retrying.')
@@ -479,9 +505,14 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
     if not assets:
         raise RuntimeError("Instagram publishing requires an image or video")
     if len(assets)!=1: raise RuntimeError('Choose one Instagram image or video.')
+    audio=None
+    if (options or {}).get('audio'):
+        from .instagram_audio import validate_selection
+        try:audio=validate_selection(conn,options['audio'],assets,placement)
+        except ValueError as exc:raise RuntimeError(str(exc)) from None
     if placement=='story': instagram_story_eligibility(db,conn)
-    token = access_token(conn, db)
-    graph = instagram_graph_base(conn)
+    token = decrypt(conn.encrypted_audio_user_token) if audio else access_token(conn, db)
+    graph = f"https://graph.facebook.com/{os.environ.get('META_GRAPH_VERSION','v23.0')}" if audio else instagram_graph_base(conn)
     caption = posts[0] if posts else ''
     if link_url and link_url not in caption:
         caption = (caption + "\n\n" + link_url).strip()
@@ -494,9 +525,11 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
         create_data.update({"media_type": "REELS", "video_url": media_url, "share_to_feed": "true"})
     else:
         create_data["image_url"] = media_url
+    if audio:
+        create_data['audio_configuration']=json.dumps({key:audio[key] for key in ('audio_id','audio_volume','video_volume')})
     create = httpx.post(f"{graph}/{conn.account_id}/media", data=create_data, timeout=45.0)
     if create.status_code >= 400:
-        raise RuntimeError(f"Instagram media container failed: {create.text}")
+        raise RuntimeError("Instagram could not prepare this media. Check the file and connection.")
     creation_id = str(create.json()["id"])
     checkpoint('container_created', container_id=creation_id)
     # Instagram creates an asynchronous media container for both images and
@@ -506,19 +539,19 @@ def publish_instagram(db: Session, conn: SocialConnection, posts: list[str], ass
     for _ in range(attempts):
         status = httpx.get(f"{graph}/{creation_id}", params={"fields": "status_code,status", "access_token": token}, timeout=20.0)
         if status.status_code >= 400:
-            raise RuntimeError(f"Instagram media processing failed: {status.text}")
+            raise RuntimeError("Instagram media processing is unavailable. Check the destination before retrying.")
         status_code = status.json().get("status_code")
         if status_code == "FINISHED":
             break
         if status_code in {"ERROR", "EXPIRED"}:
-            raise RuntimeError(f"Instagram could not process this media: {status.json().get('status') or status_code}")
+            raise RuntimeError("Instagram could not process this media. Check its format and try another file.")
         time.sleep(2)
     else:
         raise RuntimeError("Instagram is still processing the media. Try publishing again shortly.")
     checkpoint('publish_requested', container_id=creation_id)
     publish = httpx.post(f"{graph}/{conn.account_id}/media_publish", data={"creation_id": creation_id, "access_token": token}, timeout=45.0)
     if publish.status_code >= 400:
-        raise RuntimeError(f"Instagram publish failed: {publish.text}")
+        raise RuntimeError("Instagram could not confirm the post. Check the destination before retrying.")
     post_id = str(publish.json()["id"])
     checkpoint('published', container_id=creation_id, post_id=post_id)
     # Publishing is confirmed by the media ID; a missing link cannot undo it.
@@ -547,7 +580,9 @@ def publishing_context(db: Session, user_id: int, platform: str, connection_id: 
             result['requires_tiktok_completion'] = True
             return result
         info = _tiktok_creator_info(access_token(conn, db))
+        from .tiktok_policy import private_test_mode
         result.update({
+            "private_test_mode": private_test_mode(),
             "username": info.get("creator_username") or result["username"],
             "display_name": info.get("creator_nickname") or result["display_name"],
             "avatar_url": info.get("creator_avatar_url") or "",
@@ -561,6 +596,9 @@ def publishing_context(db: Session, user_id: int, platform: str, connection_id: 
 
 
 def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets: list[MediaAsset], link_url: str = "", options: dict[str, Any] | None = None) -> dict[str, Any]:
+    from .publication_evidence import checkpoint
+    from .tiktok_outcomes import init_rejection
+    checkpoint('tiktok_validating')
     if not assets:
         raise RuntimeError("TikTok publishing requires visual media in this Zova build")
     token = access_token(conn, db)
@@ -621,11 +659,21 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
         from .tiktok_policy import direct_media_url
         if is_video:body['source_info'] = {'source': 'PULL_FROM_URL', 'video_url': direct_media_url(assets[0])}
         else:body['source_info']['photo_images'] = [direct_media_url(a) for a in assets]
+    checkpoint('tiktok_publish_requested', privacy_level=privacy, posting_mode='inbox' if upload_as_draft else 'direct')
     r = httpx.post(endpoint, headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json; charset=UTF-8"}, json=body, timeout=45.0)
-    if r.status_code >= 400 or (r.json().get("error") or {}).get("code") not in {None, "ok", 0}:
-        raise RuntimeError(f"TikTok publish failed: {r.text}")
-    response_data = r.json()["data"]
-    publish_id = str(response_data["publish_id"])
+    payload = r.json()
+    rejected = init_rejection(r.status_code, payload)
+    if rejected:
+        checkpoint('tiktok_rejected', **rejected)
+        raise RuntimeError('TikTok rejected the publishing request.')
+    if r.status_code >= 400 or (payload.get("error") or {}).get("code") not in {None, "ok", 0}:
+        raise RuntimeError('TikTok publishing response could not be confirmed.')
+    response_data = payload["data"]
+    publish_id = response_data.get("publish_id")
+    if not isinstance(publish_id, str) or not publish_id.strip() or len(publish_id) > 64:
+        raise RuntimeError('TikTok publishing receipt could not be confirmed.')
+    # Persist the receipt before uploads or later work, so recovery only polls it.
+    checkpoint('tiktok_accepted', post_id=publish_id)
     if is_video and upload_as_draft:
         upload_url = response_data.get("upload_url")
         if not upload_url:
@@ -645,7 +693,7 @@ def publish_tiktok(db: Session, conn: SocialConnection, posts: list[str], assets
                 timeout=120.0,
             )
             if upload.status_code >= 400:
-                raise RuntimeError(f"TikTok video upload failed ({upload.status_code}): {upload.text}")
+                raise RuntimeError('TikTok video upload could not be confirmed. Check the recorded publishing status.')
     return {"post_id": publish_id, "post_ids": [publish_id], "url": None, "pending": True, "privacy_level": privacy, "requires_tiktok_completion": bool(is_video and upload_as_draft)}
 
 
@@ -654,7 +702,10 @@ def resolve_tiktok_post(db: Session, conn: SocialConnection, publish_id: str) ->
     r = httpx.post("https://open.tiktokapis.com/v2/post/publish/status/fetch/", headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, json={"publish_id": publish_id}, timeout=30.0)
     if r.status_code >= 400:
         return {"status": "unknown"}
-    data = r.json().get("data", {})
+    payload = r.json()
+    if (payload.get('error') or {}).get('code') not in {None, 'ok', 0}:
+        return {"status": "unknown"}
+    data = payload.get("data", {})
     post_ids = data.get("publicaly_available_post_id") or []
     return {"status": data.get("status", "unknown"), "public_ids": [str(x) for x in post_ids], "fail_reason": data.get("fail_reason")}
 
@@ -803,15 +854,24 @@ def analytics_for_user(db: Session, user_id: int) -> dict[str, Any]:
     return result
 
 
-def recent_posts_for_user(db: Session, user_id: int, limit: int = 12) -> dict[str, Any]:
+def recent_posts_for_user(db: Session, user_id: int, limit: int = 12, *, quick: bool = False) -> dict[str, Any]:
+    deadline = time.monotonic() + 8.0
     posts: list[dict[str, Any]] = []
     unavailable: list[str] = []
     for platform in ["x", "instagram", "facebook", "tiktok"]:
         try:
             conn = None
-            conn = connection_for(db, user_id, platform); token = access_token(conn, db)
+            conn = connection_for(db, user_id, platform)
+            if quick:
+                # Recommendation reads must not trigger slow token renewal or mutations.
+                if time.monotonic() >= deadline or (conn.expires_at and conn.expires_at.replace(tzinfo=None) <= utcnow().replace(tzinfo=None)):
+                    raise RuntimeError('Feed needs a later refresh')
+                token = decrypt(conn.encrypted_access_token)
+            else:
+                token = access_token(conn, db)
+            feed_timeout = min(2.0, max(0.1, deadline-time.monotonic())) if quick else 30.0
             if platform == "x":
-                response = httpx.get(f"https://api.x.com/2/users/{conn.account_id}/tweets", headers={"Authorization": f"Bearer {token}"}, params={"max_results": 10, "exclude": "retweets,replies", "tweet.fields": "created_at,public_metrics,attachments", "expansions": "attachments.media_keys", "media.fields": "url,preview_image_url,type"}, timeout=30.0)
+                response = httpx.get(f"https://api.x.com/2/users/{conn.account_id}/tweets", headers={"Authorization": f"Bearer {token}"}, params={"max_results": 10, "exclude": "retweets,replies", "tweet.fields": "created_at,public_metrics,attachments", "expansions": "attachments.media_keys", "media.fields": "url,preview_image_url,type"}, timeout=feed_timeout)
                 if response.status_code >= 400: raise RuntimeError("X feed unavailable")
                 media = {item.get("media_key"): item for item in response.json().get("includes", {}).get("media", [])}
                 for item in response.json().get("data", []):
@@ -819,22 +879,22 @@ def recent_posts_for_user(db: Session, user_id: int, limit: int = 12) -> dict[st
                     posts.append({"platform":"x","id":str(item.get("id")),"text":item.get("text") or "","created_at":item.get("created_at") or "","url":f"https://x.com/{conn.username or 'i'}/status/{item.get('id')}","image_url":visual.get("preview_image_url") or visual.get("url") or "","likes":metrics.get("like_count"),"comments":metrics.get("reply_count"),"shares":metrics.get("retweet_count"),"views":metrics.get("impression_count")})
             elif platform == "instagram":
                 graph = instagram_graph_base(conn)
-                response = httpx.get(f"{graph}/{conn.account_id}/media", params={"fields":"id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count","limit":10,"access_token":token}, timeout=30.0)
+                response = httpx.get(f"{graph}/{conn.account_id}/media", params={"fields":"id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count","limit":10,"access_token":token}, timeout=feed_timeout)
                 if response.status_code >= 400: raise RuntimeError("Instagram feed unavailable")
-                for item in response.json().get("data", []):posts.append({"platform":"instagram","id":str(item.get("id")),"text":item.get("caption") or "","created_at":item.get("timestamp") or "","url":item.get("permalink") or "","image_url":item.get("thumbnail_url") or item.get("media_url") or "","likes":item.get("like_count"),"comments":item.get("comments_count"),"shares":None,"views":None})
+                for item in response.json().get("data", []):posts.append({"platform":"instagram","id":str(item.get("id")),"text":item.get("caption") or "","created_at":item.get("timestamp") or "","format":item.get("media_type"),"url":item.get("permalink") or "","image_url":item.get("thumbnail_url") or item.get("media_url") or "","likes":item.get("like_count"),"comments":item.get("comments_count"),"shares":None,"views":None})
             elif platform == "facebook":
                 version = os.environ.get("META_GRAPH_VERSION", "v23.0")
-                response = httpx.get(f"https://graph.facebook.com/{version}/{conn.account_id}/posts", params={"fields":"id,message,created_time,permalink_url,full_picture,reactions.limit(0).summary(true),comments.limit(0).summary(true),shares","limit":10,"access_token":token}, timeout=30.0)
+                response = httpx.get(f"https://graph.facebook.com/{version}/{conn.account_id}/posts", params={"fields":"id,message,created_time,permalink_url,full_picture,reactions.limit(0).summary(true),comments.limit(0).summary(true),shares","limit":10,"access_token":token}, timeout=feed_timeout)
                 if response.status_code >= 400: raise RuntimeError("Facebook feed unavailable")
                 for item in response.json().get("data", []):posts.append({"platform":"facebook","id":str(item.get("id")),"text":item.get("message") or "","created_at":item.get("created_time") or "","url":item.get("permalink_url") or "","image_url":item.get("full_picture") or "","likes":((item.get("reactions") or {}).get("summary") or {}).get("total_count"),"comments":((item.get("comments") or {}).get("summary") or {}).get("total_count"),"shares":(item.get("shares") or {}).get("count"),"views":None})
             else:
                 if "video.list" not in (conn.scope or "").replace(" ", ",").split(","):
                     raise RuntimeError("TikTok feed access is not approved")
-                response = httpx.post("https://open.tiktokapis.com/v2/video/list/", headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"}, params={"fields":"id,title,video_description,cover_image_url,share_url,create_time,like_count,comment_count,share_count,view_count"}, json={"max_count":10}, timeout=30.0)
+                response = httpx.post("https://open.tiktokapis.com/v2/video/list/", headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"}, params={"fields":"id,title,video_description,cover_image_url,share_url,create_time,like_count,comment_count,share_count,view_count"}, json={"max_count":10}, timeout=feed_timeout)
                 if response.status_code >= 400: raise RuntimeError("TikTok feed unavailable")
                 for item in response.json().get("data", {}).get("videos", []):
                     created = datetime.fromtimestamp(int(item.get("create_time") or 0),tz=timezone.utc).isoformat() if item.get("create_time") else ""
-                    posts.append({"platform":"tiktok","id":str(item.get("id")),"text":item.get("video_description") or item.get("title") or "","created_at":created,"url":item.get("share_url") or "","image_url":item.get("cover_image_url") or "","likes":item.get("like_count"),"comments":item.get("comment_count"),"shares":item.get("share_count"),"views":item.get("view_count")})
+                    posts.append({"platform":"tiktok","id":str(item.get("id")),"text":item.get("video_description") or item.get("title") or "","created_at":created,"format":"video","url":item.get("share_url") or "","image_url":item.get("cover_image_url") or "","likes":item.get("like_count"),"comments":item.get("comment_count"),"shares":item.get("share_count"),"views":item.get("view_count")})
         except RuntimeError:
             if conn is not None: unavailable.append(platform)
             continue
@@ -874,5 +934,5 @@ def recent_content_for_user(db: Session, user_id: int) -> list[str]:
     content: list[str] = []
     for conn in rows:
         try: content.extend(recent_content_for_connection(db, conn))
-        except Exception as exc: log.warning("%s voice scan failed: %s", conn.platform, exc)
+        except Exception: log.warning("%s voice scan failed", conn.platform)
     return content[:60]

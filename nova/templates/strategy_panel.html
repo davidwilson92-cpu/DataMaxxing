@@ -1,48 +1,30 @@
 <dialog id="strategyPanel" aria-labelledby="strategyPanelTitle" class="strategy-panel">
  <header><h2 id="strategyPanelTitle">{% include "next_move_icon.html" %}<span id="strategyTitleText">Next move</span></h2><div class="move-header-tools"><button class="quiet-button move-refresh" hidden id="recommendButton" onclick="refreshStrategyActions(this)" aria-label="Refresh ideas" title="Refresh ideas">↻</button><button id="strategyClose" class="quiet-button move-close" onclick="this.closest('dialog').close()" aria-label="Close next move">×</button></div></header>
- <p id="strategyStatus" role="status"></p>
- <p id="strategyStepHint" class="support-note"></p>
+ <p id="strategyStatus" role="status" aria-live="polite"></p>
+ <p id="strategyStepHint" class="support-note" hidden></p>
  <div id="strategyActions"></div>
- <details id="nextMoveSettings" hidden><summary id="nextMoveSettingsLabel">Plan &amp; settings</summary>
- <details id="recommendationHelp" class="recommendation-help" hidden><summary>Sources &amp; context</summary>
-  <p id="strategySourceNote" class="support-note"></p><p id="strategyPerformanceNote" class="support-note" hidden></p>
-  <p class="support-note">Uses your saved plan and public topic searches. Public posts do not prove a topic is popular.</p>
- </details>
- <details id="strategyDetails"><summary>Your plan</summary>
-  <p id="strategyConfirmedState" class="support-note"></p>
-  <details id="strategyQuickStart" class="strategy-quick-start" open><summary>Start with your goal</summary>
-
-   <div class="strategy-goal-chips" role="group" aria-label="Goal ideas"><button type="button" data-strategy-goal="Build awareness for my brand">Build awareness</button><button type="button" data-strategy-goal="Get more enquiries from the right customers">Get enquiries</button><button type="button" data-strategy-goal="Build stronger connections with my audience">Grow engagement</button></div>
-   <label for="strategyBrief">What would you like to achieve?</label>
-   <textarea id="strategyBrief" rows="3" maxlength="20000" placeholder="For example: fill our Saturday pottery classes, or paste your existing strategy."></textarea>
-   <details class="strategy-extra"><summary>Add audience or timing</summary>
-   <label for="strategyQuickAudience">Who do you want to reach? (optional)</label>
-   <input id="strategyQuickAudience" maxlength="1000" placeholder="For example: local beginners looking for a creative hobby">
-   <label for="strategyQuickTime">How much time can you give your socials? (optional)</label>
-   <input id="strategyQuickTime" maxlength="500" placeholder="For example: 30 minutes a week, with my own photos">
-   </details>
-   <details class="strategy-import"><summary>Already have a strategy?</summary><label for="strategyImport">Import text or Markdown (UTF-8, up to 20 KB)</label><input id="strategyImport" type="file" accept=".txt,.md,text/plain,text/markdown"><p>Or paste it into your goal above. Your text is sent to AI only when you request a proposal.</p></details>
-   <button class="button primary" onclick="proposeStrategy(this)">Build my plan</button>
-
-  </details>
-  <div id="strategyAssumptions"></div>
-  <button id="strategyManualEdit" class="quiet-button" type="button" onclick="showStrategyEditor()">Or write my own plan</button>
+ <section id="nextMoveSettings" hidden aria-label="Your strategy">
+  <p id="strategyConfirmedState" class="strategy-saved-state"></p>
+  <section id="strategyQuickStart" class="strategy-description">
+   <label for="strategyBrief">You and your audience</label>
+   <textarea id="strategyBrief" rows="3" maxlength="20000" placeholder="I run a pottery studio in Leeds for curious beginners. I want more weekend bookings."></textarea>
+   <label for="strategyDirection">What would you like to post? <span>Optional</span></label>
+   <textarea id="strategyDirection" rows="2" maxlength="6000" placeholder="Studio moments, simple tips, new classes… Two videos a week. Keep it friendly."></textarea>
+   <div class="strategy-examples" role="group" aria-label="Content suggestions"><button type="button" data-strategy-goal="Behind the scenes">Behind the scenes</button><button type="button" data-strategy-goal="Helpful tips">Helpful tips</button><button type="button" data-strategy-goal="My latest offer">My latest offer</button></div>
+   <button id="buildStrategyButton" class="button primary" onclick="proposeStrategy(this)">Shape my strategy ✦</button>
+  </section>
   <form hidden id="strategyForm" onsubmit="confirmStrategy(event)">
-   <h3 id="strategyReviewHeading" tabindex="-1">Check the essentials</h3>
-   {% for key,label,limit in [('goal','Goal',1500)] %}
-   <label for="strategy_{{ key }}">{{ label }}</label><textarea id="strategy_{{ key }}" name="{{ key }}" rows="2" maxlength="{{ limit }}"></textarea>
-   {% endfor %}
-   <fieldset><legend>Platforms</legend>{% for p,label in [('x','X'),('instagram','Instagram'),('facebook','Facebook'),('tiktok','TikTok')] %}<label class="inline-choice"><input type="checkbox" name="strategy_platform" value="{{ p }}">{% with platform=p %}{% include 'social_icon.html' %}{% endwith %}</label>{% endfor %}</fieldset>
-   <details id="strategyAdvanced"><summary>Audience, voice &amp; details</summary>
-    {% for key,label,limit in [('audience','Audience',1500),('resources','Time and resources',1000),('offer','Your offer',1500),('voice','Voice',1500),('themes','Public content themes (used for search)',2000),('rhythm','Posting rhythm',1000),('avoid','Topics to avoid',1500)] %}
-    <label for="strategy_{{ key }}">{{ label }}</label><textarea id="strategy_{{ key }}" name="{{ key }}" rows="2" maxlength="{{ limit }}"></textarea>
-    {% endfor %}
-   </details>
-   <p class="strategy-search-disclosure"><strong>Public search topics:</strong> <span id="strategySearchPreview">None yet</span>. Keep these non-confidential. <button class="quiet-button" type="button" onclick="document.getElementById('strategyAdvanced').open=true;document.getElementById('strategy_themes').focus()">Edit search themes</button></p>
-   <button class="button primary" type="submit">Save plan &amp; find ideas</button>
+   <h3 id="strategyReviewHeading" tabindex="-1">Your proposed strategy</h3>
+   <div id="strategySummary" class="strategy-summary"></div>
+   <div id="strategyAssumptions"></div>
+   <details class="strategy-search-disclosure"><summary>Public search topics</summary><p id="strategySearchPreview"></p><p>Used for public searches. Keep your description non-confidential.</p></details>
+   <button id="saveStrategyButton" class="button primary" type="submit">Save strategy</button>
+   <button id="strategyNextMoveButton" hidden class="button primary" type="button" onclick="openNextMove()">Find my next post →</button>
   </form>
- </details>
- <details id="seriesDetails"><summary>Recurring drafts</summary>
+ </section>
+ <details id="recommendationHelp" class="recommendation-help" hidden><summary>Sources</summary><p id="strategySourceNote" class="support-note"></p><p id="strategyPerformanceNote" class="support-note" hidden></p></details>
+ <button id="strategyEditLink" class="strategy-edit-link" type="button" onclick="openNextMove(true)"><span class="strategy-callout-icon" aria-hidden="true">✦</span><span><strong>Your strategy</strong><small>Give every post a purpose</small></span><span aria-hidden="true">↗</span></button>
+ <details id="seriesDetails" hidden open><summary>Recurring posts</summary>
   <p>Plan fresh drafts or repeat a draft. Fresh drafts need individual review. Repeats can be approved together after reviewing their exact content, accounts and dates.</p>
   <button class="quiet-button" onclick="openSeriesBuilder()">Plan a series from this draft</button>
   <div id="seriesBuilder" hidden>
@@ -55,6 +37,5 @@
    <button class="quiet-button" onclick="previewSeries(this)">Preview dates</button><div id="seriesPreview"></div>
   </div>
   <div id="seriesList"></div>
- </details>
  </details>
 </dialog>

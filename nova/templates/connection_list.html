@@ -1,8 +1,24 @@
 <div class="connection-list seamless social-connect-list">
+{% if request.query_params.get('unlinked') %}<p role="status">Unlinked from Zova. Unsent posts for this account are cancelled; anything already sending may still finish. You can also remove Zova’s permission in your social account settings.</p>{% endif %}
 {% for p in ['instagram','facebook','tiktok','x'] %}{% set option=connections[p] %}{% set rows=by_platform.get(p,[]) %}
-<div class="connection-row"><div>{% with platform=p %}{% include "social_icon.html" %}{% endwith %}<b>{{ option.name }}</b>
-<small>{{ option.detail }}</small>
-{% for row in rows %}<small><strong>{{ row.username or row.display_name or 'Connected account' }}</strong> · Connected{% if p == 'instagram' and 'instagram_business_basic' not in (row.scope or '') %} via Facebook{% endif %}</small>{% if manage_connections %}<form method="post" action="/account/connections/{{ row.id }}/unlink"><button class="link-danger" type="submit" aria-label="Unlink {{ option.name }} {{ row.username or row.display_name }}">Unlink</button></form>{% endif %}{% endfor %}
-{% if not rows %}<small>{% if option.ready %}Not connected{% else %}Connection setup in progress. You can use Studio meanwhile.{% endif %}</small>{% endif %}</div>
-{% if rows %}<a class="mini-button" href="/connect/{{ p }}">Connection options</a>{% else %}<a class="mini-button" href="/connect/{{ p }}">{% if option.ready %}Connect {{ option.name }}{% else %}View setup status{% endif %}</a>{% endif %}</div>
+<section class="connection-row compact-social-row" aria-label="{{ option.name }} connection">
+ <div class="connection-identity">
+  {% with platform=p %}{% include "social_icon.html" %}{% endwith %}
+  <strong>{{ option.name }}</strong>
+  {% for row in rows %}<small class="connection-account">{{ row.username or row.display_name or 'Connected account' }}<span class="connection-state"><span aria-hidden="true">✓</span> Connected{% if p == 'instagram' and 'instagram_business_basic' not in (row.scope or '') %} via Facebook{% endif %}</span></small>{% endfor %}
+  {% if not rows %}<small>{% if option.ready %}Not connected{% else %}Setup in progress{% endif %}</small>{% endif %}
+ </div>
+ {% if rows %}
+ <details class="connection-manage">
+  <summary aria-label="Manage {{ option.name }} connection">Manage <span aria-hidden="true">⌄</span></summary>
+  <div class="connection-management">
+   <a class="connection-action" href="/connect/{{ p }}">Change or reconnect <span class="visually-hidden">{{ option.name }}</span><span aria-hidden="true">→</span></a>
+   {% if manage_connections %}
+   {% for row in rows %}<form method="post" action="/account/connections/{{ row.id }}/unlink"><button class="link-danger" type="submit" aria-label="Unlink {{ option.name }} {{ row.username or row.display_name }}">Unlink{% if rows|length > 1 %} {{ row.username or row.display_name or 'account' }}{% else %} {{ option.name }}{% endif %}</button></form>{% endfor %}
+   <p class="connection-unlink-note">Unlinking cancels unsent posts for this account.</p>
+   {% endif %}
+  </div>
+ </details>
+ {% else %}<a class="connection-action connection-primary-action" href="/connect/{{ p }}" aria-label="{% if option.ready %}Connect {{ option.name }}{% else %}View {{ option.name }} setup status{% endif %}">{% if option.ready %}Connect{% else %}View setup{% endif %}<span aria-hidden="true">→</span></a>{% endif %}
+</section>
 {% endfor %}</div>

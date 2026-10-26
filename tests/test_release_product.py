@@ -28,9 +28,20 @@ def test_draft_filters_apply_before_pagination_and_preserve_search():
         for i in range(31):db.add(Draft(user_id=uid,brief=f'New unposted {i}'))
         db.add(Draft(user_id=uid,brief='Older pottery success',status='published',updated_at=utcnow()-timedelta(days=2),variants_json=json.dumps({'instagram':{'posts':['A recognisable caption']}})))
         db.commit()
-    html=client.get('/drafts?status=published&q=pottery').text
+    html=client.get('/drafts?view=saved&status=published&q=pottery').text
     assert 'Older pottery success' in html and 'A recognisable caption' in html
-    assert 'New unposted' not in html and '1</strong> item on this page' in html
+    assert 'New unposted' not in html and html.count('class="saved-post draft-card"')==1
+    assert 'name="view" value="saved"' in html and 'value="pottery"' in html
+    assert '<option value="published" selected>' in html
+    with SessionLocal() as db:
+        for i in range(31):db.add(Draft(user_id=uid,brief=f'Pottery published {i}',status='published'))
+        db.commit()
+    first=client.get('/drafts?view=saved&status=published&q=pottery').text
+    second=client.get('/drafts?view=saved&page=2&status=published&q=pottery').text
+    assert first.count('class="saved-post draft-card"')==30 and second.count('class="saved-post draft-card"')==2
+    assert '/drafts?view=saved&page=2&status=published&q=pottery' in first
+    assert '/drafts?view=saved&page=1&status=published&q=pottery' in second
+    assert 'Older pottery success' in second and 'New unposted' not in first+second
     other,*_=account()
     assert 'Older pottery success' not in other.get('/drafts?status=published').text
 
@@ -59,6 +70,8 @@ def test_performance_is_brand_scoped_and_expires():
 
 def test_recommendation_receives_real_evidence_and_review_cannot_publish(monkeypatch):
     client,uid,*_=account()
+    from test_next_move_intelligence import connect
+    connect(uid)
     client.get('/api/strategy')
     assert client.post('/api/strategy/confirm',json={'strategy':PROFILE,'revision':0}).status_code==200
     with SessionLocal() as db:

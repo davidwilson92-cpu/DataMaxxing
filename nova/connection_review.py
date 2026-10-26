@@ -17,7 +17,8 @@ def stage(db,request,state,platform,candidates):
     # Expired grants are inaccessible; scrub them opportunistically on new flows.
     db.execute(delete(PendingConnection).where(PendingConnection.expires_at<utcnow()))
     raw=secrets.token_urlsafe(32)
-    payload={'candidates':candidates,'onboarding':request.cookies.get('zova_onboarding')==str(user.id)}
+    payload={'candidates':candidates,'onboarding':request.cookies.get('zova_onboarding')==str(user.id),
+             'native_return':request.cookies.get('zova_social_return', '')}
     db.add(PendingConnection(code_hash=hash_api_key(raw),user_id=user.id,brand_id=state.brand_id,auth_version=user.auth_version,platform=platform,encrypted_payload=encrypt(json.dumps(payload)),expires_at=utcnow()+timedelta(minutes=10)))
     db.commit()
     return RedirectResponse(f'/connections/review/{raw}?workspace={state.brand_id}',303)
@@ -58,7 +59,18 @@ def confirm(code:str,request:Request,choice:int=Form(...),action:str=Form('conne
         # Keep an existing direct Instagram grant when the linked-Page route returns it.
         preserve=existing and candidate['platform']=='instagram' and 'instagram_business_basic' in (existing.scope or '') and candidate.get('metadata',{}).get('auth_provider')=='facebook_login'
         if not preserve:upsert_connection(db,user_id=user.id,**candidate)
+        elif candidate.get('audio_user_token'):
+            # Same owner, brand and exact Instagram account ID were matched
+            # above. Retain the working direct grant; music uses its separate
+            # explicitly confirmed Facebook User grant and original scopes.
+            from .social import attach_instagram_audio_grant
+            attach_instagram_audio_grant(existing,candidate['audio_user_token'],
+                candidate.get('audio_user_token_expires_in'),candidate.get('scope',''))
     db.commit()
     if action=='switch':return RedirectResponse(f'/connect/{row.platform}?switch_account=1&workspace={row.brand_id}',303)
+    from .mobile_shell import social_return
+    if payload.get('native_return') == request.cookies.get('zova_social_return', ''):
+        if response := social_return(request, row.platform, 'connected' if action == 'connect' else 'cancelled'):
+            return response
     destination='/onboarding/socials' if payload['onboarding'] else '/account'
     return RedirectResponse(f'{destination}?{"connected" if action=="connect" else "cancelled"}={row.platform}&workspace={row.brand_id}',303)

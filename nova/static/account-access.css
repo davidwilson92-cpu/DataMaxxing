@@ -1,0 +1,13 @@
+/* A calm form rhythm with separate, touch-sized account actions. */
+.auth-alternatives{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin-top:20px}
+.auth-alternatives a,.recovery-back{display:inline-flex;align-items:center;min-height:44px;padding:4px 0}
+.recovery-form{display:grid;gap:12px;max-width:480px;margin:24px 0}
+.recovery-form label{margin:0;font-weight:600}
+.recovery-form input{min-height:48px;margin:0}
+.recovery-form button{min-height:48px;margin-top:8px}
+.recovery-form [role=status]:empty{display:none}
+.guest-help{max-width:760px;margin:0 auto;padding:28px 24px 60px}
+.guest-help>.brand{display:inline-flex;margin-bottom:28px}
+.guest-help details{padding:16px 0;border-bottom:1px solid var(--line,#3a3048)}
+.guest-help summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600}
+.guest-help p,.guest-help li{line-height:1.7}

@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-26",
+  "runtime": "a9fe5a7a4724231b3491517abed35224f3f8d011",
+  "operator_candidate": "70713cf65c6cc6c9682ee65998396a94bf885a7c",
+  "policy_version": "2026-10-26-v1",
+  "policy_approved_by_owner": true,
+  "retention_prune": {
+    "nova_oauth_states": 77,
+    "zova_auth_states": 0,
+    "zova_email_verifications": 1,
+    "zova_recovery_tokens": 3,
+    "zova_revoked_sessions": 7
+  },
+  "retention_followup_readonly_audit": {
+    "nova_oauth_states": 0,
+    "zova_auth_states": 0,
+    "zova_email_verifications": 0,
+    "zova_recovery_tokens": 0,
+    "zova_revoked_sessions": 0
+  },
+  "content_affected": false,
+  "native_sessions_affected": false,
+  "daily_cleanup_scheduled": false,
+  "recovery_tools_removed": true,
+  "recovery_scratch_remaining": 0,
+  "health_status": 200,
+  "stripe_mode": "test",
+  "live_checkout_enabled": false,
+  "plan_limits_enabled": false,
+  "security_quotes": [
+    {
+      "vendor": "Cobalt",
+      "recipient": "info@cobalt.io",
+      "message_id": "<b6744460d3f1478391f49c9732e4183b@zova-social.com>",
+      "delivery_id": "01a177d9-dc41-76e7-baca-b19fc42b6964",
+      "smtp_status": "accepted",
+      "resend_status": "delivered"
+    },
+    {
+      "vendor": "Kobalt",
+      "recipient": "info@kobalt.io",
+      "message_id": "<bd99a56d456e4b42a900fc6c4505f48e@zova-social.com>",
+      "delivery_id": "01a177d9-dfeb-70d4-901b-222ac76431cf",
+      "smtp_status": "accepted",
+      "resend_status": "delivered"
+    }
+  ],
+  "quote_reply_to": "david@zova-social.com",
+  "vendor_access_granted": false,
+  "security_testing_purchased_or_started": false,
+  "new_hosting_resources": false
+}

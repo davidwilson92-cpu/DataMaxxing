@@ -24,8 +24,8 @@ def test_health_and_branding():
     response = client.get("/health")
     assert response.json() == {"status": "ok", "version": "5.1.0", "brand": "Zova"}
     landing = client.get("/").text
-    assert "One idea." in landing and "Your socials." in landing
-    assert "YOUR AI SOCIAL MANAGER" in landing
+    assert "Because content" in landing and "fun part." in landing
+    assert "Turn your ideas into captions and a content plan with Zova, your AI social media manager." in landing
     assert "Nova" not in landing
 
 
@@ -71,7 +71,7 @@ def test_signup_routes_through_onboarding():
         assert user.subscription_status == "none"
         assert user.terms_accepted_at is not None
         assert user.marketing_consent is True
-        assert user.password_hash.startswith("scrypt$") and "long-password-1" not in user.password_hash
+        assert user.password_hash.startswith("scrypt-v2$") and "long-password-1" not in user.password_hash
 
 
 def test_signup_form_has_confirmation_and_client_validation():
@@ -104,7 +104,7 @@ def test_studio_answers_account_questions_without_external_ai():
     signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     response = client.post("/api/insights", cookies=signup.cookies, json={"question": "What is working?"})
     assert response.status_code == 200
-    assert "account data" in response.json()["answer"]
+    assert "Connect an account" in response.json()["answer"]
 
 
 def test_drafts_are_saved_reopened_and_listed():
@@ -131,8 +131,8 @@ def test_separate_analytics_workspace_and_dashboard():
     signup = client.post("/signup", data=signup_payload(email), follow_redirects=False)
     page = client.get("/analytics", cookies=signup.cookies)
     assert page.status_code == 200
-    assert "CROSS-PLATFORM ANALYTICS" in page.text
-    assert "Analyse my accounts" in page.text
+    assert "Performance" in page.text
+    assert "Ask about your results" in page.text
     dashboard = client.get("/api/analytics/dashboard", cookies=signup.cookies)
     assert dashboard.status_code == 200
     assert dashboard.json()["period"] == "Posts published in the last 7 days"
@@ -181,6 +181,14 @@ def test_admin_dashboard_is_allowlisted_and_hides_secrets():
     previous = os.environ.get("ADMIN_EMAILS")
     os.environ["ADMIN_EMAILS"] = email
     try:
+        # Claiming an allowlisted address at signup does not prove mailbox control.
+        assert client.get("/admin/users", cookies=signup.cookies).status_code == 404
+        from sqlalchemy import select
+        from nova.db import SessionLocal, User, utcnow
+        with SessionLocal() as db:
+            admin = db.scalar(select(User).where(User.email == email))
+            admin.email_verified_at = utcnow()
+            db.commit()
         page = client.get("/admin/users", cookies=signup.cookies)
         filtered = client.get("/admin/users", params={"q": email, "country": "GB", "subscription": "none"}, cookies=signup.cookies)
     finally:
@@ -188,5 +196,5 @@ def test_admin_dashboard_is_allowlisted_and_hides_secrets():
         else: os.environ["ADMIN_EMAILS"] = previous
     assert page.status_code == 200 and "ZOVA ADMIN" in page.text
     assert email in page.text and "Marketing: yes" in page.text
-    assert "password_hash" not in page.text and "scrypt$" not in page.text
+    assert "password_hash" not in page.text and "scrypt$" not in page.text and "scrypt-v2$" not in page.text
     assert filtered.status_code == 200 and "1 matching account" in filtered.text

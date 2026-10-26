@@ -7,6 +7,34 @@ def valid_metric(value):
     return type(value) in (int,float) and isfinite(value) and value>=0
 
 
+def insight_fallback(view, question, days):
+    """A missing counter is not zero; different platforms are not a league table."""
+    connected = any(value.get('connected') for value in view['platforms'].values())
+    if not connected:
+        return 'Connect an account to see its available results. You can keep drafting in Studio.'
+    summary = view.get('summary', {})
+    question = question.lower()
+    for words, key, label in [
+        (('impression','view'),'impressions','views / impressions'),
+        (('like',),'likes','likes'), (('comment','reply'),'comments','comments'),
+        (('share','repost'),'shares','shares'), (('follower',),'followers','followers'),
+    ]:
+        if any(word in question for word in words):
+            value = summary.get(key)
+            if value is None:
+                return f'A complete {label} total is unavailable. Check each account below; missing data is not zero.'
+            if key == 'followers':
+                return f'Connected accounts currently report {value:,} followers. This is a current total, not growth.'
+            return f'Available lifetime {label}: {value:,}, for sampled posts published in the last {days} days. This is not engagement gained during those days.'
+    if 'recent' in question or 'last post' in question:
+        posts = view.get('top_posts') or []
+        # top_posts is ranked by engagement, so it cannot identify the latest post
+        # across the full provider sample. Do not pretend otherwise.
+        return 'Recent posts below are a limited sample ranked by available likes and comments; open the platform for your complete history.' if posts else f'No dated posts from the last {days} days are available in this sample.'
+    recommendations = view.get('recommendations') or []
+    return recommendations[0]['detail'] if recommendations else 'There is not enough comparable data to recommend a change yet.'
+
+
 def dashboard(data, feed, now=None, window_days=7):
     if window_days not in (7,30):
         raise ValueError('Choose a 7 or 30 day post window')
@@ -59,6 +87,6 @@ def dashboard(data, feed, now=None, window_days=7):
     if not posts:
         recommendations[0]['detail']=f'No dated posts in the last {window_days} days are available in this sample. Connect an account or try refreshing later.'
     return {'period': f'Posts published in the last {window_days} days', 'summary': summary, 'platforms': platforms,
-            'top_posts': scored[:6], 'recommendations': recommendations, 'unavailable': feed.get('unavailable', []),
+            'top_posts': scored[:6], 'sample_posts': posts[:30], 'recommendations': recommendations, 'unavailable': feed.get('unavailable', []),
             'fetched_at': now.isoformat(), 'window_start': start.isoformat(), 'excluded_undated': excluded,
             'note': f'Available lifetime totals for a limited sample of posts published in the last {window_days} days. These are not engagement gained during that period. Followers are current account totals. A dash means unavailable or incomplete; views and impressions differ by platform.'}

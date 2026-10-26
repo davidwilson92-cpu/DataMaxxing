@@ -1,0 +1,21 @@
+{
+  "application_started": false,
+  "consistent_snapshot": true,
+  "database_restore": "passed",
+  "elapsed_seconds": 4.67,
+  "encrypted_values_verified": 41,
+  "managed_snapshot_restore": false,
+  "media_bytes": 25492470,
+  "media_files": 25,
+  "media_restore": "incomplete",
+  "missing_media_records": 4,
+  "network_listener": false,
+  "provider_calls": false,
+  "rows": 623,
+  "scratch_removed": true,
+  "snapshot_sha256": "9fd626af0ecb6413a1edd056c8e1a455941754eeefa5bf302396d3d388a4333c",
+  "source_major": 18,
+  "source_writes": false,
+  "status": "incomplete",
+  "tables": 44
+}

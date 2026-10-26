@@ -1046,8 +1046,8 @@
       "status": "partial",
       "severity": "P1",
       "owner": "Privacy and engineering",
-      "finding": "Assisted erasure requires verified operator input and blocks unresolved billing/publication/storage; no complete self-service workflow exists.",
-      "next_action": "Build authenticated owner-confirmed deletion with durable provider, billing, storage and secondary-store reconciliation.",
+      "finding": "Authenticated owner-confirmed in-app deletion revokes access and cancels unsent work. On 25 October 2026 the owner approved David as operator with a seven-day target. The bounded manual receipt-based process requires a full-service maintenance/drain window, refuses unresolved delivery/billing/storage, verifies committed cleanup and publishes a completion timestamp. Synthetic regression coverage and the runbook support limited-beta operation; no actual customer erasure, universal provider revocation or backup deletion is claimed.",
+      "next_action": "Operate the daily queue and seven-day target; document each retention/backup decision and reconcile blocked provider/billing cases. Verify a separately authorised operational rehearsal and deletion replay after backup recovery before claiming comprehensive lifecycle closure.",
       "evidence": [
         {
           "path": "nova/data_lifecycle.py",
@@ -1067,7 +1067,7 @@
         }
       ],
       "reviewed_by": null,
-      "reviewed_at": null
+      "reviewed_at": "2026-10-25"
     },
     {
       "id": 17,
@@ -2536,5 +2536,11 @@
       "reviewed_by": null,
       "reviewed_at": null
     }
-  ]
+  ],
+  "qa_followup_20261025": {
+    "evidence": "QA_REMEDIATION_20261025.md",
+    "scope": "Tester7bugs/5UX and owner Schedule, Strategy, NextMove, Voice, Instagram music feedback; all79 sections retained.",
+    "implementation": "Bounded shared-web/backend and native navigation fixes; additive encrypted music grant and voice-memory fields.",
+    "remaining": "Actual erasure operations, real Facebook/eligible music tests, original tester schedule cleanup, replacement iPhone acceptance. Customer billing off; Render retained."
+  }
 }

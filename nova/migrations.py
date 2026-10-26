@@ -6,6 +6,7 @@ from sqlalchemy import Engine, inspect, text
 
 
 MIGRATIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("20261025_studio_intro", ("studio_intro_pending BOOLEAN NOT NULL DEFAULT FALSE",)),
     ("20260918_default_brand_name", ("default_brand_name VARCHAR(100) NOT NULL DEFAULT 'My brand'",)),
     ("20260914_auth_version", ("auth_version INTEGER NOT NULL DEFAULT 0",)),
     (
@@ -58,6 +59,10 @@ def run_migrations(engine: Engine, migrations: Iterable[tuple[str, tuple[str, ..
 
     additions = {'nova_drafts': ("workspace_json TEXT NOT NULL DEFAULT '{}'", "revision INTEGER NOT NULL DEFAULT 0", "title VARCHAR(120) NOT NULL DEFAULT ''")}
     additions['nova_media_assets'] = ("analysis_json TEXT NOT NULL DEFAULT '{}'",)
+    additions['zova_deletion_requests'] = ('completed_at TIMESTAMP NULL',)
+    additions['nova_social_connections'] = ('encrypted_audio_user_token TEXT NULL', 'audio_user_token_expires_at TIMESTAMP NULL')
+    for table in ('nova_creator_preferences', 'zova_brand_voices'):
+        additions[table] = ("learned_json TEXT NOT NULL DEFAULT '{}'",)
     for table in ('nova_drafts', 'nova_social_connections', 'nova_oauth_states', 'zova_publish_reviews',
                   'zova_publications', 'nova_media_assets', 'nova_scheduled_posts', 'nova_activity'):
         additions[table] = additions.get(table, ()) + ("brand_id INTEGER NOT NULL DEFAULT 0",)

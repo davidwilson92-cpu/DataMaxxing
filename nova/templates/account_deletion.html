@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% block title %}Delete account | Zova{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/account.css?v=20261025">{% endblock %}
+{% block body %}<main class="legal-wrap">
+<h1>Delete your Zova account</h1>
+<p>This covers all your brands, drafts, uploads and saved social connections.</p>
+<p>Confirming signs you out everywhere and cancels unsent schedules. Erasure is then processed by support and tracked on your receipt. This does not instantly erase your data or delete published social posts.</p>
+<p>David manages these requests, with a target of seven days. Your receipt shows the target date and the verified result.</p>
+<p>Any post already being sent, active subscription or required retention must be checked before erasure. You do not need to submit another request.</p>
+<form class="deletion-form" method="post" action="/account/deletion" data-security-form>
+<input type="hidden" name="proof" value="{{ proof }}">
+<label for="deletePassword">Current Zova password</label><input id="deletePassword" name="current_password" type="password" autocomplete="current-password" maxlength="256" required>
+<label for="deleteConfirmation">Type DELETE to confirm</label><input id="deleteConfirmation" name="confirmation" required autocomplete="off" pattern="DELETE">
+<button class="button primary" type="submit">Confirm account deletion</button><p class="form-error" role="status" data-security-message></p>
+</form>
+<p><a href="/forgot-password">Need to set or reset your Zova password?</a></p><p><a href="/account">Keep my account</a></p>
+</main><script defer src="/static/security-forms.js?v=20261020"></script>{% endblock %}

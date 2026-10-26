@@ -7,9 +7,9 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def files(root):
     found=set()
-    for folder in ('nova','scripts','tests','.github'):
+    for folder in ('nova','scripts','tests','.github','ios','infra'):
         found.update(p for p in (root/folder).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix!='.pyc')
-    found.update(p for p in root.iterdir() if p.is_file() and (p.suffix in {'.py','.ini','.yaml','.toml','.txt'} or p.name in {'Dockerfile','.dockerignore','AGENTS.md'}))
+    found.update(p for p in root.iterdir() if p.is_file() and (p.suffix in {'.py','.ini','.yaml','.toml','.txt'} or p.name in {'Dockerfile','.dockerignore','.gitattributes','AGENTS.md'}))
     found.update(root/p for p in ('docs/beta/KNOWN_GAPS.md','docs/beta/deferred-register.json'))
     return {p.relative_to(root).as_posix():hashlib.sha256(p.read_bytes().replace(b'\r\n',b'\n')).hexdigest() for p in found}
 

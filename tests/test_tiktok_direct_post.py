@@ -3,9 +3,11 @@ import copy
 import httpx
 import pytest
 from nova import social, tiktok_policy as policy
+from test_reviewed_publication import synthetic_storage
 
 
 def setup(monkeypatch):
+    monkeypatch.setenv('PUBLIC_BASE_URL','https://zova-social.com')
     monkeypatch.setenv('TIKTOK_SEND_TO_INBOX','false')
     monkeypatch.setenv('TIKTOK_VERIFIED_MEDIA_PREFIX','https://zova-social.com/media/raw/')
     monkeypatch.setattr(policy,'video_duration',lambda asset:6)
@@ -13,7 +15,7 @@ def setup(monkeypatch):
     monkeypatch.setattr(social,'get_bytes',lambda *a:b'synthetic')
     info={'creator_nickname':'Creator','privacy_level_options':['PUBLIC_TO_EVERYONE','SELF_ONLY'],'max_video_post_duration_sec':60,'comment_disabled':True}
     monkeypatch.setattr(social,'_tiktok_creator_info',lambda *a:info)
-    asset=SimpleNamespace(mime_type='video/mp4',storage_key='synthetic',public_url='https://zova-social.com/media/raw/test.mp4')
+    asset=SimpleNamespace(mime_type='video/mp4',storage_key=synthetic_storage(),public_url='https://zova-social.com/media/raw/test.mp4')
     options={'posting_mode':'direct','privacy_level':'PUBLIC_TO_EVERYONE','consent':True}
     context={**info,'privacy_options':info['privacy_level_options'],'max_video_duration_sec':60}
     return asset,options,context,info
@@ -43,7 +45,14 @@ def test_direct_video_uses_verified_pull_and_exact_options(monkeypatch):
     result=social.publish_tiktok(None,None,['Reviewed caption'],[asset],options=options)
     assert calls[0][0].endswith('/video/init/') and '/inbox/' not in calls[0][0]
     body=calls[0][1]
-    assert body['source_info']=={'source':'PULL_FROM_URL','video_url':asset.public_url}
+    from urllib.parse import urlsplit, parse_qs
+    from pathlib import Path
+    from nova.storage import valid_media_signature
+    source=body['source_info']
+    assert source['source']=='PULL_FROM_URL'
+    url=urlsplit(source['video_url']);query=parse_qs(url.query)
+    assert url.netloc=='zova-social.com' and url.path=='/media/raw/'+Path(asset.storage_key).name
+    assert valid_media_signature(Path(asset.storage_key).name,int(query['expires'][0]),query['signature'][0])
     assert body['post_info']['title']=='Reviewed caption'
     assert body['post_info']['brand_content_toggle'] and body['post_info']['is_aigc']
     assert body['post_info']['disable_comment']

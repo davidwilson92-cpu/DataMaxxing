@@ -7,12 +7,17 @@ from zoneinfo import ZoneInfo
 from fastapi import HTTPException
 from sqlalchemy import select,update
 from sqlalchemy.exc import IntegrityError
-from .db import Draft,MediaAsset,SocialConnection,PublishReview,Publication,ScheduledPost,Activity,get_preferences,utcnow
+from .db import Draft,MediaAsset,SocialConnection,PublishReview,Publication,ScheduledPost,Activity,User,get_preferences,utcnow
 from .workspace import EDITABLE,PLATFORMS
 from .social import selected_connection,publishing_context,publish_platform
 from . import allowances
+from .storage import verify_available
 
 TERMINAL={'published','pending','publishing','unknown','scheduled','queued'}
+
+
+class PublicationAttemptLost(RuntimeError):
+    """A recovered or replaced attempt must stop before further provider work."""
 
 
 def owned_draft(db,uid,draft_id):
@@ -68,6 +73,8 @@ def prepare_review(db,uid,body):
     for mid in list(dict.fromkeys(body.media_asset_ids)):
         asset=db.get(MediaAsset,mid)
         if not asset or asset.user_id!=uid:raise HTTPException(404,'Attachment not found')
+        try:verify_available(asset.storage_key,asset.size_bytes)
+        except RuntimeError as exc:raise HTTPException(409,str(exc)) from None
         media.append(asset)
     if len(media)>10:raise HTTPException(400,'Choose at most ten images.')
     videos=[a for a in media if a.mime_type.startswith('video/')]
@@ -105,6 +112,15 @@ def prepare_review(db,uid,body):
             if problem:raise HTTPException(400,problem)
             context=publishing_context(db,uid,p,conn.id)
         except RuntimeError:raise HTTPException(400,f'Connect or reconnect {p} before publishing.')
+        if p=='instagram' and instagram_options.get('audio'):
+            from .instagram_audio import validate_selection
+            try:
+                checked_audio=validate_selection(conn,instagram_options['audio'],media,instagram_format)
+            except ValueError as exc:raise HTTPException(400,str(exc)) from None
+            # Exact metadata and volume controls are included in the immutable
+            # review. A different track cannot be substituted at confirmation.
+            if instagram_options['audio']!=checked_audio:
+                raise HTTPException(400,'Choose the track and both audio volumes before reviewing.')
         if story:
             from .social import instagram_story_eligibility
             try:instagram_story_eligibility(db,conn)
@@ -142,11 +158,14 @@ def prepare_review(db,uid,body):
     return {'review_token':row.code,'snapshot':payload,'expires_in':900}
 
 
-def results_for(db,uid,draft_id):
+def results_for(db,uid,draft_id,refresh=False):
     draft=owned_draft(db,uid,draft_id)
     rows=db.scalars(select(Publication).where(Publication.user_id==uid,Publication.draft_id==draft_id)).all()
     for row in rows:
         reconcile_instagram(db,row)
+        if refresh:
+            from .tiktok_status import reconcile
+            reconcile(db,row)
     db.refresh(draft)
     results={r.platform:{**json.loads(r.result_json or '{}'),'status':r.status} for r in rows}
     draft=owned_draft(db,uid,draft_id)
@@ -188,53 +207,81 @@ def update_draft_status(db,draft_id):
 
 def dispatch(db,publication,payload,publisher=publish_platform):
     target=payload['targets'][publication.platform]
-    claimed=db.execute(update(Publication).where(Publication.id==publication.id,Publication.status.in_(['queued','scheduled'])).values(status='publishing',updated_at=utcnow()).execution_options(synchronize_session=False))
+    attempt_review=publication.review_code
+    claimed=db.execute(update(Publication).where(Publication.id==publication.id,Publication.review_code==attempt_review,Publication.status.in_(['queued','scheduled'])).values(status='publishing',updated_at=utcnow()).execution_options(synchronize_session=False))
     if claimed.rowcount!=1:db.rollback();return
     db.commit();db.refresh(publication)
+    attempt_result=publication.result_json
+    def save_attempt(status,result):
+        return db.execute(update(Publication).where(
+            Publication.id==publication.id,Publication.review_code==attempt_review,
+            Publication.status=='publishing',Publication.result_json==attempt_result,
+        ).values(status=status,result_json=json.dumps(result),updated_at=utcnow()).execution_options(synchronize_session=False)).rowcount==1
     # Fail before the provider call if the exact reviewed connection/media no longer exists.
     try:
         conn=selected_connection(db,publication.user_id,publication.platform,target['connection_id'])
         if conn.account_id!=target['account_id']:raise RuntimeError('Account changed')
         media=[db.get(MediaAsset,i) for i in payload['media_asset_ids']]
         if any(not a or a.user_id!=publication.user_id for a in media):raise RuntimeError('Media unavailable')
+        for asset in media:verify_available(asset.storage_key,asset.size_bytes)
         if capability_error(conn,media):raise RuntimeError('Permission changed')
     except RuntimeError:
-        publication.status='failed';publication.result_json=json.dumps({'error':'The reviewed account, media or permissions are unavailable. Reconnect/review before retrying.'});allowances.finish(db,f'publication:{publication.id}',False);db.commit();return
+        if not save_attempt('failed',{'error':'The reviewed account, attachment or permissions are unavailable. Check the connection, re-upload missing media and review again.'}):db.rollback();return
+        allowances.finish(db,f'publication:{publication.id}',False);db.commit();db.refresh(publication);return
     from .publication_evidence import recorder
     def record(evidence):
-        previous=json.loads(publication.result_json or '{}')
+        nonlocal attempt_result
+        previous=json.loads(attempt_result or '{}')
         previous.update(evidence)
-        publication.result_json=json.dumps(previous)
-        publication.updated_at=utcnow()
+        if not save_attempt('publishing',previous):
+            db.rollback()
+            raise PublicationAttemptLost('The publication attempt was recovered or replaced.')
         db.commit()
+        attempt_result=json.dumps(previous)
     evidence_token=recorder.set(record)
     try:
         result=publisher(db,user_id=publication.user_id,platform=publication.platform,posts=target['posts'],assets=media,link_url=target.get('link',''),options=payload['publish_options'].get(publication.platform,{}),connection_id=target['connection_id'])
-        publication.status='pending' if result.get('pending') else 'published';publication.result_json=json.dumps({**json.loads(publication.result_json or '{}'),**result})
+        next_status='pending' if result.get('pending') else 'published'
+        result={**json.loads(attempt_result or '{}'),**result}
+    except PublicationAttemptLost:
+        db.rollback();return
     except Exception:
         db.rollback();db.refresh(publication)
-        evidence=json.loads(publication.result_json or '{}')
-        if evidence.get('phase')=='published' and evidence.get('post_id'):
-            publication.status='published'
+        if publication.status!='publishing' or publication.review_code!=attempt_review or publication.result_json!=attempt_result:
+            return
+        evidence=json.loads(attempt_result or '{}')
+        from .tiktok_outcomes import recover_evidence
+        tiktok_status=recover_evidence(evidence) if publication.platform=='tiktok' else None
+        if tiktok_status:
+            next_status=tiktok_status
+        elif evidence.get('phase')=='published' and evidence.get('post_id'):
+            next_status='published'
         elif evidence.get('phase') in {'validating','container_created'}:
-            publication.status='failed'
+            next_status='failed'
             evidence['error']='Instagram did not reach the publishing step. Check the media and connection, then review again.'
         else:
-            publication.status='unknown'
+            next_status='unknown'
             evidence['error']='The provider outcome is unconfirmed. Check your social account before retrying; Zova will not resend automatically.'
         evidence['support_reference']='publication-'+str(publication.id)
-        publication.result_json=json.dumps(evidence)
+        result=evidence
     finally:
         recorder.reset(evidence_token)
-    result=json.loads(publication.result_json)
-    allowances.finish(db,f'publication:{publication.id}')
-    db.add(Activity(user_id=publication.user_id,brand_id=publication.brand_id,draft_id=publication.draft_id,platform=publication.platform,action='publish',status=publication.status,text='\n\n'.join(target['posts']),platform_post_id=result.get('post_id'),url=result.get('url'),error=result.get('error')))
+    if not save_attempt(next_status,result):db.rollback();db.refresh(publication);return
+    allowances.finish(db,f'publication:{publication.id}',next_status!='failed')
+    db.add(Activity(user_id=publication.user_id,brand_id=publication.brand_id,draft_id=publication.draft_id,platform=publication.platform,action='publish',status=next_status,text='\n\n'.join(target['posts']),platform_post_id=result.get('post_id'),url=result.get('url'),error=result.get('error')))
     db.commit()
+    db.refresh(publication)
 
 
 def confirm_review(db,uid,body,mode,publisher=publish_platform):
+    # Serialise with account deletion before claiming any approval or job.
+    # A request authenticated just before revocation must not queue new sends.
+    allowances.lock(db,uid)
+    if not db.scalar(select(User.id).where(User.id==uid,User.active.is_(True))):
+        db.rollback();raise HTTPException(401,'This account is no longer active.')
     review=db.get(PublishReview,body.review_token) if body.review_token else None
     if not review or review.user_id!=uid or review.draft_id!=body.draft_id:raise HTTPException(400,'Review this draft before confirming publication.')
+    if review.status=='cancelled':raise HTTPException(409,'This review is no longer valid. Review the current draft and destination again.')
     if review.status!='review':return results_for(db,uid,review.draft_id)
     payload=json.loads(review.payload_json)
     if bool(payload['scheduled_utc'])!=(mode=='schedule'):raise HTTPException(400,'Review the selected publication mode again.')
@@ -261,6 +308,8 @@ def confirm_review(db,uid,body,mode,publisher=publish_platform):
             row.status='scheduled' if mode=='schedule' else 'queued';row.connection_id=target['connection_id'];row.review_code=review.code;row.result_json='{}';db.flush();jobs.append(row)
             allowances.reserve(db,uid,'publications',f'publication:{row.id}',max(1,len(target['posts'])))
             if mode=='schedule':db.add(ScheduledPost(user_id=uid,draft_id=draft.id,platform=platform,connection_id=target['connection_id'],content_json=json.dumps({'review_code':review.code,'publication_id':row.id,'posts':target['posts']}),media_asset_ids_json=json.dumps(payload['media_asset_ids']),scheduled_at=datetime.fromisoformat(payload['scheduled_utc']),status='scheduled'))
+        from .voice_memory import remember_approved
+        remember_approved(db,uid,payload)
         db.commit()
     except HTTPException:
         db.rollback();raise

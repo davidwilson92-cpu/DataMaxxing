@@ -58,7 +58,8 @@ def test_work_summary_brand_scope_due_windows_and_statuses():
         db.commit()
         result=work_summary(db,uid)
         assert result=={'drafts':1,'needs_review':1,'scheduled':1,'overdue':1,'unconfirmed':0}
-    page=client.get('/studio').text
+    assert 'class="work-summary"' not in client.get('/studio').text
+    page=client.get('/drafts').text
     assert '1 scheduled delivery is overdue' in page
     assert 'Pending does not mean published' in page
 
@@ -95,7 +96,7 @@ def test_pending_delivery_has_actionable_filter_and_corrupt_legacy_title_survive
         assert work_summary(db,uid)['overdue']==0
     assert client.get('/api/drafts').status_code==200
     assert 'My pending post' in client.get('/drafts?status=awaiting_results').text
-    assert 'Check publication results before retrying' in client.get('/studio').text
+    assert 'Check publication results before retrying' in client.get('/drafts').text
 
 
 def test_title_migration_keeps_existing_draft_and_is_repeatable():

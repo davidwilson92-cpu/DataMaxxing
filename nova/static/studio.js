@@ -1,3 +1,4 @@
+function safeRecentUrl(value){try{const url=new URL(String(value||''));return url.protocol==='https:'&&!url.username&&!url.password?url.href:'';}catch{return '';}}
 let variants = {};
 
 let currentPlatform = "x";
@@ -73,7 +74,25 @@ let stickToLatest=true;
 function scrollChat(force=false){const feed=document.getElementById('chatFeed');if(force||stickToLatest){requestAnimationFrame(()=>feed.scrollTo({top:feed.scrollHeight,behavior:'smooth'}));document.getElementById('latestMessage').hidden=true;}else document.getElementById('latestMessage').hidden=false;}
 document.getElementById('chatFeed').addEventListener('scroll',()=>{const feed=document.getElementById('chatFeed');stickToLatest=feed.scrollHeight-feed.scrollTop-feed.clientHeight<100;if(stickToLatest)document.getElementById('latestMessage').hidden=true;});
 
-function addUserMessage(text){document.querySelector('.welcome-message')?.remove();conversation.push({role:"user",content:text});document.getElementById("chatFeed").insertAdjacentHTML("beforeend",`<article class="chat-message user-message"><div class="message-content">${esc(text)}</div></article>`);scrollChat();}
+function composerAttachments(){
+  const sent=new Set(conversation.filter(message=>message.role==='user').flatMap(message=>message.media_asset_ids||[]));
+  return uploadedMedia.filter(asset=>!sent.has(asset.id));
+}
+function messageMediaMarkup(message){
+  return (message.media||[]).map(asset=>{
+    const active=uploadedMediaIds.includes(asset.id),canRemove=active&&editableDraft();
+    const action=canRemove?`<button class="message-attachment-action" type="button" onclick="removeSentAttachment(${asset.id})" ${mediaUploading||sendingMessage?'disabled':''} aria-label="Remove ${esc(asset.filename)} from this post">Remove from post</button>`:`<span class="sent-attachment-status">${active?'Attached to post':'Not in current post'}</span>`;
+    return `<figure class="sent-attachment">${attachmentPreview(asset)}<figcaption><span title="${esc(asset.filename)}">${esc(asset.filename)}</span>${action}</figcaption></figure>`;
+  }).join('');
+}
+function addUserMessage(text,media=[]){
+  document.querySelector('.welcome-message')?.remove();
+  const message={role:'user',content:text};
+  if(media.length){message.media_asset_ids=media.map(asset=>asset.id);message.media=media.map(asset=>({...asset}));}
+  const index=conversation.push(message)-1;
+  document.getElementById('chatFeed').insertAdjacentHTML('beforeend',`<article class="chat-message user-message"><div class="message-content"><div data-message-media="${index}" class="sent-attachments">${messageMediaMarkup(message)}</div><div>${esc(text)}</div></div></article>`);
+  scrollChat();
+}
 
 function addThinking(){document.getElementById("chatFeed").insertAdjacentHTML("beforeend",'<article id="thinking" class="chat-message assistant-message"><div class="assistant-avatar">Z</div><div class="message-content"><div class="thinking" role="status" aria-label="Zova is thinking"><i></i><i></i><i></i></div></div></article>');scrollChat();}
 
@@ -91,7 +110,7 @@ function platformMention(text){const lower=text.toLowerCase();if(/\b(insta|insta
 
 function draftWorkspace(){
  const platforms=Object.keys(variants),locked=!editableDraft(),missing=['x','instagram','facebook','tiktok'].filter(p=>!variants[p]);
- return `<section class="inline-draft" data-current-draft>${currentDraftTitle?`<h2 class="draft-working-title">${esc(currentDraftTitle)}</h2>`:""}<p class="draft-scope">${editingDraft?"Editing ":""}${window.zovaPlatformLabel(currentPlatform)}${currentPlatform==='instagram'?' · '+(instagramFormat()==='story'?'Story planning notes':'Post'):""}${editingDraft&&platforms.length>1?" only":""}</p>${platforms.length>1?`<div class="draft-tabs" role="group" aria-label="Platform versions">${platforms.map(p=>`<button class="draft-tab ${p===currentPlatform?'active':''}" type="button" aria-pressed="${p===currentPlatform}" onclick="switchPlatform('${p}')">${window.zovaPlatformLabel(p)}</button>`).join('')}</div>`:''}<div id="variantEditor">${editorMarkup()}</div><div class="response-actions">${!locked?`<button class="review-button" onclick="requestPublishConfirmation('publish')">Review & publish</button>`:''}${!locked?`<button onclick="${editingDraft?'finishEditing()':"canvasView('edit')"}">${editingDraft?'Done editing':'Edit'}</button>`:''}<button onclick="copyDraft(this)">Copy</button><details class="draft-options"><summary>More</summary><div><button onclick="canvasView('preview')">Preview</button>${platforms.length>1?`<button onclick="canvasView('compare')">Compare versions</button>`:''}${!locked?`<button onclick="undoTextEdit()">Undo text edit</button><button onclick="requestPublishConfirmation('schedule')">Schedule</button>${missing.map(p=>`<button onclick="promptComposer('Add a ${platformName(p)} version of this post')">Add ${platformName(p)}</button>`).join('')}`:''}</div></details></div>${locked?`<p class="response-note">${esc(publicationStates[currentPlatform]?publicationStatus(publicationStates[currentPlatform]):'Not submitted')}</p>`:''}</section>`;
+ return `<section class="inline-draft" data-current-draft>${currentDraftTitle?`<h2 class="draft-working-title">${esc(currentDraftTitle)}</h2>`:""}<p class="draft-scope">${editingDraft?"Editing ":""}${window.zovaPlatformLabel(currentPlatform)}${currentPlatform==='instagram'?' · '+(instagramFormat()==='story'?'Story planning notes':'Post'):""}${editingDraft&&platforms.length>1?" only":""}</p>${platforms.length>1?`<div class="draft-tabs" role="group" aria-label="Platform versions">${platforms.map(p=>`<button class="draft-tab ${p===currentPlatform?'active':''}" type="button" aria-pressed="${p===currentPlatform}" onclick="switchPlatform('${p}')">${window.zovaPlatformLabel(p)}</button>`).join('')}</div>`:''}<div id="variantEditor">${editorMarkup()}</div><div class="response-actions">${locked&&currentDraftStatus==='scheduled'?`<a class="review-button" href="${window.zovaWorkspaceUrl('/drafts?draft='+currentDraftId)}">Manage schedule</a>`:''}${!locked?`<button class="review-button" onclick="requestPublishConfirmation('publish')">Review & publish</button>`:''}${!locked?`<button onclick="${editingDraft?'finishEditing()':"canvasView('edit')"}">${editingDraft?'Done editing':currentPlatform==='instagram'&&instagramFormat()==='story'?'Edit planning notes':'Edit caption'}</button>`:''}<button onclick="copyDraft(this)">Copy</button><details class="draft-options"><summary>More</summary><div><button onclick="canvasView('preview')">Preview</button>${platforms.length>1?`<button onclick="canvasView('compare')">Compare versions</button>`:''}${!locked?`<button onclick="undoTextEdit()">Undo text edit</button><button onclick="requestPublishConfirmation('schedule')">Schedule</button>${missing.map(p=>`<button onclick="promptComposer('Add a ${platformName(p)} version of this post')">Add ${platformName(p)}</button>`).join('')}`:''}</div></details></div>${locked?`<p class="response-note">${esc(publicationStates[currentPlatform]?publicationStatus(publicationStates[currentPlatform]):'Checking publication status…')}</p>`:''}</section>`;
 }
 
 function editorMarkup(){if(!editingDraft||!editableDraft())return `<div class="draft-text">${(variants[currentPlatform]?.posts||[]).map((post,index)=>`${(variants[currentPlatform]?.posts.length||0)>1?`<small>Post ${index+1}</small>`:''}<p>${esc(post)}</p>`).join('')}</div>`;const posts=(variants[currentPlatform]||{}).posts||[],locked=!editableDraft(),rule=currentPlatform==="x"?"280 characters max per post":(["instagram","tiktok"].includes(currentPlatform)?"Media required to publish":"Review before publishing");return `<div class="draft-platform-head"><b>${platformIcon(currentPlatform)} ${platformName(currentPlatform)}</b><span>${rule}</span></div>${posts.map((post,index)=>`<label class="post-copy"><span>${posts.length>1?`Post ${index+1}`:"Draft"}</span><textarea rows="${posts.length>1?4:6}" ${locked?"readonly":""} onfocus="rememberTextRevision()" oninput="updateDraftPost('${currentPlatform}',${index},this.value)">${esc(post)}</textarea><small>${currentPlatform==="x"?`<b data-character-count>${post.length}</b> / 280`:saveLabel}</small></label>`).join("")}`;}
@@ -100,17 +119,29 @@ function saveEditors(){return saveDraftNow();}
 
 function updateCount(){}
 
+function attachmentPreview(asset){
+  if(!asset.url)return '<div class="attachment-placeholder">Preview unavailable</div>';
+  return asset.kind==='video'?`<video src="${esc(mediaPreviewUrl(asset.url))}" controls playsinline preload="metadata" aria-label="Preview of ${esc(asset.filename)}"></video>`:`<img src="${esc(mediaPreviewUrl(asset.url))}" alt="Preview of ${esc(asset.filename)}">`;
+}
 function renderAttachments(){
   if(typeof renderReadiness==='function'){renderReadiness();renderCanvasPreview();}
 
   const tray=document.getElementById("attachmentTray");
 
-  tray.classList.toggle("hidden",!uploadedMedia.length);
+  const pending=composerAttachments();
+  tray.classList.toggle("hidden",!pending.length);
 
-  tray.innerHTML=uploadedMedia.map((asset,index)=>`<div class="attachment-card">${!asset.url?'<div class="attachment-placeholder">Preview unavailable</div>':asset.kind==="video"?`<video src="${esc(mediaPreviewUrl(asset.url))}" controls preload="metadata" aria-label="Preview of ${esc(asset.filename)}"></video>`:`<img src="${esc(mediaPreviewUrl(asset.url))}" alt="Preview of ${esc(asset.filename)}">`}<div class="attachment-details"><span title="${esc(asset.filename)}">${esc(asset.filename)}</span><button type="button" onclick="removeAttachment(${index})" ${mediaUploading?"disabled":""} aria-label="Remove ${esc(asset.filename)}">Remove</button></div></div>`).join("");
+  tray.innerHTML=pending.map(asset=>`<div class="attachment-card">${attachmentPreview(asset)}<div class="attachment-details"><span title="${esc(asset.filename)}">${esc(asset.filename)}</span><button type="button" onclick="removeSentAttachment(${asset.id})" ${mediaUploading||sendingMessage?"disabled":""} aria-label="Remove ${esc(asset.filename)}">Remove</button></div></div>`).join("");
+  document.querySelectorAll('[data-message-media]').forEach(node=>{node.innerHTML=messageMediaMarkup(conversation[Number(node.dataset.messageMedia)]||{});});
 
   document.getElementById("mediaStatus").textContent="";
+  if(typeof renderMessageRetry==='function')renderMessageRetry();
 
+}
+
+function removeSentAttachment(id){
+  const index=uploadedMedia.findIndex(asset=>asset.id===id);
+  if(index>=0)removeAttachment(index);
 }
 
 function removeAttachment(index){
@@ -195,7 +226,7 @@ function useTime(value,label){addUserMessage(`Schedule these posts for ${label}`
 
 
 
-async function loadSidebar(){try{const data=await api("/api/analytics"),s=data._summary||{};const connected=Object.entries(data).filter(([k,v])=>k!=="_summary"&&v.connected);document.getElementById("connectionPulse").innerHTML=`<i></i>${connected.length?`${connected.length} social${connected.length===1?"":"s"} connected`:"Connect your socials"}`;document.getElementById("analytics").innerHTML=`<div class="pulse-metrics"><div><strong>${(s.impressions==null?"—":Number(s.impressions).toLocaleString())}</strong><span>Views / impressions</span></div><div><strong>${(s.likes==null?"—":Number(s.likes).toLocaleString())}</strong><span>Likes</span></div><div><strong>${(s.comments==null?"—":Number(s.comments).toLocaleString())}</strong><span>Comments</span></div><div><strong>${(s.shares==null?"—":Number(s.shares).toLocaleString())}</strong><span>Shares</span></div></div><p class="support-note">Available recent-post totals; — means unavailable.</p><a class="analytics-link" href="/analytics">Open full analytics →</a><button class="ask-data" onclick="askQuestion('What is working across my accounts?')">Ask in chat</button>`;}catch(error){document.getElementById("analytics").innerHTML=`<div class="tiny-error">${esc(error.message)}</div>`;}try{const feed=await api("/api/recent-posts"),rows=feed.posts||[];document.getElementById("recentActivity").innerHTML=rows.length?rows.slice(0,4).map(row=>`<a class="recent-post" target="_blank" rel="noopener" href="${esc(row.url||"#")}">${row.image_url?`<img src="${esc(row.image_url)}" alt="">`:`<span class="post-platform-art">${platformIcon(row.platform)}</span>`}<div class="recent-post-copy"><div class="recent-post-platform">${platformIcon(row.platform)}<b>${platformName(row.platform)}</b></div><p>${esc(row.text||"Media post").slice(0,90)}</p><div class="post-metrics"><span>♥ ${(row.likes==null?"—":Number(row.likes).toLocaleString())}</span><span>◯ ${(row.comments==null?"—":Number(row.comments).toLocaleString())}</span><span>↗ ${(row.shares==null?"—":Number(row.shares).toLocaleString())}</span></div></div></a>`).join(""):'<div class="empty-feed">Your recent posts will appear here.</div>';}catch(error){document.getElementById("recentActivity").innerHTML=`<div class="tiny-error">${esc(error.message)}</div>`;}}
+async function loadSidebar(){try{const data=await api("/api/analytics"),s=data._summary||{};const connected=Object.entries(data).filter(([k,v])=>k!=="_summary"&&v.connected);document.getElementById("connectionPulse").innerHTML=`<i></i>${connected.length?`${connected.length} social${connected.length===1?"":"s"} connected`:"Connect your socials"}`;document.getElementById("analytics").innerHTML=`<div class="pulse-metrics"><div><strong>${(s.impressions==null?"—":Number(s.impressions).toLocaleString())}</strong><span>Views / impressions</span></div><div><strong>${(s.likes==null?"—":Number(s.likes).toLocaleString())}</strong><span>Likes</span></div><div><strong>${(s.comments==null?"—":Number(s.comments).toLocaleString())}</strong><span>Comments</span></div><div><strong>${(s.shares==null?"—":Number(s.shares).toLocaleString())}</strong><span>Shares</span></div></div><p class="support-note">Available recent-post totals; — means unavailable.</p><a class="analytics-link" href="/analytics">Open full analytics →</a><button class="ask-data" onclick="askQuestion('What is working across my accounts?')">Ask in chat</button>`;}catch(error){document.getElementById("analytics").innerHTML=`<div class="tiny-error">${esc(error.message)}</div>`;}try{const feed=await api("/api/recent-posts"),rows=feed.posts||[];document.getElementById("recentActivity").innerHTML=rows.length?rows.slice(0,4).map(row=>`<a class="recent-post" target="_blank" rel="noopener" href="${esc(safeRecentUrl(row.url)||"#")}">${safeRecentUrl(row.image_url)?`<img src="${esc(safeRecentUrl(row.image_url))}" alt="">`:`<span class="post-platform-art">${platformIcon(row.platform)}</span>`}<div class="recent-post-copy"><div class="recent-post-platform">${platformIcon(row.platform)}<b>${platformName(row.platform)}</b></div><p>${esc(row.text||"Media post").slice(0,90)}</p><div class="post-metrics"><span>♥ ${(row.likes==null?"—":Number(row.likes).toLocaleString())}</span><span>◯ ${(row.comments==null?"—":Number(row.comments).toLocaleString())}</span><span>↗ ${(row.shares==null?"—":Number(row.shares).toLocaleString())}</span></div></div></a>`).join(""):'<div class="empty-feed">Your recent posts will appear here.</div>';}catch(error){document.getElementById("recentActivity").innerHTML=`<div class="tiny-error">${esc(error.message)}</div>`;}}
 
 
 function askQuestion(text){document.getElementById("brief").value=text;sendMessage();}

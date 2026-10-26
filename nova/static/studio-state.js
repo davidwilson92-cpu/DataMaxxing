@@ -16,7 +16,7 @@ function setAutosaveStatus(text){
   document.querySelectorAll('[data-save-status],#autosaveStatus').forEach(node=>node.textContent=text);
 }
 let reviewEpoch=0;
-function invalidateReview(){reviewEpoch++;pendingReview=null;document.querySelectorAll('.chat-confirmation').forEach(node=>node.remove());}
+function invalidateReview(){document.body?.classList.remove('review-active');reviewEpoch++;pendingReview=null;document.querySelectorAll('.chat-confirmation').forEach(node=>node.remove());}
 function addAssistantMessage(text,extra=''){
   const follow=stickToLatest;
   conversation.push({role:'assistant',content:text});
@@ -26,8 +26,8 @@ function addAssistantMessage(text,extra=''){
 }
 function draftPayload(){
   return {brief:lastBrief,instruction:'',platforms:Object.keys(variants),variants,revision:draftRevision,thread_length:+document.getElementById('threadLength').value,
-    workspace:{instagram_format:instagramFormat(),media_asset_ids:uploadedMediaIds,video_duration:uploadedVideoDuration,link_url:document.getElementById('linkUrl').value,
-      conversation,text_history:textHistory,composer:document.getElementById('brief').value,selected_platforms:selectedPlatforms(),platform_selection_explicit:platformSelectionExplicit,active_platform:currentPlatform}};
+    workspace:{instagram_format:instagramFormat(),instagram_audio:window.zovaInstagramMusic?.snapshot()||null,media_asset_ids:uploadedMediaIds,video_duration:uploadedVideoDuration,link_url:document.getElementById('linkUrl').value,
+      conversation,text_history:textHistory,composer:document.getElementById('brief').value,pending_message:retryTurn?.text||'',pending_media_asset_ids:retryTurn?.mediaIds||[],pending_link_url:retryTurn?.link||'',selected_platforms:selectedPlatforms(),platform_selection_explicit:platformSelectionExplicit,active_platform:currentPlatform}};
 }
 function scheduleAutosave(){
   if(studioLoading || !editableDraft())return;
@@ -81,23 +81,50 @@ function studioBusy(active){
   document.getElementById('brief').readOnly=active||!editableDraft();
   document.getElementById('newChatBtn').disabled=active;
   document.querySelectorAll('#variantEditor textarea').forEach(node=>node.readOnly=active||!editableDraft());
-  document.querySelectorAll('.platform-check input,[name=instagramFormatChoice],#threadLength,#instagramFormat,#linkUrl,#mediaInput,.attachment-details button').forEach(node=>node.disabled=active||!editableDraft());
+  document.querySelectorAll('.platform-check input,[name=instagramFormatChoice],#threadLength,#instagramFormat,#linkUrl,#mediaInput,.attachment-details button,.message-attachment-action').forEach(node=>node.disabled=active||mediaUploading||!editableDraft());
+  renderMessageRetry();
 }
-async function sendMessage(){
-  const input=document.getElementById('brief'),text=input.value.trim();
+function renderMessageRetry(){
+  document.getElementById('messageRetry')?.remove();
+  if(!retryTurn||sendingMessage||!editableDraft())return;
+  const changed=retryContextChanged();
+  document.getElementById('chatFeed').insertAdjacentHTML('beforeend',`<div id="messageRetry" class="message-retry"><p>${changed?'Your media or source link changed. Send a new message to use the current selection.':'Your message is kept above.'}</p><button class="button ghost" type="button" onclick="retryMessage()" ${changed?'disabled':''}>Retry message</button></div>`);
+}
+function retryContextChanged(){
+  if(!retryTurn)return false;
+  return JSON.stringify([...(retryTurn.mediaIds||[])].sort())!==JSON.stringify([...uploadedMediaIds].sort())||retryTurn.link!==document.getElementById('linkUrl').value;
+}
+async function retryMessage(){
+  if(retryTurn?.draftId!==currentDraftId)return;
+  if(retryContextChanged()){renderMessageRetry();document.getElementById('brief').focus();return;}
+  await sendMessage(retryTurn.text);
+}
+async function sendMessage(retryText=null){
+  const input=document.getElementById('brief'),text=(retryText??input.value).trim();
   if(!text||sendingMessage||studioLoading||mediaUploading||!editableDraft())return;
   studioBusy(true);invalidateReview();
-  const epoch=workspaceEpoch;let responseApplied=false,turnAdded=false;
+  const epoch=workspaceEpoch;let responseApplied=false;
   try{
     await saveDraftNow();
     if(epoch!==workspaceEpoch)return;
+    const recentMessages=conversation.slice(-12).map(({role,content})=>({role,content}));
+    stickToLatest=true;
+    if(retryText===null||!(retryTurn?.draftId===currentDraftId&&retryTurn.text===text))addUserMessage(text,composerAttachments());
+    retryTurn={draftId:currentDraftId,text,mediaIds:[...uploadedMediaIds],link:document.getElementById('linkUrl').value};
+    if(retryText===null)input.value='';
+    renderAttachments();sizeComposer();scrollChat(true);changeSerial++;
     addThinking();
-    const plan=await api('/api/conversation/plan',{method:'POST',headers,body:JSON.stringify({message:text,draft_id:currentDraftId,selected_platforms:selectedPlatforms(),platform_selection_explicit:platformSelectionExplicit,active_platform:currentPlatform,recent_messages:conversation.slice(-12),media_asset_ids:uploadedMediaIds})});
+    await saveDraftNow();
     if(epoch!==workspaceEpoch)return;
+    const selected=selectedPlatforms();
+    const active=selected.includes(currentPlatform)?currentPlatform:selected[0]||currentPlatform;
+    const plan=await api('/api/conversation/plan',{method:'POST',headers,body:JSON.stringify({message:text,draft_id:currentDraftId,selected_platforms:selected,platform_selection_explicit:platformSelectionExplicit,active_platform:active,recent_messages:recentMessages,media_asset_ids:uploadedMediaIds})});
+    if(epoch!==workspaceEpoch)return;
+    // A request to post media first needs an editable caption, never an automatic send.
+    const hasCaption=Object.values(variants).some(variant=>Array.isArray(variant.posts)&&variant.posts.some(post=>typeof post==='string'&&post.trim()));
+    if(['publish','schedule'].includes(plan.action)&&!hasCaption){plan.action='create';plan.platforms=selected;plan.brief=plan.brief||text;}
     removeThinking();stickToLatest=true;
-    if(!(retryTurn?.draftId===currentDraftId&&retryTurn.text===text))addUserMessage(text);
-    turnAdded=true;retryTurn=null;
-    if(plan.media_inspection?.length)showMediaInspection(plan.media_inspection);scrollChat(true);input.value='';sizeComposer();changeSerial++;addThinking();
+    if(plan.media_inspection?.length)showMediaInspection(plan.media_inspection);scrollChat(true);addThinking();
     if(plan.action==='answer'){removeThinking();addAssistantMessage(plan.reply||'What would you like to create or change?');}
     else if(plan.action==='insight'){
       const result=await api('/api/insights',{method:'POST',headers,body:JSON.stringify({question:text})});if(epoch!==workspaceEpoch)return;removeThinking();addAssistantMessage(result.answer);
@@ -113,7 +140,7 @@ async function sendMessage(){
         if(epoch!==workspaceEpoch)return;
         changed[p]={posts:result.posts};
       }
-      rememberTextRevision();Object.assign(variants,changed);currentPlatform=targets[0];removeThinking();addAssistantMessage(`Here’s the revised ${targets.map(platformName).join(' and ')} ${targets.length===1?'version':'copy'}.`,draftWorkspace());
+      rememberTextRevision();Object.assign(variants,changed);currentPlatform=targets[0];removeThinking();editingDraft=false;renderCanvas(draftWorkspace());scrollChat(true);
     }else{
       const platforms=plan.platforms.length?plan.platforms:selectedPlatforms();
       const creationBrief=plan.brief||[lastBrief,...conversation.filter(m=>m.role==='user').slice(-4).map(m=>m.content)].filter(Boolean).join('\n').slice(-12000);
@@ -123,22 +150,22 @@ async function sendMessage(){
       if(newDraft)await saveDraftNow();
       const targets=plan.action==='add_platforms'?platforms.filter(p=>!variants[p]):platforms;
       if(!targets.length)throw new Error('Those versions already exist. Tell me what to change in them.');
-      const result=await api('/api/ai/generate',{method:'POST',headers,body:JSON.stringify({media_asset_ids:uploadedMediaIds,brief:plan.action==='add_platforms'?(lastBrief||text):creationBrief,instruction:instagramInstruction(targets.includes('instagram')?'instagram':'',plan.action==='add_platforms'?text:''),platforms:targets,thread_length:+document.getElementById('threadLength').value,link_url:document.getElementById('linkUrl').value,draft_id:newDraft?null:currentDraftId})});
+      const result=await api('/api/ai/generate',{method:'POST',headers,body:JSON.stringify({media_asset_ids:uploadedMediaIds,brief:plan.action==='add_platforms'?(lastBrief||text):creationBrief,instruction:instagramInstruction(targets.includes('instagram')?'instagram':'',plan.action==='add_platforms'?text:''),platforms:targets,thread_length:+document.getElementById('threadLength').value,link_url:document.getElementById('linkUrl').value,draft_id:newDraft?null:currentDraftId,...(newDraft?{source_draft_id:currentDraftId,source_revision:draftRevision}:{})})});
       if(epoch!==workspaceEpoch)return;
       if(newDraft){textHistory=[];publicationStates={};currentDraftTitle='';}
       selectStudioPlatforms(plan.action==='add_platforms'?[...new Set([...selectedPlatforms(),...targets])]:targets);
       history.replaceState({},'',window.zovaWorkspaceUrl(`/studio?draft=${result.draft_id}`));
       variants=result.variants;currentDraftId=result.draft_id;draftRevision=result.revision;lastBrief=plan.action==='add_platforms'?lastBrief:creationBrief;currentPlatform=targets[0];currentDraftStatus='draft';
       currentDraftTitle=result.display_title||result.title||currentDraftTitle;
-      removeThinking();addAssistantMessage(plan.action==='add_platforms'?`I’ve added ${targets.map(platformName).join(' and ')}. Your other versions are still here.`:'Here’s a first draft. What would make it sound more like you?',draftWorkspace());
+      removeThinking();editingDraft=false;renderCanvas(draftWorkspace());scrollChat(true);
     }
     if(epoch!==workspaceEpoch)return;
-    responseApplied=true;changeSerial++;await saveDraftNow();
+    responseApplied=true;retryTurn=null;changeSerial++;await saveDraftNow();
   }catch(error){
     if(epoch!==workspaceEpoch)return;
     removeThinking();
     if(responseApplied){setAutosaveStatus('Save failed — retry');document.getElementById('undoStatus').textContent='Your response is ready here, but it has not saved. Use Retry save to keep it.';}
-    else{input.value=text;retryTurn=turnAdded?{draftId:currentDraftId,text}:null;changeSerial++;addAssistantMessage(error.message||'I couldn’t finish that yet. Your message is ready to try again.');try{await saveDraftNow();}catch{setAutosaveStatus('Unsaved changes — retry');}}
+    else{changeSerial++;addAssistantMessage(error.message||'I couldn’t finish that yet. Please retry.');try{await saveDraftNow();}catch{setAutosaveStatus('Unsaved changes — retry');}}
   }
   finally{if(epoch===workspaceEpoch){studioBusy(false);renderReadiness();sizeComposer();if(window.matchMedia('(min-width: 761px)').matches)input.focus();}}
 }
@@ -151,15 +178,17 @@ async function loadRequestedDraft(){
     if(epoch!==workspaceEpoch)return;
     currentDraftTitle=row.display_title||row.title||'';platformSelectionExplicit=row.workspace?.platform_selection_explicit===true;retryTurn=null;
     plannedOccurrence=row.planned||null;
-    textHistory=ws.text_history||[];variants=row.variants||{};currentDraftId=row.id;draftRevision=row.revision||0;currentDraftStatus=row.status||'draft';lastBrief=row.brief||'';
+    publicationStates={};textHistory=ws.text_history||[];variants=row.variants||{};currentDraftId=row.id;draftRevision=row.revision||0;currentDraftStatus=row.status||'draft';lastBrief=row.brief||'';
     currentPlatform=ws.active_platform||row.platforms?.[0]||'x';if(Object.keys(variants).length&&!variants[currentPlatform])currentPlatform=Object.keys(variants)[0];
     uploadedMedia=ws.media||[];uploadedMediaIds=ws.media_asset_ids||[];uploadedMediaKind=ws.media_kind||null;uploadedVideoDuration=ws.video_duration||0;
     document.getElementById('brief').value=ws.composer||'';document.getElementById('linkUrl').value=ws.link_url||'';
     document.getElementById('threadLength').value=String(row.thread_length||1);
     document.getElementById('instagramFormat').value=ws.instagram_format||'post';
+    window.zovaInstagramMusic?.restore(ws.instagram_audio);
     const selected=savedPlatformSelection(row);document.querySelectorAll('.platform-check input').forEach(node=>node.checked=selected.includes(node.value));
     conversation=[];document.getElementById('chatFeed').innerHTML='';
-    for(const message of ws.conversation||[]){if(message.role==='user')addUserMessage(message.content);else addAssistantMessage(message.content);}
+    for(const message of ws.conversation||[]){if(message.role==='user')addUserMessage(message.content,message.media||[]);else addAssistantMessage(message.content);}
+    if(ws.pending_message&&conversation.some(m=>m.role==='user'&&m.content===ws.pending_message))retryTurn={draftId:row.id,text:ws.pending_message,mediaIds:ws.pending_media_asset_ids||[...uploadedMediaIds],link:ws.pending_link_url??(ws.link_url||'')};
     if(Object.keys(variants).length)renderCanvas(draftWorkspace());
     if(!conversation.length&&!Object.keys(variants).length)addAssistantMessage('Your saved workspace is ready.');
     renderAttachments();setAutosaveStatus(editableDraft()?'Saved':currentDraftStatus);
@@ -173,6 +202,7 @@ async function newConversation(){
   workspaceEpoch++;retryTurn=null;currentDraftTitle='';
   clearTimeout(autosaveTimer);invalidateReview();mediaUploadVersion++;mediaUploading=false;
   document.getElementById('instagramFormat').value='post';
+  window.zovaInstagramMusic?.reset();
   plannedOccurrence=null;variants={};textHistory=[];publicationStates={};document.getElementById('undoStatus').textContent='';currentDraftId=null;draftRevision=0;currentDraftStatus='draft';conversation=[];lastBrief='';pendingSchedule=null;
   uploadedMedia=[];uploadedMediaIds=[];uploadedMediaKind=null;uploadedVideoDuration=0;changeSerial=0;savedSerial=0;
   history.replaceState({},'',window.zovaWorkspaceUrl('/studio'));document.getElementById('chatFeed').innerHTML='';
@@ -182,10 +212,10 @@ async function newConversation(){
 document.getElementById('mediaInput').addEventListener('change',async()=>{await uploadMedia();scheduleAutosave();});
 document.getElementById('brief').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&(event.ctrlKey||event.metaKey||window.matchMedia('(min-width: 761px)').matches)){event.preventDefault();sendMessage();}});
 document.getElementById('brief').addEventListener('input',scheduleAutosave);
-document.getElementById('linkUrl').addEventListener('input',scheduleAutosave);
+document.getElementById('linkUrl').addEventListener('input',()=>{scheduleAutosave();renderMessageRetry();});
 document.querySelectorAll('.platform-check input,#threadLength,#instagramFormat').forEach(node=>node.addEventListener('change',()=>{if(node.matches('.platform-check input'))platformSelectionExplicit=true;scheduleAutosave();}));
 window.addEventListener('beforeunload',event=>{if(savedSerial!==changeSerial||mediaUploading||sendingMessage){event.preventDefault();event.returnValue='';}});
-window.addEventListener('DOMContentLoaded',()=>{renderReadiness();loadRequestedDraft();});
+window.addEventListener('DOMContentLoaded',()=>{renderReadiness();loadRequestedDraft().then(()=>window.dispatchEvent(new Event('zova:studio-ready')));});
 
 async function switchStudioBrand(event){
  event.preventDefault();

@@ -34,16 +34,18 @@ def decrypt(value: str) -> str:
 
 def hash_password(password: str) -> str:
     salt = secrets.token_bytes(16)
-    digest = hashlib.scrypt(password.encode(), salt=salt, n=2**14, r=8, p=1, dklen=32)
-    return f"scrypt${salt.hex()}${digest.hex()}"
+    # OWASP's 16 MiB profile keeps memory bounded on the beta host while
+    # increasing CPU work. The version preserves verification of legacy hashes.
+    digest = hashlib.scrypt(password.encode(), salt=salt, n=2**14, r=8, p=5, dklen=32)
+    return f"scrypt-v2${salt.hex()}${digest.hex()}"
 
 
 def verify_password(password: str, hashed: str) -> bool:
     try:
         algorithm, salt_hex, digest_hex = hashed.split("$", 2)
-        if algorithm != "scrypt":
+        if algorithm not in {"scrypt", "scrypt-v2"} or len(password) > 256 or len(salt_hex) != 32 or len(digest_hex) != 64:
             return False
-        digest = hashlib.scrypt(password.encode(), salt=bytes.fromhex(salt_hex), n=2**14, r=8, p=1, dklen=32)
+        digest = hashlib.scrypt(password.encode(), salt=bytes.fromhex(salt_hex), n=2**14, r=8, p=5 if algorithm == 'scrypt-v2' else 1, dklen=32)
         return hmac.compare_digest(digest.hex(), digest_hex)
     except Exception:
         return False
@@ -56,12 +58,14 @@ def session_secret() -> str:
     return value
 
 
-def make_user_session(user_id: int) -> str:
+def make_user_session(user_id: int, expected_auth_version: int | None = None) -> str:
     expires = int((utcnow() + timedelta(days=30)).timestamp())
     with SessionLocal() as db:
         user = db.get(User, user_id)
         if not user or not user.active:
             raise ValueError('Active user required')
+        if expected_auth_version is not None and user.auth_version != expected_auth_version:
+            raise HTTPException(401, 'Your account changed. Sign in again.')
         payload = f'v2.{user_id}.{user.auth_version}.{expires}.{secrets.token_hex(16)}'
     signature = hmac.new(session_secret().encode(), payload.encode(), hashlib.sha256).hexdigest()
     return f'{payload}.{signature}'
@@ -75,6 +79,9 @@ def user_from_session(token: str | None) -> User | None:
         if len(parts) == 3:
             user_id, expires, signature = parts
             version = 0  # Existing reviewer/customer sessions remain valid until revoked or expired.
+        elif len(parts) == 7 and parts[0] == 'ios':
+            _, user_id, version, expires, mobile_id, nonce, signature = parts
+            version = int(version)
         elif len(parts) == 6 and parts[0] == 'v2':
             _, user_id, version, expires, nonce, signature = parts
             version = int(version)
@@ -85,6 +92,15 @@ def user_from_session(token: str | None) -> User | None:
         if not hmac.compare_digest(signature, expected) or int(expires) < int(utcnow().timestamp()):
             return None
         with SessionLocal() as db:
+            if parts[0] == 'ios':
+                if os.environ.get('ZOVA_MOBILE_ENABLED', 'false').lower() != 'true':
+                    return None
+                from .db import MobileSession
+                mobile = db.get(MobileSession, mobile_id)
+                if (not mobile or mobile.revoked or mobile.user_id != int(user_id)
+                        or mobile.auth_version != version
+                        or mobile.expires_at.replace(tzinfo=mobile.expires_at.tzinfo or timezone.utc) <= utcnow()):
+                    return None
             if db.get(RevokedSession, hash_api_key(token)):
                 return None
             user = db.get(User, int(user_id))
@@ -110,6 +126,11 @@ def revoke_session(token: str | None) -> None:
     expires = int(parts[1] if len(parts) == 3 else parts[3])
     from sqlalchemy.exc import IntegrityError
     with SessionLocal() as db:
+        if parts[0] == 'ios':
+            from .db import MobileSession
+            mobile = db.get(MobileSession, parts[4])
+            if mobile:
+                mobile.revoked = True
         db.add(RevokedSession(token_hash=hash_api_key(token), expires_at=datetime.fromtimestamp(expires, timezone.utc)))
         try:
             db.commit()

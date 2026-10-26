@@ -17,7 +17,7 @@ def test_legacy_x_oauth_signing_remains_compatible(monkeypatch,provider_status):
         assert url=='https://api.x.com/2/tweets' and timeout==30.0
         assert headers['Authorization'].startswith('OAuth ') and 'oauth_signature=' in headers['Authorization']
         assert json.loads(content)=={'text':'Synthetic only'}
-        return SimpleNamespace(status_code=provider_status,text='Synthetic denial',json=lambda:{'data':{'id':'synthetic-id'}})
+        return SimpleNamespace(status_code=provider_status,text='Synthetic denial provider_token=never-leak-this',json=lambda:{'data':{'id':'synthetic-id'}})
     monkeypatch.setattr(module.httpx,'post',provider)
     with SessionLocal() as db:
         creator=Creator(name='Synthetic',x_username='synthetic-'+uuid.uuid4().hex,api_key_hash=hash_api_key(uuid.uuid4().hex),encrypted_x_api_key=encrypt('key'),encrypted_x_api_secret=encrypt('secret'),encrypted_x_access_token=encrypt('token'),encrypted_x_access_token_secret=encrypt('token-secret'))
@@ -25,9 +25,12 @@ def test_legacy_x_oauth_signing_remains_compatible(monkeypatch,provider_status):
         if provider_status==201:
             assert module.publish_legacy_creator('Synthetic only',creator,db)['post_id']=='synthetic-id'
         else:
-            with pytest.raises(HTTPException):module.publish_legacy_creator('Synthetic only',creator,db)
+            with pytest.raises(HTTPException) as failure:module.publish_legacy_creator('Synthetic only',creator,db)
+            assert 'never-leak-this' not in str(failure.value.detail)
+            assert 'Check the destination' in failure.value.detail
         log=db.scalar(select(PostLog).where(PostLog.creator_id==creator.id))
         assert log.status==('published' if provider_status==201 else 'failed')
+        assert 'never-leak-this' not in (log.error or '')
 
 
 @pytest.mark.skipif(not os.environ.get('ZOVA_TEST_POSTGRES'),reason='Requires isolated PostgreSQL CI')

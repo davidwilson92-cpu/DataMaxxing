@@ -21,7 +21,10 @@ def connection_options():
 
 
 def safe_login_next(value):
-    # Never resume an authorisation endpoint automatically after signing in.
+    import re
+    if isinstance(value, str) and re.fullmatch(r"/mobile/authorize/[A-Za-z0-9_-]{43}", value):
+        return value
+    # Native sign-in returns to explicit consent, never a social grant.
     allowed = {"/studio", "/account", "/analytics", "/drafts", "/onboarding/socials", "/onboarding/writing-style"}
     allowed.update(f"/connect/{key}" for key in PLATFORMS)
     return value if value in allowed else "/studio"
