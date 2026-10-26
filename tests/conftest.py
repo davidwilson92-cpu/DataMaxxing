@@ -24,6 +24,21 @@ import pytest
 import httpx
 
 @pytest.fixture(autouse=True)
+def isolate_request_budgets():
+    """Independent journeys must not inherit another test's shared-IP budget.
+
+    Keep real limiting within each test, including multi-request boundary tests.
+    Native suites can raise their budget; their persisted counts must not leak
+    into the next test when the production-sized limit is restored.
+    """
+    from sqlalchemy import delete, inspect
+    from nova.db import SessionLocal, RequestLimit
+    with SessionLocal() as db:
+        if inspect(db.get_bind()).has_table(RequestLimit.__tablename__):
+            db.execute(delete(RequestLimit))
+            db.commit()
+
+@pytest.fixture(autouse=True)
 def block_external_http(monkeypatch):
     """A missing provider mock must fail locally, never make a live request."""
     def blocked(*args, **kwargs):

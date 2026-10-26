@@ -67,6 +67,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         if unsafe and not external_callback and response is None:
             from starlette.concurrency import run_in_threadpool
             user = await run_in_threadpool(user_from_session, request.cookies.get('nova_session'))
+            if path == '/api/media' and user is None:
+                # Reject before BodyLimit/multipart parsing can spool a large
+                # anonymous upload to memory or disk.
+                response = JSONResponse({'detail': 'Sign in required'}, 401)
             from .ai_consent import required, uses_ai, permitted
             if user and required() and uses_ai(path) and not await run_in_threadpool(permitted, user.id):
                 response = JSONResponse({'detail':'Choose whether to use AI before sending content. Your content has not been sent to AI.', 'code':'ai_permission_required'},403)

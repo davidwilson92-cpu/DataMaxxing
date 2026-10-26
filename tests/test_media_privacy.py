@@ -94,3 +94,22 @@ def test_native_auth_does_not_share_the_shorter_mutation_window(monkeypatch):
     for path in ('/api/v1/auth/token', '/api/v1/auth/refresh'):
         assert client.post(path, json={}).status_code == 429
     assert calls == [(f'user:{uid}:auth', 30, 300)] * 2
+
+
+def test_anonymous_upload_is_rejected_before_body_is_read():
+    import asyncio
+    from nova.request_security import SecurityMiddleware
+    messages = []
+    async def forbidden_body():
+        raise AssertionError('Anonymous upload body was read')
+    async def forbidden_handler(*args):
+        raise AssertionError('Anonymous request reached upload parsing')
+    async def send(message):
+        messages.append(message)
+    scope = {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.4'},
+             'method': 'POST', 'path': '/api/media', 'raw_path': b'/api/media',
+             'root_path': '', 'query_string': b'', 'scheme': 'http', 'http_version': '1.1',
+             'headers': [(b'host', b'testserver')], 'server': ('testserver', 80),
+             'client': ('127.0.0.1', 12345)}
+    asyncio.run(SecurityMiddleware(forbidden_handler)(scope, forbidden_body, send))
+    assert messages[0]['status'] == 401
