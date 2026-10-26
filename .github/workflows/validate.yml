@@ -36,6 +36,7 @@ jobs:
           node tests/studio_clarity_client.cjs
           node --test tests/ios_shell_client.cjs tests/analytics_commercial.test.cjs tests/ai_privacy_client.test.cjs
           node --test tests/security_forms_client.test.cjs
+          node --test tests/studio_link_safety.test.cjs
           for file in strategy analytics drafts; do node --check "nova/static/$file.js"; done
       - name: Check mobile composer in an isolated browser
         run: |

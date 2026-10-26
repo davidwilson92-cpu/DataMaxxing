@@ -202,7 +202,7 @@ app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
 @app.exception_handler(HTTPException)
 async def authentication_error(request: Request, exc: HTTPException):
     # Only browser pages redirect. APIs and OAuth callbacks retain their errors.
-    private_pages = {"/studio", "/account", "/analytics", "/drafts", "/subscribe",
+    private_pages = {"/studio", "/account", "/account/deletion", "/brands", "/analytics", "/drafts", "/subscribe",
                      "/onboarding/socials", "/onboarding/writing-style", "/onboarding/complete"}
     connection_path = request.url.path
     oauth_starts = {value["start"]: f"/connect/{key}" for key, value in connection_options().items()}
@@ -1026,7 +1026,7 @@ async def upload_media(request:Request,files:list[UploadFile]=File(...),db:Sessi
         raise HTTPException(400,"Add one video per post and do not mix video with images")
     validated=[await validated_upload(file) for file in files]
     db.scalar(select(User).where(User.id==user.id).with_for_update())
-    used=db.scalar(select(func.coalesce(func.sum(MediaAsset.size_bytes),0)).where(MediaAsset.user_id==user.id))
+    used=db.scalar(select(func.coalesce(func.sum(MediaAsset.size_bytes),0)).where(MediaAsset.user_id==user.id).execution_options(all_brands=True))
     if used+sum(len(data) for data,mime in validated)>500*1024*1024:
         raise HTTPException(413,"Your media storage limit has been reached. Contact support to manage older uploads.")
     result=[]
@@ -1038,11 +1038,8 @@ async def upload_media(request:Request,files:list[UploadFile]=File(...),db:Sessi
     db.commit()
     return {'assets':result}
 
-@app.get("/media/raw/{filename}")
-def local_media(filename:str):
-    safe=Path(filename).name; path=UPLOAD_DIR/safe
-    if not path.exists():raise HTTPException(404,"Media not found")
-    return FileResponse(path, headers={"X-Content-Type-Options":"nosniff","Content-Security-Policy":"sandbox; default-src 'none'"})
+from .media_delivery import router as media_delivery_router
+app.include_router(media_delivery_router)
 
 @app.post("/api/ai/generate")
 def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)):

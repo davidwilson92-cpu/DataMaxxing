@@ -3,9 +3,11 @@ from __future__ import annotations
 import os
 import pathlib
 import uuid
+import hashlib
+import hmac
+import time
 from dataclasses import dataclass
-
-import httpx
+from urllib.parse import urlsplit, urlencode
 
 UPLOAD_DIR = pathlib.Path(os.environ.get("UPLOAD_DIR", "./uploads"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -56,7 +58,29 @@ def get_bytes(storage_key: str) -> bytes:
     if client and bucket and storage_key.startswith("nova/"):
         response = client.get_object(Bucket=bucket, Key=storage_key)
         return response["Body"].read()
-    return pathlib.Path(storage_key).read_bytes()
+    return local_path(storage_key).read_bytes()
+
+
+def local_path(storage_key: str) -> pathlib.Path:
+    """Only regular files in the managed upload directory may be read."""
+    path = pathlib.Path(storage_key)
+    resolved = path.resolve(strict=True)
+    if path.is_symlink() or not resolved.is_relative_to(UPLOAD_DIR.resolve()) or not resolved.is_file():
+        raise ValueError('Invalid upload path')
+    return resolved
+
+
+def media_signature(filename: str, expires_at: int) -> str:
+    from .security import session_secret
+    payload = f'zova-media-v1:{filename}:{expires_at}'
+    return hmac.new(session_secret().encode(), payload.encode(), hashlib.sha256).hexdigest()
+
+
+def valid_media_signature(filename: str, expires_at: int, signature: str) -> bool:
+    now = int(time.time())
+    return (len(signature) == 64 and signature.isascii()
+            and now < expires_at <= now + 3600
+            and hmac.compare_digest(media_signature(filename, expires_at), signature))
 
 
 def verify_available(storage_key: str, size_bytes: int) -> None:
@@ -65,10 +89,7 @@ def verify_available(storage_key: str, size_bytes: int) -> None:
         if storage_key.startswith('nova/') and os.environ.get('S3_BUCKET'):
             size = _s3_client().head_object(Bucket=os.environ['S3_BUCKET'], Key=storage_key)['ContentLength']
         else:
-            path = pathlib.Path(storage_key)
-            resolved = path.resolve(strict=True)
-            if not resolved.is_relative_to(UPLOAD_DIR.resolve()) or path.is_symlink() or not resolved.is_file():
-                raise ValueError('Invalid upload path')
+            resolved = local_path(storage_key)
             # Opening catches unreadable files, without loading a large video.
             with resolved.open('rb') as stream:
                 size = os.fstat(stream.fileno()).st_size
@@ -79,6 +100,15 @@ def verify_available(storage_key: str, size_bytes: int) -> None:
 
 
 def get_public_url(storage_key: str, existing_public_url: str | None = None, expires: int = 3600) -> str:
+    base = os.environ.get('PUBLIC_BASE_URL', '').rstrip('/')
+    existing = urlsplit(existing_public_url or '')
+    configured = urlsplit(base)
+    if (existing_public_url and base and existing.scheme == configured.scheme
+            and existing.netloc == configured.netloc and existing.path.startswith('/media/raw/')):
+        path = local_path(storage_key)
+        expires_at = int(time.time()) + min(3600, max(1, expires))
+        query = urlencode({'expires': expires_at, 'signature': media_signature(path.name, expires_at)})
+        return f'{base}/media/raw/{path.name}?{query}'
     if existing_public_url:
         return existing_public_url
     client = _s3_client()
@@ -86,9 +116,3 @@ def get_public_url(storage_key: str, existing_public_url: str | None = None, exp
     if client and bucket and storage_key.startswith("nova/"):
         return client.generate_presigned_url("get_object", Params={"Bucket": bucket, "Key": storage_key}, ExpiresIn=expires)
     raise RuntimeError("This media does not have a public URL. Configure S3 or another persistent public media store.")
-
-
-def fetch_remote(url: str) -> bytes:
-    r = httpx.get(url, timeout=30.0, follow_redirects=True)
-    r.raise_for_status()
-    return r.content
