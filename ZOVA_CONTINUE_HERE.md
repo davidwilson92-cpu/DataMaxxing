@@ -1,3 +1,37 @@
+# Security/privacy/functionality review — 26 October 2026
+
+Owner requested an engineering review while external testers handle UX. Read
+docs/COMMERCIAL_SECURITY_REVIEW_20261026.md for findings, evidence and limits.
+Runtime candidate a9fe5a7 fixes credential-reset races, raises password hash work
+with backwards-compatible lazy upgrades, restricts local media to owners or
+expiring provider capabilities, enforces storage across brands, rejects anonymous
+uploads before parsing, corrects AI/native rate classification and unsafe Studio
+links, and clarifies factual privacy disclosures. No broad migration or new native
+runtime change. Owner confirmed the exposed tester password was changed and the
+recording secured; this is owner attestation, not independent inspection.
+
+The candidate is pushed to the existing branch/PR34; it is NOT deployed. Live
+Render remains d090e6e and TestFlight last known 0.1.0 (11). Customer charges,
+subscription enforcement and plan limits stay OFF; paid monitoring stays inactive.
+Do not migrate to AWS. No real social post or customer erasure was performed.
+
+Exact runtime candidate application PR CI 40301485867 PASSED: 707 SQLite tests
+(2 skips), 708 PostgreSQL (1 skip), browser/client checks, synthetic restore,
+hosting image smoke/audit and constrained password-cost probe. Native CI
+40301485777 PASSED simulator tests and release compilation. Local focused set:
+83 passed. The duplicate push-triggered application run's browser step was still
+running at handover; use the dated report for precise evidence and limitations.
+Documentation-only updates after a9fe5a7 do not change its validated runtime scope.
+
+Before deployment: record exact-candidate checks, drain in-flight provider media
+fetches, verify legacy local-media URL origins and perform signed-fetch acceptance.
+Rollback MUST retain scrypt-v2 password verification after any upgraded/new hash
+has been stored. A server deployment does not create a new TestFlight binary.
+Privacy/retention decisions, production recovery evidence and independent security
+assurance remain open. Preserve the full 79-item register and prior QA findings.
+
+---
+
 # Render retained; Stripe test acceptance - 25 October 2026
 
 Owner chose to remain on Render, superseding the AWS migration request below.

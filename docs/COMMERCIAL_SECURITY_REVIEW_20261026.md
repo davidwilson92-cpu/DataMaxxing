@@ -40,16 +40,34 @@ local-media protection must not be represented as a universal private-bucket aud
 - Six focused browser-JavaScript tests passed, including unsafe-link rejection and AI permission behavior.
 - Render read-only smoke: 15 public/protected URLs returned expected pages or login redirects, with no-store and frame-denial headers. This checks the existing live version, not deployment of these changes.
 - Synthetic authenticated crawl renders 22 customer pages and checks at least 50 distinct internal route/form/static references. It does not follow real OAuth authorizations, click destructive controls or prove external sites never fail.
+- A separate rendered-page check found no missing targets among 21 in-page fragment links across 14 pages.
 - Local dependency audit after aligning with the repository's already-pinned Pillow 13.0.0 and pip 26.2: no known vulnerabilities reported; pip dependency consistency check passed. Initial findings were stale local packages, not newly verified production vulnerabilities.
 - Existing tests cover recovery/session revocation, cross-account/workspace access, immutable publishing review, provider error ambiguity, deletion and Stripe test/live isolation. Provider fixtures are simulated; historical live acceptances are recorded separately.
 - Native source review confirms WhenUnlockedThisDeviceOnly, non-synchronizing Keychain storage, owned-origin navigation, PKCE/state and one-use handoff checks. No phone or Apple account was operated in this review.
-- The previous native CI run 40233634882 failed because its first loopback WebKit GET lacked the expected cookie; other recent runs passed. A fresh run is required. Do not dismiss this as infrastructure-only without evidence.
+- Previous native CI run 40233634882 failed because its first loopback WebKit GET lacked the expected cookie. Fresh candidate run 40301485777 passed. That is fresh acceptance evidence, not a diagnosis of the earlier intermittent failure; retain it for investigation if it recurs.
 - Full changed-candidate application/PostgreSQL/image/native results are recorded in the acceptance addendum below when available.
+
+## Functional and code-quality interpretation
+
+| Area | What the review establishes | What it does not establish |
+| --- | --- | --- |
+| Sign-in, recovery and account isolation | Regression coverage includes credential races, session revocation, account/brand boundaries and native handoff. | An independent penetration test or every real device/browser combination. |
+| Studio, Schedule, Strategy and voice | Existing synthetic persistence/journey tests and route/form checks run with the candidate. | A new UX acceptance or a live external AI response for every journey. |
+| Social connections and publishing | Provider fixtures check consent, reviewed snapshots, media URL delivery and ambiguous-result protection. | Fresh live Facebook/X/Instagram/TikTok publishing acceptance. No real post was sent in this review. |
+| Billing and email | Synthetic tests cover mode separation and recovery; previous hosted acceptance remains in the dated handover. | A new real payment, live billing approval or email deliverability guarantee. Charges stay disabled. |
+| Maintainability | A dedicated media-delivery module replaces an unrestricted route; common file validation and AI classification reduce duplication. New tests cover behavioral boundaries. | The large legacy application module, all duplicated legacy paths or the unfinished service/RLS migration being resolved. Avoid a broad rewrite as part of this security patch. |
+| Dependencies and secrets | Current package/image audit and a narrow tracked-file scan for private keys, AWS access keys and Stripe keys provide bounded evidence. | A full Git-history secret scan, supplier assurance or proof that no undisclosed vulnerability exists. |
+
+The test suite now resets persisted request budgets between independent tests;
+actual request limits remain active within each test and in production. This
+removes shared-IP leakage from high-volume native fixtures without increasing
+production limits. Existing client-library deprecation warnings remain hygiene
+work, not hidden test failures.
 
 ## What still prevents an unconditional commercial sign-off
 
 1. **Privacy decisions and evidence (owner/legal):** approve a data inventory with purposes/lawful bases, actual retention periods, supplier processing agreements and international-transfer safeguards. The current generic retention wording is not a completed retention programme. Implement approved purge periods and verify backup expiry/deletion replay. Do not invent legal assurances in the public notice.
-2. **Operational ownership (owner/engineering):** complete an incident/restore exercise with measured recovery targets and deletion queue ownership. Synthetic restore coverage and yesterday's backup are useful but do not prove a current production recovery drill. The owner declined the paid monitor; it remains inactive. Record a workable manual response arrangement or separately approve monitoring.
+2. **Operational evidence (owner/engineering):** complete an incident/restore exercise with measured recovery targets. David is already the designated daily deletion-queue owner with a seven-day target, and the test alert to david@zova-social.com was confirmed received. Those decisions are preserved. Synthetic restore coverage and yesterday's backup do not prove a current production recovery drill or timely incident detection. The owner declined the paid monitor; it remains inactive. Record the manual health-check/incident response arrangement before paid launch.
 3. **Security assurance (engineering/independent reviewer):** finish privileged-account MFA/least-privilege evidence, rotation inventory and independent penetration testing. Broad inline-script CSP, incomplete tamper-resistant security audit coverage, full dependency locking, upload metadata/scanning policy and load testing remain retained findings. These are not all evidence of an exploitable defect, but have not been closed by this review.
 4. **Exposed tester credential — owner-confirmed closed:** on 26 October the owner confirmed the password was changed and the recording secured. This is owner attestation, not independent inspection of the password or recording.
 5. **Release acceptance (engineering/tester):** run exact-candidate PostgreSQL/image/native checks; investigate any repeated native cookie failure. Verify signed local media fetching in the deployed environment without a real post. Confirm all legacy local-media URL origins match PUBLIC_BASE_URL. Before switching raw-media access rules, drain in-flight provider fetches and retain rollback evidence. A server deployment does not create a new TestFlight binary. Password hash upgrades are lazy on successful login/new credentials; rollback must retain support for scrypt-v2 hashes, never revert to a binary that only understands the old hash. Test the CPU profile on the Render-sized host before enabling the commercial workload.
@@ -69,4 +87,33 @@ These references inform the review, not an assertion of audited compliance.
 
 ## Changed-candidate acceptance
 
-Pending exact-candidate validation. The changes are not yet published.
+Runtime candidate: `a9fe5a7a4724231b3491517abed35224f3f8d011` on the existing
+`codex/ios-beta-20261019` branch / PR 34. This report and the continuation handover
+may be updated separately without changing that validated runtime scope.
+
+- [Application CI 40301485867](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40301485867): **passed**.
+- SQLite: **707 passed, 2 skipped**. PostgreSQL: **708 passed, 1 skipped**.
+- Interactive client and isolated Chromium checks: passed, including Studio,
+  attachment handoff, Next Move, onboarding, keyboard/focus and mobile layout.
+- Synthetic PostgreSQL restore: passed for credentials, sessions, revocation,
+  unresolved publication, AI choice and media.
+- Hosting image build/startup smoke and package audit: passed; no known package
+  vulnerabilities reported. Infrastructure template validation passed without
+  provisioning or changing hosting.
+- Password-cost probe in the image restricted to **512 MiB / 0.5 CPU**: four
+  concurrent hash-and-verify tasks completed in **4.698 seconds** total, individual
+  durations 4.599–4.697 seconds. This is bounded synthetic resource evidence, not
+  a production latency guarantee or full load/abuse test.
+- [Native CI 40301485777](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/40301485777): **passed**, including iPhone simulator tests and release compilation. No new binary was signed or uploaded to Apple.
+- The duplicate push-triggered run 40301479522 completed PostgreSQL successfully;
+  its separate browser step was still running when this report was saved. The
+  complete PR-triggered application run above, for the same exact commit, passed.
+- Local focused regression set: **83 passed**. Exact beta scope validation passed.
+
+Earlier candidate failures were investigated, not ignored: an old hash-format
+assertion was corrected, and persisted request counts from independent test
+journeys were isolated. The final hosted application run above is green.
+
+**Not deployed.** Live Render remains `d090e6e`; no TestFlight build was released.
+Deployment still needs the media/rollback acceptance described above. No customer
+charges, subscription enforcement, paid monitoring or real social posts enabled.
