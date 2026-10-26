@@ -38,6 +38,7 @@ const idea={id:9,title:'Show how you make a mug',reason:'Help beginners get star
  const generating=c.changeMove(1,{});await c.changeMove(1,{});assert.equal(nextCalls,1);
  resolveNext({items:[{...idea,id:12,title:'Fresh fourth idea'},{...idea,id:13},{...idea,id:14}]});await generating;
  assert.match(node('strategyActions').innerHTML,/Fresh fourth idea/);assert.match(node('strategyActions').innerHTML,/Idea 4/);
+ await c.changeMove(-1,{});assert.match(node('strategyActions').innerHTML,/Idea 3/);await c.changeMove(1,{});assert.match(node('strategyActions').innerHTML,/Fresh fourth idea/);
  await c.changeMove(1,{});await c.changeMove(1,{});const kept=node('strategyActions').innerHTML;c.api=async()=>{throw Error('Try again in a moment');};await c.changeMove(1,{});assert.equal(node('strategyActions').innerHTML,kept);assert.match(node('strategyStatus').textContent,/Try again/);
  c.api=()=>new Promise(resolve=>resolveNext=resolve);const late=c.changeMove(1,{});vm.runInContext('strategyViewEpoch++',c);resolveNext({items:[{...idea,id:30,title:'Late wrong view'}]});await late;assert.doesNotMatch(node('strategyActions').innerHTML,/Late wrong view/);vm.runInContext('strategyPending=false',c);
  let remaining=[idea,{...idea,id:10}],feedbackCalls=[],generated=0;
@@ -51,6 +52,12 @@ const idea={id:9,title:'Show how you make a mug',reason:'Help beginners get star
  c.api=async(url,opts)=>{if(url.includes('/feedback')){feedbackCalls.push(JSON.parse(opts.body));return {};}return {items:[]};};
  node('moveReminder11').value='';await c.remindMove(11,null,{});assert.match(node('strategyStatus').textContent,/future date/);
  await c.remindMove(11,7,{});assert.equal(feedbackCalls.at(-1).status,'snoozed');assert.ok(new Date(feedbackCalls.at(-1).remind_at)>new Date());assert.match(node('strategyStatus').textContent,/Nothing is scheduled/);
- node('moveFeedback11').value='Less filming';let refined=false;c.api=async(url,opts)=>{if(url.includes('/feedback')){assert.equal(JSON.parse(opts.body).reason,'Less filming');return {}; }if(url.endsWith('/recommend')){refined=true;return {};}return {items:[idea]};};await c.refineMove(11,{});assert.ok(refined);
+ node('moveFeedback11').value='Less filming';let refined=false;
+ c.api=async(url,opts)=>{assert.equal(url,'/api/strategy/recommend');const body=JSON.parse(opts.body);assert.equal(body.refinement,'Less filming');assert.equal(body.refine_action_id,11);refined=true;return {items:[{...idea,id:99,title:'Refined with less filming'}]};};
+ await c.refineMove(11,{});assert.ok(refined);assert.match(node('strategyActions').innerHTML,/Refined with less filming/);
+ node('moveFeedback99').value='Keep my humour';const original=node('strategyActions').innerHTML;
+ c.api=async()=>{throw Error('Generation unavailable');};await c.refineMove(99,{});
+ assert.equal(node('strategyActions').innerHTML,original);assert.equal(node('moveFeedback99').value,'Keep my humour');
+ assert.match(node('strategyStatus').textContent,/Generation unavailable/);
  console.log('Next move journey: automatic ideas, no repeated generation, retry, failed save, workspace link and late response passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

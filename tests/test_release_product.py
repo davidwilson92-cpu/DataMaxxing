@@ -70,6 +70,8 @@ def test_performance_is_brand_scoped_and_expires():
 
 def test_recommendation_receives_real_evidence_and_review_cannot_publish(monkeypatch):
     client,uid,*_=account()
+    from test_next_move_intelligence import connect
+    connect(uid)
     client.get('/api/strategy')
     assert client.post('/api/strategy/confirm',json={'strategy':PROFILE,'revision':0}).status_code==200
     with SessionLocal() as db:

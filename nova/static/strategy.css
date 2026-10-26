@@ -62,3 +62,18 @@
 @media(prefers-reduced-motion:reduce){.simple-chat .next-move-launch::after,.simple-chat .next-move-launch>span,.simple-chat .next-move-launch .next-move-sparkle{animation:none}}
 .simple-chat .studio-header-actions .next-move-launch{background:linear-gradient(115deg,#100c18 0%,#21132f 62%,#43215e 100%);border-color:#4d3265;box-shadow:0 4px 16px #32184a26,inset 0 1px 0 #d6b6ff24}
 .simple-chat .studio-header-actions .next-move-launch:hover{background:linear-gradient(115deg,#191022,#321b48 62%,#573079);border-color:#78509c}
+
+/* Optional creative steering stays inside the recommendation, not another step. */
+.strategy-panel .move-refine{margin-top:4px;border:0}
+.strategy-panel .move-refine summary{color:#61349b;font-size:12px;font-weight:600;min-height:32px}
+.strategy-panel .move-refine textarea{margin:4px 0;min-height:72px}
+.strategy-panel .move-refine button{min-height:44px;color:#61349b;font-weight:600;padding:6px 0;background:transparent;border:0}
+
+@media(max-height:700px){
+ .strategy-panel header{padding-bottom:12px}
+ .strategy-panel .move-hero{padding:16px}
+ .strategy-panel .move-meta{margin-bottom:10px}
+ .strategy-panel #strategyActions h3{font-size:22px;margin-bottom:16px}
+ .strategy-panel .move-recommendation{margin-top:10px;padding:12px}
+ .strategy-panel .move-pager{padding-bottom:10px}
+}

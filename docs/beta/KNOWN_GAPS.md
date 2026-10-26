@@ -1,5 +1,20 @@
 # Beta known gaps and required follow-up
 
+## Next Move intelligence candidate — 26 October 2026
+
+Next Move now carries saved strategy, current explicit/approved voice and fresh
+available performance into quick ideas, new batches and refinements. Automatic
+bounded feed reads use a 15-minute retry cache and exclude expired, disconnected
+or replaced-account evidence. Upcoming schedules and recent work inform prompts;
+no automatic scheduling or publication. One optional refinement input, retained
+recent ideas and compact mobile layout preserve the simple experience.
+See NEXT_MOVE_INTELLIGENCE_20261026.md for validation and limits. This candidate
+is not deployed. Real provider/AI output acceptance remains distinct from mocked
+regressions. No whole-market trend coverage, conversion attribution or guaranteed
+AI adherence is claimed. All 79 commercial findings remain retained; charges,
+paid monitoring and Render hosting stay unchanged.
+
+
 ## Security and functional review — 26 October 2026
 
 See ../COMMERCIAL_SECURITY_REVIEW_20261026.md. The bounded candidate replaces

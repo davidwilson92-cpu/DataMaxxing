@@ -1,6 +1,7 @@
 /* Strategy is saved per brand; Next move is a separate, immediate action. */
 let hasConfirmedStrategy=false;
 let moveItems=[],moveIndex=0,moveOffset=0;
+const moveRefinements=new Map();
 let strategyData={},strategyInputSnapshot="";
 const movePlatform=p=>window.zovaPlatformLabel?window.zovaPlatformLabel(p):esc(platformName(p));
 let strategyRevision=0,strategyLoaded=false,strategyPending=false,seriesRequestKey=null,seriesPreviewBody=null;
@@ -126,11 +127,15 @@ async function confirmStrategy(event){event.preventDefault();await strategyTask(
  if(JSON.stringify(strategyInputs())!==snapshot){strategyLoaded=false;strategyStatus('Strategy saved. Your newer text is not saved yet.');return;}
  fillStrategy(r.confirmed||strategy);showStrategyAssumptions([]);setStrategySaved(true);strategyStatus('Strategy saved.');
 });}
-function recommendationBody(fresh=false){return {revision:strategyRevision,post_only:true,fresh,...(quickMoveRequest||{})};}
-async function requestMoves(epoch=strategyViewEpoch,fresh=false){
- const data=await api('/api/strategy/recommend',{method:'POST',headers,body:JSON.stringify(recommendationBody(fresh))});
+function recommendationBody(fresh=false){
+ const selected=moveItems[moveIndex]?.strategy_context;
+ const topic=selected?.one_off?{brief:selected.topic||selected.goal,platforms:selected.platforms}:quickMoveRequest;
+ return {revision:strategyRevision,post_only:true,fresh,...(topic||{})};
+}
+async function requestMoves(epoch=strategyViewEpoch,fresh=false,append=false,extra={}){
+ const data=await api('/api/strategy/recommend',{method:'POST',headers,body:JSON.stringify({...recommendationBody(fresh),...extra})});
  if(epoch!==strategyViewEpoch)return;
- if(Array.isArray(data.items))return applyNextMoves(data,epoch);
+ if(Array.isArray(data.items))return applyNextMoves(data,epoch,append,true);
  return loadNextMoves(epoch);
 }
 async function quickNextMove(button){await strategyTask(button,async epoch=>{
@@ -168,7 +173,7 @@ function nextMoveCard(a){
  <h3 tabindex="-1">${esc(conciseCopy(a.title,14))}</h3>
  ${stale?'<p class="move-stale">Check the source before drafting.</p>':''}
  <div class="move-actions"><button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true">→</span></button></div></div>
- <section class="move-recommendation" aria-labelledby="moveRecommendation${a.id}"><h4 id="moveRecommendation${a.id}">✦ AI recommendation</h4><p>${esc(conciseCopy(moveReason(a.reason),32))}</p>${a.source?nextMoveSource(a):'<small>Based on your '+(a.strategy_context?.one_off?'topic':'strategy')+'</small>'}</section>
+ <section class="move-recommendation" aria-labelledby="moveRecommendation${a.id}"><h4 id="moveRecommendation${a.id}">✦ AI recommendation</h4><p>${esc(conciseCopy(moveReason(a.reason),32))}</p>${a.source?nextMoveSource(a):'<small>'+esc(a.basis||('Based on your '+(a.strategy_context?.one_off?'topic':'strategy')))+'</small>'}<details class="move-refine"><summary>Refine idea</summary><label class="visually-hidden" for="moveFeedback${a.id}">What would you change?</label><textarea id="moveFeedback${a.id}" rows="2" maxlength="500" placeholder="More personal, less filming…" oninput="moveRefinements.set(${a.id},this.value)">${esc(moveRefinements.get(a.id)||'')}</textarea><button type="button" class="quiet-button" onclick="refineMove(${a.id},this)">Update idea →</button></details></section>
  <div class="move-pager" role="group" aria-label="Browse ideas"><button type="button" onclick="changeMove(-1,this)" aria-label="Previous idea" ${moveIndex===0?'disabled':''}>←</button><span role="status">Idea ${moveOffset+moveIndex+1}</span><button class="move-next" type="button" onclick="changeMove(1,this)" aria-label="Next idea">Next idea <span aria-hidden="true">→</span></button></div>
  </article>`;
 }
@@ -181,14 +186,14 @@ async function changeMove(direction,button){
  if(direction<0){if(moveIndex===0)return;moveIndex--;renderNextMove();}
  else if(moveIndex<moveItems.length-1){moveIndex++;renderNextMove();}
  else {await strategyTask(button,async epoch=>{
-  const offset=moveOffset+moveItems.length;strategyStatus('Finding fresh ideas…');
-  const items=await requestMoves(epoch,true);if(epoch!==strategyViewEpoch)return;
+  strategyStatus('Finding fresh ideas…');
+  const items=await requestMoves(epoch,true,true);if(epoch!==strategyViewEpoch)return;
   if(!items?.length)throw Error('No fresh ideas yet. Try Next idea again.');
-  moveOffset=offset;moveIndex=0;renderNextMove();strategyStatus('');
+  renderNextMove();strategyStatus('');
  });}
  document.querySelector('#strategyActions h3')?.focus();
 }
-function applyNextMoves(data,epoch=strategyViewEpoch){
+function applyNextMoves(data,epoch=strategyViewEpoch,append=false,selectNew=false){
  if(epoch!==strategyViewEpoch)return;
  if(Number.isInteger(data.revision)&&data.revision!==strategyRevision){moveItems=[];moveIndex=0;renderNextMove();strategyLoaded=false;const error=Error('Your strategy changed. Reopen Next move to see the latest ideas.');error.status=409;throw error;}
  document.getElementById('strategySourceNote').textContent=data.source_note||'';
@@ -197,8 +202,15 @@ function applyNextMoves(data,epoch=strategyViewEpoch){
  const currentId=moveItems[moveIndex]?.id;
  const items=data.items.filter(a=>a.kind!=='review');
  const context=items[0]?.strategy_context;
- if(context?.one_off)quickMoveRequest={brief:context.goal,platforms:context.platforms};
- moveItems=items;const kept=items.findIndex(a=>a.id===currentId);moveIndex=kept<0?0:kept;renderNextMove();
+ if(context?.one_off)quickMoveRequest={brief:context.topic||context.goal,platforms:context.platforms};
+ const history=(Array.isArray(data.history)?data.history:[]).filter(a=>a.kind!=='review');
+ const merged=new Map((append?moveItems:history).map(a=>[a.id,a]));
+ for(const item of [...history,...items])merged.set(item.id,item);
+ const all=Array.from(merged.values()).sort((a,b)=>a.id-b.id),removed=Math.max(0,all.length-60);
+ moveOffset=append?moveOffset+removed:0;moveItems=all.slice(-60);
+ const preferred=append||selectNew?items[0]?.id:currentId;
+ const kept=moveItems.findIndex(a=>a.id===preferred);
+ moveIndex=kept<0?Math.max(0,moveItems.findIndex(a=>a.id===items[0]?.id)):kept;renderNextMove();
  document.getElementById('recommendationHelp').hidden=true;
  document.getElementById('recommendButton').hidden=strategyPlanning||moveItems.length>0||!(hasConfirmedStrategy||quickMoveRequest);
  document.getElementById('recommendButton').setAttribute('aria-label',items.length?'Refresh ideas':'Find post ideas');
@@ -222,12 +234,11 @@ async function remindMove(id,days,button){
  await actionFeedback(id,'snoozed',button,{remind_at:date.toISOString()});
 }
 async function refineMove(id,button){await strategyTask(button,async epoch=>{
- const field=document.getElementById('moveFeedback'+id),reason=field.value.trim();
- if(!reason){field.focus();throw Error('Tell Zova what to change.');}
- await api(`/api/strategy/actions/${id}/feedback`,{method:'POST',headers,body:JSON.stringify({status:'dismissed',reason})});
- if(epoch!==strategyViewEpoch)return;
- moveItems=moveItems.filter(item=>item.id!==id);moveIndex=0;renderNextMove();
- strategyStatus('Finding a better fit…');await requestMoves(epoch);if(epoch===strategyViewEpoch)strategyStatus('');
+ const field=document.getElementById('moveFeedback'+id),refinement=field.value.trim();
+ if(!refinement){field.focus();throw Error('Tell Zova what to change.');}
+ moveRefinements.set(id,refinement);strategyStatus('Shaping your idea…');
+ await requestMoves(epoch,true,true,{refine_action_id:id,refinement});
+ if(epoch===strategyViewEpoch){moveRefinements.delete(id);strategyStatus('');}
 });}
 async function openLinkedDraft(url,button,existingDraftId=0){
  if(sendingMessage||mediaUploading||studioLoading){strategyStatus('Finish the current upload or response first.');return;}

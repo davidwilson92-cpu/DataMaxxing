@@ -87,6 +87,6 @@ def dashboard(data, feed, now=None, window_days=7):
     if not posts:
         recommendations[0]['detail']=f'No dated posts in the last {window_days} days are available in this sample. Connect an account or try refreshing later.'
     return {'period': f'Posts published in the last {window_days} days', 'summary': summary, 'platforms': platforms,
-            'top_posts': scored[:6], 'recommendations': recommendations, 'unavailable': feed.get('unavailable', []),
+            'top_posts': scored[:6], 'sample_posts': posts[:30], 'recommendations': recommendations, 'unavailable': feed.get('unavailable', []),
             'fetched_at': now.isoformat(), 'window_start': start.isoformat(), 'excluded_undated': excluded,
             'note': f'Available lifetime totals for a limited sample of posts published in the last {window_days} days. These are not engagement gained during that period. Followers are current account totals. A dash means unavailable or incomplete; views and impressions differ by platform.'}
