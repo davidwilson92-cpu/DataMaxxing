@@ -109,3 +109,17 @@ in the existing register.
   editing. Preview/compare/add-platform and sent-attachment removal were checked
   against the web controls and restored. Undo now skips an unchanged snapshot.
   These changes require fresh simulator and Release checks.
+
+- Further security review isolated fresh sign-in from a prior user's in-memory
+  product cookie, invalidates earlier responses, and resets brand/tab/consent
+  presentation on sign-out. Regression checks cover the account boundary.
+- Picker/camera copies now live only in Zova's protected temporary directory and
+  are cleared after use, sign-out and restart without deleting source files.
+  Follow-up chat turns retain the attachment on the post without repeating it
+  in each new message, matching the web composer. Added regression evidence.
+- Production read-only preflight at 18:54 UTC: Stripe test mode, subscription
+  enforcement false, live checkout false. Publications: seven published, one
+  pending, one unknown, one cancelled; schedules: one cancelled, no active
+  deliveries. Unknown/pending records are retained, never automatically resent.
+  A fresh managed Render database export was requested at 18:50 UTC; completion
+  still needs verification. No backend deployment has occurred.

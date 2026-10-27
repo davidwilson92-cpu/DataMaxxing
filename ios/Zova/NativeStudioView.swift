@@ -7,15 +7,11 @@ struct PickedMedia: Transferable {
     let url: URL
     static var transferRepresentation: some TransferRepresentation {
         FileRepresentation(importedContentType: .movie) { received in
-            let target = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + "." + (received.file.pathExtension.isEmpty ? "mov" : received.file.pathExtension))
-            try FileManager.default.copyItem(at: received.file, to: target)
-            try FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: target.path)
+            let target = try NativeMediaFiles.copyOwned(received.file, extension: received.file.pathExtension.isEmpty ? "mov" : received.file.pathExtension)
             return PickedMedia(url: target)
         }
         FileRepresentation(importedContentType: .image) { received in
-            let target = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + "." + (received.file.pathExtension.isEmpty ? "jpg" : received.file.pathExtension))
-            try FileManager.default.copyItem(at: received.file, to: target)
-            try FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: target.path)
+            let target = try NativeMediaFiles.copyOwned(received.file, extension: received.file.pathExtension.isEmpty ? "jpg" : received.file.pathExtension)
             return PickedMedia(url: target)
         }
     }
@@ -120,7 +116,7 @@ struct NativeStudioView: View {
                 case .failure(let error): store.handle(error)
                 }
             }
-            .sheet(isPresented: $camera) { NativeCamera(selected: { url, mime in camera = false; run { defer { try? FileManager.default.removeItem(at: url) }; try await store.upload(url, name: url.lastPathComponent, mime: mime) } }, failed: { error in camera = false; store.handle(error) }) }
+            .sheet(isPresented: $camera) { NativeCamera(selected: { url, mime in camera = false; run { defer { NativeMediaFiles.remove(url) }; try await store.upload(url, name: url.lastPathComponent, mime: mime) } }, failed: { error in camera = false; store.handle(error) }) }
             .onChange(of: captionEditing) { _, editing in if editing { store.draft.addHistory() } }
             .onChange(of: picker) { _, items in
                 guard !items.isEmpty else { return }
@@ -129,7 +125,7 @@ struct NativeStudioView: View {
                     try store.validateAttachments(items.map { $0.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) ? "video/mp4" : "image/jpeg" })
                     for item in items {
                         guard let media = try await item.loadTransferable(type: PickedMedia.self) else { throw ZovaFailure.server("This photo or video could not be opened.") }
-                        defer { try? FileManager.default.removeItem(at: media.url) }
+                        defer { NativeMediaFiles.remove(media.url) }
                         try await store.upload(media.url, name: media.url.lastPathComponent, mime: UTType(filenameExtension: media.url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
                     }
                 }
@@ -169,12 +165,13 @@ struct NativeStudioView: View {
     private var caption: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
+                ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 4) {
                 ForEach(SocialPlatform.allCases.filter { store.draft.variants.object[$0.rawValue] != nil }) { platform in
                     Button { store.draft.active = platform.rawValue; store.changed() } label: {
                         NativePlatformMark(platform: platform.rawValue).frame(width: 44, height: 44).background(store.draft.active == platform.rawValue ? ZovaDesign.pale : .clear, in: RoundedRectangle(cornerRadius: 12))
                     }.accessibilityLabel("Edit " + platform.title + " caption")
                 }
-                Spacer()
+                } }.frame(maxWidth: .infinity, alignment: .leading)
                 Button { UIPasteboard.general.string = store.draft.variants[store.draft.active]["posts"].strings.joined(separator: "\n\n") } label: { Image(systemName: "doc.on.doc").frame(width: 44, height: 44) }.accessibilityLabel("Copy caption")
                 if !store.draft.workspace["text_history"].array.isEmpty {
                     Button { store.draft.undo(); store.changed() } label: { Image(systemName: "arrow.uturn.backward").frame(width: 44, height: 44) }.accessibilityLabel("Undo caption change")
@@ -195,6 +192,9 @@ struct NativeStudioView: View {
                 TextField("Edit caption", text: Binding(get: { store.caption(store.draft.active, index: index) }, set: { store.editCaption(store.draft.active, index: index, text: $0) }), axis: .vertical)
                     .lineLimit(4...20).padding(16).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 16))
                     .focused($captionEditing).disabled((store.busy && !store.backgroundSaving) || !store.draft.editable).accessibilityIdentifier("caption-\(index)")
+                if store.draft.active == "x" {
+                    Text("\(store.caption("x", index: index).count) / 280").font(.caption).foregroundStyle(.secondary)
+                }
             }
             if store.draft.editable {
                 HStack {
@@ -205,8 +205,7 @@ struct NativeStudioView: View {
         }
     }
     private var unsentMedia: [JSONValue] {
-        let sent = store.draft.conversation.flatMap { $0["media_asset_ids"].array }
-        return store.draft.media.filter { !sent.contains($0["id"]) }
+        store.draft.unsentMedia
     }
     private var composer: some View {
         VStack(spacing: 6) {
@@ -307,12 +306,10 @@ struct NativeCamera: UIViewControllerRepresentable {
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             do {
                 if let source = info[.mediaURL] as? URL {
-                    let target = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mov")
-                    try FileManager.default.copyItem(at: source, to: target)
-                    try FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: target.path)
+                    let target = try NativeMediaFiles.copyOwned(source, extension: "mov")
                     parent.selected(target, "video/quicktime")
                 } else if let image = info[.originalImage] as? UIImage, let data = image.jpegData(compressionQuality: 0.92) {
-                    let target = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".jpg")
+                    let target = try NativeMediaFiles.create(extension: "jpg")
                     try data.write(to: target, options: [.atomic, .completeFileProtection]); parent.selected(target, "image/jpeg")
                 } else { throw ZovaFailure.server("The camera could not save that attachment. Please try again.") }
             } catch { parent.failed(error); parent.dismiss() }

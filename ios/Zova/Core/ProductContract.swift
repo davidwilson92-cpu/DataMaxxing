@@ -74,6 +74,10 @@ struct ProductDraft: Equatable {
         set { workspace["composer"] = .string(newValue) }
     }
     var media: [JSONValue] { workspace["media"].array }
+    var unsentMedia: [JSONValue] {
+        let sent = conversation.filter { $0["role"].string == "user" }.flatMap { $0["media_asset_ids"].array }
+        return media.filter { !sent.contains($0["id"]) }
+    }
     var conversation: [JSONValue] {
         get { workspace["conversation"].array }
         set { workspace["conversation"] = .array(newValue) }

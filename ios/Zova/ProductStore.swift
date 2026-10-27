@@ -162,7 +162,8 @@ final class ProductStore: ObservableObject {
         }
         guard account["ai"]["allowed"].bool || !account["ai"]["required"].bool else { needsConsent = true; return }
         if !retry {
-            draft.conversation.append(.object(["role": .string("user"), "content": .string(text), "media_asset_ids": draft.mediaIDs, "media": .array(draft.media)]))
+            let sentMedia = draft.unsentMedia
+            draft.conversation.append(.object(["role": .string("user"), "content": .string(text), "media_asset_ids": .array(sentMedia.map { $0["id"] }), "media": .array(sentMedia)]))
             draft.composer = ""; draft.workspace["pending_message"] = .string(text)
             draft.workspace["pending_media_asset_ids"] = draft.mediaIDs
             draft.workspace["pending_link_url"] = draft.workspace["link_url"]
@@ -291,6 +292,8 @@ final class ProductStore: ObservableObject {
         NativeMediaFiles.clear(); recovery = .null
         changeSerial = 0; savedSerial = 0; pendingReview = false; showReview = false
         draft = ProductDraft(); drafts = []; schedules = []; series = []; account = .null; results = .null; mediaNotice = ""
+        brand = 0; selectedTab = 0; draftOffset = 0; moreDrafts = false
+        needsConsent = false; showIntro = false; reviewMode = "publish"; error = nil; saveStatus = "Ready"
     }
     private var recoveryOwner: String { "\(account["profile"]["id"].int):\(brand)" }
     private func persistRecovery() {

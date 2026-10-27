@@ -61,6 +61,10 @@ actor NativeAPI {
         let pair = try JSONDecoder().decode(TokenReply.self, from: data).tokens()
         guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
         try KeychainVault.save(pair)
+        // A fresh sign-in may belong to another user. Never reuse the previous
+        // user's product cookie or accept a response issued under that identity.
+        sessionEpoch += 1; rotation?.cancel(); rotation = nil
+        productSessionTask?.cancel(); productSessionTask = nil; productCookie = nil
         tokens = pair
     }
     private func access() async throws -> String {

@@ -116,6 +116,23 @@ final class ZovaUITests: XCTestCase {
     private func capture(_ app: XCUIApplication, _ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
     }
+    func testScheduleCanBeReviewedRescheduledAndCancelledExplicitly() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        XCTAssertTrue(app.buttons["tab-Schedule"].waitForExistence(timeout: 12)); app.buttons["tab-Schedule"].tap()
+        let manage = app.buttons["Manage schedule →"]
+        XCTAssertTrue(manage.waitForExistence(timeout: 8))
+        for _ in 0..<3 { if manage.isHittable { break }; app.swipeUp() }
+        manage.tap()
+        XCTAssertTrue(app.buttons["Save new time"].waitForExistence(timeout: 8))
+        capture(app, "Native scheduled delivery — guarded editing")
+        app.buttons["Save new time"].tap()
+        XCTAssertTrue(manage.waitForExistence(timeout: 8)); manage.tap()
+        XCTAssertTrue(app.buttons["Cancel scheduled post"].waitForExistence(timeout: 8)); app.buttons["Cancel scheduled post"].tap()
+        XCTAssertTrue(app.buttons["Cancel delivery"].waitForExistence(timeout: 5)); app.buttons["Cancel delivery"].tap()
+        XCTAssertTrue(app.staticTexts["No posts scheduled this month."].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
+        XCTAssertEqual(app.webViews.count, 0)
+    }
     func testFreshInstallHasClearSignInAndReadableBranding() {
         let app = XCUIApplication()
         app.launchArguments = ["--test-fresh-install"]

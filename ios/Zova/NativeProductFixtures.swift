@@ -12,11 +12,14 @@ final class NativeProductFixtures: URLProtocol {
     static var storedProposal: JSONValue = .null
     static var strategyRevision = 1
     static var primaryPlatform = "instagram"
+    static var schedule: JSONValue = .null
     static func reset(tiktok: Bool = false) {
         lock.lock(); defer { lock.unlock() }
         primaryPlatform = tiktok ? "tiktok" : "instagram"
         saved = [24: draft(24)]; batch = 0
         storedStrategy = strategy; storedProposal = .null; strategyRevision = 1
+        let date = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+        schedule = .object(["id": .integer(1), "draft_id": .integer(24), "draft_revision": .integer(1), "platform": .string("instagram"), "title": .string("Beginner pottery class"), "account_name": .string("Pottery Studio"), "status": .string("scheduled"), "scheduled_at": .string(ISO8601DateFormatter().string(from: date)), "updated_at": .string("2026-10-27T10:00:00Z")])
     }
     static func draft(_ id: Int) -> JSONValue {
         .object(["id": .integer(id), "revision": .integer(1), "status": .string("draft"), "display_title": .string("Meet the maker"), "title": .string("Meet the maker"), "brief": .string("The story behind our small pottery studio."), "instruction": .string(""), "thread_length": .integer(1), "platforms": .strings([primaryPlatform]), "variants": .object([primaryPlatform: .object(["posts": .strings(["New to pottery? Start with a small piece of clay and give yourself time to learn. What would you like to try making?"])])]), "workspace": .object(["selected_platforms": .strings([primaryPlatform]), "active_platform": .string(primaryPlatform), "media": .array([]), "media_asset_ids": .array([]), "composer": .string(""), "conversation": .array([.object(["role": .string("user"), "content": .string("The story behind our small pottery studio.")])])])])
@@ -94,8 +97,14 @@ final class NativeProductFixtures: URLProtocol {
             return ok(.object(["draft_id": .integer(id), "revision": value["revision"], "variants": value["variants"]]))
         }
         if path == "/api/schedules" {
-            let date = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
-            return ok(.array([.object(["id": .integer(1), "draft_id": .integer(24), "draft_revision": .integer(1), "platform": .string("instagram"), "title": .string("Beginner pottery class"), "account_name": .string("Pottery Studio"), "status": .string("scheduled"), "scheduled_at": .string(ISO8601DateFormatter().string(from: date)), "updated_at": .string(ISO8601DateFormatter().string(from: Date()))])]))
+            return ok(.array(schedule["status"].string == "scheduled" ? [schedule] : []))
+        }
+        if path == "/api/schedules/1/reschedule" || path == "/api/schedules/1/cancel" {
+            guard input["expected_updated_at"] == schedule["updated_at"] else { return (409, .object(["detail": .string("Schedule changed. Refresh first.")]), [:]) }
+            if path.hasSuffix("reschedule") { schedule["scheduled_at"] = input["scheduled_local"] }
+            else { schedule["status"] = .string("cancelled") }
+            schedule["updated_at"] = .string(ISO8601DateFormatter().string(from: Date()))
+            return ok(schedule)
         }
         if path == "/api/series" { return ok(.array([])) }
         if path == "/api/analytics/dashboard" {

@@ -45,6 +45,37 @@ final class NativeProductSafetyTests: XCTestCase {
         catch let issue as ProductError { XCTAssertEqual(issue.status, 502) }
         await fulfillment(of: [once], timeout: 3)
     }
+    func testNewSignInCannotReusePreviousUsersProductCookie() async throws {
+        let api = try api()
+        var cookieGeneration = 0
+        var productCookies: [String] = []
+        ProductTestTransport.respond = { request in
+            if request.url?.path == "/api/v1/auth/token" {
+                let pair = JSONValue.object(["access_token": .string(String(repeating: "b", count: 64)), "refresh_token": .string(String(repeating: "s", count: 64)), "expires_in": .integer(900), "token_type": .string("Bearer")])
+                return (200, try! pair.encoded(), [:], 0)
+            }
+            if request.url?.path == "/api/v1/native-web-session" {
+                cookieGeneration += 1
+                return (200, Data("{\"destination\":\"/studio\"}".utf8), ["Set-Cookie": "nova_session=ios.owner-\(cookieGeneration); Path=/; Max-Age=900; Secure; HttpOnly; SameSite=Lax"], 0)
+            }
+            if request.url?.path == "/api/native/account" { productCookies.append(request.value(forHTTPHeaderField: "Cookie") ?? "") }
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            return (status, try! value.encoded(), headers, 0)
+        }
+        _ = try await api.product("/api/native/account")
+        try await api.exchange(code: String(repeating: "c", count: 43), verifier: String(repeating: "v", count: 64))
+        _ = try await api.product("/api/native/account")
+        XCTAssertEqual(productCookies, ["nova_session=ios.owner-1", "nova_session=ios.owner-2"])
+    }
+    func testSignOutResetsBrandAndPrivatePresentationState() throws {
+        let store = ProductStore(api: try api())
+        store.brand = 12; store.selectedTab = 3; store.needsConsent = true; store.showIntro = true
+        store.moreDrafts = true; store.error = "Previous account detail"; store.reviewMode = "schedule"
+        store.clear()
+        XCTAssertEqual(store.brand, 0); XCTAssertEqual(store.selectedTab, 0)
+        XCTAssertFalse(store.needsConsent); XCTAssertFalse(store.showIntro); XCTAssertFalse(store.moreDrafts)
+        XCTAssertNil(store.error); XCTAssertEqual(store.reviewMode, "publish")
+    }
     func testAccountFormCannotReportSuccessAfterLoginRedirectOrValidationError() async throws {
         let api = try api()
         for target in ["/login?next=/account", "/account?error=current_password", "https://untrusted.example/"] {
@@ -106,6 +137,23 @@ final class NativeProductSafetyTests: XCTestCase {
         XCTAssertFalse(store.caption("instagram").isEmpty); XCTAssertTrue(store.draft.editable)
         let id = try XCTUnwrap(store.draft.id); try await store.openDraft(id)
         XCTAssertFalse(store.caption("instagram").isEmpty); XCTAssertTrue(store.draft.composer.isEmpty)
+        store.clear()
+    }
+    func testFollowUpDoesNotRepeatSentAttachmentOrLoseItFromPost() async throws {
+        let store = ProductStore(api: try api())
+        try await store.start()
+        store.draft.workspace["media"] = .array([.object(["id": .integer(4), "kind": .string("video"), "filename": .string("synthetic.mp4")])])
+        store.draft.workspace["media_asset_ids"] = .array([.integer(4)])
+        store.draft.composer = "A pottery tip"; store.changed()
+        await store.perform { try await store.send() }
+        XCTAssertNil(store.error); XCTAssertTrue(store.draft.unsentMedia.isEmpty)
+        store.draft.composer = "Make it shorter"; store.changed()
+        await store.perform { try await store.send() }
+        XCTAssertNil(store.error)
+        XCTAssertEqual(store.draft.conversation.count, 2)
+        XCTAssertEqual(store.draft.conversation[0]["media_asset_ids"], .array([.integer(4)]))
+        XCTAssertTrue(store.draft.conversation[1]["media"].array.isEmpty)
+        XCTAssertEqual(store.draft.mediaIDs, .array([.integer(4)]))
         store.clear()
     }
     func testTypingDuringBackgroundSaveRetainsNewestTextAndDoesNotCancelPatch() async throws {
@@ -193,6 +241,11 @@ final class NativeProductSafetyTests: XCTestCase {
         XCTAssertNotNil(data.range(of: original)); XCTAssertTrue(String(decoding: data.prefix(150), as: UTF8.self).contains("filename=\"clip.mp4\""))
         NativeMediaFiles.remove(source); XCTAssertTrue(FileManager.default.fileExists(atPath: source.path))
         NativeMediaFiles.remove(body); XCTAssertFalse(FileManager.default.fileExists(atPath: body.path))
+        let ownedCopy = try NativeMediaFiles.copyOwned(source, extension: "mp4")
+        XCTAssertEqual(try Data(contentsOf: ownedCopy), original)
+        NativeMediaFiles.clear()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: ownedCopy.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: source.path))
     }
     func testAttachmentConversionProducesReadableJPEGWithoutDeletingSource() throws {
         let file = try NativeMediaFiles.create(extension: "png")

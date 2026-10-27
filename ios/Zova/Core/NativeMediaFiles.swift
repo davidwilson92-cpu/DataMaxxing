@@ -21,6 +21,20 @@ enum NativeMediaFiles {
         guard let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
         files.forEach(remove)
     }
+    static func copyOwned(_ source: URL, extension ext: String) throws -> URL {
+        guard source.isFileURL,
+              let size = try FileManager.default.attributesOfItem(atPath: source.path)[.size] as? NSNumber,
+              size.intValue > 0, size.intValue <= 100 * 1024 * 1024 else {
+            throw ZovaFailure.server("Choose a non-empty photo or a video of 100 MB or less.")
+        }
+        let target = try create(extension: ext)
+        do {
+            try FileManager.default.removeItem(at: target)
+            try FileManager.default.copyItem(at: source, to: target)
+            try FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: target.path)
+            return target
+        } catch { remove(target); throw error }
+    }
     static func multipart(file: URL, filename: String, mime: String, boundary: String) throws -> URL {
         guard file.isFileURL else { throw ZovaFailure.unsafeURL }
         let safeName = filename.replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "\r", with: "").replacingOccurrences(of: "\n", with: "")
