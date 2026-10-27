@@ -1,27 +1,24 @@
 # Beta known gaps and required follow-up
 
-## Native tracker follow-up candidate — 27 October 2026
+## Native tracker follow-up — 27 October 2026
 
-The owner requested fixes to the audit gaps. Native changes add a short X format
-explanation, guaranteed 44pt secondary controls, scalable calendar/Next Move text,
-adaptive rows and a scrolling composer in landscape/accessibility layouts.
-New simulator journeys cover large text, landscape, scanned voice presentation,
-Schedule edit-to-draft/list navigation, protected deletion entry and touch targets.
-First candidate 9e62dbc passed 727 SQLite / 728 PostgreSQL and 39 native unit /
-16 UI tests. Visual review then found oversized tab labels and incomplete sheet
-large-text coverage. Follow-up fixes navigation with Large Content Viewer,
-strengthens real content-size testing and retains the deletion-status receipt
-after submitting. Fresh follow-up validation is pending. These changes are NOT
-in signed build12.
-External release remains held. No customer charge or backend migration change.
+Runtime 9504809 corrects X format clarity, target sizes, adaptive large-text/landscape
+layouts, connection guidance and retained protected deletion receipts. Native
+CI40586221324 passed 40 unit / 16 UI and Release compilation; application CI40586221444
+passed 727 SQLite / 728 PostgreSQL plus browser, recovery, audits and exact beta guard.
+Screenshots inspected. PR native CI40586232192 rerun also passed 40 unit / 16 UI and Release compilation
+after its first attempt hit a screenshot-service timeout. Codemagic 6ae11bc3206ce93970c6a317 signed exact 9504809 and uploaded build 13.
+Apple completed processing; build 13 is Testing in the existing internal group.
+These changes are not in build 12. External release remains held; charges remain off.
 
-Read-only production reconciliation now identifies the original tester's schedule
-1, draft45, owner19: cancelled on 25 October at 06:00 UTC. No active scheduled
-deliveries remain; pending/unknown publication records belong to other owners and
-remain untouched. There is one access-revoked account-deletion request awaiting
-operator review; completed erasure must not be claimed without execution evidence.
-Real native Facebook connection and voice-provider acceptance remain distinct
-from synthetic UI tests. All 79 commercial findings remain recorded.
+Owner reported completion of requested native Facebook final connection/return and
+populated voice scan/reopen. Original tester schedule 1 / draft 45 / publication 10 is
+cancelled; no active schedules. Approved account 21 erasure completed 21:39:45 UTC;
+active store, receipt, control account and restore-exclusion record verified.
+Production 2de31e1 resumed 21:42:28 UTC; maintenance off, fresh worker heartbeat,
+health/sign-in and disabled billing verified. No pending deletion requests remain.
+See NATIVE_QA_FIXES_20261027.md; retain original 57 statuses below as historical.
+All 79 separate commercial findings remain recorded; this is not commercial certification.
 
 ## Original tester tracker audit of native build 12 — 27 October 2026
 
@@ -40,7 +37,7 @@ explanation. TC-54 native brand/history/calendar controls specify dimensions bel
 the original approximately 44pt target. Fixed-size small labels and absent full
 Dynamic Type/product-landscape coverage prevent inheriting TC-53/56's old passes.
 Record and address these in the next native candidate, with fresh validation.
-No runtime/deployment or release-setting change in this audit. External build12
+No runtime/deployment or release-setting change in this audit. External build 12
 remains held at the owner's request; build11 is still the external testing build.
 All 79 commercial findings remain separately retained; charges remain disabled.
 
@@ -50,7 +47,7 @@ SwiftUI replacement is implemented in draft PR35. Shared security/data and
 provider contracts remain. Render 2de31e1 is live after a completed backup and
 passing 727 SQLite / 728 PostgreSQL checks. Native CI40565819691 passed 39 unit,
 10 UI checks and iPhone Release compilation. Latest simulator screenshots inspected.
-Signed candidate 6ae0f93f206ce93970c697a3 uploaded the validated source as build12.
+Signed candidate 6ae0f93f206ce93970c697a3 uploaded the validated source as build 12.
 Apple processing completed; 0.1.0 (12) is Testing in the existing internal group.
 Owner confirmed the requested upgrade/Studio/saved media/reopen/social cancellation
 checks passed. Separate live posting and comprehensive provider/device testing are
@@ -152,7 +149,7 @@ managed point-in-time recovery, and missing historical media remains a recovery 
 The independent Render monitor is prepared with a distinct read-only credential
 path; activation, its $1/month minimum and new credential require owner approval.
 Live recovery will use a separate test account, not change Apple's reviewer login.
-Physical build10 acceptance and alert delivery remain unverified. All79 retained.
+Physical build10 acceptance and alert delivery remain unverified. All 79 retained.
 
 Owner authorises validated Render updates and external TestFlight preparation, with
 customer charges disabled and no cloud migration. See `EXTERNAL_BETA_20261020.md`
@@ -187,7 +184,7 @@ revocation remains separate from local unlinking. All 79 historical sections rem
 
 ## Current commercial review — 19 October 2026
 
-The owner now requests commercial-readiness assessment and improvement, followed by a credit-supported cloud migration. The current candidate adds explicit AI permission, correct/failure-safe Performance, simpler Account/Drafts/help, safer error diagnostics and dormant separate-worker controls. See `../COMMERCIAL_READINESS_20261019.md`, `../architecture/CLOUD_MIGRATION_20261019.md` and `current-reconciliation-20261019.json`. These bounded fixes do not close entire historical sections. All79 remain retained; no broad RLS/service migration, charges or cloud cutover is activated. Existing older release/rollback hashes below are historical: use the latest handoff for the active candidate. A rollback must preserve the new AI permission boundary or pause AI processing.
+The owner now requests commercial-readiness assessment and improvement, followed by a credit-supported cloud migration. The current candidate adds explicit AI permission, correct/failure-safe Performance, simpler Account/Drafts/help, safer error diagnostics and dormant separate-worker controls. See `../COMMERCIAL_READINESS_20261019.md`, `../architecture/CLOUD_MIGRATION_20261019.md` and `current-reconciliation-20261019.json`. These bounded fixes do not close entire historical sections. All 79 remain retained; no broad RLS/service migration, charges or cloud cutover is activated. Existing older release/rollback hashes below are historical: use the latest handoff for the active candidate. A rollback must preserve the new AI permission boundary or pause AI processing.
 
 On 10 October 2026 the owner authorised a limited beta for personal testing, deferring the broader commercial-readiness work until later. This is not a certification or a finding that any security issue is fixed.
 
