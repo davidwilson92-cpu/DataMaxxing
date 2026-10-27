@@ -176,6 +176,14 @@ final class ZovaUITests: XCTestCase {
             XCTAssertLessThanOrEqual(app.buttons["tab-" + tab].frame.height, 80, "Navigation must leave room for content")
         }
         capture(app, "Native Studio — largest accessibility text")
+        let composer = app.textFields["post-composer"]
+        reveal(composer, in: app); composer.tap(); composer.typeText("A large-text pottery idea")
+        XCTAssertFalse(app.buttons["next-move"].exists, "Typing should make room above the keyboard")
+        let send = app.buttons["Send idea"]; reveal(send, in: app); assertTarget(send, app: app)
+        let ready = expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: send)
+        wait(for: [ready], timeout: 10)
+        capture(app, "Native Studio — largest text with keyboard and Send")
+        send.tap(); XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 10))
         app.buttons["next-move"].tap()
         XCTAssertTrue(app.staticTexts["next-move-title"].waitForExistence(timeout: 8))
         XCTAssertGreaterThan(app.staticTexts["next-move-title"].frame.height, 60, "The presented sheet must inherit the large text preference")

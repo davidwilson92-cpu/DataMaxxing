@@ -37,7 +37,7 @@ struct NativeStudioView: View {
     private var scrollingComposer: Bool { textSize.isAccessibilitySize || verticalSize == .compact }
     var body: some View {
         VStack(spacing: 0) {
-            if verticalSize != .compact || (!focused && !captionEditing) { header }
+            if !scrollingComposer || (!focused && !captionEditing) { header }
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 22) {
@@ -268,7 +268,9 @@ struct NativeStudioView: View {
                     } label: { Image(systemName: "plus").font(.title3).frame(width: 44, height: 44) }.accessibilityLabel("Add attachment").disabled(store.busy)
                     Button("Post options") { focused = false; captionEditing = false; options = true }.font(.subheadline).frame(minHeight: 44).disabled(store.busy)
                     Spacer()
-                    Button { focused = false; run { try await store.send() } } label: { Image(systemName: "arrow.up").font(.title2.bold()).foregroundStyle(.white).frame(width: 48, height: 48).background(ZovaDesign.purple.opacity(store.draft.composer.isEmpty ? 0.4 : 1), in: Circle()) }.accessibilityLabel("Send idea").disabled(store.busy || store.draft.composer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Button { focused = false; run { try await store.send() } } label: { Image(systemName: "arrow.up").font(.system(size: 22, weight: .bold)).foregroundStyle(.white).frame(width: 48, height: 48).background(ZovaDesign.purple.opacity(store.draft.composer.isEmpty ? 0.4 : 1), in: Circle()) }.accessibilityLabel("Send idea")
+                        .accessibilityShowsLargeContentViewer { Label("Send idea", systemImage: "arrow.up") }
+                        .disabled(store.busy || store.draft.composer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }.padding(14).background(Color.white, in: RoundedRectangle(cornerRadius: 22)).overlay(RoundedRectangle(cornerRadius: 22).stroke(focused ? ZovaDesign.purple : ZovaDesign.line)).padding(.horizontal, 14)
             if !focused { NativeAdaptiveRow(spacing: 6) { Text(store.saveStatus); Text("Nothing posts without your approval.") }.font(.caption2).foregroundStyle(.secondary).padding(.horizontal, 18) }
