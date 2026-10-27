@@ -8,9 +8,11 @@ passing 727 SQLite / 728 PostgreSQL checks. Native CI40565819691 passed 39 unit,
 10 UI checks and iPhone Release compilation. Latest simulator screenshots inspected.
 Signed candidate 6ae0f93f206ce93970c697a3 uploaded the validated source as build12.
 Apple processing completed; 0.1.0 (12) is Testing in the existing internal group.
-Physical upgrade/media/provider acceptance and external eligibility remain pending.
-Build11 remains available externally; build12 is not yet assigned externally.
-See NATIVE_IOS_PARITY_20261027.md. Owner has been asked for device acceptance.
+Owner confirmed the requested upgrade/Studio/saved media/reopen/social cancellation
+checks passed. Separate live posting and comprehensive provider/device testing are
+not inferred. Build12 is assigned externally and Apple shows Approved. The owner
+explicitly chose to keep it approved for now: external release/Notify Testers is
+on hold. Build11 remains Testing externally. See NATIVE_IOS_PARITY_20261027.md.
 All 79 historical findings remain open where not separately evidenced.
 
 ## Next Move intelligence candidate — 26 October 2026

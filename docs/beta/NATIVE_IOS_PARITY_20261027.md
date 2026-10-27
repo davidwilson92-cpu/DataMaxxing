@@ -1,4 +1,4 @@
-# Native iOS replacement — internal build 12, device acceptance pending
+# Native iOS replacement — build 12 approved, external release held by owner
 
 Owner requests a native interface preserving the advanced beta, mobile-web design,
 all functionality and existing security. This is an implementation and parity
@@ -156,8 +156,17 @@ UUID 12a46187-8f8f-45b2-82fc-018df4c2547d. Testing notes were saved and the
 existing internal group assigned. Its builds page visibly confirms Testing.
 Evidence: C:/Users/david/AppData/Local/Temp/zova-native-testflight-build12.png.
 
-Owner asked to update without uninstalling, check saved work/media, and cancel a
-social connection to verify return. Physical results remain pending. Build12 has
-not been assigned externally or submitted for external review. Build11 remains
-available to existing testers. Do not claim perfect parity, real provider success,
-external availability or commercial certification from synthetic tests alone.
+On 27 October the owner answered Yes to the device acceptance question: upgrade
+without uninstalling, Studio opens, existing drafts/attachments remain, an idea
+with photo/video saves and reopens, and social cancellation returns to Zova. Record
+this as owner-reported success for that exact check, not separate live posting or
+each provider/device configuration.
+
+Build12 was assigned to the existing external group and submitted for review.
+Apple showed Approved with Notify Testers available. Automatic notifications were
+unchecked. The owner explicitly selected "Keep it approved for now"; do not release
+externally or notify testers without a subsequent instruction. Build11 remains
+Testing for existing external testers. Proof:
+C:/Users/david/AppData/Local/Temp/zova-native-build12-external-approved.png.
+Broader device/provider and independent tester coverage remains open. Do not claim
+perfect parity, external native availability or commercial certification.

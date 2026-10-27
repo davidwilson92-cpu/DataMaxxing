@@ -36,7 +36,7 @@
     "tests/test_instagram_formats.py": "4dec61e71263fdf24d484fb9b4ebf80f37071d1f0a6faae855c4111cde39a09d",
     "tests/test_analytics_integrity.py": "3f551599ae2d3cf86ce27227547a82bffc0f5546620350bb9f2799fcbf847e64",
     "ios/Zova/NativeAPI.swift": "498a66a2e9fe3ca27b04a090df005743e1d8018fdd2a789cadcc144b249b6fb9",
-    "docs/beta/KNOWN_GAPS.md": "c6d22fc5b5556d3e1513cc91a357de10a373225428978fe58ccfc6905e21aa3c",
+    "docs/beta/KNOWN_GAPS.md": "1ebb9b224b390d634c0ebf34bb9c73eaa40308c6da5dfe59f44f087a44689519",
     "nova/analytics_view.py": "ad7c57fe706a4a4ecd805fd9c3446ba01bb33f143c8e0f3cf83eff795bb138a9",
     "nova/conversation.py": "ff3c2f4a7ffb81f7beef674364e124d606dd9ef42521c0b55a29eff532752c21",
     "tests/test_media_privacy.py": "e1acd2589aa35dec8999082a208b7b06572e8aa67fe0165cbfae1b6873e28915",
@@ -320,6 +320,6 @@
     "nova/security.py": "8215519bb44ce034f1d80bbb23921dec378102daec11bc1e4d75f7d0e8a945bd"
   },
   "release_class": "limited-beta",
-  "reviewed_update": "2026-10-27: native SwiftUI replacement validated with 39 unit / 10 simulator journeys and iPhone Release build; application validation passed 727 SQLite / 728 PostgreSQL checks. Exact runtime 2de31e1 deployed to Render after backup and live checks. Apple build12 processed and internal Testing. This follow-up changes release documentation and the known-gap evidence hash only. Physical upgrade/media/provider checks and external review remain pending. Charges disabled; no new hosting or real social posts. All 79 commercial findings retained.",
-  "source_candidate": "2de31e19401367d909cb320986122b28093fdeb6; Render live and native build 0.1.0 (12) internal Testing; physical/external acceptance pending"
+  "reviewed_update": "2026-10-27 documentation only: owner confirmed requested upgrade, Studio, saved attachments, photo/video save/reopen and social cancellation checks. Apple approved external build12 following submission. Owner explicitly chose Keep it approved for now; do not notify/release externally without further instruction. Existing external build11 remains Testing. No runtime changes, real posts, customer charges or new hosting. All 79 commercial findings retained.",
+  "source_candidate": "2de31e19401367d909cb320986122b28093fdeb6; Render live; native build12 internal Testing and external Approved; external release held at owner request"
 }

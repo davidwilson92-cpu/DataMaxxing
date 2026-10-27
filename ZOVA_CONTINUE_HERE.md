@@ -1,4 +1,4 @@
-# Native iPhone replacement — build 12 in internal TestFlight, 27 October 2026
+# Native iPhone replacement — build 12 externally approved; owner holds release
 
 Current candidate/branch: 2de31e19401367d909cb320986122b28093fdeb6 on
 codex/ios-beta-native-20261027, draft PR35. Native SwiftUI product screens replace
@@ -21,18 +21,23 @@ Codemagic 6ae0f93f206ce93970c697a3 signed and uploaded the exact validated 2de31
 Apple processed 0.1.0 (12), UUID 12a46187-8f8f-45b2-82fc-018df4c2547d. Native
 testing notes saved; existing Zova Social Internal Beta group assigned and its
 builds page visibly confirms Testing. Owner can update through TestFlight now.
-Existing build11 stays available internally and externally. Native build12 is not
-yet assigned to the external group or submitted for its review. Do not tell the
-paid tester that the public link supplies the native build until verified.
+On 27 October the owner answered Yes to the requested device check: update without
+deleting Zova, Studio opens, existing drafts/attachments remain, photo/video idea
+saves and reopens, and cancelling a social connection returns to Zova. This is
+owner-reported acceptance of those checks, not a separate live posting test or
+individual confirmation of every provider/device condition.
 
-Owner asked through an async question to upgrade without deleting Zova and check
-saved work, photo/video save/reopen and social cancellation/return. Await device
-result; address failures before external distribution. No real post needed.
-Evidence: C:/Users/david/AppData/Local/Temp/zova-native-testflight-build12.png.
+Build12 was assigned to the existing Zova Social External Beta group and submitted
+for beta review. Apple immediately showed Approved, with Notify Testers available.
+Automatic tester notification was unchecked. The owner explicitly chose "Keep it
+approved for now" when asked to release/notify. DO NOT click Notify Testers or
+release externally until the owner authorises resuming. Existing build11 remains
+Testing externally; do not claim the public link supplies native build12 yet.
+Evidence: C:/Users/david/AppData/Local/Temp/zova-native-build12-external-approved.png.
 No new signing credentials, customer charges, or public App Store submission.
 
-See docs/beta/NATIVE_IOS_PARITY_20261027.md and native TestFlight notes. Physical
-upgrade/media/provider acceptance remains required separately from synthetic tests.
+See docs/beta/NATIVE_IOS_PARITY_20261027.md and native TestFlight notes. Broader
+physical/provider and independent tester coverage remains separate from this check.
 Keep Render, charges off, monitor inactive and all 79 commercial findings retained.
 
 ---
