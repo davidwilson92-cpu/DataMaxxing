@@ -23,10 +23,7 @@ struct NativePostOptionsView: View {
                     NativeAssetPreview(asset: asset)
                     HStack {
                         Button("Save / share media") { run {
-                            let bytes = try await store.api.media("/media/download/\(asset["id"].int)", brand: store.brand)
-                            let ext = (asset["filename"].string as NSString).pathExtension
-                            let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + "." + (ext.isEmpty ? asset["kind"].string == "video" ? "mp4" : "jpg" : ext))
-                            try bytes.write(to: url, options: [.atomic, .completeFileProtection]); export = url
+                            export = try await store.assetFile(asset)
                         } }
                         Spacer(); Button("Remove", role: .destructive) { store.removeMedia(asset["id"].int) }
                     }
@@ -39,7 +36,7 @@ struct NativePostOptionsView: View {
             .onDisappear { cleanExport() }
     }
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
-    private func cleanExport() { if let export { try? FileManager.default.removeItem(at: export) }; export = nil }
+    private func cleanExport() { NativeMediaFiles.remove(export); export = nil }
 }
 
 struct NativeShare: UIViewControllerRepresentable {

@@ -25,6 +25,8 @@ final class ProductStore: ObservableObject {
     private var changeSerial = 0
     private var savedSerial = 0
     private var authority = 0
+    private var pendingReview = false
+    @Published var recovery: JSONValue = .null
     var dirty: Bool { changeSerial != savedSerial }
     var name: String { account["profile"]["name"].string }
     var timezone: String { account["voice"]["timezone"].string.isEmpty ? "Europe/London" : account["voice"]["timezone"].string }
@@ -40,22 +42,33 @@ final class ProductStore: ObservableObject {
         if error is CancellationError { return }
         if case ZovaFailure.signInRequired = error { signedOut = true; return }
         if let issue = error as? ProductError, issue.code == "ai_permission_required" { needsConsent = true; return }
+        if let issue = error as? ProductError, issue.status == 409, dirty { recovery = NativeDraftRecovery.load(owner: recoveryOwner) }
         self.error = error.localizedDescription
     }
     func perform(_ work: @escaping @MainActor () async throws -> Void) async {
         guard !busy else { return }; busy = true; error = nil
-        defer { busy = false }
-        do { try await work() } catch { handle(error) }
+        var succeeded = false
+        defer {
+            busy = false
+            if succeeded, pendingReview { pendingReview = false; showReview = true }
+            if succeeded, dirty { queueAutosave() }
+        }
+        do { try await work(); succeeded = true } catch { saveStatus = dirty ? "Not saved — try again" : saveStatus; handle(error) }
     }
     func start() async throws {
         account = try await request("/api/native/account")
         let connected = account["connections"].array.map { $0["platform"].string }
         draft.selected = SocialPlatform.allCases.map(\.rawValue).filter { connected.contains($0) }
+        recovery = NativeDraftRecovery.load(owner: recoveryOwner)
         let intro = try await request("/api/studio/intro/claim", method: "POST", body: .object([:]))
         showIntro = intro["show"].bool
     }
     func changed() {
         changeSerial += 1; saveStatus = "Saving…"
+        persistRecovery()
+        queueAutosave()
+    }
+    private func queueAutosave() {
         autosave?.cancel()
         autosave = Task { [weak self] in
             do { try await Task.sleep(for: .milliseconds(700)) } catch { return }
@@ -67,7 +80,9 @@ final class ProductStore: ObservableObject {
         guard draft.editable else { return }
         guard dirty || draft.id == nil else { return }
         if draft.id == nil {
-            guard !draft.composer.isEmpty || !draft.brief.isEmpty || !draft.media.isEmpty || !draft.conversation.isEmpty else { return }
+            guard !draft.composer.isEmpty || !draft.brief.isEmpty || !draft.media.isEmpty || !draft.conversation.isEmpty else {
+                savedSerial = changeSerial; saveStatus = "Ready"; NativeDraftRecovery.remove(owner: recoveryOwner); return
+            }
             let created = try await request("/api/drafts", method: "POST", body: .object([:]))
             guard created["id"].int > 0 else { throw ZovaFailure.invalidResponse }
             draft.id = created["id"].int; draft.revision = created["revision"].int
@@ -77,6 +92,7 @@ final class ProductStore: ObservableObject {
         let reply = try await request("/api/drafts/\(id)", method: "PATCH", body: draft.payload)
         draft.revision = reply["revision"].int
         savedSerial = serial; saveStatus = dirty ? "Unsaved changes" : "Saved"
+        if dirty { persistRecovery() } else { NativeDraftRecovery.remove(owner: recoveryOwner) }
     }
     func openDraft(_ id: Int) async throws {
         try await save()
@@ -120,11 +136,11 @@ final class ProductStore: ObservableObject {
         guard !draft.selected.isEmpty else { throw ZovaFailure.server("Choose a platform first.") }
         guard account["ai"]["allowed"].bool || !account["ai"]["required"].bool else { needsConsent = true; return }
         if !retry {
-            draft.conversation.append(.object(["role": .string("user"), "content": .string(text), "media_asset_ids": draft.mediaIDs]))
+            draft.conversation.append(.object(["role": .string("user"), "content": .string(text), "media_asset_ids": draft.mediaIDs, "media": .array(draft.media)]))
             draft.composer = ""; draft.workspace["pending_message"] = .string(text)
             draft.workspace["pending_media_asset_ids"] = draft.mediaIDs
             draft.workspace["pending_link_url"] = draft.workspace["link_url"]
-            changeSerial += 1
+            changeSerial += 1; persistRecovery()
         }
         try await save()
         guard let id = draft.id else { throw ZovaFailure.invalidResponse }
@@ -161,13 +177,14 @@ final class ProductStore: ObservableObject {
             let reply = try await request("/api/insights", method: "POST", body: .object(["question": .string(String(text.prefix(2000))), "days": .integer(7)]))
             draft.conversation.append(.object(["role": .string("assistant"), "content": reply["answer"]]))
         } else if action == "publish" || action == "schedule" {
-            reviewMode = action; showReview = true
+            reviewMode = action
         } else if !plan["reply"].string.isEmpty {
             draft.conversation.append(.object(["role": .string("assistant"), "content": plan["reply"]]))
         }
         draft.workspace["pending_message"] = .string("")
         draft.workspace["pending_media_asset_ids"] = .array([])
         changeSerial += 1; try await save()
+        if action == "publish" || action == "schedule" { pendingReview = true }
     }
     func upload(_ url: URL, name: String, mime: String) async throws {
         guard draft.editable else { throw ZovaFailure.server("Start a new post to attach media.") }
@@ -193,7 +210,13 @@ final class ProductStore: ObservableObject {
         draft.workspace["media"] = .array(media); draft.workspace["media_asset_ids"] = .array(media.map { $0["id"] })
         draft.workspace["instagram_audio"] = .null; changed()
     }
-    func refreshResults() async throws {
+    func assetFile(_ asset: JSONValue) async throws -> URL {
+        let epoch = authority
+        let url = try await api.downloadAsset(asset["id"].int, filename: asset["filename"].string, brand: brand)
+        guard epoch == authority, !Task.isCancelled else { NativeMediaFiles.remove(url); throw CancellationError() }
+        return url
+    }
+    func refreshResults(attempt: Int = 0) async throws {
         guard let id = draft.id else { return }
         let reply = try await request("/api/publications/\(id)")
         guard draft.id == id else { return }
@@ -204,15 +227,37 @@ final class ProductStore: ObservableObject {
             (["pending", "publishing", "queued"].contains(value["status"].string) && !value["delivered_to_inbox"].bool) ||
             (value["status"].string == "published" && value["privacy_level"].string == "PUBLIC_TO_EVERYONE" && value["url"].string.isEmpty)
         }
-        if pending {
+        if pending && attempt < 40 {
             polling = Task { [weak self] in
-                do { try await Task.sleep(for: .seconds(15)); guard let self, self.draft.id == id else { return }; try await self.refreshResults() }
+                do { try await Task.sleep(for: .seconds(15)); guard let self, self.draft.id == id else { return }; try await self.refreshResults(attempt: attempt + 1) }
                 catch { if !(error is CancellationError) { self?.handle(error) } }
             }
         }
     }
     func clear() {
         authority += 1; autosave?.cancel(); polling?.cancel()
+        NativeDraftRecovery.remove(owner: recoveryOwner); NativeMediaFiles.clear(); recovery = .null
+        changeSerial = 0; savedSerial = 0; pendingReview = false; showReview = false
         draft = ProductDraft(); drafts = []; schedules = []; series = []; account = .null; results = .null
     }
+    private var recoveryOwner: String { "\(account["profile"]["id"].int):\(brand)" }
+    private func persistRecovery() {
+        guard account["profile"]["id"].int > 0 else { return }
+        do { try NativeDraftRecovery.save(draft, owner: recoveryOwner) }
+        catch { saveStatus = "Unsaved changes" }
+    }
+    func restoreRecovery(asNew: Bool = false) async throws {
+        guard !recovery.isNull else { return }
+        var restored = ProductDraft(recovery)
+        if asNew { restored.id = nil; restored.revision = 0; restored.status = "draft" }
+        else if let id = restored.id {
+            let current = ProductDraft(try await request("/api/drafts/\(id)"))
+            guard current.editable, current.revision == restored.revision else {
+                throw ZovaFailure.server("This post changed elsewhere. Use Save as new draft to keep both versions.")
+            }
+        }
+        if draft.id != restored.id && dirty { try await save() }
+        draft = restored; changeSerial += 1; recovery = .null; persistRecovery(); try await save()
+    }
+    func discardRecovery() { NativeDraftRecovery.remove(owner: recoveryOwner); recovery = .null }
 }

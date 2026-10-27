@@ -20,7 +20,7 @@ struct NativeAccountView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 Text("Account").font(.title2.bold())
-                HStack { VStack(alignment: .leading, spacing: 5) { Text(store.name).font(.headline); Text(store.account["profile"]["email"].string).font(.caption).foregroundStyle(.secondary) }; Spacer(); Button("Sign out") { Task { await session.logout() } }.font(.caption).disabled(store.busy) }
+                HStack { VStack(alignment: .leading, spacing: 5) { Text(store.name).font(.headline); Text(store.account["profile"]["email"].string).font(.caption).foregroundStyle(.secondary) }; Spacer(); Button("Sign out") { run { try await store.save(); await session.logout() } }.font(.caption).disabled(store.busy) }
                 if store.busy { ProgressView("Saving…") }
                 if !saved.isEmpty { Text(saved).font(.callout).foregroundStyle(ZovaDesign.violet) }
                 group("Your details", icon: "person") {
@@ -46,7 +46,7 @@ struct NativeAccountView: View {
                 group("Social accounts", icon: "link") {
                     ForEach(SocialPlatform.allCases) { platform in
                         VStack(alignment: .leading, spacing: 12) {
-                            HStack { NativePlatformMark(platform: platform.rawValue).colorInvert(); Text(platform.title).font(.headline) }
+                            HStack { NativePlatformMark(platform: platform.rawValue, light: true); Text(platform.title).font(.headline) }
                             let connections = store.account["connections"].array.filter { $0["platform"].string == platform.rawValue }
                             if connections.isEmpty { Text("Not connected").font(.callout).foregroundStyle(.secondary) }
                             ForEach(connections, id: \.["id"].int) { connection in
@@ -105,7 +105,7 @@ struct NativeAccountView: View {
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
     private func fillVoice() { for (_, key) in voiceFields { voice[key] = store.account["voice"][key].string } }
     private func row(_ title: String, icon: String, arrow: String) -> some View { HStack(spacing: 14) { Image(systemName: icon).frame(width: 24); Text(title).font(.headline); Spacer(); Image(systemName: arrow).font(.caption) }.frame(minHeight: 44) }
-    private func group<Content: View>(_ title: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
+    private func group<Content: View>(_ title: String, icon: String, @ViewBuilder content: @escaping () -> Content) -> some View {
         VStack(spacing: 14) { DisclosureGroup { VStack(alignment: .leading, spacing: 16, content: content).padding(.vertical, 16) } label: { HStack(spacing: 14) { Image(systemName: icon).frame(width: 24); Text(title).font(.headline) }.frame(minHeight: 44) }; Divider().overlay(.white.opacity(0.15)) }
     }
     private func legal(_ title: String, _ path: String) -> some View { Link(title, destination: try! session.configuration.endpoint(path)) }

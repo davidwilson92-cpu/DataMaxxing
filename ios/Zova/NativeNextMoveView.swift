@@ -42,7 +42,7 @@ struct NativeNextMoveView: View {
     private var proposal: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 20) {
-                HStack { NativePlatformMark(platform: current["platform"].string).colorInvert(); Text(current["format"].string == "story" ? "Story" : "Post").font(.caption); Spacer() }
+                HStack { NativePlatformMark(platform: current["platform"].string, light: true); Text(current["format"].string == "story" ? "Story" : "Post").font(.caption); Spacer() }
                 Text(current["title"].string).font(.system(size: 25, weight: .bold)).fixedSize(horizontal: false, vertical: true)
                 Button {
                     run {

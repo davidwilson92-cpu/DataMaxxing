@@ -197,53 +197,71 @@ actor NativeAPI {
     }
 
     func upload(file: URL, name: String, mime: String, brand: Int) async throws -> JSONValue {
-        // Input is a copied picker/document file, never an arbitrary URL.
-        guard file.isFileURL else { throw ZovaFailure.unsafeURL }
-        let attrs = try FileManager.default.attributesOfItem(atPath: file.path)
-        guard let size = attrs[.size] as? NSNumber, size.intValue <= 150 * 1024 * 1024 else {
-            throw ZovaFailure.server("Choose a file smaller than 150 MB.")
-        }
         let boundary = "Zova-" + UUID().uuidString
-        let safeName = name.replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "\r", with: "").replacingOccurrences(of: "\n", with: "")
-        guard !mime.contains("\r"), !mime.contains("\n") else { throw ZovaFailure.invalidResponse }
-        var body = Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"files\"; filename=\"\(safeName)\"\r\nContent-Type: \(mime)\r\n\r\n".utf8)
-        body.append(try Data(contentsOf: file, options: .mappedIfSafe))
-        body.append(Data("\r\n--\(boundary)--\r\n".utf8))
-        let result = try await productResponse("/api/media", method: "POST", data: body, contentType: "multipart/form-data; boundary=\(boundary)", brand: brand)
-        return try JSONDecoder().decode(JSONValue.self, from: result.0)
+        let body = try NativeMediaFiles.multipart(file: file, filename: name, mime: mime, boundary: boundary)
+        defer { NativeMediaFiles.remove(body) }
+        let (request, epoch) = try await productRequest("/api/media", method: "POST", contentType: "multipart/form-data; boundary=\(boundary)", brand: brand)
+        let (result, raw) = try await session.upload(for: request, fromFile: body)
+        _ = try validateProduct(result, raw: raw, epoch: epoch)
+        return try JSONDecoder().decode(JSONValue.self, from: result)
     }
 
-    func media(_ path: String, brand: Int) async throws -> Data {
-        guard path.hasPrefix("/media/preview/") || path.hasPrefix("/media/download/") else { throw ZovaFailure.unsafeURL }
-        return try await productResponse(path, method: "GET", data: nil, contentType: nil, brand: brand, media: true).0
+    func downloadAsset(_ id: Int, filename: String, brand: Int) async throws -> URL {
+        guard id > 0 else { throw ZovaFailure.unsafeURL }
+        // This authenticated endpoint streams owned media; preview redirects are
+        // intentionally avoided so a social/media host never receives credentials.
+        let (request, epoch) = try await productRequest("/media/download/\(id)", method: "GET", contentType: nil, brand: brand)
+        let (download, raw) = try await session.download(for: request)
+        defer { try? FileManager.default.removeItem(at: download) }
+        guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
+        guard let response = raw as? HTTPURLResponse else { throw ZovaFailure.invalidResponse }
+        if response.statusCode == 401 { productCookie = nil; throw ZovaFailure.signInRequired }
+        guard response.statusCode == 200,
+              let size = try FileManager.default.attributesOfItem(atPath: download.path)[.size] as? NSNumber,
+              size.intValue > 0, size.intValue <= 160 * 1024 * 1024 else { throw ZovaFailure.unavailable }
+        let destination = try NativeMediaFiles.create(extension: (filename as NSString).pathExtension)
+        do {
+            try FileManager.default.removeItem(at: destination)
+            try FileManager.default.moveItem(at: download, to: destination)
+            try FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: destination.path)
+            return destination
+        } catch { NativeMediaFiles.remove(destination); throw error }
     }
 
-    private func productResponse(_ path: String, method: String, data: Data?, contentType: String?, brand: Int,
-                                 allowFormRedirect: Bool = false, media: Bool = false) async throws -> (Data, HTTPURLResponse) {
+    private func productRequest(_ path: String, method: String, contentType: String?, brand: Int) async throws -> (URLRequest, Int) {
         let epoch = sessionEpoch
         let cookie = try await productSession()
         guard epoch == sessionEpoch, brand >= 0 else { throw ZovaFailure.signInRequired }
         var request = URLRequest(url: try configuration.endpoint(path))
-        request.httpMethod = method; request.httpBody = data
+        request.httpMethod = method
         request.timeoutInterval = 180; request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(cookie.name + "=" + cookie.value, forHTTPHeaderField: "Cookie")
         request.setValue(configuration.base.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/")), forHTTPHeaderField: "Origin")
         request.setValue(String(brand), forHTTPHeaderField: "X-Zova-Brand")
-        if let contentType, data != nil { request.setValue(contentType, forHTTPHeaderField: "Content-Type") }
+        if let contentType { request.setValue(contentType, forHTTPHeaderField: "Content-Type") }
+        return (request, epoch)
+    }
+    private func productResponse(_ path: String, method: String, data: Data?, contentType: String?, brand: Int,
+                                 allowFormRedirect: Bool = false) async throws -> (Data, HTTPURLResponse) {
+        var (request, epoch) = try await productRequest(path, method: method, contentType: contentType, brand: brand)
+        request.httpBody = data
         let (result, raw) = try await session.data(for: request)
+        return (result, try validateProduct(result, raw: raw, epoch: epoch, allowFormRedirect: allowFormRedirect))
+    }
+    private func validateProduct(_ result: Data, raw: URLResponse, epoch: Int, allowFormRedirect: Bool = false) throws -> HTTPURLResponse {
         guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
         guard let response = raw as? HTTPURLResponse else { throw ZovaFailure.invalidResponse }
         if response.statusCode == 401 { productCookie = nil; throw ZovaFailure.signInRequired }
-        if response.statusCode == 303, allowFormRedirect { return (result, response) }
+        if response.statusCode == 303, allowFormRedirect { return response }
         guard (200...299).contains(response.statusCode) else {
             let value = (try? JSONDecoder().decode(JSONValue.self, from: result)) ?? .null
             let text = value["detail"].string
             throw ProductError(status: response.statusCode, code: value["code"].string,
                                message: text.isEmpty ? "Zova couldn’t complete that request. Your saved work is unchanged." : String(text.prefix(800)))
         }
-        guard result.count <= (media ? 160 * 1024 * 1024 : 4 * 1024 * 1024) else { throw ZovaFailure.invalidResponse }
-        return (result, response)
+        guard result.count <= 4 * 1024 * 1024 else { throw ZovaFailure.invalidResponse }
+        return response
     }
 }
 

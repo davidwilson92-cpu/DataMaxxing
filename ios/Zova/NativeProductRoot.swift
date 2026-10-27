@@ -12,6 +12,7 @@ final class NativeProductSession: ObservableObject {
     @Published var working = false
     @Published var message: String?
     init() {
+        NativeMediaFiles.clear()
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--test-fresh-install") { try? KeychainVault.clear() }
         if ProcessInfo.processInfo.arguments.contains("--native-fixture") {

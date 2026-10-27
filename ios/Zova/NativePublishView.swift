@@ -195,8 +195,13 @@ struct NativeReviewSnapshot: View {
             ForEach(snapshot["media"].array, id: \.["id"].int) { NativeAssetPreview(asset: $0) }
             if !snapshot["link_url"].string.isEmpty { Text("Source link: " + snapshot["link_url"].string).font(.caption) }
             if let date = ProductLinks.date(snapshot["scheduled_utc"].string) {
-                Text("Scheduled: " + date.formatted(date: .abbreviated, time: .shortened) + " · " + snapshot["timezone"].string).font(.headline)
+                Text("Scheduled: " + scheduledLabel(date) + " · " + snapshot["timezone"].string).font(.headline)
             } else { Text("Publish these reviewed versions now?").font(.headline) }
         }
+    }
+    private func scheduledLabel(_ date: Date) -> String {
+        let formatter = DateFormatter(); formatter.dateStyle = .medium; formatter.timeStyle = .short
+        formatter.timeZone = TimeZone(identifier: snapshot["timezone"].string) ?? TimeZone(secondsFromGMT: 0)
+        return formatter.string(from: date)
     }
 }

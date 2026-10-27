@@ -30,13 +30,26 @@ struct NativeStudioView: View {
     @State private var importer = false
     @State private var camera = false
     @State private var picker: PhotosPickerItem?
-    @State private var captionEditing = false
+    @FocusState private var captionEditing: Bool
+    @State private var discardRecovery = false
     var body: some View {
         VStack(spacing: 0) {
             header
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 22) {
+                        if !store.recovery.isNull {
+                            ZovaCard {
+                                Text("Recover unsaved changes").font(.headline)
+                                Text("There’s a copy saved on this iPhone.").font(.callout)
+                                Button("Resume editing") { run { try await store.restoreRecovery() } }
+                                Button("Save as new draft") { run { try await store.restoreRecovery(asNew: true) } }
+                                Button("Discard local copy", role: .destructive) { discardRecovery = true }
+                            }
+                        }
+                        if store.saveStatus.hasPrefix("Not saved") {
+                            Button("Retry save") { run { try await store.save() } }
+                        }
                         if store.draft.conversation.isEmpty && store.draft.variants.object.isEmpty && !focused {
                             VStack(spacing: 18) {
                                 Text("How can we grow your\nengagement today?").font(.system(size: 29, weight: .bold)).multilineTextAlignment(.center)
@@ -71,6 +84,7 @@ struct NativeStudioView: View {
             }
             if store.draft.editable { composer } else { Button("+ New post") { run { try await store.newPost() } }.buttonStyle(ZovaPrimary()).padding(18) }
         }.foregroundStyle(ZovaDesign.ink)
+            .confirmationDialog("Discard the unsaved copy on this iPhone? Your server draft stays unchanged.", isPresented: $discardRecovery, titleVisibility: .visible) { Button("Discard local copy", role: .destructive) { store.discardRecovery() } }
             .sheet(isPresented: $history) { NativeHistoryView().environmentObject(store) }
             .sheet(isPresented: $options) { NativePostOptionsView().environmentObject(store) }
             .fileImporter(isPresented: $importer, allowedContentTypes: [.image, .movie]) { result in
@@ -84,7 +98,8 @@ struct NativeStudioView: View {
                 case .failure(let error): store.handle(error)
                 }
             }
-            .sheet(isPresented: $camera) { NativeCamera { url, mime in camera = false; run { defer { try? FileManager.default.removeItem(at: url) }; try await store.upload(url, name: url.lastPathComponent, mime: mime) } } }
+            .sheet(isPresented: $camera) { NativeCamera(selected: { url, mime in camera = false; run { defer { try? FileManager.default.removeItem(at: url) }; try await store.upload(url, name: url.lastPathComponent, mime: mime) } }, failed: { error in camera = false; store.handle(error) }) }
+            .onChange(of: captionEditing) { _, editing in if editing { store.draft.addHistory() } }
             .onChange(of: picker) { _, item in
                 guard let item else { return }
                 run {
@@ -134,7 +149,7 @@ struct NativeStudioView: View {
             ForEach(Array(store.draft.variants[store.draft.active]["posts"].strings.enumerated()), id: \.offset) { index, _ in
                 TextField("Edit caption", text: Binding(get: { store.caption(store.draft.active, index: index) }, set: { store.editCaption(store.draft.active, index: index, text: $0) }), axis: .vertical)
                     .lineLimit(4...20).padding(16).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 16))
-                    .disabled(store.busy || !store.draft.editable).accessibilityIdentifier("caption-\(index)")
+                    .focused($captionEditing).disabled(store.busy || !store.draft.editable).accessibilityIdentifier("caption-\(index)")
             }
             ForEach(store.draft.media, id: \.["id"].int) { NativeAssetPreview(asset: $0) }
             if store.draft.editable {
@@ -206,6 +221,7 @@ struct NativeHistoryView: View {
 
 struct NativeCamera: UIViewControllerRepresentable {
     let selected: (URL, String) -> Void
+    let failed: (Error) -> Void
     @Environment(\.dismiss) var dismiss
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIViewController(context: Context) -> UIImagePickerController {
@@ -222,12 +238,14 @@ struct NativeCamera: UIViewControllerRepresentable {
             do {
                 if let source = info[.mediaURL] as? URL {
                     let target = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mov")
-                    try FileManager.default.copyItem(at: source, to: target); parent.selected(target, "video/quicktime")
+                    try FileManager.default.copyItem(at: source, to: target)
+                    try FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: target.path)
+                    parent.selected(target, "video/quicktime")
                 } else if let image = info[.originalImage] as? UIImage, let data = image.jpegData(compressionQuality: 0.92) {
                     let target = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".jpg")
                     try data.write(to: target, options: [.atomic, .completeFileProtection]); parent.selected(target, "image/jpeg")
-                }
-            } catch { parent.dismiss() }
+                } else { throw ZovaFailure.server("The camera could not save that attachment. Please try again.") }
+            } catch { parent.failed(error); parent.dismiss() }
         }
     }
 }

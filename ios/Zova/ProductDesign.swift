@@ -24,10 +24,12 @@ struct ZovaCard<Content: View>: View {
 struct NativePlatformMark: View {
     let platform: String
     var size: CGFloat = 24
+    var light = false
     var body: some View {
         Group {
             if UIImage(named: "Platform-" + platform) != nil {
-                Image("Platform-" + platform).resizable().scaledToFit()
+                if light && platform != "instagram" { Image("Platform-" + platform).resizable().scaledToFit().colorInvert() }
+                else { Image("Platform-" + platform).resizable().scaledToFit() }
             } else {
                 Text(["x":"𝕏", "instagram":"◎", "facebook":"f", "tiktok":"♪"][platform] ?? "•").font(.system(size: size, weight: .bold))
             }
@@ -74,17 +76,17 @@ struct NativeAssetPreview: View {
             }.frame(maxWidth: compact ? 72 : .infinity).frame(height: compact ? 58 : 200).clipShape(RoundedRectangle(cornerRadius: 12))
             if !compact { Text(failed ? "Preview unavailable. Your attachment is retained." : asset["filename"].string).font(.caption).foregroundStyle(.secondary) }
         }.task(id: asset["id"].int) { await load() }
-            .onDisappear { player?.pause(); if let localURL { try? FileManager.default.removeItem(at: localURL) }; localURL = nil; player = nil }
+            .onDisappear { player?.pause(); NativeMediaFiles.remove(localURL); localURL = nil; player = nil; image = nil }
     }
     private func load() async {
         guard asset["id"].int > 0, !asset["unavailable"].bool else { failed = true; return }
         if compact && asset["kind"].string == "video" { return }
         do {
-            let data = try await store.api.media("/media/preview/\(asset["id"].int)", brand: store.brand)
+            let url = try await store.assetFile(asset)
+            guard !Task.isCancelled else { NativeMediaFiles.remove(url); return }
             if asset["kind"].string == "video" {
-                let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
-                try data.write(to: url, options: [.atomic, .completeFileProtection]); localURL = url; player = AVPlayer(url: url)
-            } else { image = UIImage(data: data); failed = image == nil }
+                localURL = url; player = AVPlayer(url: url)
+            } else { image = UIImage(contentsOfFile: url.path); failed = image == nil; NativeMediaFiles.remove(url) }
         } catch { failed = true }
     }
 }
