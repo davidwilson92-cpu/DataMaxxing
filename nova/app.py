@@ -1172,10 +1172,14 @@ def api_create_draft(request:Request,db:Session=Depends(get_db)):
     return {"id":row.id,"revision":row.revision}
 
 @app.get("/api/drafts")
-def api_drafts(request:Request,offset:int=Query(0,ge=0,le=100000),db:Session=Depends(get_db)):
+def api_drafts(request:Request,offset:int=Query(0,ge=0,le=100000),status:str=Query("all",pattern="^(all|draft|scheduled|published|needs_review|awaiting_results)$"),db:Session=Depends(get_db)):
     user=current_user(request)
     query=request.query_params.get("q","").strip()[:200]
     statement=select(Draft).where(Draft.user_id==user.id)
+    if status=='awaiting_results':statement=statement.where(Draft.id.in_(select(Publication.draft_id).where(Publication.user_id==user.id,Publication.brand_id==db.info.get('brand_id',0),Publication.status.in_(('unknown','pending','publishing','queued')))))
+    elif status=='needs_review':statement=statement.where(Draft.status.in_(('needs_review','failed','partial')))
+    elif status=='draft':statement=statement.where(Draft.status.in_(('draft','cancelled')))
+    elif status!='all':statement=statement.where(Draft.status==status)
     if query:statement=statement.where(or_(Draft.title.icontains(query,autoescape=True),Draft.brief.icontains(query,autoescape=True),Draft.variants_json.icontains(query,autoescape=True),Draft.workspace_json.icontains(query,autoescape=True)))
     rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).offset(offset).limit(100)).all()
     from .workspace import draft_media_previews

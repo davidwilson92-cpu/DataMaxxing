@@ -88,3 +88,20 @@ def test_native_history_pagination_retains_owner_filter_and_revisions(native):
     assert client.get('/api/drafts?offset=100001').status_code == 422
     found = client.get('/api/drafts?q=Native%20history%20104&offset=0').json()
     assert len(found) == 1 and found[0]['brief'] == 'Native history 104'
+
+
+def test_native_schedule_status_filters_and_summary_match_web_semantics(native):
+    from nova.db import Draft
+    client, _, uid, _ = native
+    with SessionLocal() as db:
+        db.add_all([Draft(user_id=uid, brief='Native ' + state, status=state)
+                    for state in ['draft', 'cancelled', 'failed', 'partial', 'needs_review', 'published']])
+        db.commit()
+    assert {r['status'] for r in client.get('/api/drafts?status=draft').json()} == {'draft', 'cancelled'}
+    assert {r['status'] for r in client.get('/api/drafts?status=needs_review').json()} == {'failed', 'partial', 'needs_review'}
+    assert {r['status'] for r in client.get('/api/drafts?status=published').json()} == {'published'}
+    assert client.get('/api/drafts?status=invalid').status_code == 422
+    result = client.get('/api/native/schedule-summary')
+    assert result.status_code == 200 and 'no-store' in result.headers['cache-control']
+    assert result.json() == {'drafts': 2, 'scheduled': 0, 'overdue': 0, 'unconfirmed': 0, 'needs_review': 3}
+    assert TestClient(app).get('/api/native/schedule-summary').status_code == 401

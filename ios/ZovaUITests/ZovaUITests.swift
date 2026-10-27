@@ -30,6 +30,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(composer.waitForExistence(timeout: 12))
         composer.tap(); composer.typeText("A simple pottery tip")
         capture(app, "Native Studio — keyboard")
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "Background saving must keep the keyboard open")
         XCTAssertFalse(app.alerts.firstMatch.exists, "Typing must autosave without an alert: " + app.debugDescription)
         XCTAssertFalse(app.staticTexts["How can we grow your\nengagement today?"].exists)
         app.buttons["Send idea"].tap()
@@ -39,6 +40,52 @@ final class ZovaUITests: XCTestCase {
         capture(app, "Native Studio — proposed caption")
         app.buttons["tab-Schedule"].tap(); app.buttons["tab-Studio"].tap()
         XCTAssertTrue(app.textFields["caption-0"].exists)
+        XCTAssertEqual(app.webViews.count, 0)
+    }
+    func testStrategyEditsPersistAndIdeaOpensInNativeStudio() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        XCTAssertTrue(app.buttons["next-move"].waitForExistence(timeout: 12)); app.buttons["next-move"].tap()
+        XCTAssertTrue(app.buttons["your-strategy"].waitForExistence(timeout: 8)); app.buttons["your-strategy"].tap()
+        let direction = app.textFields["What would you like to post?"]
+        XCTAssertTrue(direction.waitForExistence(timeout: 5)); direction.tap(); direction.typeText(" Include studio tours.")
+        app.swipeUp()
+        let update = app.buttons["Update my strategy ✦"]
+        XCTAssertTrue(update.waitForExistence(timeout: 5)); update.tap()
+        let save = app.buttons["Save strategy"]
+        for _ in 0..<3 { if save.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(save.waitForExistence(timeout: 8)); save.tap()
+        XCTAssertTrue(app.staticTexts["Saved to your brand"].waitForExistence(timeout: 8))
+        app.swipeDown(); app.swipeDown(); app.buttons["Close Your strategy"].tap()
+        app.buttons["next-move"].tap()
+        XCTAssertTrue(app.buttons["your-strategy"].waitForExistence(timeout: 8)); app.buttons["your-strategy"].tap()
+        XCTAssertTrue((direction.value as? String ?? "").contains("Include studio tours."))
+        app.buttons["Close Your strategy"].tap(); app.buttons["next-move"].tap()
+        XCTAssertTrue(app.buttons["Draft post"].waitForExistence(timeout: 8)); app.buttons["Draft post"].tap()
+        XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.webViews.count, 0)
+    }
+    func testCaptionEditIsRetainedAndFinalReviewCanBeCancelledWithoutSending() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        XCTAssertTrue(app.buttons["next-move"].waitForExistence(timeout: 12)); app.buttons["next-move"].tap()
+        XCTAssertTrue(app.buttons["Draft post"].waitForExistence(timeout: 8)); app.buttons["Draft post"].tap()
+        let caption = app.textFields["caption-0"]
+        XCTAssertTrue(caption.waitForExistence(timeout: 8)); caption.tap(); caption.typeText(" Come join us.")
+        // This closes the keyboard through an existing action, not a testing-only UI.
+        app.buttons["Post options"].tap(); app.buttons["Close Post options"].tap()
+        let review = app.buttons["Review post →"]
+        for _ in 0..<3 { if review.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(review.isHittable); review.tap()
+        let finalReview = app.buttons["Review final post"]
+        XCTAssertTrue(finalReview.waitForExistence(timeout: 8)); finalReview.tap()
+        XCTAssertTrue(app.buttons["confirm-publication"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Come join us.")).firstMatch.exists)
+        capture(app, "Native immutable final review — no publication")
+        app.buttons["Close Confirm publish"].tap()
+        app.buttons["tab-Schedule"].tap()
+        XCTAssertTrue(app.buttons["Saved posts"].waitForExistence(timeout: 8)); app.buttons["Saved posts"].tap()
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "pottery studio")).firstMatch.waitForExistence(timeout: 8))
+        app.buttons["tab-Studio"].tap()
+        XCTAssertTrue((caption.value as? String ?? "").contains("Come join us."))
         XCTAssertEqual(app.webViews.count, 0)
     }
     private func capture(_ app: XCUIApplication, _ name: String) {

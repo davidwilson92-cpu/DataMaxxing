@@ -9,12 +9,8 @@ struct NativePostOptionsView: View {
         ScrollView { VStack(alignment: .leading, spacing: 20) {
             NativeSheetHeader(title: "Post options")
             if store.draft.selected.contains("instagram") {
-                Picker("Instagram format", selection: Binding(get: { store.draft.workspace["instagram_format"].string.isEmpty ? "post" : store.draft.workspace["instagram_format"].string }, set: { store.draft.workspace["instagram_format"] = .string($0); store.draft.workspace["instagram_audio"] = .null; store.changed() })) { Text("Post / Reel").tag("post"); Text("Story").tag("story") }.pickerStyle(.segmented)
                 if store.draft.workspace["instagram_format"].string == "story" { Text("Only your photo or video appears in the Story. Caption, links and music are not added automatically.").font(.caption).foregroundStyle(.secondary) }
                 Button(store.draft.workspace["instagram_audio"].isNull ? "Add Instagram music" : "Music · " + store.draft.workspace["instagram_audio"]["title"].string) { music = true }
-            }
-            if store.draft.selected.contains("x") {
-                Picker("X thread", selection: Binding(get: { store.draft.threadLength }, set: { store.draft.threadLength = $0; store.changed() })) { Text("1 post").tag(1); Text("3 posts").tag(3); Text("5 posts").tag(5) }.pickerStyle(.segmented)
             }
             NativeField(title: "Source link", text: Binding(get: { store.draft.workspace["link_url"].string }, set: { store.draft.workspace["link_url"] = .string($0); store.changed() }), prompt: "https://…", lines: 1)
             NativeField(title: "Writing instructions", text: Binding(get: { store.draft.instruction }, set: { store.draft.instruction = String($0.prefix(5000)); store.changed() }), prompt: "Anything Zova should keep in mind", lines: 2)

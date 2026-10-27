@@ -1,4 +1,6 @@
 import Foundation
+import ImageIO
+import UniformTypeIdentifiers
 
 /// Short-lived files owned exclusively by Zova. Never delete a caller's picker file.
 enum NativeMediaFiles {
@@ -31,12 +33,24 @@ enum NativeMediaFiles {
             var size = 0
             while let chunk = try input.read(upToCount: 65_536), !chunk.isEmpty {
                 size += chunk.count
-                guard size <= 150 * 1024 * 1024 else { throw ZovaFailure.server("Choose a file smaller than 150 MB.") }
+                guard size <= (mime.hasPrefix("video/") ? 100 : 15) * 1024 * 1024 else { throw ZovaFailure.server("Images must be 15 MB or smaller; videos 100 MB or smaller.") }
                 try output.write(contentsOf: chunk)
             }
             guard size > 0 else { throw ZovaFailure.server("This file is empty. Choose another attachment.") }
             try output.write(contentsOf: Data("\r\n--\(boundary)--\r\n".utf8))
             return destination
         } catch { remove(destination); throw error }
+    }
+    static func compatibleImage(_ file: URL) throws -> URL {
+        guard let source = CGImageSourceCreateWithURL(file as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: 4096, kCGImageSourceShouldCacheImmediately: true
+              ] as CFDictionary) else { throw ZovaFailure.server("This photo could not be opened. Choose another image.") }
+        let output = try create(extension: "jpg")
+        guard let destination = CGImageDestinationCreateWithURL(output as CFURL, UTType.jpeg.identifier as CFString, 1, nil) else { remove(output); throw ZovaFailure.unavailable }
+        CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.92] as CFDictionary)
+        guard CGImageDestinationFinalize(destination) else { remove(output); throw ZovaFailure.unavailable }
+        return output
     }
 }

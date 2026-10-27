@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 @testable import Zova
 
 @MainActor
@@ -154,6 +155,30 @@ final class NativeProductSafetyTests: XCTestCase {
         XCTAssertNotNil(data.range(of: original)); XCTAssertTrue(String(decoding: data.prefix(150), as: UTF8.self).contains("filename=\"clip.mp4\""))
         NativeMediaFiles.remove(source); XCTAssertTrue(FileManager.default.fileExists(atPath: source.path))
         NativeMediaFiles.remove(body); XCTAssertFalse(FileManager.default.fileExists(atPath: body.path))
+    }
+    func testAttachmentConversionProducesReadableJPEGWithoutDeletingSource() throws {
+        let file = try NativeMediaFiles.create(extension: "png")
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 80, height: 40), format: format).image { context in
+            UIColor.purple.setFill(); context.fill(CGRect(x: 0, y: 0, width: 80, height: 40))
+        }
+        try XCTUnwrap(image.pngData()).write(to: file)
+        defer { NativeMediaFiles.remove(file) }
+        let converted = try NativeMediaFiles.compatibleImage(file)
+        defer { NativeMediaFiles.remove(converted) }
+        XCTAssertEqual(converted.pathExtension, "jpg")
+        let bytes = try Data(contentsOf: converted)
+        XCTAssertEqual(Array(bytes.prefix(2)), [0xff, 0xd8])
+        XCTAssertEqual(try XCTUnwrap(UIImage(data: bytes)).size, CGSize(width: 80, height: 40))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
+    }
+    func testOversizedPhotoIsRejectedAndMultipartTemporaryFileIsRemoved() throws {
+        let file = try NativeMediaFiles.create(extension: "jpg")
+        defer { NativeMediaFiles.remove(file) }
+        try Data(repeating: 1, count: 15 * 1024 * 1024 + 1).write(to: file)
+        let before = try FileManager.default.contentsOfDirectory(atPath: NativeMediaFiles.directory.path)
+        XCTAssertThrowsError(try NativeMediaFiles.multipart(file: file, filename: "large.jpg", mime: "image/jpeg", boundary: "test-boundary"))
+        XCTAssertEqual(Set(before), Set(try FileManager.default.contentsOfDirectory(atPath: NativeMediaFiles.directory.path)))
     }
 }
 

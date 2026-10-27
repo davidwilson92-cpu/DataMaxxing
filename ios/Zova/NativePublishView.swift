@@ -60,7 +60,9 @@ struct NativePublishView: View {
                     Button("Remove from this review") { platforms.removeAll { $0 == platform } }
                 } else {
                     Picker("Account", selection: Binding(get: { connections[platform, default: 0] }, set: { connections[platform] = $0; consent = false; privacy = ""; run { try await loadContexts() } })) {
-                        ForEach(contexts[platform]["accounts"].array, id: \.["id"].int) { account in Text(account["name"].string).tag(account["id"].int) }
+                        ForEach(contexts[platform]["accounts"].array, id: \.["id"].int) { account in
+                            Text(account["name"].string.isEmpty || account["name"] == account["account_id"] ? "Connected account" : account["name"].string).tag(account["id"].int)
+                        }
                     }.pickerStyle(.menu).disabled(store.busy)
                 }
             }
@@ -94,6 +96,7 @@ struct NativePublishView: View {
                 Button("Suggest starting times") { run { suggestions = try await store.request("/api/ai/schedule", method: "POST", body: .object(["platforms": .strings(platforms), "context": .string(store.draft.brief)])) } }
                 if !suggestions.isNull {
                     Text(suggestions["note"].string).font(.caption)
+                    Text("Suggested times in " + store.timezone).font(.caption).foregroundStyle(.secondary)
                     ForEach(suggestions["suggestions"].object.keys.sorted(), id: \.self) { platform in
                         ForEach(Array(suggestions["suggestions"][platform].array.enumerated()), id: \.offset) { _, item in
                             Button(item["label"].string + " · " + item["local_time"].string) {

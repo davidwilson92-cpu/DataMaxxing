@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import UniformTypeIdentifiers
+import AVFoundation
 
 struct PickedMedia: Transferable {
     let url: URL
@@ -53,13 +54,6 @@ struct NativeStudioView: View {
                         }
                         if store.saveStatus.hasPrefix("Not saved") {
                             Button("Retry save") { run { try await store.save() } }
-                        }
-                        if store.draft.conversation.isEmpty && store.draft.variants.object.isEmpty && store.draft.composer.isEmpty && !focused {
-                            VStack(spacing: 18) {
-                                Text("How can we grow your\nengagement today?").font(.system(size: 29, weight: .bold)).multilineTextAlignment(.center)
-                                Text("Share your ideas. Zova’s AI helps shape them into a plan and posts in your voice.").foregroundStyle(.secondary).multilineTextAlignment(.center)
-                                HStack { Button("Plan my socials") { strategy = true }; Button("Improve a caption") { store.draft.composer = "Improve this caption: "; store.changed(); focused = true } }.buttonStyle(.bordered)
-                            }.padding(.top, 40).padding(.bottom, 25).frame(maxWidth: .infinity)
                         }
                         ForEach(Array(store.draft.conversation.enumerated()), id: \.offset) { _, message in
                             HStack {
@@ -199,7 +193,7 @@ struct NativeStudioView: View {
                     } } }
                 }
                 TextField("Describe your post. Zova drafts the caption…", text: Binding(get: { store.draft.composer }, set: { store.draft.composer = String($0.prefix(12000)); store.changed() }), axis: .vertical)
-                    .lineLimit(2...5).focused($focused).accessibilityIdentifier("post-composer").disabled(store.busy && !store.backgroundSaving)
+                    .lineLimit(1...5).focused($focused).accessibilityIdentifier("post-composer").disabled(store.busy && !store.backgroundSaving)
                 HStack(spacing: 8) {
                     ForEach(SocialPlatform.allCases) { platform in
                         Button {
@@ -211,11 +205,25 @@ struct NativeStudioView: View {
                     }
                     Spacer(minLength: 0)
                 }
+                if store.draft.selected.contains("instagram") || store.draft.selected.contains("x") {
+                    HStack(spacing: 10) {
+                        if store.draft.selected.contains("x") {
+                            Picker("X format", selection: Binding(get: { store.draft.threadLength }, set: { store.draft.threadLength = $0; store.changed() })) {
+                                Text("One post").tag(1); Text("Thread · 3 posts").tag(3); Text("Thread · 5 posts").tag(5)
+                            }.pickerStyle(.menu).font(.caption).accessibilityIdentifier("x-format")
+                        }
+                        if store.draft.selected.contains("instagram") {
+                            Picker("Instagram format", selection: Binding(get: { store.draft.workspace["instagram_format"].string.isEmpty ? "post" : store.draft.workspace["instagram_format"].string }, set: { store.draft.workspace["instagram_format"] = .string($0); store.draft.workspace["instagram_audio"] = .null; store.changed() })) {
+                                Text("Post").tag("post"); Text("Story").tag("story")
+                            }.pickerStyle(.segmented).accessibilityIdentifier("instagram-format")
+                        }
+                    }.frame(minHeight: 36).disabled(store.busy && !store.backgroundSaving)
+                }
                 HStack {
                     Menu {
-                        PhotosPicker(selection: $picker, maxSelectionCount: max(1, 10 - store.draft.media.count), selectionBehavior: .ordered, matching: .any(of: [.images, .videos])) { Label("Photo library", systemImage: "photo") }
+                        PhotosPicker(selection: $picker, maxSelectionCount: max(1, 10 - store.draft.media.count), selectionBehavior: .ordered, matching: .any(of: [.images, .videos]), preferredItemEncoding: .compatible) { Label("Photo library", systemImage: "photo") }
                         Button("Choose file", systemImage: "folder") { importer = true }
-                        if UIImagePickerController.isSourceTypeAvailable(.camera) { Button("Camera", systemImage: "camera") { camera = true } }
+                        if UIImagePickerController.isSourceTypeAvailable(.camera) { Button("Camera", systemImage: "camera") { openCamera() } }
                     } label: { Image(systemName: "plus").font(.title3).frame(width: 44, height: 44) }.accessibilityLabel("Add attachment").disabled(store.busy)
                     Button("Post options") { focused = false; options = true }.font(.subheadline).frame(minHeight: 44).disabled(store.busy)
                     Spacer()
@@ -224,6 +232,15 @@ struct NativeStudioView: View {
             }.padding(14).background(Color.white, in: RoundedRectangle(cornerRadius: 22)).overlay(RoundedRectangle(cornerRadius: 22).stroke(focused ? ZovaDesign.purple : ZovaDesign.line)).padding(.horizontal, 14)
             if !focused { HStack { Text(store.saveStatus); Spacer(); Text("Nothing posts without your approval.") }.font(.system(size: 10)).foregroundStyle(.secondary).padding(.horizontal, 18) }
         }.padding(.bottom, 8)
+    }
+    private func openCamera() {
+        Task {
+            let status = AVCaptureDevice.authorizationStatus(for: .video)
+            var allowed = status == .authorized
+            if status == .notDetermined { allowed = await AVCaptureDevice.requestAccess(for: .video) }
+            if allowed { camera = true }
+            else { store.handle(ZovaFailure.server("Allow camera access for Zova in iPhone Settings, or choose an existing photo or video.")) }
+        }
     }
 }
 

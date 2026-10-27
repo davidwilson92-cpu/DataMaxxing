@@ -1,105 +1,9 @@
 import SwiftUI
 
-struct NativeScheduleView: View {
-    @EnvironmentObject var store: ProductStore
-    @State private var calendarMode = true
-    @State private var month = Date()
-    @State private var selectedDay: Date?
-    @State private var monthRows: [JSONValue] = []
-    @State private var search = ""
-    @State private var filter = "all"
-    @State private var selected: JSONValue = .null
-    @State private var recurring = false
-    private var calendar: Calendar { var c = Calendar(identifier: .gregorian); c.firstWeekday = 2; c.timeZone = TimeZone(identifier: store.timezone) ?? .current; return c }
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack { Text("Schedule").font(.title2.bold()); Spacer(); Button { recurring = true } label: { Image(systemName: "repeat").frame(width: 44, height: 44) }.accessibilityLabel("Recurring posts"); Button { reload() } label: { Image(systemName: "arrow.clockwise").frame(width: 44, height: 44) }.accessibilityLabel("Refresh schedule") }
-                HStack { TextField("Search your posts", text: $search).textFieldStyle(.roundedBorder).onSubmit { reload() }; Button { calendarMode.toggle() } label: { Image(systemName: calendarMode ? "list.bullet" : "calendar").frame(width: 44, height: 44) }.accessibilityLabel(calendarMode ? "List view" : "Calendar view") }
-                if store.busy { ProgressView("Loading saved work…") }
-                if calendarMode { calendarView }
-                Picker("Show", selection: $filter) { Text("All").tag("all"); Text("Drafts").tag("draft"); Text("Upcoming").tag("scheduled"); Text("Published").tag("published") }.pickerStyle(.segmented)
-                if calendarMode && selectedDay != nil {
-                    HStack { Text(ProductLinks.displayDate(selectedDay!, timezone: store.timezone, time: false)).font(.headline); Spacer(); Button("All dates") { selectedDay = nil } }
-                }
-                if shownSchedules.isEmpty && shownDrafts.isEmpty && !store.busy { ZovaCard { Text("Space for your next idea").font(.headline); Text("Saved drafts and upcoming posts appear here.").foregroundStyle(.secondary); Button("+ New post") { run { try await store.newPost() } }.buttonStyle(ZovaPrimary()) } }
-                ForEach(shownSchedules, id: \.["id"].int) { row in
-                    Button { selected = row } label: {
-                        ZovaCard {
-                            HStack { NativePlatformMark(platform: row["platform"].string); Text(row["status"].string.capitalized).font(.caption); Spacer(); if let date = ProductLinks.date(row["scheduled_at"].string) { Text(ProductLinks.displayDate(date, timezone: store.timezone)).font(.caption) } }
-                            Text(row["title"].string).font(.headline).foregroundStyle(.primary).lineLimit(2)
-                            if !row["account_name"].string.isEmpty { Text(row["account_name"].string).font(.caption).foregroundStyle(.secondary) }
-                        }
-                    }.buttonStyle(.plain)
-                }
-                ForEach(shownDrafts, id: \.["id"].int) { row in
-                    NativeDraftRow(row: row) { try await store.loadSchedule(search: search) }
-                }
-                if store.moreDrafts { Button("Load older posts") { run { try await store.loadDrafts(search: search, more: true) } }.disabled(store.busy) }
-                if (calendarMode ? monthRows : store.schedules).count >= 100 { Text("Showing up to 100 scheduled deliveries. Choose a calendar month to narrow the results.").font(.caption).foregroundStyle(.secondary) }
-                Text("Times shown in " + store.timezone).font(.caption).foregroundStyle(.secondary)
-            }.padding(18)
-        }.task(id: store.selectedTab) { if store.selectedTab == 1 { await load() } }.refreshable { await load() }
-            .sheet(isPresented: Binding(get: { !selected.isNull }, set: { if !$0 { selected = .null } })) { NativeScheduleEdit(row: selected) { try await store.loadSchedule(search: search); try await loadMonth() }.environmentObject(store) }
-            .sheet(isPresented: $recurring) { NativeSeriesView().environmentObject(store) }
-    }
-    private var shownSchedules: [JSONValue] {
-        (calendarMode ? monthRows : store.schedules).filter { row in
-            (filter == "all" || row["status"].string == filter) &&
-            (search.isEmpty || (row["title"].string + row["excerpt"].string).localizedCaseInsensitiveContains(search)) &&
-            (selectedDay == nil || ProductLinks.date(row["scheduled_at"].string).map { calendar.isDate($0, inSameDayAs: selectedDay!) } == true)
-        }
-    }
-    private var shownDrafts: [JSONValue] {
-        guard selectedDay == nil else { return [] }
-        return store.drafts.filter { row in
-            !["scheduled", "pending", "publishing"].contains(row["status"].string) && (filter == "all" || row["status"].string == filter) && !shownSchedules.contains(where: { $0["draft_id"].int == row["id"].int })
-        }
-    }
-    private var calendarView: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Button { moveMonth(-1) } label: { Image(systemName: "chevron.left").frame(width: 44, height: 44) }.accessibilityLabel("Previous month")
-                Spacer(); Text(monthTitle).font(.headline); Spacer()
-                Button { moveMonth(1) } label: { Image(systemName: "chevron.right").frame(width: 44, height: 44) }.accessibilityLabel("Next month")
-            }
-            let start = calendar.dateInterval(of: .month, for: month)!.start
-            let count = calendar.range(of: .day, in: .month, for: month)!.count
-            let padding = (calendar.component(.weekday, from: start) - 2 + 7) % 7
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 7), spacing: 3) {
-                ForEach(["M", "T", "W", "T", "F", "S", "S"].enumerated().map { ($0.offset, $0.element) }, id: \.0) { _, text in Text(text).font(.caption).foregroundStyle(.secondary) }
-                ForEach(0..<(padding + count), id: \.self) { position in
-                    if position < padding { Color.clear.frame(height: 44) }
-                    else {
-                        let date = calendar.date(byAdding: .day, value: position - padding, to: start)!
-                        let posts = monthRows.filter { ProductLinks.date($0["scheduled_at"].string).map { calendar.isDate($0, inSameDayAs: date) } == true }
-                        let chosen = selectedDay.map { calendar.isDate($0, inSameDayAs: date) } ?? false
-                        Button { selectedDay = date } label: {
-                            VStack(spacing: 3) { Text(String(position - padding + 1)).font(.callout); HStack(spacing: 2) { ForEach(0..<min(posts.count, 3), id: \.self) { _ in Circle().fill(chosen ? .white : ZovaDesign.purple).frame(width: 4, height: 4) } }.frame(height: 5) }.frame(maxWidth: .infinity, minHeight: 44).foregroundStyle(chosen ? .white : ZovaDesign.ink).background(chosen ? ZovaDesign.purple : ZovaDesign.pale.opacity(posts.isEmpty ? 0 : 1), in: RoundedRectangle(cornerRadius: 10))
-                        }.accessibilityLabel(date.formatted(date: .complete, time: .omitted) + ", \(posts.count) posts")
-                    }
-                }
-            }
-        }
-    }
-    private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
-    private var monthTitle: String {
-        let formatter = DateFormatter(); formatter.dateFormat = "MMMM yyyy"; formatter.timeZone = calendar.timeZone
-        return formatter.string(from: month)
-    }
-    private func reload() { Task { await load() } }
-    private func load() async { await store.perform { try await store.loadSchedule(search: search); try await loadMonth() } }
-    private func loadMonth() async throws {
-        let interval = calendar.dateInterval(of: .month, for: month)!
-        let format = ISO8601DateFormatter()
-        monthRows = try await store.request("/api/schedules?from=" + ProductLinks.query(format.string(from: interval.start)) + "&to=" + ProductLinks.query(format.string(from: interval.end))).array
-    }
-    private func moveMonth(_ offset: Int) { guard !store.busy else { return }; month = calendar.date(byAdding: .month, value: offset, to: month)!; selectedDay = nil; run { try await loadMonth() } }
-}
-
 struct NativeDraftRow: View {
     @EnvironmentObject var store: ProductStore
     let row: JSONValue
+    var open: (() async throws -> Void)? = nil
     let changed: () async throws -> Void
     @State private var rename = false
     @State private var title = ""
@@ -108,7 +12,7 @@ struct NativeDraftRow: View {
         ZovaCard {
             HStack(alignment: .top) {
                 if !row["thumbnail"].isNull { NativeAssetPreview(asset: row["thumbnail"], compact: true) }
-                Button { run { try await store.openDraft(row["id"].int) } } label: { VStack(alignment: .leading, spacing: 7) { Text(row["title"].string).font(.headline).foregroundStyle(.primary).lineLimit(2); Text(row["status"].string.capitalized).font(.caption).foregroundStyle(.secondary) } }.buttonStyle(.plain)
+                Button { run { if let open { try await open() } else { try await store.openDraft(row["id"].int) } } } label: { VStack(alignment: .leading, spacing: 7) { Text(row["title"].string).font(.headline).foregroundStyle(.primary).lineLimit(2); Text(row["status"].string.capitalized).font(.caption).foregroundStyle(.secondary) } }.buttonStyle(.plain)
                 Spacer()
                 Menu { Button("Rename") { title = row["title"].string; rename = true }; if ["draft", "failed", "cancelled"].contains(row["status"].string) { Button("Delete", role: .destructive) { delete = true } } } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }.accessibilityLabel("Post options")
             }

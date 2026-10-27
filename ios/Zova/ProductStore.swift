@@ -121,7 +121,7 @@ final class ProductStore: ObservableObject {
     func switchBrand(_ id: Int) async throws {
         guard id != brand else { return }
         try await save(); authority += 1; polling?.cancel()
-        brand = id; draft = ProductDraft(); results = .null
+        brand = id; draft = ProductDraft(); results = .null; mediaNotice = ""
         changeSerial = 0; savedSerial = 0; drafts = []; schedules = []; series = []
         try await start(); selectedTab = 0
     }
@@ -131,9 +131,9 @@ final class ProductStore: ObservableObject {
         schedules = try await request("/api/schedules").array
         series = try await request("/api/series").array
     }
-    func loadDrafts(search: String = "", more: Bool = false) async throws {
+    func loadDrafts(search: String = "", more: Bool = false, status: String = "all") async throws {
         let offset = more ? draftOffset : 0
-        let rows = try await request("/api/drafts?q=" + ProductLinks.query(search) + "&offset=\(offset)").array
+        let rows = try await request("/api/drafts?q=" + ProductLinks.query(search) + "&offset=\(offset)&status=" + ProductLinks.query(status)).array
         if !more { drafts = [] }
         let existing = Set(drafts.map { $0["id"].int })
         drafts += rows.filter { !existing.contains($0["id"].int) }
@@ -231,11 +231,15 @@ final class ProductStore: ObservableObject {
             throw ZovaFailure.server("Use one video or up to ten images per post.")
         }
         let epoch = authority
-        let response = try await api.upload(file: url, name: name, mime: mime, brand: brand)
+        let converted = ["image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"].contains(mime) ? try NativeMediaFiles.compatibleImage(url) : nil
+        defer { NativeMediaFiles.remove(converted) }
+        let response = try await api.upload(file: converted ?? url, name: converted == nil ? name : (name as NSString).deletingPathExtension + ".jpg", mime: converted == nil ? mime : "image/jpeg", brand: brand)
         guard epoch == authority else { throw CancellationError() }
         let media = draft.media + response["assets"].array
         draft.workspace["media"] = .array(media); draft.workspace["media_asset_ids"] = .array(media.map { $0["id"] })
         if video {
+            // Match Studio: video destinations currently support Instagram/TikTok.
+            draft.selected = draft.selected.filter { ["instagram", "tiktok"].contains($0) }
             let asset = AVURLAsset(url: url)
             if let duration = try? await asset.load(.duration), duration.seconds.isFinite {
                 draft.workspace["video_duration"] = .number(duration.seconds)

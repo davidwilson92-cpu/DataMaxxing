@@ -1,5 +1,6 @@
 import SwiftUI
 import AVKit
+import ImageIO
 
 enum ZovaDesign {
     static let ink = Color(red: 0.08, green: 0.06, blue: 0.12)
@@ -76,6 +77,8 @@ struct NativeAssetPreview: View {
             }.frame(maxWidth: compact ? 72 : .infinity).frame(height: compact ? 58 : 200).clipShape(RoundedRectangle(cornerRadius: 12))
             if !compact { Text(failed ? "Preview unavailable. Your attachment is retained." : asset["filename"].string).font(.caption).foregroundStyle(.secondary) }
         }.task(id: asset["id"].int) { await load() }
+            .onChange(of: store.selectedTab) { _, _ in player?.pause() }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in player?.pause() }
             .onDisappear { player?.pause(); NativeMediaFiles.remove(localURL); localURL = nil; player = nil; image = nil }
     }
     private func load() async {
@@ -86,7 +89,16 @@ struct NativeAssetPreview: View {
             guard !Task.isCancelled else { NativeMediaFiles.remove(url); return }
             if asset["kind"].string == "video" {
                 localURL = url; player = AVPlayer(url: url)
-            } else { image = UIImage(contentsOfFile: url.path); failed = image == nil; NativeMediaFiles.remove(url) }
+            } else {
+                if let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
+                   let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                    kCGImageSourceCreateThumbnailFromImageAlways: true,
+                    kCGImageSourceCreateThumbnailWithTransform: true,
+                    kCGImageSourceThumbnailMaxPixelSize: compact ? 240 : 1400,
+                    kCGImageSourceShouldCacheImmediately: true
+                   ] as CFDictionary) { image = UIImage(cgImage: thumbnail) }
+                failed = image == nil; NativeMediaFiles.remove(url)
+            }
         } catch { failed = true }
     }
 }

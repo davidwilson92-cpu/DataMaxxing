@@ -18,8 +18,6 @@ struct NativeNextMoveView: View {
     @State private var refinements: [Int: String] = [:]
     @State private var note = ""
     @State private var reviewSteps = false
-    @State private var reminding = false
-    @State private var remindAt = Date().addingTimeInterval(86400)
     private var current: JSONValue { moves.indices.contains(index) ? moves[index] : .null }
     var body: some View {
         ScrollView {
@@ -35,25 +33,21 @@ struct NativeNextMoveView: View {
                 if !note.isEmpty { Text(note).font(.caption).foregroundStyle(.secondary).accessibilityAddTraits(.updatesFrequently) }
                 if !planning {
                     Button { planning = true } label: {
-                        HStack(spacing: 12) { Image(systemName: "sparkles").font(.title2); VStack(alignment: .leading, spacing: 4) { Text("Your strategy").font(.headline); Text("Give every post a purpose").font(.caption).foregroundStyle(.secondary) }; Spacer(); Image(systemName: "arrow.up.right") }.padding(18).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 17))
+                        HStack(spacing: 12) { Image(systemName: "sparkles").font(.title2); VStack(alignment: .leading, spacing: 4) { Text("Your strategy").font(.subheadline.bold()); Text("Give every post a purpose").font(.caption2).foregroundStyle(.secondary) }; Spacer(); Image(systemName: "arrow.up.right") }.padding(14).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 17)).overlay(RoundedRectangle(cornerRadius: 17).stroke(ZovaDesign.line))
                     }.accessibilityIdentifier("your-strategy")
                 }
             }.padding(20)
         }.background(.white).preferredColorScheme(.light).foregroundStyle(ZovaDesign.ink).tint(ZovaDesign.purple)
             .task { run { try await load() } }.interactiveDismissDisabled(store.busy)
-            .sheet(isPresented: $reminding) {
-                VStack(alignment: .leading, spacing: 20) {
-                    NativeSheetHeader(title: "Remind me")
-                    DatePicker("When", selection: $remindAt, in: Date()...Date().addingTimeInterval(366 * 86400))
-                    Button("Save reminder") { run { try await feedback("snoozed"); reminding = false } }.buttonStyle(ZovaPrimary()).disabled(store.busy)
-                }.padding(22).presentationDetents([.medium])
-            }
     }
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
     private var proposal: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 20) {
-                HStack { NativePlatformMark(platform: current["platform"].string, light: true); Text(current["format"].string == "story" ? "Story" : "Post").font(.caption); Spacer() }
+                HStack {
+                    HStack(spacing: 5) { NativePlatformMark(platform: current["platform"].string, size: 20, light: true); Text(current["format"].string == "story" ? "Story" : "Post").font(.caption2) }.padding(8).overlay(Capsule().stroke(.white.opacity(0.2)))
+                    Spacer(); Text("POST PROPOSAL").font(.system(size: 9, weight: .semibold)).foregroundStyle(.white.opacity(0.7))
+                }
                 Text(current["title"].string).font(.system(size: 25, weight: .bold)).fixedSize(horizontal: false, vertical: true)
                 Button {
                     if current["kind"].string == "review" { reviewSteps = true; return }
@@ -65,24 +59,18 @@ struct NativeNextMoveView: View {
                         try await store.openDraft(reply["draft_id"].int); dismiss()
                     }
                 } label: { HStack { Text(current["kind"].string == "review" ? "See steps" : current["draft_id"].int > 0 ? "Open draft" : "Draft post"); Spacer(); Image(systemName: "arrow.right") }.padding(.horizontal, 14) }.buttonStyle(ZovaPrimary()).disabled(store.busy)
-            }.padding(20).foregroundStyle(.white).background(ZovaDesign.hero, in: RoundedRectangle(cornerRadius: 21))
+            }.padding(20).foregroundStyle(.white).background {
+                ZStack(alignment: .bottomTrailing) { ZovaDesign.hero; Image("ZovaMark").resizable().scaledToFit().frame(width: 125).opacity(0.08).offset(x: 22, y: 18) }
+                    .clipShape(RoundedRectangle(cornerRadius: 21))
+            }
             VStack(alignment: .leading, spacing: 9) {
-                HStack {
-                    Text("AI recommendation").font(.subheadline.bold()); Spacer()
-                    Menu {
-                        Button("Refresh ideas") { run { try await generate() } }
-                        Button("Already done") { run { try await feedback("complete") } }
-                        Button("Not for me") { run { try await feedback("dismissed") } }
-                        Button("Remind me") { reminding = true }
-                    } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }.accessibilityLabel("Idea options").disabled(store.busy)
-                }
-                Text(concise(current["reason"].string, words: 32)).font(.callout)
+                HStack(spacing: 4) { Image(systemName: "sparkle"); Text("AI recommendation") }.font(.caption.bold()).foregroundStyle(ZovaDesign.purple)
+                Text(concise(current["reason"].string, words: 32)).font(.system(size: 14)).lineSpacing(4)
                 if !current["basis"].string.isEmpty { Text(current["basis"].string).font(.caption).foregroundStyle(.secondary) }
                 if reviewSteps && current["kind"].string == "review" {
                     Text(current["brief"].string).font(.callout)
                     Button("Mark done") { run { try await feedback("complete"); reviewSteps = false } }
                 }
-            }.padding(16).frame(maxWidth: .infinity, alignment: .leading).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 15))
             if !current["source"].isNull || current["performance_evidence"]["available"].bool {
                 DisclosureGroup("Evidence") {
                     VStack(alignment: .leading, spacing: 8) {
@@ -100,10 +88,11 @@ struct NativeNextMoveView: View {
                     Button("Shape this idea") { run { try await generate(refine: true) } }.buttonStyle(ZovaPrimary()).disabled(store.busy || (refinements[id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }.padding(.top, 12)
             }.font(.subheadline)
+            }.padding(16).frame(maxWidth: .infinity, alignment: .leading).background(ZovaDesign.pale).overlay(alignment: .leading) { Rectangle().fill(ZovaDesign.purple).frame(width: 3) }.clipShape(RoundedRectangle(cornerRadius: 10))
             HStack {
                 Button { index -= 1; note = "" } label: { Image(systemName: "arrow.left").frame(width: 44, height: 44) }.disabled(index == 0 || store.busy).accessibilityLabel("Previous idea")
                 Spacer(); Text("Idea \(index + 1)").font(.caption).foregroundStyle(.secondary); Spacer()
-                Button { if index + 1 < moves.count { index += 1; note = "" } else { run { try await generate() } } } label: { Image(systemName: "arrow.right").frame(width: 44, height: 44) }.disabled(store.busy).accessibilityLabel("Next idea")
+                Button { if index + 1 < moves.count { index += 1; note = "" } else { run { try await generate() } } } label: { Label("Next idea", systemImage: "arrow.right").labelStyle(.titleAndIcon).font(.caption).frame(minHeight: 44).padding(.horizontal, 10).overlay(RoundedRectangle(cornerRadius: 12).stroke(ZovaDesign.line)) }.disabled(store.busy).accessibilityLabel("Next idea")
             }
         }
     }
@@ -183,10 +172,9 @@ struct NativeNextMoveView: View {
     }
     private func feedback(_ status: String) async throws {
         guard !current.isNull else { return }
-        var body = JSONValue.object(["status": .string(status)])
-        if status == "snoozed" { body["remind_at"] = .string(ISO8601DateFormatter().string(from: remindAt)) }
+        let body = JSONValue.object(["status": .string(status)])
         _ = try await store.request("/api/strategy/actions/\(current["id"].int)/feedback", method: "POST", body: body)
         moves.remove(at: index); index = min(index, max(0, moves.count - 1)); reviewSteps = false
-        note = status == "snoozed" ? "Reminder saved." : status == "complete" ? "Marked done." : "Feedback saved."
+        note = status == "complete" ? "Marked done." : "Feedback saved."
     }
 }

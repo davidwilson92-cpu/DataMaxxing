@@ -8,9 +8,13 @@ final class NativeProductFixtures: URLProtocol {
     static let lock = NSLock()
     static var saved: [Int: JSONValue] = [:]
     static var batch = 0
+    static var storedStrategy: JSONValue = .null
+    static var storedProposal: JSONValue = .null
+    static var strategyRevision = 1
     static func reset() {
         lock.lock(); defer { lock.unlock() }
         saved = [24: draft(24)]; batch = 0
+        storedStrategy = strategy; storedProposal = .null; strategyRevision = 1
     }
     static func draft(_ id: Int) -> JSONValue {
         .object(["id": .integer(id), "revision": .integer(1), "status": .string("draft"), "display_title": .string("Meet the maker"), "title": .string("Meet the maker"), "brief": .string("The story behind our small pottery studio."), "instruction": .string(""), "thread_length": .integer(1), "platforms": .strings(["instagram"]), "variants": .object(["instagram": .object(["posts": .strings(["New to pottery? Start with a small piece of clay and give yourself time to learn. What would you like to try making?"])])]), "workspace": .object(["selected_platforms": .strings(["instagram"]), "active_platform": .string("instagram"), "media": .array([]), "media_asset_ids": .array([]), "composer": .string(""), "conversation": .array([.object(["role": .string("user"), "content": .string("The story behind our small pottery studio.")])])])])
@@ -49,11 +53,19 @@ final class NativeProductFixtures: URLProtocol {
             return ok(.object(["presentation_version": .integer(1), "profile": .object(["id": .integer(1), "name": .string("Synthetic creator"), "email": .string("creator@example.test"), "email_verified": .bool(true)]), "brand": .object(["id": .integer(0), "name": .string("My pottery studio"), "choices": .array([.object(["id": .integer(0), "name": .string("My pottery studio")])])]), "voice": .object(["writing_tone": .string("Warm and practical"), "audience": .string("Local beginners"), "topics": .string("Pottery"), "timezone": .string("Europe/London"), "preferred_post_length": .integer(220)]), "connections": .array([.object(["id": .integer(1), "platform": .string("instagram"), "name": .string("Pottery Studio"), "username": .string("pottery")])]), "ai": .object(["allowed": .bool(true), "required": .bool(true), "version": .string("2026-10-19")])]))
         }
         if path == "/api/studio/intro/claim" { return ok(.object(["show": .bool(false)])) }
-        if path == "/api/strategy" { return ok(.object(["revision": .integer(1), "confirmed": strategy, "defaults": strategy, "proposal": .object([:])])) }
+        if path == "/api/native/schedule-summary" { return ok(.object(["drafts": .integer(saved.count), "scheduled": .integer(1), "overdue": .integer(0), "unconfirmed": .integer(0)])) }
+        if path == "/api/strategy" { return ok(.object(["revision": .integer(strategyRevision), "confirmed": storedStrategy, "defaults": strategy, "proposal": storedProposal])) }
         if path == "/api/strategy/actions" { return ok(actions()) }
         if path == "/api/strategy/recommend" { batch += 1; return ok(actions()) }
-        if path == "/api/strategy/propose" { return ok(.object(["revision": .integer(2), "proposal": .object(["strategy": strategy, "assumptions": .array([])])])) }
-        if path == "/api/strategy/confirm" { return ok(.object(["revision": .integer(3), "confirmed": input["strategy"]])) }
+        if path == "/api/strategy/propose" {
+            var next = storedStrategy; next["description"] = input["brief"]; next["content_direction"] = input["content_direction"]
+            storedProposal = .object(["strategy": next, "assumptions": .array([])]); strategyRevision += 1
+            return ok(.object(["revision": .integer(strategyRevision), "proposal": storedProposal]))
+        }
+        if path == "/api/strategy/confirm" {
+            storedStrategy = input["strategy"]; storedProposal = .null; strategyRevision += 1
+            return ok(.object(["revision": .integer(strategyRevision), "confirmed": storedStrategy]))
+        }
         if path.hasPrefix("/api/strategy/actions/") && path.hasSuffix("/draft") { return ok(.object(["draft_id": .integer(24)])) }
         if path == "/api/drafts" {
             if request.httpMethod == "POST" { let id = (saved.keys.max() ?? 24) + 1; var value = draft(id); value["variants"] = .object([:]); value["workspace"] = .object([:]); saved[id] = value; return ok(.object(["id": .integer(id), "revision": .integer(1)])) }
@@ -68,9 +80,12 @@ final class NativeProductFixtures: URLProtocol {
             if request.httpMethod == "DELETE" { saved.removeValue(forKey: id); return (204, .null, [:]) }
             return ok(value)
         }
-        if path == "/api/conversation/plan" { return ok(.object(["action": .string("create"), "platforms": input["selected_platforms"], "brief": input["message"]])) }
+        if path == "/api/conversation/plan" { return ok(.object(["action": .string(input["message"].string.lowercased().contains("shorter") ? "rewrite" : "create"), "platforms": input["selected_platforms"], "brief": input["message"]])) }
+        if path == "/api/ai/rewrite" { return ok(.object(["posts": .strings(["A little clay. A fresh start."])])) }
         if path == "/api/ai/generate" {
-            let id = input["draft_id"].int
+            let fresh = input["source_draft_id"].int > 0
+            let id = fresh ? (saved.keys.max() ?? 24) + 1 : input["draft_id"].int
+            if fresh, var source = saved[input["source_draft_id"].int] { source["id"] = .integer(id); source["revision"] = .integer(1); source["variants"] = .object([:]); saved[id] = source }
             guard var value = saved[id] else { return (404, .object(["detail": .string("Draft not found")]), [:]) }
             value["variants"] = .object(Dictionary(uniqueKeysWithValues: input["platforms"].strings.map { ($0, JSONValue.object(["posts": .strings(["New to pottery? Start with a small piece of clay and give yourself time to learn. What would you like to try making?"])])) }))
             value["brief"] = input["brief"]; value["revision"] = .integer(value["revision"].int + 1); value["workspace"]["pending_message"] = .string(""); saved[id] = value
@@ -84,7 +99,7 @@ final class NativeProductFixtures: URLProtocol {
         if path == "/api/analytics/dashboard" {
             return ok(.object(["summary": .object(["impressions": .integer(1240), "engagements": .integer(84), "comments": .integer(16), "followers": .integer(380), "posts": .integer(6)]), "platforms": .object(["instagram": .object(["connected": .bool(true), "account": .string("Pottery Studio"), "impressions": .integer(1240), "engagements": .integer(84), "followers": .integer(380)])]), "top_posts": .array([]), "recommendations": .array([.object(["title": .string("Show the process"), "detail": .string("Try another simple pottery demonstration.")])]), "note": .string("Synthetic simulator evidence. No real provider data.")]))
         }
-        if path == "/api/publications/24" { return ok(.object(["draft_status": .string("draft"), "results": .object([:])])) }
+        if path.hasPrefix("/api/publications/") { return ok(.object(["draft_status": .string("draft"), "results": .object([:])])) }
         if path == "/api/publish-context" { return ok(.object(["platforms": .object(["instagram": .object(["connection_id": .integer(1), "accounts": .array([.object(["id": .integer(1), "name": .string("Pottery Studio")])])])])])) }
         if path == "/api/publish-review" {
             var snapshot = input

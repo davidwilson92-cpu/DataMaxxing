@@ -11,6 +11,11 @@ from .security import current_user
 
 router = APIRouter(prefix='/api/native')
 
+@router.get('/schedule-summary')
+def schedule_summary(request: Request, db=Depends(get_db)):
+    from .work_summary import work_summary
+    return work_summary(db, current_user(request).id)
+
 
 @router.get('/account')
 def account(request: Request, db=Depends(get_db)):
