@@ -70,11 +70,13 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Draft post"].waitForExistence(timeout: 8)); app.buttons["Draft post"].tap()
         let caption = app.textFields["caption-0"]
         XCTAssertTrue(caption.waitForExistence(timeout: 8)); caption.tap(); caption.typeText(" Come join us.")
-        // This closes the keyboard through an existing action, not a testing-only UI.
-        app.buttons["Post options"].tap(); app.buttons["Close Post options"].tap()
-        let review = app.buttons["Review post →"]
+        XCTAssertTrue(app.buttons["finish-editing"].waitForExistence(timeout: 5)); app.buttons["finish-editing"].tap()
+        app.buttons["More caption options"].tap(); app.buttons["Preview"].tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Come join us.")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.webViews.count, 0); app.buttons["Close Preview"].tap()
+        let review = app.buttons["review-draft"]
         for _ in 0..<3 { if review.isHittable { break }; app.swipeUp() }
-        XCTAssertTrue(review.isHittable); review.tap()
+        XCTAssertTrue(review.isHittable, app.debugDescription); review.tap()
         let finalReview = app.buttons["Review final post"]
         XCTAssertTrue(finalReview.waitForExistence(timeout: 8)); finalReview.tap()
         XCTAssertTrue(app.buttons["confirm-publication"].waitForExistence(timeout: 8))
@@ -86,6 +88,29 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "pottery studio")).firstMatch.waitForExistence(timeout: 8))
         app.buttons["tab-Studio"].tap()
         XCTAssertTrue((caption.value as? String ?? "").contains("Come join us."))
+        XCTAssertEqual(app.webViews.count, 0)
+    }
+    func testTikTokRequiresChosenPrivacyAndFreshCommercialConsent() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture", "--fixture-tiktok"]; app.launch()
+        XCTAssertTrue(app.buttons["next-move"].waitForExistence(timeout: 12)); app.buttons["next-move"].tap()
+        XCTAssertTrue(app.buttons["Draft post"].waitForExistence(timeout: 8)); app.buttons["Draft post"].tap()
+        let review = app.buttons["review-draft"]
+        XCTAssertTrue(review.waitForExistence(timeout: 8))
+        for _ in 0..<3 { if review.isHittable { break }; app.swipeUp() }
+        review.tap()
+        let privacy = app.buttons["tiktok-privacy"], consent = app.switches["tiktok-consent"], finalReview = app.buttons["Review final post"]
+        XCTAssertTrue(privacy.waitForExistence(timeout: 8))
+        XCTAssertEqual(consent.value as? String, "0"); XCTAssertFalse(finalReview.isEnabled)
+        privacy.tap(); app.buttons["Everyone"].tap()
+        consent.tap(); XCTAssertTrue(finalReview.isEnabled)
+        app.switches["Promotes a brand, product or service"].tap()
+        XCTAssertEqual(consent.value as? String, "0"); XCTAssertFalse(finalReview.isEnabled)
+        app.switches["Your brand"].tap()
+        for _ in 0..<3 { if consent.isHittable { break }; app.swipeUp() }
+        consent.tap(); XCTAssertTrue(finalReview.isEnabled)
+        capture(app, "Native TikTok — explicit privacy and commercial consent")
+        app.swipeDown(); privacy.tap(); app.buttons["Only me"].tap()
+        XCTAssertEqual(consent.value as? String, "0"); XCTAssertFalse(finalReview.isEnabled)
         XCTAssertEqual(app.webViews.count, 0)
     }
     private func capture(_ app: XCUIApplication, _ name: String) {

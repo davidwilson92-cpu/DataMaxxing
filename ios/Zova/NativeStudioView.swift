@@ -35,6 +35,7 @@ struct NativeStudioView: View {
     @State private var compared: ProductDraft?
     @FocusState private var captionEditing: Bool
     @State private var discardRecovery = false
+    @State private var previewMode: String?
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -61,7 +62,12 @@ struct NativeStudioView: View {
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text(message["content"].string).textSelection(.enabled)
                                     let media = message["media"].array.isEmpty ? store.draft.media.filter { message["media_asset_ids"].array.contains($0["id"]) } : message["media"].array
-                                    ForEach(media, id: \.["id"].int) { asset in NativeAssetPreview(asset: asset) }
+                                    ForEach(media, id: \.["id"].int) { asset in
+                                        NativeAssetPreview(asset: asset)
+                                        if store.draft.mediaIDs.array.contains(asset["id"]) && store.draft.editable {
+                                            Button("Remove from post") { store.removeMedia(asset["id"].int) }.font(.caption).disabled(store.busy)
+                                        } else { Text(store.draft.mediaIDs.array.contains(asset["id"]) ? "Attached to post" : "Not in current post").font(.caption).foregroundStyle(.secondary) }
+                                    }
                                 }.padding(16).background(message["role"].string == "user" ? ZovaDesign.pale : .clear, in: RoundedRectangle(cornerRadius: 20))
                                 if message["role"].string != "user" { Spacer(minLength: 24) }
                             }
@@ -79,13 +85,21 @@ struct NativeStudioView: View {
                     }.padding(.horizontal, 18).padding(.vertical, 16)
                 }.scrollDismissesKeyboard(.interactively)
                     .onChange(of: store.draft.conversation.count) { _, _ in withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
-                    .onChange(of: store.busy) { _, _ in if !focused { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } } }
+                    .onChange(of: store.busy) { _, _ in if !focused && !captionEditing { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } } }
             }
-            if store.draft.editable { composer } else { Button("+ New post") { run { try await store.newPost() } }.buttonStyle(ZovaPrimary()).padding(18) }
+            if store.draft.editable {
+                if captionEditing {
+                    HStack { Text("Editing caption").font(.caption).foregroundStyle(.secondary); Spacer(); Button("Done") { captionEditing = false }.accessibilityIdentifier("finish-editing") }
+                        .padding(.horizontal, 18).frame(minHeight: 44).background(Color.white)
+                } else { composer }
+            } else { Button("+ New post") { run { try await store.newPost() } }.buttonStyle(ZovaPrimary()).padding(18) }
         }.foregroundStyle(ZovaDesign.ink)
             .confirmationDialog("Discard the unsaved copy on this iPhone? Your server draft stays unchanged.", isPresented: $discardRecovery, titleVisibility: .visible) { Button("Discard local copy", role: .destructive) { store.discardRecovery() } }
             .sheet(isPresented: $history) { NativeHistoryView().environmentObject(store) }
             .sheet(isPresented: $options) { NativePostOptionsView().environmentObject(store) }
+            .sheet(isPresented: Binding(get: { previewMode != nil }, set: { if !$0 { previewMode = nil } })) {
+                NativeDraftPreview(compare: previewMode == "compare").environmentObject(store)
+            }
             .sheet(isPresented: Binding(get: { recoveryExport != nil }, set: { if !$0 { clearRecoveryExport() } }), onDismiss: clearRecoveryExport) {
                 if let recoveryExport { NativeShare(items: [recoveryExport]) }
             }
@@ -165,17 +179,27 @@ struct NativeStudioView: View {
                 if !store.draft.workspace["text_history"].array.isEmpty {
                     Button { store.draft.undo(); store.changed() } label: { Image(systemName: "arrow.uturn.backward").frame(width: 44, height: 44) }.accessibilityLabel("Undo caption change")
                 }
+                Menu {
+                    Button("Preview") { captionEditing = false; previewMode = "preview" }
+                    if store.draft.variants.object.count > 1 { Button("Compare versions") { captionEditing = false; previewMode = "compare" } }
+                    if store.draft.editable {
+                        ForEach(SocialPlatform.allCases.filter { store.draft.variants[$0.rawValue].isNull }) { platform in
+                            Button("Add " + platform.title) {
+                                store.draft.composer = "Add a \(platform.title) version of this post"; store.changed(); captionEditing = false; focused = true
+                            }
+                        }
+                    }
+                } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }.accessibilityLabel("More caption options").disabled(store.busy)
             }
             ForEach(Array(store.draft.variants[store.draft.active]["posts"].strings.enumerated()), id: \.offset) { index, _ in
                 TextField("Edit caption", text: Binding(get: { store.caption(store.draft.active, index: index) }, set: { store.editCaption(store.draft.active, index: index, text: $0) }), axis: .vertical)
                     .lineLimit(4...20).padding(16).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 16))
                     .focused($captionEditing).disabled((store.busy && !store.backgroundSaving) || !store.draft.editable).accessibilityIdentifier("caption-\(index)")
             }
-            ForEach(store.draft.media, id: \.["id"].int) { NativeAssetPreview(asset: $0) }
             if store.draft.editable {
                 HStack {
-                    Button("Schedule") { focused = false; store.reviewMode = "schedule"; store.showReview = true }.buttonStyle(.bordered)
-                    Button("Review post →") { focused = false; store.reviewMode = "publish"; store.showReview = true }.buttonStyle(ZovaPrimary())
+                    Button("Schedule") { focused = false; captionEditing = false; store.reviewMode = "schedule"; store.showReview = true }.buttonStyle(.bordered)
+                    Button("Review post →") { focused = false; captionEditing = false; store.reviewMode = "publish"; store.showReview = true }.buttonStyle(ZovaPrimary()).accessibilityIdentifier("review-draft")
                 }.disabled(store.busy)
             }
         }
@@ -225,7 +249,7 @@ struct NativeStudioView: View {
                         Button("Choose file", systemImage: "folder") { importer = true }
                         if UIImagePickerController.isSourceTypeAvailable(.camera) { Button("Camera", systemImage: "camera") { openCamera() } }
                     } label: { Image(systemName: "plus").font(.title3).frame(width: 44, height: 44) }.accessibilityLabel("Add attachment").disabled(store.busy)
-                    Button("Post options") { focused = false; options = true }.font(.subheadline).frame(minHeight: 44).disabled(store.busy)
+                    Button("Post options") { focused = false; captionEditing = false; options = true }.font(.subheadline).frame(minHeight: 44).disabled(store.busy)
                     Spacer()
                     Button { focused = false; run { try await store.send() } } label: { Image(systemName: "arrow.up").font(.title2.bold()).foregroundStyle(.white).frame(width: 48, height: 48).background(ZovaDesign.purple.opacity(store.draft.composer.isEmpty ? 0.4 : 1), in: Circle()) }.accessibilityLabel("Send idea").disabled(store.busy || store.draft.composer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }

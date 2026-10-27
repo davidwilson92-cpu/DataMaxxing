@@ -64,8 +64,12 @@ final class ProductStore: ObservableObject {
         let connected = account["connections"].array.map { $0["platform"].string }
         draft.selected = SocialPlatform.allCases.map(\.rawValue).filter { connected.contains($0) }
         recovery = NativeDraftRecovery.load(owner: recoveryOwner)
-        let intro = try await request("/api/studio/intro/claim", method: "POST", body: .object([:]))
-        showIntro = intro["show"].bool
+        do {
+            let intro = try await request("/api/studio/intro/claim", method: "POST", body: .object([:]))
+            showIntro = intro["show"].bool
+        } catch ZovaFailure.signInRequired { throw ZovaFailure.signInRequired }
+        catch is CancellationError { throw CancellationError() }
+        catch { showIntro = false } // Optional guidance must not block a valid account.
     }
     func changed() {
         changeSerial += 1; saveStatus = "Saving…"
@@ -231,8 +235,12 @@ final class ProductStore: ObservableObject {
             throw ZovaFailure.server("Use one video or up to ten images per post.")
         }
         let epoch = authority
-        let converted = ["image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"].contains(mime) ? try NativeMediaFiles.compatibleImage(url) : nil
+        var converted: URL?
+        if ["image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"].contains(mime) {
+            converted = try await Task.detached(priority: .userInitiated) { try NativeMediaFiles.compatibleImage(url) }.value
+        }
         defer { NativeMediaFiles.remove(converted) }
+        guard epoch == authority, !Task.isCancelled else { throw CancellationError() }
         let response = try await api.upload(file: converted ?? url, name: converted == nil ? name : (name as NSString).deletingPathExtension + ".jpg", mime: converted == nil ? mime : "image/jpeg", brand: brand)
         guard epoch == authority else { throw CancellationError() }
         let media = draft.media + response["assets"].array
@@ -276,9 +284,11 @@ final class ProductStore: ObservableObject {
             }
         }
     }
-    func clear() {
+    func clear(preserveRecovery: Bool = false) {
         authority += 1; autosave?.cancel(); polling?.cancel()
-        NativeDraftRecovery.removeUser(account["profile"]["id"].int); NativeMediaFiles.clear(); recovery = .null
+        if preserveRecovery { if dirty { persistRecovery() } }
+        else { NativeDraftRecovery.removeUser(account["profile"]["id"].int) }
+        NativeMediaFiles.clear(); recovery = .null
         changeSerial = 0; savedSerial = 0; pendingReview = false; showReview = false
         draft = ProductDraft(); drafts = []; schedules = []; series = []; account = .null; results = .null; mediaNotice = ""
     }

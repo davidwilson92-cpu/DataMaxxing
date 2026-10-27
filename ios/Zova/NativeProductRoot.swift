@@ -16,7 +16,7 @@ final class NativeProductSession: ObservableObject {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--test-fresh-install") { try? KeychainVault.clear() }
         if ProcessInfo.processInfo.arguments.contains("--native-fixture") {
-            NativeProductFixtures.reset()
+            NativeProductFixtures.reset(tiktok: ProcessInfo.processInfo.arguments.contains("--fixture-tiktok"))
             NativeDraftRecovery.remove(owner: "1:0")
             let configuration = URLSessionConfiguration.ephemeral
             configuration.protocolClasses = [NativeProductFixtures.self]
@@ -59,6 +59,10 @@ final class NativeProductSession: ObservableObject {
     }
     func logout() async {
         store.clear(); await api.logout(); phase = .signedOut
+    }
+    func reauthenticate() async {
+        store.clear(preserveRecovery: true); await api.forget(); phase = .signedOut
+        message = "Please sign in again. Any unsaved draft is kept securely for the same account."
     }
     func connect(_ platform: String) async {
         await store.perform {
@@ -169,7 +173,7 @@ struct NativeProductTabs: View {
             .sheet(isPresented: $store.needsConsent) { NativeAIConsentView().environmentObject(store) }
             .sheet(isPresented: $store.showIntro) { NativeGuideView(introduction: true).environmentObject(store) }
             .alert("Zova", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button("OK") { store.error = nil } } message: { Text(store.error ?? "") }
-            .onChange(of: store.signedOut) { _, value in if value { Task { await session.logout() } } }
+            .onChange(of: store.signedOut) { _, value in if value { Task { await session.reauthenticate() } } }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboard = true }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboard = false }
     }

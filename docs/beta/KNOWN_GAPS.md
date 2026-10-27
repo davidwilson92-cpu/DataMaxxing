@@ -1,5 +1,14 @@
 # Beta known gaps and required follow-up
 
+## Native iPhone replacement — 27 October 2026
+
+SwiftUI replacement is under validation in draft PR35. Shared security/data and
+provider contracts remain; production and build 11 are unchanged. See
+NATIVE_IOS_PARITY_20261027.md. Native fc9eda7 passed 32 unit and 7/8 UI checks;
+caption-edit review access is being corrected. Fresh exact-candidate checks,
+visual comparisons, signed build and physical-device acceptance remain required.
+All 79 historical findings remain open where not separately evidenced.
+
 ## Next Move intelligence candidate — 26 October 2026
 
 Next Move now carries saved strategy, current explicit/approved voice and fresh

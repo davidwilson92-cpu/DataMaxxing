@@ -1,3 +1,32 @@
+# Native iPhone replacement in validation — 27 October 2026
+
+User explicitly requested genuine native iOS parity, preserving all functionality,
+security and mobile-web design. Work is on `codex/ios-beta-native-20261027`, draft
+PR35 against the existing iOS branch. SwiftUI product screens replace the embedded
+web renderer; the shared backend/data, Keychain sign-in and provider return
+protocol remain. No database migration or new provider permission is included.
+
+Production remains a9fe5a7a4724231b3491517abed35224f3f8d011. Apple verified build
+0.1.0 (11) Testing in internal and external groups on 27 October. No native
+replacement has been uploaded or deployed yet. Customer charges/enforcement
+remain off, Stripe test-only, Render unchanged, paid monitor inactive.
+
+See docs/beta/NATIVE_IOS_PARITY_20261027.md for scope and acceptance. Native
+c6a4a9d passed 30 unit / 6 UI tests and Release compile. fc9eda7 passed 32 unit /
+7 of 8 UI tests; caption-edit review access failed. The following candidate fixes
+focus/keyboard space and expands recovery, consent and caption-preview checks.
+It needs fresh full application/PostgreSQL and native validation before release.
+Never use an earlier pass to certify later code. All 79 commercial findings stay
+in the register. Physical upgrade, media and provider acceptance are separate
+from synthetic tests; no real social post is authorised by this rewrite.
+
+Codemagic's branch selector currently fails in the side browser. No build was
+started. The reviewed workflow retains its existing ID/signing integration,
+pins the native branch, requires build >=12 and leaves automatic distribution
+and public App Store submission off. Apple sign-in is currently working.
+
+---
+
 # Next Move candidate ready for shared Studio publication — 26 October 2026
 
 User requested implementation, iteration and readiness to publish, not deployment.

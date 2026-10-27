@@ -187,6 +187,10 @@ actor NativeAPI {
         let (data, response) = try await productResponse(path, method: "POST", data: Data(encoded.utf8), contentType: "application/x-www-form-urlencoded", brand: brand, allowFormRedirect: true)
         if let target = response.value(forHTTPHeaderField: "Location") {
             let url = try configuration.endpoint(target)
+            if url.path == "/login" || url.path == "/signup" {
+                productCookie = nil
+                throw ZovaFailure.signInRequired
+            }
             let parts = URLComponents(url: url, resolvingAgainstBaseURL: false)
             if let error = parts?.queryItems?.first(where: { $0.name == "error" })?.value {
                 let message = ["profile": "Enter your name.", "current_password": "The current password is incorrect.", "password_length": "Use 10–256 characters.", "password_match": "The new passwords do not match."][error] ?? "That change could not be saved. Check the details and try again."

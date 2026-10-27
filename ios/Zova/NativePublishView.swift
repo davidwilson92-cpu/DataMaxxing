@@ -57,6 +57,7 @@ struct NativePublishView: View {
                 HStack { NativePlatformMark(platform: platform); Text(SocialPlatform(rawValue: platform)?.title ?? platform).font(.headline); Spacer() }
                 if !contexts[platform]["error"].isNull {
                     Text(contexts[platform]["error"].string).font(.callout).foregroundStyle(.secondary)
+                    Button("Open social accounts") { store.selectedTab = 3; dismiss() }
                     Button("Remove from this review") { platforms.removeAll { $0 == platform } }
                 } else {
                     Picker("Account", selection: Binding(get: { connections[platform, default: 0] }, set: { connections[platform] = $0; consent = false; privacy = ""; run { try await loadContexts() } })) {
@@ -71,7 +72,7 @@ struct NativePublishView: View {
                     Picker("Who can see this post?", selection: $privacy) {
                         Text("Choose privacy").tag("")
                         ForEach(tiktok["privacy_options"].strings.filter { !tiktok["private_test_mode"].bool || $0 == "SELF_ONLY" }, id: \.self) { value in Text(privacyName(value)).tag(value) }
-                    }.pickerStyle(.menu)
+                    }.pickerStyle(.menu).accessibilityIdentifier("tiktok-privacy")
                     Toggle("Allow comments", isOn: $comment).disabled(tiktok["comment_disabled"].bool)
                     if store.draft.media.contains(where: { $0["kind"].string == "video" }) {
                         Toggle("Allow Duet", isOn: $duet).disabled(tiktok["duet_disabled"].bool)
@@ -87,7 +88,7 @@ struct NativePublishView: View {
                     }
                     if tiktok["private_test_mode"].bool { Text("TikTok testing requires Only me visibility. Paid partnerships need TikTok approval.").font(.caption) }
                     TikTokDeclaration(paid: partnership)
-                    Toggle("I agree and want to post this content to TikTok", isOn: $consent)
+                    Toggle("I agree and want to post this content to TikTok", isOn: $consent).accessibilityIdentifier("tiktok-consent")
                 } else { Text("This connection sends videos to your TikTok inbox. Finish the caption, privacy and publishing in TikTok.").font(.callout) }
             }
             if mode == "schedule" {

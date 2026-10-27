@@ -31,8 +31,10 @@ final class ProductContractTests: XCTestCase {
         draft.workspace["media_asset_ids"] = .array([.integer(9)])
         for index in 0..<5 { draft.variants = .object(["instagram": .object(["posts": .strings([String(index)])])]); draft.addHistory() }
         XCTAssertEqual(draft.workspace["text_history"].array.count, 3)
+        draft.addHistory()
+        XCTAssertEqual(draft.workspace["text_history"].array.count, 3, "Focusing unchanged text must not consume undo history")
         draft.undo()
-        XCTAssertEqual(draft.variants["instagram"]["posts"].strings, ["4"])
+        XCTAssertEqual(draft.variants["instagram"]["posts"].strings, ["3"])
         XCTAssertEqual(draft.workspace["media_asset_ids"], .array([.integer(9)]))
     }
     func testMissingMetricsRemainNullAndUnsafeExternalLinksAreRejected() throws {

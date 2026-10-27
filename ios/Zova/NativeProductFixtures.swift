@@ -11,18 +11,20 @@ final class NativeProductFixtures: URLProtocol {
     static var storedStrategy: JSONValue = .null
     static var storedProposal: JSONValue = .null
     static var strategyRevision = 1
-    static func reset() {
+    static var primaryPlatform = "instagram"
+    static func reset(tiktok: Bool = false) {
         lock.lock(); defer { lock.unlock() }
+        primaryPlatform = tiktok ? "tiktok" : "instagram"
         saved = [24: draft(24)]; batch = 0
         storedStrategy = strategy; storedProposal = .null; strategyRevision = 1
     }
     static func draft(_ id: Int) -> JSONValue {
-        .object(["id": .integer(id), "revision": .integer(1), "status": .string("draft"), "display_title": .string("Meet the maker"), "title": .string("Meet the maker"), "brief": .string("The story behind our small pottery studio."), "instruction": .string(""), "thread_length": .integer(1), "platforms": .strings(["instagram"]), "variants": .object(["instagram": .object(["posts": .strings(["New to pottery? Start with a small piece of clay and give yourself time to learn. What would you like to try making?"])])]), "workspace": .object(["selected_platforms": .strings(["instagram"]), "active_platform": .string("instagram"), "media": .array([]), "media_asset_ids": .array([]), "composer": .string(""), "conversation": .array([.object(["role": .string("user"), "content": .string("The story behind our small pottery studio.")])])])])
+        .object(["id": .integer(id), "revision": .integer(1), "status": .string("draft"), "display_title": .string("Meet the maker"), "title": .string("Meet the maker"), "brief": .string("The story behind our small pottery studio."), "instruction": .string(""), "thread_length": .integer(1), "platforms": .strings([primaryPlatform]), "variants": .object([primaryPlatform: .object(["posts": .strings(["New to pottery? Start with a small piece of clay and give yourself time to learn. What would you like to try making?"])])]), "workspace": .object(["selected_platforms": .strings([primaryPlatform]), "active_platform": .string(primaryPlatform), "media": .array([]), "media_asset_ids": .array([]), "composer": .string(""), "conversation": .array([.object(["role": .string("user"), "content": .string("The story behind our small pottery studio.")])])])])
     }
     static var strategy: JSONValue { .object(["goal": .string("Generate pottery class enquiries"), "description": .string("I run a pottery studio in Leeds for curious beginners. I want more weekend bookings."), "content_direction": .string("Studio moments, simple tips, new classes. Two videos a week. Keep it friendly."), "audience": .string("Local beginners"), "themes": .string("Beginner pottery tips, clay process, common questions"), "rhythm": .string("Two posts each week"), "platforms": .strings(["instagram"])]) }
     static func actions() -> JSONValue {
         .object(["revision": .integer(1), "history": .array([]), "items": .array(["Share one tip for centring clay", "Explain what beginners need for class", "Invite questions about starting pottery"].enumerated().map { index, title in
-            .object(["id": .integer(batch * 3 + index + 1), "title": .string(title), "reason": .string("Help local beginners feel confident enough to try a pottery class."), "kind": .string("draft"), "platform": .string("instagram"), "format": .string("post"), "brief": .string(title), "basis": .string("Strategy · Voice"), "strategy_context": strategy, "source": .null])
+            .object(["id": .integer(batch * 3 + index + 1), "title": .string(title), "reason": .string("Help local beginners feel confident enough to try a pottery class."), "kind": .string("draft"), "platform": .string(primaryPlatform), "format": .string("post"), "brief": .string(title), "basis": .string("Strategy · Voice"), "strategy_context": strategy, "source": .null])
         })])
     }
     override class func canInit(with request: URLRequest) -> Bool { true }
@@ -50,7 +52,7 @@ final class NativeProductFixtures: URLProtocol {
         if path == "/api/v1/native-handoff" { return ok(.object(["ticket": .string(String(repeating: "t", count: 64))])) }
         if path == "/api/v1/native-web-session" { return (200, .object(["destination": .string("/studio")]), ["Set-Cookie":"nova_session=ios.synthetic-fixture; Path=/; Max-Age=900; Secure; HttpOnly; SameSite=Lax"]) }
         if path == "/api/native/account" {
-            return ok(.object(["presentation_version": .integer(1), "profile": .object(["id": .integer(1), "name": .string("Synthetic creator"), "email": .string("creator@example.test"), "email_verified": .bool(true)]), "brand": .object(["id": .integer(0), "name": .string("My pottery studio"), "choices": .array([.object(["id": .integer(0), "name": .string("My pottery studio")])])]), "voice": .object(["writing_tone": .string("Warm and practical"), "audience": .string("Local beginners"), "topics": .string("Pottery"), "timezone": .string("Europe/London"), "preferred_post_length": .integer(220)]), "connections": .array([.object(["id": .integer(1), "platform": .string("instagram"), "name": .string("Pottery Studio"), "username": .string("pottery")])]), "ai": .object(["allowed": .bool(true), "required": .bool(true), "version": .string("2026-10-19")])]))
+            return ok(.object(["presentation_version": .integer(1), "profile": .object(["id": .integer(1), "name": .string("Synthetic creator"), "email": .string("creator@example.test"), "email_verified": .bool(true)]), "brand": .object(["id": .integer(0), "name": .string("My pottery studio"), "choices": .array([.object(["id": .integer(0), "name": .string("My pottery studio")])])]), "voice": .object(["writing_tone": .string("Warm and practical"), "audience": .string("Local beginners"), "topics": .string("Pottery"), "timezone": .string("Europe/London"), "preferred_post_length": .integer(220)]), "connections": .array([.object(["id": .integer(1), "platform": .string(primaryPlatform), "name": .string("Pottery Studio"), "username": .string("pottery")])]), "ai": .object(["allowed": .bool(true), "required": .bool(true), "version": .string("2026-10-19")])]))
         }
         if path == "/api/studio/intro/claim" { return ok(.object(["show": .bool(false)])) }
         if path == "/api/native/schedule-summary" { return ok(.object(["drafts": .integer(saved.count), "scheduled": .integer(1), "overdue": .integer(0), "unconfirmed": .integer(0)])) }
@@ -100,7 +102,15 @@ final class NativeProductFixtures: URLProtocol {
             return ok(.object(["summary": .object(["impressions": .integer(1240), "engagements": .integer(84), "comments": .integer(16), "followers": .integer(380), "posts": .integer(6)]), "platforms": .object(["instagram": .object(["connected": .bool(true), "account": .string("Pottery Studio"), "impressions": .integer(1240), "engagements": .integer(84), "followers": .integer(380)])]), "top_posts": .array([]), "recommendations": .array([.object(["title": .string("Show the process"), "detail": .string("Try another simple pottery demonstration.")])]), "note": .string("Synthetic simulator evidence. No real provider data.")]))
         }
         if path.hasPrefix("/api/publications/") { return ok(.object(["draft_status": .string("draft"), "results": .object([:])])) }
-        if path == "/api/publish-context" { return ok(.object(["platforms": .object(["instagram": .object(["connection_id": .integer(1), "accounts": .array([.object(["id": .integer(1), "name": .string("Pottery Studio")])])])])])) }
+        if path == "/api/publish-context" {
+            var context = JSONValue.object(["connection_id": .integer(1), "accounts": .array([.object(["id": .integer(1), "name": .string("Pottery Studio")])])])
+            if primaryPlatform == "tiktok" {
+                context["posting_mode"] = .string("direct")
+                context["privacy_options"] = .strings(["PUBLIC_TO_EVERYONE", "MUTUAL_FOLLOW_FRIENDS", "SELF_ONLY"])
+                context["private_test_mode"] = .bool(false)
+            }
+            return ok(.object(["platforms": .object([primaryPlatform: context])]))
+        }
         if path == "/api/publish-review" {
             var snapshot = input
             snapshot["targets"] = .object(["instagram": .object(["display_name": .string("Pottery Studio"), "username": .string("pottery"), "format": .string("post"), "posts": input["variants"]["instagram"]["posts"]])]); snapshot["media"] = .array([])

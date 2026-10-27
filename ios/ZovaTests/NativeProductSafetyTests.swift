@@ -45,6 +45,20 @@ final class NativeProductSafetyTests: XCTestCase {
         catch let issue as ProductError { XCTAssertEqual(issue.status, 502) }
         await fulfillment(of: [once], timeout: 3)
     }
+    func testAccountFormCannotReportSuccessAfterLoginRedirectOrValidationError() async throws {
+        let api = try api()
+        for target in ["/login?next=/account", "/account?error=current_password", "https://untrusted.example/"] {
+            ProductTestTransport.respond = { request in
+                if request.url?.path == "/account/password" { return (303, Data(), ["Location": target], 0) }
+                let (status, value, headers) = NativeProductFixtures.response(request)
+                return (status, try! value.encoded(), headers, 0)
+            }
+            do {
+                _ = try await api.form("/account/password", fields: ["current_password": "synthetic-only"])
+                XCTFail("Unsafe or failed redirect was reported as saved")
+            } catch { }
+        }
+    }
     func testLateProductResponseCannotRepopulateSignedOutAccount() async throws {
         let api = try api(), store = ProductStore(api: api), started = expectation(description: "account requested")
         ProductTestTransport.respond = { request in
@@ -57,6 +71,18 @@ final class NativeProductSafetyTests: XCTestCase {
         store.clear(); await api.forget()
         do { try await pending.value; XCTFail("Stale account accepted") } catch { }
         XCTAssertTrue(store.account.isNull); XCTAssertNil(try KeychainVault.load())
+    }
+    func testOptionalIntroFailureDoesNotBlockAuthenticatedStudio() async throws {
+        let store = ProductStore(api: try api())
+        ProductTestTransport.respond = { request in
+            if request.url?.path == "/api/studio/intro/claim" { return (503, Data(), [:], 0) }
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            return (status, try! value.encoded(), headers, 0)
+        }
+        try await store.start()
+        XCTAssertEqual(store.account["profile"]["id"].int, 1)
+        XCTAssertFalse(store.showIntro); XCTAssertEqual(store.draft.selected, ["instagram"])
+        store.clear()
     }
     func testFailedSaveBlocksNavigationAndRetainsRecovery() async throws {
         let api = try api(), store = ProductStore(api: api)
@@ -125,6 +151,18 @@ final class NativeProductSafetyTests: XCTestCase {
         XCTAssertTrue(NativeDraftRecovery.load(owner: "1:0").isNull)
         XCTAssertTrue(NativeDraftRecovery.load(owner: "1:12").isNull)
         XCTAssertFalse(NativeDraftRecovery.load(owner: "2:0").isNull)
+    }
+    func testExpiredLoginLocksUIButKeepsUnsavedDraftForSameOwner() async throws {
+        let store = ProductStore(api: try api())
+        try await store.start()
+        store.draft.composer = "An idea written just before the session expired"; store.changed()
+        store.clear(preserveRecovery: true)
+        XCTAssertTrue(store.account.isNull); XCTAssertTrue(store.draft.composer.isEmpty)
+        XCTAssertFalse(NativeDraftRecovery.load(owner: "1:0").isNull)
+        XCTAssertTrue(NativeDraftRecovery.load(owner: "2:0").isNull)
+        try await store.start(); try await store.restoreRecovery(asNew: true)
+        XCTAssertEqual(store.draft.composer, "An idea written just before the session expired")
+        store.clear(); XCTAssertTrue(NativeDraftRecovery.load(owner: "1:0").isNull)
     }
     func testAttachmentSelectionRejectsMixedMediaBeforeAnyUpload() throws {
         let store = ProductStore(api: try api())

@@ -103,12 +103,16 @@ struct ProductDraft: Equatable {
                  "thread_length": .integer(threadLength)])
     }
     mutating func addHistory() {
+        guard workspace["text_history"].array.last != variants else { return }
         let history = Array((workspace["text_history"].array + [variants]).suffix(3))
         workspace["text_history"] = .array(history)
     }
     mutating func undo() {
         var history = workspace["text_history"].array
-        if let previous = history.popLast() { variants = previous; workspace["text_history"] = .array(history) }
+        while let previous = history.popLast() {
+            if previous != variants { variants = previous; break }
+        }
+        workspace["text_history"] = .array(history)
     }
 }
 

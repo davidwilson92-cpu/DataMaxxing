@@ -105,3 +105,56 @@ def test_native_schedule_status_filters_and_summary_match_web_semantics(native):
     assert result.status_code == 200 and 'no-store' in result.headers['cache-control']
     assert result.json() == {'drafts': 2, 'scheduled': 0, 'overdue': 0, 'unconfirmed': 0, 'needs_review': 3}
     assert TestClient(app).get('/api/native/schedule-summary').status_code == 401
+
+
+def test_native_profile_voice_and_draft_edits_are_the_same_saved_web_data(native):
+    client, web, _, _ = native
+    assert client.post('/account/profile', data={'display_name': 'Native creator'}, follow_redirects=False).status_code == 303
+    fields = {'writing_tone': 'Warm and direct', 'audience': 'New pottery learners', 'topics': 'Clay',
+              'things_to_avoid': 'Hype', 'example_posts': 'A little clay and a fresh start.',
+              'preferred_post_length': '180', 'timezone': 'America/New_York'}
+    assert client.post('/account/preferences', data=fields, follow_redirects=False).status_code == 303
+    data = client.get('/api/native/account').json()
+    assert data['profile']['name'] == 'Native creator'
+    assert data['voice']['writing_tone'] == fields['writing_tone']
+    assert data['voice']['timezone'] == fields['timezone']
+    assert 'Warm and direct' in web.get('/account').text
+    row = client.post('/api/drafts', json={}).json()
+    payload = {'revision': row['revision'], 'brief': 'Shared idea', 'platforms': ['x'],
+               'variants': {'x': {'posts': ['Edited native caption']}},
+               'workspace': {'composer': '', 'selected_platforms': ['x'],
+                             'conversation': [{'role': 'user', 'content': 'Shared idea'}]}}
+    assert client.patch(f"/api/drafts/{row['id']}", json=payload).status_code == 200
+    result = web.get(f"/api/drafts/{row['id']}").json()
+    assert result['variants'] == payload['variants']
+    assert result['workspace']['conversation'] == payload['workspace']['conversation']
+
+
+def test_native_snapshot_confirmation_preserves_explicit_approval_and_duplicate_guard(native, monkeypatch):
+    import nova.app as module
+    from nova.security import encrypt
+    client, _, uid, _ = native
+    with SessionLocal() as db:
+        db.add(SocialConnection(user_id=uid, platform='x', account_id='native-synthetic',
+                               display_name='Native test', scope='tweet.write', encrypted_access_token=encrypt('synthetic')))
+        db.commit()
+    calls = []
+    monkeypatch.setattr(module, 'publish_platform', lambda *a, **kw: calls.append(kw) or {'post_id': 'synthetic'})
+    row = client.post('/api/drafts', json={}).json()
+    variants = {'x': {'posts': ['Only the reviewed caption']}}
+    assert client.patch(f"/api/drafts/{row['id']}", json={'revision': row['revision'], 'platforms': ['x'], 'variants': variants}).status_code == 200
+    body = {'draft_id': row['id'], 'platforms': ['x'], 'variants': variants, 'media_asset_ids': [], 'link_url': '', 'publish_options': {}}
+    assert client.post('/api/publish', json=body).status_code == 400
+    result = client.post('/api/publish-review', json=body)
+    assert result.status_code == 200, result.text
+    reviewed = result.json()
+    assert not calls
+    # This is precisely the payload constructed from NativePublishView's snapshot.
+    confirmation = {key: reviewed['snapshot'][key] for key in body}
+    confirmation['review_token'] = reviewed['review_token']
+    changed = {**confirmation, 'variants': {'x': {'posts': ['Unapproved replacement']}}}
+    assert client.post('/api/publish', json=changed).status_code == 409
+    assert not calls
+    assert client.post('/api/publish', json=confirmation).status_code == 200
+    assert client.post('/api/publish', json=confirmation).status_code == 200
+    assert len(calls) == 1 and calls[0]['posts'] == variants['x']['posts']
