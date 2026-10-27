@@ -2,11 +2,15 @@
 
 ## Native iPhone replacement — 27 October 2026
 
-SwiftUI replacement is under validation in draft PR35. Shared security/data and
-provider contracts remain; production and build 11 are unchanged. See
-NATIVE_IOS_PARITY_20261027.md. Native fc9eda7 passed 32 unit and 7/8 UI checks;
-caption-edit review access is being corrected. Fresh exact-candidate checks,
-visual comparisons, signed build and physical-device acceptance remain required.
+SwiftUI replacement is implemented in draft PR35. Shared security/data and
+provider contracts remain. Render 2de31e1 is live after a completed backup and
+passing 727 SQLite / 728 PostgreSQL checks. Native CI40565819691 passed 39 unit,
+10 UI checks and iPhone Release compilation. Latest simulator screenshots inspected.
+Signed candidate 6ae0f93f206ce93970c697a3 uploaded the validated source as build12.
+Apple processing completed; 0.1.0 (12) is Testing in the existing internal group.
+Physical upgrade/media/provider acceptance and external eligibility remain pending.
+Build11 remains available externally; build12 is not yet assigned externally.
+See NATIVE_IOS_PARITY_20261027.md. Owner has been asked for device acceptance.
 All 79 historical findings remain open where not separately evidenced.
 
 ## Next Move intelligence candidate — 26 October 2026
@@ -17,8 +21,8 @@ bounded feed reads use a 15-minute retry cache and exclude expired, disconnected
 or replaced-account evidence. Upcoming schedules and recent work inform prompts;
 no automatic scheduling or publication. One optional refinement input, retained
 recent ideas and compact mobile layout preserve the simple experience.
-See NEXT_MOVE_INTELLIGENCE_20261026.md for validation and limits. This candidate
-is not deployed. Real provider/AI output acceptance remains distinct from mocked
+See NEXT_MOVE_INTELLIGENCE_20261026.md for validation and limits. These changes
+are included in deployed 2de31e1. Real provider/AI output acceptance remains distinct from mocked
 regressions. No whole-market trend coverage, conversion attribution or guaranteed
 AI adherence is claimed. All 79 commercial findings remain retained; charges,
 paid monitoring and Render hosting stay unchanged.

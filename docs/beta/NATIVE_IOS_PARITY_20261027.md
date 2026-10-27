@@ -1,4 +1,4 @@
-# Native iOS replacement — work in progress
+# Native iOS replacement — internal build 12, device acceptance pending
 
 Owner requests a native interface preserving the advanced beta, mobile-web design,
 all functionality and existing security. This is an implementation and parity
@@ -16,7 +16,7 @@ revision and publication-approval controls. No second publishing engine.
 System browser authentication for social providers and legal external links is
 intentional; it does not make the product screens web views.
 
-## Required parity inventory (not yet accepted)
+## Implemented parity inventory (physical acceptance pending)
 
 - Entry: branded launch, reduced motion, sign in/up/recovery/Apple login/MFA where
   configured, cancellation, auth expiry/revocation, protected app switcher.
@@ -123,3 +123,41 @@ in the existing register.
   deliveries. Unknown/pending records are retained, never automatically resent.
   A fresh managed Render database export was requested at 18:50 UTC; completion
   still needs verification. No backend deployment has occurred.
+
+- `2de31e1`: application CI40565819642 passed 727 SQLite / 728 PostgreSQL
+  tests and required browser/recovery/audit/beta checks. Native validation pending.
+  Background-save completion now precedes a queued Send action; it cannot silently
+  lose a same-frame tap or use an earlier revision. A delayed-PATCH regression
+  checks exactly one generation and one sent message.
+- Managed backup export completed. Render deployed this candidate successfully as
+  dep-dbgfedsipgvc73eksujg. Post-switch health/public pages and signed-out routing
+  passed; all three new private native routes return 401/no-store without login.
+  Transient 502s during deployment were rechecked after Live and resolved. Billing
+  remains test-only with charges/enforcement false. Publication/schedule counts
+  match preflight. Existing ambiguous outcomes remain untouched.
+
+- `2de31e1`: native CI40565819691 PASSED 39 unit tests, 10 simulator
+  journeys and the unsigned iPhone Release build. Latest screenshots inspected:
+  sent idea/editor, account, calendar, schedule management, Next Move/strategy,
+  performance, final publication review and TikTok explicit consent. Synthetic
+  test routes never publish. Evidence artifact12763353562 is attached to that run.
+- Signed Codemagic candidate started from the exact validated branch at build
+  6ae0f93f206ce93970c697a3. Apple upload/processing and device acceptance are
+  still pending. Existing external build11 remains available.
+
+- PR native CI40565830592 also passed. Signed archive and exported metadata
+  validation completed; Codemagic is uploading to Apple. No customer charges.
+
+## Current delivery result
+
+Codemagic 6ae0f93f206ce93970c697a3 finished signing and uploading exact candidate
+2de31e19401367d909cb320986122b28093fdeb6. Apple processed build 0.1.0 (12),
+UUID 12a46187-8f8f-45b2-82fc-018df4c2547d. Testing notes were saved and the
+existing internal group assigned. Its builds page visibly confirms Testing.
+Evidence: C:/Users/david/AppData/Local/Temp/zova-native-testflight-build12.png.
+
+Owner asked to update without uninstalling, check saved work/media, and cancel a
+social connection to verify return. Physical results remain pending. Build12 has
+not been assigned externally or submitted for external review. Build11 remains
+available to existing testers. Do not claim perfect parity, real provider success,
+external availability or commercial certification from synthetic tests alone.

@@ -1,29 +1,39 @@
-# Native iPhone replacement in validation — 27 October 2026
+# Native iPhone replacement — build 12 in internal TestFlight, 27 October 2026
 
-User explicitly requested genuine native iOS parity, preserving all functionality,
-security and mobile-web design. Work is on `codex/ios-beta-native-20261027`, draft
-PR35 against the existing iOS branch. SwiftUI product screens replace the embedded
-web renderer; the shared backend/data, Keychain sign-in and provider return
-protocol remain. No database migration or new provider permission is included.
+Current candidate/branch: 2de31e19401367d909cb320986122b28093fdeb6 on
+codex/ios-beta-native-20261027, draft PR35. Native SwiftUI product screens replace
+the embedded interface; existing backend/data and native/provider security remain.
 
-Production remains a9fe5a7a4724231b3491517abed35224f3f8d011. Apple verified build
-0.1.0 (11) Testing in internal and external groups on 27 October. No native
-replacement has been uploaded or deployed yet. Customer charges/enforcement
-remain off, Stripe test-only, Render unchanged, paid monitor inactive.
+Render deployed 2de31e1 successfully (dep-dbgfedsipgvc73eksujg). Backup export
+27 Oct 18:50 UTC completed. Post-deploy health/public pages passed, Studio redirects
+to sign-in, native private routes reject unsigned requests with 401/no-store.
+Stripe test mode, subscription enforcement false and live checkout false verified.
+Seven published, one pending, one unknown, one cancelled publication retained;
+one cancelled schedule, no active deliveries. No real social posts sent.
 
-See docs/beta/NATIVE_IOS_PARITY_20261027.md for scope and acceptance. Native
-c6a4a9d passed 30 unit / 6 UI tests and Release compile. fc9eda7 passed 32 unit /
-7 of 8 UI tests; caption-edit review access failed. The following candidate fixes
-focus/keyboard space and expands recovery, consent and caption-preview checks.
-It needs fresh full application/PostgreSQL and native validation before release.
-Never use an earlier pass to certify later code. All 79 commercial findings stay
-in the register. Physical upgrade, media and provider acceptance are separate
-from synthetic tests; no real social post is authorised by this rewrite.
+Application CI40565819642 passed: 727 SQLite / 728 PostgreSQL tests, browser,
+recovery, audits and exact beta guard. Native CI40565819691 PASSED 39 unit / 10 UI tests and iPhone Release compilation.
+PR40565830592 also PASSED. Previous 13f4ab0 passed 35 unit and 8/9 UI
+checks; typed-send UI failed before a caption appeared. Candidate adds save/send
+serialization, session-isolation/media tests and schedule manage/cancel UI coverage.
 
-Codemagic's branch selector currently fails in the side browser. No build was
-started. The reviewed workflow retains its existing ID/signing integration,
-pins the native branch, requires build >=12 and leaves automatic distribution
-and public App Store submission off. Apple sign-in is currently working.
+Codemagic 6ae0f93f206ce93970c697a3 signed and uploaded the exact validated 2de31e1.
+Apple processed 0.1.0 (12), UUID 12a46187-8f8f-45b2-82fc-018df4c2547d. Native
+testing notes saved; existing Zova Social Internal Beta group assigned and its
+builds page visibly confirms Testing. Owner can update through TestFlight now.
+Existing build11 stays available internally and externally. Native build12 is not
+yet assigned to the external group or submitted for its review. Do not tell the
+paid tester that the public link supplies the native build until verified.
+
+Owner asked through an async question to upgrade without deleting Zova and check
+saved work, photo/video save/reopen and social cancellation/return. Await device
+result; address failures before external distribution. No real post needed.
+Evidence: C:/Users/david/AppData/Local/Temp/zova-native-testflight-build12.png.
+No new signing credentials, customer charges, or public App Store submission.
+
+See docs/beta/NATIVE_IOS_PARITY_20261027.md and native TestFlight notes. Physical
+upgrade/media/provider acceptance remains required separately from synthetic tests.
+Keep Render, charges off, monitor inactive and all 79 commercial findings retained.
 
 ---
 
