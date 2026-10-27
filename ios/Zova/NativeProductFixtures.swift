@@ -13,10 +13,15 @@ final class NativeProductFixtures: URLProtocol {
     static var strategyRevision = 1
     static var primaryPlatform = "instagram"
     static var schedule: JSONValue = .null
+    static var storedVoice: JSONValue = .null
+    static var emptyVoiceScan = false
     static func reset(tiktok: Bool = false) {
         lock.lock(); defer { lock.unlock() }
         primaryPlatform = tiktok ? "tiktok" : "instagram"
         saved = [24: draft(24)]; batch = 0
+        var second = draft(23); second["brief"] = .string("Autumn class dates"); second["variants"][primaryPlatform]["posts"] = .strings(["Autumn classes are open for booking."]); saved[23] = second
+        emptyVoiceScan = ProcessInfo.processInfo.arguments.contains("--fixture-empty-voice")
+        storedVoice = .object(["writing_tone": .string("Warm and practical"), "audience": .string("Local beginners"), "topics": .string("Pottery"), "timezone": .string("Europe/London"), "preferred_post_length": .integer(220)])
         storedStrategy = strategy; storedProposal = .null; strategyRevision = 1
         let date = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
         schedule = .object(["id": .integer(1), "draft_id": .integer(24), "draft_revision": .integer(1), "platform": .string("instagram"), "title": .string("Beginner pottery class"), "account_name": .string("Pottery Studio"), "status": .string("scheduled"), "scheduled_at": .string(ISO8601DateFormatter().string(from: date)), "updated_at": .string("2026-10-27T10:00:00Z")])
@@ -55,9 +60,16 @@ final class NativeProductFixtures: URLProtocol {
         if path == "/api/v1/native-handoff" { return ok(.object(["ticket": .string(String(repeating: "t", count: 64))])) }
         if path == "/api/v1/native-web-session" { return (200, .object(["destination": .string("/studio")]), ["Set-Cookie":"nova_session=ios.synthetic-fixture; Path=/; Max-Age=900; Secure; HttpOnly; SameSite=Lax"]) }
         if path == "/api/native/account" {
-            return ok(.object(["presentation_version": .integer(1), "profile": .object(["id": .integer(1), "name": .string("Synthetic creator"), "email": .string("creator@example.test"), "email_verified": .bool(true)]), "brand": .object(["id": .integer(0), "name": .string("My pottery studio"), "choices": .array([.object(["id": .integer(0), "name": .string("My pottery studio")])])]), "voice": .object(["writing_tone": .string("Warm and practical"), "audience": .string("Local beginners"), "topics": .string("Pottery"), "timezone": .string("Europe/London"), "preferred_post_length": .integer(220)]), "connections": .array([.object(["id": .integer(1), "platform": .string(primaryPlatform), "name": .string("Pottery Studio"), "username": .string("pottery")])]), "ai": .object(["allowed": .bool(true), "required": .bool(true), "version": .string("2026-10-19")])]))
+            return ok(.object(["presentation_version": .integer(1), "profile": .object(["id": .integer(1), "name": .string("Synthetic creator"), "email": .string("creator@example.test"), "email_verified": .bool(true)]), "brand": .object(["id": .integer(0), "name": .string("My pottery studio"), "choices": .array([.object(["id": .integer(0), "name": .string("My pottery studio")])])]), "voice": storedVoice, "connections": .array([.object(["id": .integer(1), "platform": .string(primaryPlatform), "name": .string("Pottery Studio"), "username": .string("pottery")])]), "ai": .object(["allowed": .bool(true), "required": .bool(true), "version": .string("2026-10-19")])]))
         }
         if path == "/api/studio/intro/claim" { return ok(.object(["show": .bool(false)])) }
+        if path == "/api/voice/scan-socials" {
+            if emptyVoiceScan { return ok(.object(["message": .string("No readable recent captions were found. Your saved voice is unchanged.")])) }
+            storedVoice["writing_tone"] = .string("Warm, curious and conversational")
+            storedVoice["topics"] = .string("Pottery classes and studio moments")
+            return ok(.object(["message": .string("Voice updated from recent captions.")]))
+        }
+        if path == "/api/native/deletion-confirmation" { return ok(.object(["proof": .string("synthetic-session-bound-proof")])) }
         if path == "/api/native/schedule-summary" { return ok(.object(["drafts": .integer(saved.count), "scheduled": .integer(1), "overdue": .integer(0), "unconfirmed": .integer(0)])) }
         if path == "/api/strategy" { return ok(.object(["revision": .integer(strategyRevision), "confirmed": storedStrategy, "defaults": strategy, "proposal": storedProposal])) }
         if path == "/api/strategy/actions" { return ok(actions()) }
@@ -105,6 +117,11 @@ final class NativeProductFixtures: URLProtocol {
             else { schedule["status"] = .string("cancelled") }
             schedule["updated_at"] = .string(ISO8601DateFormatter().string(from: Date()))
             return ok(schedule)
+        }
+        if path == "/api/schedules/drafts/24/edit" {
+            guard input["revision"].int == schedule["draft_revision"].int else { return (409, .object(["detail": .string("Draft changed. Refresh first.")]), [:]) }
+            schedule["status"] = .string("cancelled")
+            return ok(.object(["draft_id": .integer(24)]))
         }
         if path == "/api/series" { return ok(.array([])) }
         if path == "/api/analytics/dashboard" {

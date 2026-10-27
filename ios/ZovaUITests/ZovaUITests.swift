@@ -116,7 +116,120 @@ final class ZovaUITests: XCTestCase {
         XCTAssertEqual(app.webViews.count, 0)
     }
     private func capture(_ app: XCUIApplication, _ name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
+    }
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication, down: Bool = false) {
+        for _ in 0..<12 {
+            if element.isHittable { return }
+            if down { app.swipeDown() } else { app.swipeUp() }
+        }
+        XCTAssertTrue(element.isHittable, app.debugDescription)
+    }
+    private func assertTarget(_ element: XCUIElement, app: XCUIApplication) {
+        XCTAssertTrue(element.isHittable, app.debugDescription)
+        XCTAssertGreaterThanOrEqual(element.frame.width, 43.5, element.identifier)
+        XCTAssertGreaterThanOrEqual(element.frame.height, 43.5, element.identifier)
+        XCTAssertGreaterThanOrEqual(element.frame.minX, app.frame.minX - 1)
+        XCTAssertLessThanOrEqual(element.frame.maxX, app.frame.maxX + 1)
+    }
+    func testThreadExplanationAndSecondaryTargets() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        XCTAssertTrue(app.buttons["brand-selector"].waitForExistence(timeout: 12))
+        assertTarget(app.buttons["brand-selector"], app: app)
+        assertTarget(app.buttons["Your posts"], app: app)
+        let x = app.buttons["X"]
+        if x.value as? String != "Selected" { x.tap() }
+        XCTAssertTrue(app.staticTexts["One update, up to 280 characters."].waitForExistence(timeout: 5))
+        app.buttons["x-format"].tap(); app.buttons["Thread · 3 posts"].tap()
+        XCTAssertTrue(app.staticTexts["3 connected posts, read in order."].waitForExistence(timeout: 5))
+        capture(app, "Native Studio — clear X formats and larger targets")
+        app.buttons["tab-Schedule"].tap()
+        XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout: 8))
+        for name in ["Previous month", "Next month", "Refresh schedule", "Today"] { assertTarget(app.buttons[name], app: app) }
+        assertTarget(app.buttons["calendar-day-1"], app: app)
+    }
+    func testLargestTextKeepsProductActionsReachable() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture", "--accessibility-text"]; app.launch()
+        XCTAssertTrue(app.buttons["next-move"].waitForExistence(timeout: 12))
+        assertTarget(app.buttons["Your posts"], app: app)
+        capture(app, "Native Studio — largest accessibility text")
+        app.buttons["next-move"].tap()
+        XCTAssertTrue(app.staticTexts["next-move-title"].waitForExistence(timeout: 8))
+        capture(app, "Native Next Move — largest accessibility text")
+        reveal(app.buttons["Draft post"], in: app)
+        assertTarget(app.buttons["Draft post"], app: app)
+        app.swipeDown(); app.swipeDown(); app.buttons["Close ✦ Next move"].tap()
+        app.buttons["tab-Schedule"].tap()
+        XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout: 8))
+        reveal(app.buttons["Next month"], in: app); assertTarget(app.buttons["Next month"], app: app)
+        capture(app, "Native Schedule — scaled calendar")
+        app.buttons["tab-Performance"].tap()
+        XCTAssertTrue(app.staticTexts["Performance"].waitForExistence(timeout: 8))
+        capture(app, "Native Performance — largest accessibility text")
+        app.buttons["tab-Account"].tap()
+        XCTAssertTrue(app.buttons["Your details"].waitForExistence(timeout: 8))
+        capture(app, "Native Account — largest accessibility text")
+        XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
+    }
+    func testLandscapeComposerAndAllTabsRemainUsable() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        let composer = app.textFields["post-composer"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 12)); reveal(composer, in: app)
+        composer.tap(); composer.typeText("A landscape pottery idea")
+        let send = app.buttons["Send idea"]; reveal(send, in: app)
+        assertTarget(send, app: app); capture(app, "Native landscape — keyboard and Send")
+        send.tap()
+        XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 10))
+        for tab in ["Schedule", "Performance", "Account", "Studio"] {
+            app.buttons["tab-" + tab].tap()
+            capture(app, "Native landscape — " + tab)
+        }
+        XCTAssertTrue(app.textFields["caption-0"].exists)
+        XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
+    }
+    func testVoiceScanPopulatesFieldsAndSurvivesAccountNavigation() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        XCTAssertTrue(app.buttons["tab-Account"].waitForExistence(timeout: 12)); app.buttons["tab-Account"].tap()
+        XCTAssertTrue(app.buttons["Your voice"].waitForExistence(timeout: 8)); app.buttons["Your voice"].tap()
+        let scan = app.buttons["Scan recent posts"]; reveal(scan, in: app); scan.tap()
+        XCTAssertTrue(app.staticTexts["Voice updated from recent captions."].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.textFields["Writing tone"].value as? String, "Warm, curious and conversational")
+        app.buttons["tab-Studio"].tap(); app.buttons["tab-Account"].tap()
+        XCTAssertEqual(app.textFields["Writing tone"].value as? String, "Warm, curious and conversational")
+        reveal(app.textFields["Writing tone"], in: app, down: true)
+        capture(app, "Native voice — saved scan fields")
+        XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
+    }
+    func testScheduledEditStopsDeliveryAndReturnsToSavedListWithoutRestart() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        XCTAssertTrue(app.buttons["tab-Schedule"].waitForExistence(timeout: 12)); app.buttons["tab-Schedule"].tap()
+        let manage = app.buttons["Manage schedule →"]
+        XCTAssertTrue(manage.waitForExistence(timeout: 8)); reveal(manage, in: app); manage.tap()
+        app.buttons["Edit caption / media"].tap()
+        app.buttons["Stop deliveries and edit"].tap()
+        XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 8))
+        app.buttons["tab-Schedule"].tap(); app.buttons["Saved posts"].tap()
+        let other = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Autumn class dates")).firstMatch
+        XCTAssertTrue(other.waitForExistence(timeout: 8)); reveal(other, in: app); other.tap()
+        XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.textFields["caption-0"].value as? String, "Autumn classes are open for booking.")
+        app.buttons["tab-Schedule"].tap(); app.buttons["Calendar"].tap()
+        XCTAssertTrue(app.staticTexts["No posts scheduled this month."].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
+    }
+    func testDeletionIsReachableButRequiresPasswordAndExplicitConfirmation() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        XCTAssertTrue(app.buttons["tab-Account"].waitForExistence(timeout: 12)); app.buttons["tab-Account"].tap()
+        let deletion = app.buttons["Delete account"]; reveal(deletion, in: app); deletion.tap()
+        XCTAssertTrue(app.secureTextFields["Current password"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["Delete my account"].isEnabled)
+        XCTAssertTrue(app.textFields["Type DELETE to confirm"].exists)
+        capture(app, "Native account deletion — explicit protected request")
+        app.buttons["Close Delete account"].tap()
+        XCTAssertTrue(app.buttons["tab-Account"].exists)
+        XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
     }
     func testScheduleCanBeReviewedRescheduledAndCancelledExplicitly() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()

@@ -10,6 +10,7 @@ final class NativeProductSession: ObservableObject {
     let social = NativeSignIn()
     @Published var phase: Phase = .opening
     @Published var working = false
+    @Published var connectingPlatform: String?
     @Published var message: String?
     init() {
         NativeMediaFiles.clear()
@@ -66,6 +67,8 @@ final class NativeProductSession: ObservableObject {
     }
     func connect(_ platform: String) async {
         await store.perform {
+            self.connectingPlatform = SocialPlatform(rawValue: platform)?.title ?? platform
+            defer { self.connectingPlatform = nil }
             try await self.store.save()
             let target = "/connect/\(platform)?workspace=\(self.store.brand)"
             let request = try await self.api.browserHandoff(destination: target)
@@ -73,7 +76,8 @@ final class NativeProductSession: ObservableObject {
             do {
                 let outcome = try await self.social.connect(url: url, destination: target, configuration: self.configuration)
                 try await self.store.reloadAccount()
-                if ["connection_failed", "no_pages"].contains(outcome) { throw ZovaFailure.server("The connection did not finish. Check the account permissions and try again.") }
+                if outcome == "no_pages" { throw ZovaFailure.server("No Facebook Page was available. Sign in with the Facebook account that manages your Page and allow access to that Page.") }
+                if outcome == "connection_failed" { throw ZovaFailure.server("The connection did not finish. Check the account permissions and try again.") }
             } catch ZovaFailure.cancelled { try await self.store.reloadAccount() }
         }
     }
@@ -106,7 +110,7 @@ struct NativeProductRoot: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HStack { Image("ZovaMark").resizable().scaledToFit().frame(width: 40); Text("Zova").font(.largeTitle.bold()) }
-                Text("Because content\nis the fun part.").font(.system(size: 48, weight: .bold, design: .rounded)).minimumScaleFactor(0.65)
+                Text("Because content\nis the fun part.").font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
                 Text("Turn your ideas into captions and a content plan with Zova, your AI social media manager.").font(.title3).foregroundStyle(.white.opacity(0.75))
                 signInButton
                 Text("Use your existing Zova account, or create one in the secure sign-in window.").font(.subheadline).foregroundStyle(.white.opacity(0.75))
@@ -126,14 +130,14 @@ struct NativeProductRoot: View {
         }.buttonStyle(ZovaPrimary()).disabled(session.working).accessibilityIdentifier("continue-zova")
     }
     private var welcomeLinks: some View {
-        HStack(spacing: 24) {
+        NativeAdaptiveRow(spacing: 24) {
             welcomeLink("Privacy", path: "/privacy-policy")
             welcomeLink("Terms", path: "/terms-of-service")
             welcomeLink("Help", path: "/help")
         }.tint(ZovaDesign.violet)
     }
     private func welcomeLink(_ title: String, path: String) -> some View {
-        Button(title) { if let url = try? session.configuration.endpoint(path) { UIApplication.shared.open(url) } }
+        Button { if let url = try? session.configuration.endpoint(path) { UIApplication.shared.open(url) } } label: { Text(title).frame(minWidth: 44, minHeight: 44).contentShape(Rectangle()) }
     }
     private var buildLabel: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""

@@ -14,13 +14,27 @@ enum ZovaDesign {
 
 struct ZovaPrimary: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label.font(.body.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 48)
+        configuration.label.font(.body.weight(.semibold)).multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true).padding(.vertical, 10).frame(maxWidth: .infinity, minHeight: 48)
             .foregroundStyle(.white).background(ZovaDesign.purple.opacity(configuration.isPressed ? 0.7 : 1), in: RoundedRectangle(cornerRadius: 13))
     }
 }
 struct ZovaCard<Content: View>: View {
     @ViewBuilder var content: () -> Content
     var body: some View { VStack(alignment: .leading, spacing: 14, content: content).padding(18).frame(maxWidth: .infinity, alignment: .leading).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 18)) }
+}
+
+/// Text rows reflow at accessibility sizes without shrinking the user's text.
+struct NativeAdaptiveRow<Content: View>: View {
+    @Environment(\.dynamicTypeSize) private var textSize
+    var spacing: CGFloat = 12
+    @ViewBuilder var content: () -> Content
+    var body: some View {
+        let layout = textSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: spacing))
+            : AnyLayout(HStackLayout(spacing: spacing))
+        layout { content() }.frame(maxWidth: .infinity, alignment: .leading)
+    }
 }
 struct NativePlatformMark: View {
     let platform: String

@@ -1,5 +1,23 @@
 # Beta known gaps and required follow-up
 
+## Native tracker follow-up candidate — 27 October 2026
+
+The owner requested fixes to the audit gaps. Native changes add a short X format
+explanation, guaranteed 44pt secondary controls, scalable calendar/Next Move text,
+adaptive rows and a scrolling composer in landscape/accessibility layouts.
+New simulator journeys cover large text, landscape, scanned voice presentation,
+Schedule edit-to-draft/list navigation, protected deletion entry and touch targets.
+These changes are NOT in signed build12; fresh native/application CI is pending.
+External release remains held. No customer charge or backend migration change.
+
+Read-only production reconciliation now identifies the original tester's schedule
+1, draft45, owner19: cancelled on 25 October at 06:00 UTC. No active scheduled
+deliveries remain; pending/unknown publication records belong to other owners and
+remain untouched. There is one access-revoked account-deletion request awaiting
+operator review; completed erasure must not be claimed without execution evidence.
+Real native Facebook connection and voice-provider acceptance remain distinct
+from synthetic UI tests. All 79 commercial findings remain recorded.
+
 ## Original tester tracker audit of native build 12 — 27 October 2026
 
 See NATIVE_QA_REVIEW_20261027.md for all 57 original cases, seven populated bugs

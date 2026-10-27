@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NativePerformanceView: View {
     @EnvironmentObject var store: ProductStore
+    @Environment(\.dynamicTypeSize) private var textSize
     @State private var days = 7
     @State private var dashboard: JSONValue = .null
     @State private var question = ""
@@ -19,7 +20,7 @@ struct NativePerformanceView: View {
                         ZovaCard { Text("See what connects with your audience").font(.title3.bold()); Text("Connect an account to see results and decide what to try next."); Button("Connect an account") { store.selectedTab = 3 }.buttonStyle(ZovaPrimary()) }
                     } else {
                         DisclosureGroup("How to read these results") { Text("Available lifetime counters for a sample of posts published in this period—not growth during the period. Followers are current totals. A dash means a metric is unavailable. Compare the same platform and format.").font(.caption).foregroundStyle(.secondary) }
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: textSize.isAccessibilitySize ? 1 : 2), spacing: 12) {
                             ForEach(metrics, id: \.1) { title, key in
                                 ZovaCard { Text(title).font(.caption); Text(number(dashboard["summary"][key])).font(.title.bold()) }
                             }
@@ -30,7 +31,7 @@ struct NativePerformanceView: View {
                             if value["connected"].bool {
                                 ZovaCard {
                                     HStack { NativePlatformMark(platform: key); Text(value["account"].string).font(.subheadline.bold()) }
-                                    HStack { ForEach([("Views", "impressions"), ("Engagements", "engagements"), ("Followers", "followers")], id: \.1) { title, metric in VStack(alignment: .leading) { Text(title).font(.caption2); Text(number(value[metric])).font(.headline) }.frame(maxWidth: .infinity, alignment: .leading) } }
+                                    NativeAdaptiveRow { ForEach([("Views", "impressions"), ("Engagements", "engagements"), ("Followers", "followers")], id: \.1) { title, metric in VStack(alignment: .leading) { Text(title).font(.caption2); Text(number(value[metric])).font(.headline) }.frame(maxWidth: .infinity, alignment: .leading) } }
                                     if !value["error"].isNull { Text("Some results are unavailable.").font(.caption).foregroundStyle(.secondary) }
                                 }
                             }
@@ -43,7 +44,7 @@ struct NativePerformanceView: View {
                         ForEach(Array(dashboard["top_posts"].array.enumerated()), id: \.offset) { _, row in
                             ZovaCard {
                                 HStack { NativePlatformMark(platform: row["platform"].string); Text(row["text"].string.isEmpty ? "Media post" : row["text"].string).lineLimit(4).font(.callout) }
-                                HStack { ForEach(["likes", "comments", "shares", "views"], id: \.self) { key in VStack { Text(key.capitalized).font(.caption2); Text(number(row[key])).font(.caption.bold()) }.frame(maxWidth: .infinity) } }
+                                NativeAdaptiveRow { ForEach(["likes", "comments", "shares", "views"], id: \.self) { key in VStack { Text(key.capitalized).font(.caption2); Text(number(row[key])).font(.caption.bold()) }.frame(maxWidth: .infinity) } }
                                 if let url = ProductLinks.external(row["url"].string) { Link("View post ↗", destination: url) }
                             }
                         }

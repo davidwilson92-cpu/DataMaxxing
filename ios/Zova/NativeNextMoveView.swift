@@ -44,11 +44,11 @@ struct NativeNextMoveView: View {
     private var proposal: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 20) {
-                HStack {
+                NativeAdaptiveRow {
                     HStack(spacing: 5) { NativePlatformMark(platform: current["platform"].string, size: 20, light: true); Text(current["format"].string == "story" ? "Story" : "Post").font(.caption2) }.padding(8).overlay(Capsule().stroke(.white.opacity(0.2)))
-                    Spacer(); Text("POST PROPOSAL").font(.system(size: 9, weight: .semibold)).foregroundStyle(.white.opacity(0.7))
+                    Text("POST PROPOSAL").font(.caption2.weight(.semibold)).foregroundStyle(.white.opacity(0.7))
                 }
-                Text(current["title"].string).font(.system(size: 25, weight: .bold)).fixedSize(horizontal: false, vertical: true)
+                Text(current["title"].string).font(.title2.bold()).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("next-move-title")
                 Button {
                     if current["kind"].string == "review" { reviewSteps = true; return }
                     run {
@@ -65,7 +65,7 @@ struct NativeNextMoveView: View {
             }
             VStack(alignment: .leading, spacing: 9) {
                 HStack(spacing: 4) { Image(systemName: "sparkle"); Text("AI recommendation") }.font(.caption.bold()).foregroundStyle(ZovaDesign.purple)
-                Text(concise(current["reason"].string, words: 32)).font(.system(size: 14)).lineSpacing(4)
+                Text(concise(current["reason"].string, words: 32)).font(.callout).lineSpacing(4)
                 if !current["basis"].string.isEmpty { Text(current["basis"].string).font(.caption).foregroundStyle(.secondary) }
                 if reviewSteps && current["kind"].string == "review" {
                     Text(current["brief"].string).font(.callout)
@@ -101,7 +101,7 @@ struct NativeNextMoveView: View {
             NativeField(title: "You and your audience", text: $description, prompt: "I run a pottery studio in Leeds for curious beginners. I want more weekend bookings.")
             NativeField(title: "What would you like to post?", text: $direction, prompt: "Studio moments, simple tips, new classes… Two videos a week. Keep it friendly.", lines: 2)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack { ForEach(["Behind the scenes", "Helpful tips", "My latest offer"], id: \.self) { item in Button(item) { direction += (direction.isEmpty ? "" : " · ") + item }.font(.caption).buttonStyle(.bordered) } }
+                HStack { ForEach(["Behind the scenes", "Helpful tips", "My latest offer"], id: \.self) { item in Button { direction += (direction.isEmpty ? "" : " · ") + item } label: { Text(item).frame(minHeight: 44) }.font(.caption).buttonStyle(.bordered) } }
             }
             if proposalInput != description + "\n" + direction || strategy.isNull {
                 Button(saved ? "Update my strategy ✦" : "Shape my strategy ✦") { run { try await propose() } }.buttonStyle(ZovaPrimary()).disabled(store.busy || description.trimmingCharacters(in: .whitespacesAndNewlines).count < 3)

@@ -19,6 +19,8 @@ struct PickedMedia: Transferable {
 
 struct NativeStudioView: View {
     @EnvironmentObject var store: ProductStore
+    @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.verticalSizeClass) private var verticalSize
     @Binding var nextMove: Bool
     @Binding var strategy: Bool
     @FocusState private var focused: Bool
@@ -32,9 +34,10 @@ struct NativeStudioView: View {
     @FocusState private var captionEditing: Bool
     @State private var discardRecovery = false
     @State private var previewMode: String?
+    private var scrollingComposer: Bool { textSize.isAccessibilitySize || verticalSize == .compact }
     var body: some View {
         VStack(spacing: 0) {
-            header
+            if verticalSize != .compact || (!focused && !captionEditing) { header }
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 22) {
@@ -77,17 +80,19 @@ struct NativeStudioView: View {
                             ZovaCard { NativeInlineStatus(value: store.results); Button("Refresh results") { run { try await store.refreshResults() } } }
                         }
                         if store.busy && !store.backgroundSaving { HStack { ProgressView(); Text("Working…").font(.callout).foregroundStyle(.secondary) }.accessibilityIdentifier("studio-working") }
+                        if scrollingComposer && store.draft.editable && !captionEditing { composer.id("composer") }
                         Color.clear.frame(height: 1).id("bottom")
                     }.padding(.horizontal, 18).padding(.vertical, 16)
                 }.scrollDismissesKeyboard(.interactively)
                     .onChange(of: store.draft.conversation.count) { _, _ in withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
                     .onChange(of: store.busy) { _, _ in if !focused && !captionEditing { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } } }
+                    .onChange(of: focused) { _, editing in if editing && scrollingComposer { proxy.scrollTo("composer", anchor: .bottom) } }
             }
             if store.draft.editable {
                 if captionEditing {
                     HStack { Text("Editing caption").font(.caption).foregroundStyle(.secondary); Spacer(); Button("Done") { captionEditing = false }.accessibilityIdentifier("finish-editing") }
                         .padding(.horizontal, 18).frame(minHeight: 44).background(Color.white)
-                } else { composer }
+                } else if !scrollingComposer { composer }
             } else { Button("+ New post") { run { try await store.newPost() } }.buttonStyle(ZovaPrimary()).padding(18) }
         }.foregroundStyle(ZovaDesign.ink)
             .confirmationDialog("Discard the unsaved copy on this iPhone? Your server draft stays unchanged.", isPresented: $discardRecovery, titleVisibility: .visible) { Button("Discard local copy", role: .destructive) { store.discardRecovery() } }
@@ -143,24 +148,33 @@ struct NativeStudioView: View {
     private func clearRecoveryExport() { NativeMediaFiles.remove(recoveryExport); recoveryExport = nil }
     private var header: some View {
         VStack(spacing: 5) {
-            HStack(spacing: 10) {
-                HStack(spacing: 5) { Image("ZovaMark").resizable().scaledToFit().frame(width: 24, height: 26); Text("Zova").font(.title3.bold()) }
-                Spacer(minLength: 0)
-                Button { focused = false; run { try await store.newPost() } } label: { Label("New post", systemImage: "plus").font(.caption.weight(.medium)).frame(minHeight: 44) }.disabled(store.busy).accessibilityIdentifier("new-post")
-                Button { focused = false; nextMove = true } label: {
-                    Label("Next move", systemImage: "sparkles").font(.subheadline.bold()).padding(.horizontal, 13).frame(height: 44).foregroundStyle(.white).background(ZovaDesign.hero, in: Capsule())
-                }.accessibilityIdentifier("next-move").disabled(store.busy)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) { brandMark; Spacer(minLength: 0); headerActions }.fixedSize(horizontal: true, vertical: false)
+                VStack(alignment: .leading, spacing: 4) { brandMark; headerActions }
             }
             HStack {
                 Menu {
                     ForEach(store.account["brand"]["choices"].array, id: \.["id"].int) { brand in
                         Button(brand["name"].string) { run { try await store.switchBrand(brand["id"].int) } }
                     }
-                } label: { HStack(spacing: 5) { Text(store.account["brand"]["name"].string); Image(systemName: "chevron.down").font(.caption2) }.font(.caption).foregroundStyle(.secondary).frame(minHeight: 30) }.disabled(store.busy)
+                } label: { HStack(spacing: 5) { Text(store.account["brand"]["name"].string); Image(systemName: "chevron.down").font(.caption2) }.font(.caption).foregroundStyle(.secondary).frame(minWidth: 44, minHeight: 44).contentShape(Rectangle()) }.disabled(store.busy).accessibilityIdentifier("brand-selector")
                 Spacer()
-                Button { history = true } label: { Image(systemName: "clock.arrow.circlepath").frame(width: 44, height: 34) }.accessibilityLabel("Your posts").disabled(store.busy)
+                Button { history = true } label: { Image(systemName: "clock.arrow.circlepath").frame(width: 44, height: 44).contentShape(Rectangle()) }.accessibilityLabel("Your posts").disabled(store.busy)
             }
         }.padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 4)
+    }
+    private var brandMark: some View {
+        HStack(spacing: 5) { Image("ZovaMark").resizable().scaledToFit().frame(width: 24, height: 26); Text("Zova").font(.title3.bold()) }
+    }
+    private var headerActions: some View {
+        NativeAdaptiveRow(spacing: 10) {
+            Button { focused = false; captionEditing = false; run { try await store.newPost() } } label: {
+                Label("New post", systemImage: "plus").font(.caption.weight(.medium)).frame(minHeight: 44).contentShape(Rectangle())
+            }.disabled(store.busy).accessibilityIdentifier("new-post")
+            Button { focused = false; captionEditing = false; nextMove = true } label: {
+                Label("Next move", systemImage: "sparkles").font(.subheadline.bold()).padding(.horizontal, 13).padding(.vertical, 8).frame(minHeight: 44).foregroundStyle(.white).background(ZovaDesign.hero, in: Capsule())
+            }.accessibilityIdentifier("next-move").disabled(store.busy)
+        }
     }
     private var caption: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -197,7 +211,7 @@ struct NativeStudioView: View {
                 }
             }
             if store.draft.editable {
-                HStack {
+                NativeAdaptiveRow {
                     Button("Schedule") { focused = false; captionEditing = false; store.reviewMode = "schedule"; store.showReview = true }.buttonStyle(.bordered)
                     Button("Review post →") { focused = false; captionEditing = false; store.reviewMode = "publish"; store.showReview = true }.buttonStyle(ZovaPrimary()).accessibilityIdentifier("review-draft")
                 }.disabled(store.busy)
@@ -212,7 +226,7 @@ struct NativeStudioView: View {
             VStack(alignment: .leading, spacing: 10) {
                 if !unsentMedia.isEmpty {
                     ScrollView(.horizontal) { HStack { ForEach(unsentMedia, id: \.["id"].int) { asset in
-                        HStack { NativeAssetPreview(asset: asset, compact: true); Button { store.removeMedia(asset["id"].int) } label: { Image(systemName: "xmark.circle.fill") }.accessibilityLabel("Remove " + asset["filename"].string) }.padding(5).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 12))
+                        HStack { NativeAssetPreview(asset: asset, compact: true); Button { store.removeMedia(asset["id"].int) } label: { Image(systemName: "xmark.circle.fill").frame(width: 44, height: 44).contentShape(Rectangle()) }.accessibilityLabel("Remove " + asset["filename"].string) }.padding(5).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 12))
                     } } }
                 }
                 TextField("Describe your post. Zova drafts the caption…", text: Binding(get: { store.draft.composer }, set: { store.draft.composer = String($0.prefix(12000)); store.changed() }), axis: .vertical)
@@ -229,18 +243,22 @@ struct NativeStudioView: View {
                     Spacer(minLength: 0)
                 }
                 if store.draft.selected.contains("instagram") || store.draft.selected.contains("x") {
-                    HStack(spacing: 10) {
+                    NativeAdaptiveRow(spacing: 10) {
                         if store.draft.selected.contains("x") {
                             Picker("X format", selection: Binding(get: { store.draft.threadLength }, set: { store.draft.threadLength = $0; store.changed() })) {
                                 Text("One post").tag(1); Text("Thread · 3 posts").tag(3); Text("Thread · 5 posts").tag(5)
-                            }.pickerStyle(.menu).font(.caption).accessibilityIdentifier("x-format")
+                            }.pickerStyle(.menu).font(.caption).frame(minWidth: 44, minHeight: 44).accessibilityIdentifier("x-format")
                         }
                         if store.draft.selected.contains("instagram") {
                             Picker("Instagram format", selection: Binding(get: { store.draft.workspace["instagram_format"].string.isEmpty ? "post" : store.draft.workspace["instagram_format"].string }, set: { store.draft.workspace["instagram_format"] = .string($0); store.draft.workspace["instagram_audio"] = .null; store.changed() })) {
                                 Text("Post").tag("post"); Text("Story").tag("story")
                             }.pickerStyle(.segmented).accessibilityIdentifier("instagram-format")
                         }
-                    }.frame(minHeight: 36).disabled(store.busy && !store.backgroundSaving)
+                    }.frame(minHeight: 44).disabled(store.busy && !store.backgroundSaving)
+                }
+                if store.draft.selected.contains("x") {
+                    Text(store.draft.threadLength == 1 ? "One update, up to 280 characters." : "\(store.draft.threadLength) connected posts, read in order.")
+                        .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("x-format-hint")
                 }
                 HStack {
                     Menu {
@@ -253,7 +271,7 @@ struct NativeStudioView: View {
                     Button { focused = false; run { try await store.send() } } label: { Image(systemName: "arrow.up").font(.title2.bold()).foregroundStyle(.white).frame(width: 48, height: 48).background(ZovaDesign.purple.opacity(store.draft.composer.isEmpty ? 0.4 : 1), in: Circle()) }.accessibilityLabel("Send idea").disabled(store.busy || store.draft.composer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }.padding(14).background(Color.white, in: RoundedRectangle(cornerRadius: 22)).overlay(RoundedRectangle(cornerRadius: 22).stroke(focused ? ZovaDesign.purple : ZovaDesign.line)).padding(.horizontal, 14)
-            if !focused { HStack { Text(store.saveStatus); Spacer(); Text("Nothing posts without your approval.") }.font(.system(size: 10)).foregroundStyle(.secondary).padding(.horizontal, 18) }
+            if !focused { NativeAdaptiveRow(spacing: 6) { Text(store.saveStatus); Text("Nothing posts without your approval.") }.font(.caption2).foregroundStyle(.secondary).padding(.horizontal, 18) }
         }.padding(.bottom, 8)
     }
     private func openCamera() {

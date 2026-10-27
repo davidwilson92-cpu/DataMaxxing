@@ -21,8 +21,8 @@ struct NativeAccountView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 Text("Account").font(.title2.bold())
-                HStack { VStack(alignment: .leading, spacing: 5) { Text(store.name).font(.headline); Text(store.account["profile"]["email"].string).font(.caption).foregroundStyle(.secondary) }; Spacer(); Button("Sign out") { run { try await store.save(); await session.logout() } }.font(.caption).disabled(store.busy) }
-                if store.busy { ProgressView("Saving…") }
+                NativeAdaptiveRow { VStack(alignment: .leading, spacing: 5) { Text(store.name).font(.headline); Text(store.account["profile"]["email"].string).font(.caption).foregroundStyle(.secondary) }; Button("Sign out") { run { try await store.save(); await session.logout() } }.font(.caption).frame(minWidth: 44, minHeight: 44).disabled(store.busy) }
+                if store.busy { ProgressView(session.connectingPlatform.map { "Connecting to " + $0 + "…" } ?? "Updating…") }
                 if !saved.isEmpty { Text(saved).font(.callout).foregroundStyle(ZovaDesign.violet) }
                 group("Your details", icon: "person") {
                     NativeField(title: "Name", text: $name, lines: 1)
@@ -37,7 +37,7 @@ struct NativeAccountView: View {
                     ForEach(voiceFields, id: \.1) { title, key in NativeField(title: title, text: Binding(get: { voice[key] ?? "" }, set: { voice[key] = $0 }), lines: key == "timezone" ? 1 : 2) }
                     Stepper("Typical caption · \(preferredLength) characters", value: $preferredLength, in: 30...4000, step: 10)
                     Button("Save voice") { run { var fields = voice; fields["preferred_post_length"] = String(preferredLength); _ = try await store.api.form("/account/preferences", fields: fields, brand: store.brand); try await store.reloadAccount(); fillVoice(); saved = "Voice saved." } }.buttonStyle(ZovaPrimary())
-                    Button("Scan recent posts") { run { let reply = try await store.request("/api/voice/scan-socials", method: "POST", body: .object([:])); try await store.reloadAccount(); fillVoice(); saved = reply["message"].string.isEmpty ? "Voice refreshed." : reply["message"].string } }
+                    Button("Scan recent posts") { run { let reply = try await store.request("/api/voice/scan-socials", method: "POST", body: .object([:])); try await store.reloadAccount(); fillVoice(); saved = reply["message"].string.isEmpty ? "Voice refreshed." : reply["message"].string } }.frame(minHeight: 44)
                     Button("Learn from my writing examples") { run { _ = try await store.request("/api/voice/learn", method: "POST", body: .object(["content": .string(voice["example_posts"] ?? "")])); try await store.reloadAccount(); fillVoice(); saved = "Voice refreshed from your examples." } }.disabled((voice["example_posts"] ?? "").count < 80)
                     if !(voice["example_posts"] ?? "").isEmpty && (voice["example_posts"] ?? "").count < 80 { Text("Add at least 80 characters of examples to learn your voice.").font(.caption) }
                     if !store.account["voice"]["approved_examples"].array.isEmpty {
@@ -54,9 +54,9 @@ struct NativeAccountView: View {
                             let connections = store.account["connections"].array.filter { $0["platform"].string == platform.rawValue }
                             if connections.isEmpty { Text("Not connected").font(.callout).foregroundStyle(.secondary) }
                             ForEach(connections, id: \.["id"].int) { connection in
-                                HStack { Text(connection["name"].string + " · Connected").font(.callout); Spacer(); Button("Unlink", role: .destructive) { unlinkID = connection["id"].int }.font(.caption) }
+                                NativeAdaptiveRow { Text(connection["name"].string + " · Connected").font(.callout); Button("Unlink", role: .destructive) { unlinkID = connection["id"].int }.font(.caption).frame(minWidth: 44, minHeight: 44) }
                             }
-                            Button(connections.isEmpty ? "Connect " + platform.title : "Connection options") { Task { await session.connect(platform.rawValue) } }
+                            Button(connections.isEmpty ? "Connect " + platform.title : "Connection options") { Task { await session.connect(platform.rawValue) } }.frame(minHeight: 44)
                             if platform == .instagram { Text("Creator or Business account required. You can also connect through Facebook if linked to a Page.").font(.caption).foregroundStyle(.secondary) }
                         }.padding(.vertical, 10)
                         Divider()
@@ -175,6 +175,7 @@ struct NativeGuideView: View {
                 Button("Skip intro") { dismiss() }.frame(minHeight: 44)
             } else {
                 Text("Your work and accounts").font(.headline)
+                Text("One post is a single update. An X thread is a series of connected posts, read in order.")
                 Text("Drafts save to your brand. Use Your posts to reopen a conversation. Schedule includes drafts, upcoming posts, a calendar and recurring series. Changing a scheduled caption first stops its unsent deliveries; review it again before scheduling.")
                 Text("Connections and media").font(.headline)
                 Text("Connect each social account separately in Account. Instagram requires a Creator or Business account. Supported video destinations are Instagram and TikTok. Instagram photos and Stories finish music selection in Instagram; eligible Reels can choose music before review.")
