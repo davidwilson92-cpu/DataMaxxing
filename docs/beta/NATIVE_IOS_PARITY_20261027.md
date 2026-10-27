@@ -168,5 +168,15 @@ unchecked. The owner explicitly selected "Keep it approved for now"; do not rele
 externally or notify testers without a subsequent instruction. Build11 remains
 Testing for existing external testers. Proof:
 C:/Users/david/AppData/Local/Temp/zova-native-build12-external-approved.png.
+
+## Original tester workbook regression audit
+
+NATIVE_QA_REVIEW_20261027.md traces all 57 original test cases, seven bugs and five
+UX observations to this exact native runtime. Fresh focused backend tests: 164
+passed. This is not 57 physical-device retests. The X thread explanation and some
+small native touch targets remain incomplete. Larger text/product landscape,
+live Facebook connection, real voice scanning, original job cleanup and completed
+deletion operations require the separate checks recorded there. No runtime or
+external-release setting changed; the owner's hold remains in force.
 Broader device/provider and independent tester coverage remains open. Do not claim
 perfect parity, external native availability or commercial certification.

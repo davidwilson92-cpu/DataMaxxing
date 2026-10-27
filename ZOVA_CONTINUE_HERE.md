@@ -1,5 +1,12 @@
 # Native iPhone replacement — build 12 externally approved; owner holds release
 
+Latest audit: docs/beta/NATIVE_QA_REVIEW_20261027.md checks the original workbook's
+57 cases, seven bugs and five UX observations against unchanged native build12.
+Fresh focused tests: 164 passed. Do not claim all tracker items closed: thread
+format explanation and native touch targets need follow-up; larger-text/full
+product landscape, real Facebook connection/voice scan, original job cleanup and
+completed deletion operations still need evidence. No runtime or release change.
+
 Current candidate/branch: 2de31e19401367d909cb320986122b28093fdeb6 on
 codex/ios-beta-native-20261027, draft PR35. Native SwiftUI product screens replace
 the embedded interface; existing backend/data and native/provider security remain.

@@ -1,5 +1,26 @@
 # Beta known gaps and required follow-up
 
+## Original tester tracker audit of native build 12 — 27 October 2026
+
+See NATIVE_QA_REVIEW_20261027.md for all 57 original cases, seven populated bugs
+and five UX observations. Fresh focused regressions: 164 passed; unchanged native
+runtime 2de31e1 has existing 39 unit / 10 UI passing evidence. Signed-out /help
+also returns HTTP 200 HTML. Do not interpret these as 57 fresh phone passes.
+
+Six defect fixes retain implementation/test evidence. Facebook's original failed
+connection still needs eligible-account login, Page selection, final confirmation
+and native return. Real voice scan/reopen, the original tester job's cleanup and
+completed manual erasure remain separate evidence gaps.
+
+UX-05 is incomplete in native Studio: X thread formats lack the requested short
+explanation. TC-54 native brand/history/calendar controls specify dimensions below
+the original approximately 44pt target. Fixed-size small labels and absent full
+Dynamic Type/product-landscape coverage prevent inheriting TC-53/56's old passes.
+Record and address these in the next native candidate, with fresh validation.
+No runtime/deployment or release-setting change in this audit. External build12
+remains held at the owner's request; build11 is still the external testing build.
+All 79 commercial findings remain separately retained; charges remain disabled.
+
 ## Native iPhone replacement — 27 October 2026
 
 SwiftUI replacement is implemented in draft PR35. Shared security/data and
