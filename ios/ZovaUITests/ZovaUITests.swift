@@ -164,7 +164,7 @@ final class ZovaUITests: XCTestCase {
         for name in ["Previous month", "Next month", "Refresh schedule", "Today"] { assertTarget(app.buttons[name], app: app) }
         assertTarget(app.buttons["calendar-day-1"], app: app)
     }
-    func testLargestTextKeepsProductActionsReachable() {
+    func testAccessibilityLargestTextKeepsProductActionsReachable() {
         let app = XCUIApplication()
         // Exercise UIKit's size preference too, including newly presented sheets.
         app.launchArguments = ["--native-fixture", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
@@ -177,7 +177,8 @@ final class ZovaUITests: XCTestCase {
         }
         capture(app, "Native Studio — largest accessibility text")
         let composer = app.textFields["post-composer"]
-        reveal(composer, in: app); composer.tap(); composer.typeText("A large-text pottery idea")
+        XCTAssertTrue(composer.isHittable, "An empty Studio must show where to type, without scrolling past its input: " + app.debugDescription)
+        composer.tap(); composer.typeText("A large-text pottery idea")
         XCTAssertFalse(app.buttons["next-move"].exists, "Typing should make room above the keyboard")
         let send = app.buttons["Send idea"]; reveal(send, in: app); assertTarget(send, app: app)
         let ready = expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: send)
@@ -207,9 +208,10 @@ final class ZovaUITests: XCTestCase {
         XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
     }
     func testLandscapeComposerAndAllTabsRemainUsable() {
+        let app = XCUIApplication()
         XCUIDevice.shared.orientation = .landscapeLeft
-        defer { XCUIDevice.shared.orientation = .portrait }
-        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
+        app.launchArguments = ["--native-fixture"]; app.launch()
         let composer = app.textFields["post-composer"]
         XCTAssertTrue(composer.waitForExistence(timeout: 12)); reveal(composer, in: app)
         composer.tap(); composer.typeText("A landscape pottery idea")

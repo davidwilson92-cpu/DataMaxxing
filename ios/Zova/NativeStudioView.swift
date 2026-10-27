@@ -85,8 +85,16 @@ struct NativeStudioView: View {
                     }.padding(.horizontal, 18).padding(.vertical, 16)
                 }.scrollDismissesKeyboard(.interactively)
                     .onChange(of: store.draft.conversation.count) { _, _ in withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
-                    .onChange(of: store.busy) { _, _ in if !focused && !captionEditing { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } } }
-                    .onChange(of: focused) { _, editing in if editing && scrollingComposer { proxy.scrollTo("composer", anchor: .bottom) } }
+                    .onChange(of: store.busy) { _, _ in
+                        if !focused && !captionEditing {
+                            withAnimation {
+                                if scrollingComposer && store.draft.conversation.isEmpty && store.draft.variants.object.isEmpty {
+                                    proxy.scrollTo("composer", anchor: .top)
+                                } else { proxy.scrollTo("bottom", anchor: .bottom) }
+                            }
+                        }
+                    }
+                    .onChange(of: focused) { _, editing in if editing && scrollingComposer { proxy.scrollTo("composer", anchor: .top) } }
             }
             if store.draft.editable {
                 if captionEditing {
