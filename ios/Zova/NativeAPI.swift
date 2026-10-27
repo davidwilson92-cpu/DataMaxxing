@@ -93,21 +93,16 @@ actor NativeAPI {
             throw ZovaFailure.signInRequired
         }
     }
-    func handoff(destination: String, browser: Bool = false) async throws -> URLRequest {
+    func browserHandoff(destination: String) async throws -> URLRequest {
+        let epoch = sessionEpoch
+        guard configuration.browserDestination(try configuration.endpoint(destination)) == destination else { throw ZovaFailure.unsafeURL }
         let token = try await access()
-        let data = try await request("/api/v1/native-handoff", body: ["destination": destination, "purpose": browser ? "browser" : "studio"], token: token)
+        let data = try await request("/api/v1/native-handoff", body: ["destination": destination, "purpose": "browser"], token: token)
+        guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
         struct Reply: Decodable { let ticket: String }
         let value = try JSONDecoder().decode(Reply.self, from: data)
         guard (40...100).contains(value.ticket.count), value.ticket.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == "-") }) else { throw ZovaFailure.invalidResponse }
-        if browser { return URLRequest(url: try configuration.endpoint("/mobile/browser/" + value.ticket)) }
-        var result = URLRequest(url: try configuration.endpoint("/mobile/web-session"))
-        result.httpMethod = "POST"
-        result.httpBody = Data(("ticket=" + value.ticket).utf8)
-        result.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        // The initial WebKit navigation may send Origin:null. A non-simple
-        // header distinguishes this ticket exchange from a cross-site form.
-        result.setValue("1", forHTTPHeaderField: "X-Zova-Native-Handoff")
-        return result
+        return URLRequest(url: try configuration.endpoint("/mobile/browser/" + value.ticket))
     }
     func webSession(destination: String) async throws -> NativeWebSession {
         let epoch = sessionEpoch
@@ -140,15 +135,19 @@ actor NativeAPI {
         }
     }
     func deviceSessions() async throws -> JSONValue {
+        let epoch = sessionEpoch
         let token = try await access()
         let data = try await request("/api/v1/auth/sessions", token: token)
+        guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
         return try JSONDecoder().decode(JSONValue.self, from: data)
     }
     func revokeDevice(_ id: String) async throws {
+        let epoch = sessionEpoch
         guard !id.isEmpty, id.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }) else { throw ZovaFailure.invalidResponse }
         var request = URLRequest(url: try configuration.endpoint("/api/v1/auth/sessions/" + id))
         request.httpMethod = "DELETE"; request.setValue("Bearer " + (try await access()), forHTTPHeaderField: "Authorization")
         let (_, raw) = try await session.data(for: request)
+        guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
         guard let response = raw as? HTTPURLResponse, response.statusCode == 204 else { throw ZovaFailure.unavailable }
     }
     func forget() {

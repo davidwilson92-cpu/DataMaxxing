@@ -32,7 +32,7 @@ final class NativeProductFixtures: URLProtocol {
     override func stopLoading() { }
     static func body(_ request: URLRequest) -> JSONValue {
         var data = request.httpBody ?? Data()
-        if let stream = request.httpBodyStream {
+        if data.isEmpty, let stream = request.httpBodyStream {
             stream.open(); defer { stream.close() }; var buffer = [UInt8](repeating: 0, count: 4096)
             while stream.hasBytesAvailable { let size = stream.read(&buffer, maxLength: buffer.count); if size <= 0 { break }; data.append(contentsOf: buffer.prefix(size)) }
         }

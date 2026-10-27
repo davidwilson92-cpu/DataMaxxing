@@ -2,6 +2,13 @@ import XCTest
 @testable import Zova
 
 final class ProductContractTests: XCTestCase {
+    func testScheduleOffsetsAndNaiveServerUTCRemainDistinctFromLocalTimes() throws {
+        let utc = try XCTUnwrap(ProductLinks.date("2026-10-27T17:30:00Z"))
+        XCTAssertEqual(ProductLinks.date("2026-10-27T12:30:00-05:00"), utc)
+        XCTAssertEqual(ProductLinks.date("2026-10-27T17:30:00"), utc)
+        XCTAssertEqual(ProductLinks.localDate("2026-10-27T12:30", timezone: "America/New_York"), utc.addingTimeInterval(-3600))
+        XCTAssertNil(ProductLinks.date("not a date"))
+    }
     func testDraftPreservesConversationAttachmentsAndUnknownWorkspaceFields() throws {
         let source = Data("""
         {"id":24,"revision":7,"status":"draft","brief":"A real idea","thread_length":3,

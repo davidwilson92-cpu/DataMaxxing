@@ -30,7 +30,7 @@ struct NativePostOptionsView: View {
                 }
             }
             Button("Done") { run { try await store.save(); dismiss() } }.buttonStyle(ZovaPrimary())
-        }.padding(22).disabled(store.busy) }.preferredColorScheme(.light)
+        }.padding(22).disabled(store.busy && !store.backgroundSaving) }.preferredColorScheme(.light)
             .sheet(isPresented: $music) { NativeMusicView().environmentObject(store) }
             .sheet(isPresented: Binding(get: { export != nil }, set: { if !$0 { cleanExport() } })) { if let export { NativeShare(items: [export]) } }
             .onDisappear { cleanExport() }

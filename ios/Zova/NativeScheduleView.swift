@@ -20,7 +20,7 @@ struct NativeScheduleView: View {
                 if calendarMode { calendarView }
                 Picker("Show", selection: $filter) { Text("All").tag("all"); Text("Drafts").tag("draft"); Text("Upcoming").tag("scheduled"); Text("Published").tag("published") }.pickerStyle(.segmented)
                 if calendarMode && selectedDay != nil {
-                    HStack { Text(selectedDay!.formatted(date: .abbreviated, time: .omitted)).font(.headline); Spacer(); Button("All dates") { selectedDay = nil } }
+                    HStack { Text(ProductLinks.displayDate(selectedDay!, timezone: store.timezone, time: false)).font(.headline); Spacer(); Button("All dates") { selectedDay = nil } }
                 }
                 if shownSchedules.isEmpty && shownDrafts.isEmpty && !store.busy { ZovaCard { Text("Space for your next idea").font(.headline); Text("Saved drafts and upcoming posts appear here.").foregroundStyle(.secondary); Button("+ New post") { run { try await store.newPost() } }.buttonStyle(ZovaPrimary()) } }
                 ForEach(shownSchedules, id: \.["id"].int) { row in
@@ -36,10 +36,10 @@ struct NativeScheduleView: View {
                     NativeDraftRow(row: row) { try await store.loadSchedule(search: search) }
                 }
                 if store.moreDrafts { Button("Load older posts") { run { try await store.loadDrafts(search: search, more: true) } }.disabled(store.busy) }
-                if store.schedules.count >= 100 { Text("Showing up to 100 scheduled deliveries. Choose a calendar month to narrow the results.").font(.caption).foregroundStyle(.secondary) }
+                if (calendarMode ? monthRows : store.schedules).count >= 100 { Text("Showing up to 100 scheduled deliveries. Choose a calendar month to narrow the results.").font(.caption).foregroundStyle(.secondary) }
                 Text("Times shown in " + store.timezone).font(.caption).foregroundStyle(.secondary)
             }.padding(18)
-        }.task { await load() }.refreshable { await load() }
+        }.task(id: store.selectedTab) { if store.selectedTab == 1 { await load() } }.refreshable { await load() }
             .sheet(isPresented: Binding(get: { !selected.isNull }, set: { if !$0 { selected = .null } })) { NativeScheduleEdit(row: selected) { try await store.loadSchedule(search: search); try await loadMonth() }.environmentObject(store) }
             .sheet(isPresented: $recurring) { NativeSeriesView().environmentObject(store) }
     }
@@ -53,14 +53,14 @@ struct NativeScheduleView: View {
     private var shownDrafts: [JSONValue] {
         guard selectedDay == nil else { return [] }
         return store.drafts.filter { row in
-            !["scheduled", "pending", "publishing"].contains(row["status"].string) && (filter == "all" || row["status"].string == filter)
+            !["scheduled", "pending", "publishing"].contains(row["status"].string) && (filter == "all" || row["status"].string == filter) && !shownSchedules.contains(where: { $0["draft_id"].int == row["id"].int })
         }
     }
     private var calendarView: some View {
         VStack(spacing: 12) {
             HStack {
                 Button { moveMonth(-1) } label: { Image(systemName: "chevron.left").frame(width: 44, height: 44) }.accessibilityLabel("Previous month")
-                Spacer(); Text(month.formatted(.dateTime.month(.wide).year())).font(.headline); Spacer()
+                Spacer(); Text(monthTitle).font(.headline); Spacer()
                 Button { moveMonth(1) } label: { Image(systemName: "chevron.right").frame(width: 44, height: 44) }.accessibilityLabel("Next month")
             }
             let start = calendar.dateInterval(of: .month, for: month)!.start
@@ -83,6 +83,10 @@ struct NativeScheduleView: View {
         }
     }
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
+    private var monthTitle: String {
+        let formatter = DateFormatter(); formatter.dateFormat = "MMMM yyyy"; formatter.timeZone = calendar.timeZone
+        return formatter.string(from: month)
+    }
     private func reload() { Task { await load() } }
     private func load() async { await store.perform { try await store.loadSchedule(search: search); try await loadMonth() } }
     private func loadMonth() async throws {
@@ -165,6 +169,7 @@ struct NativeSeriesView: View {
     @State private var occurrenceRevision = 0
     @State private var movedDate = Date()
     @State private var future = false
+    @State private var occurrenceTimezone = ""
     @State private var resultNote = ""
     var body: some View {
         ScrollView { VStack(alignment: .leading, spacing: 20) {
@@ -190,7 +195,8 @@ struct NativeSeriesView: View {
             .sheet(isPresented: Binding(get: { !occurrence.isNull }, set: { if !$0 { occurrence = .null } })) {
                 VStack(alignment: .leading, spacing: 20) {
                     NativeSheetHeader(title: "Move occurrence")
-                    DatePicker("New time", selection: $movedDate, in: Date()...)
+                    DatePicker("New time", selection: $movedDate, in: Date()...).environment(\.timeZone, TimeZone(identifier: occurrenceTimezone) ?? .current)
+                    Text(occurrenceTimezone).font(.caption)
                     Toggle("This and future occurrences", isOn: $future)
                     Text("Changed posts need a fresh review before scheduling.").font(.caption)
                     Button("Save new time") { run {
@@ -238,7 +244,7 @@ struct NativeSeriesView: View {
             }
             ForEach(series["occurrences"].array, id: \.["id"].int) { item in
                 VStack(alignment: .leading, spacing: 8) {
-                    Text((ProductLinks.date(item["due_at"].string)?.formatted(date: .abbreviated, time: .shortened) ?? item["due_at"].string) + " · " + item["status"].string).font(.caption)
+                    Text((ProductLinks.date(item["due_at"].string).map { ProductLinks.displayDate($0, timezone: series["spec"]["timezone"].string) } ?? item["due_at"].string) + " · " + item["status"].string).font(.caption)
                     if series["status"].string == "active" && item["status"].string != "cancelled" {
                         HStack {
                             Button(item["draft_id"].int > 0 ? "Open draft" : "Start draft") { run {
@@ -246,7 +252,7 @@ struct NativeSeriesView: View {
                                 try await store.openDraft(reply["draft_id"].int); dismiss()
                             } }
                             Menu("More") {
-                                Button("Change time") { occurrence = item; occurrenceRevision = series["revision"].int; movedDate = ProductLinks.date(item["due_at"].string) ?? Date(); future = false }
+                                Button("Change time") { occurrence = item; occurrenceRevision = series["revision"].int; occurrenceTimezone = series["spec"]["timezone"].string; movedDate = ProductLinks.date(item["due_at"].string) ?? Date(); future = false }
                                 Button("Cancel occurrence", role: .destructive) { run { _ = try await store.request("/api/series/occurrences/\(item["id"].int)/cancel", method: "POST", body: .object(["revision": series["revision"]])); try await reload() } }
                             }
                         }.font(.caption)

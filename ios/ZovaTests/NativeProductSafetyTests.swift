@@ -81,6 +81,58 @@ final class NativeProductSafetyTests: XCTestCase {
         XCTAssertFalse(store.caption("instagram").isEmpty); XCTAssertTrue(store.draft.composer.isEmpty)
         store.clear()
     }
+    func testTypingDuringBackgroundSaveRetainsNewestTextAndDoesNotCancelPatch() async throws {
+        let api = try api(), store = ProductStore(api: api), saving = expectation(description: "debounced PATCH started")
+        try await store.start()
+        ProductTestTransport.respond = { request in
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            if request.httpMethod == "PATCH" { saving.fulfill(); return (status, try! value.encoded(), headers, 0.2) }
+            return (status, try! value.encoded(), headers, 0)
+        }
+        store.draft.composer = "First words"; store.changed()
+        await fulfillment(of: [saving], timeout: 3)
+        XCTAssertTrue(store.backgroundSaving)
+        store.draft.composer = "First words and the next sentence"; store.changed()
+        try await Task.sleep(for: .milliseconds(350))
+        XCTAssertNil(store.error); XCTAssertEqual(store.draft.composer, "First words and the next sentence")
+        XCTAssertTrue(store.dirty)
+        ProductTestTransport.respond = { request in
+            let (status, value, headers) = NativeProductFixtures.response(request); return (status, try! value.encoded(), headers, 0)
+        }
+        await store.perform { try await store.save() }
+        XCTAssertNil(store.error); XCTAssertFalse(store.dirty)
+        let saved = try await store.savedVersion()
+        XCTAssertEqual(saved.composer, "First words and the next sentence")
+        store.clear()
+    }
+    func testConflictingCurrentDraftCanRecoverAsNewWithoutRetryingOriginal() async throws {
+        let api = try api(), store = ProductStore(api: api)
+        try await store.start(); try await store.openDraft(24)
+        store.draft.revision = 0; store.draft.composer = "Local conflict"; store.changed()
+        store.recovery = NativeDraftRecovery.load(owner: "1:0")
+        try await store.restoreRecovery(asNew: true)
+        XCTAssertNotEqual(store.draft.id, 24); XCTAssertEqual(store.draft.composer, "Local conflict")
+        let original = try await store.request("/api/drafts/24")
+        XCTAssertEqual(original["revision"].int, 1); XCTAssertEqual(original["workspace"]["composer"].string, "")
+        store.clear()
+    }
+    func testSignOutRemovesAllBrandsLocalRecoveryOnlyForThatUser() throws {
+        var draft = ProductDraft(); draft.composer = "Synthetic private work"
+        for owner in ["1:0", "1:12", "2:0"] { try NativeDraftRecovery.save(draft, owner: owner) }
+        defer { NativeDraftRecovery.removeUser(2) }
+        NativeDraftRecovery.removeUser(1)
+        XCTAssertTrue(NativeDraftRecovery.load(owner: "1:0").isNull)
+        XCTAssertTrue(NativeDraftRecovery.load(owner: "1:12").isNull)
+        XCTAssertFalse(NativeDraftRecovery.load(owner: "2:0").isNull)
+    }
+    func testAttachmentSelectionRejectsMixedMediaBeforeAnyUpload() throws {
+        let store = ProductStore(api: try api())
+        XCTAssertNoThrow(try store.validateAttachments(Array(repeating: "image/jpeg", count: 10)))
+        XCTAssertThrowsError(try store.validateAttachments(Array(repeating: "image/jpeg", count: 11)))
+        XCTAssertThrowsError(try store.validateAttachments(["video/mp4", "image/jpeg"]))
+        store.draft.workspace["media"] = .array([.object(["id": .integer(1), "kind": .string("video")])])
+        XCTAssertThrowsError(try store.validateAttachments(["image/jpeg"]))
+    }
     func testRecoveryCannotOverwriteChangedServerDraft() async throws {
         let api = try api(), store = ProductStore(api: api)
         try await store.start()

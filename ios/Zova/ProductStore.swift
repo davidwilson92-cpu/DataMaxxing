@@ -13,6 +13,7 @@ final class ProductStore: ObservableObject {
     @Published var series: [JSONValue] = []
     @Published var selectedTab = 0
     @Published var busy = false
+    @Published var backgroundSaving = false
     @Published var error: String?
     @Published var saveStatus = "Ready"
     @Published var needsConsent = false
@@ -21,6 +22,7 @@ final class ProductStore: ObservableObject {
     @Published var reviewMode = "publish"
     @Published var results: JSONValue = .null
     @Published var showIntro = false
+    @Published var mediaNotice = ""
     private var autosave: Task<Void, Never>?
     private var polling: Task<Void, Never>?
     private var changeSerial = 0
@@ -75,12 +77,18 @@ final class ProductStore: ObservableObject {
         autosave = Task { [weak self] in
             do { try await Task.sleep(for: .milliseconds(700)) } catch { return }
             guard let self, !self.busy, self.draft.editable else { return }
+            // Cancel only the debounce timer. Cancelling an in-flight PATCH
+            // leaves an ambiguous server revision when the user keeps typing.
+            self.autosave = nil
+            self.backgroundSaving = true
+            defer { self.backgroundSaving = false }
             await self.perform { try await self.save() }
         }
     }
     func save() async throws {
         guard draft.editable else { return }
         guard dirty || draft.id == nil else { return }
+        persistRecovery()
         if draft.id == nil {
             guard !draft.composer.isEmpty || !draft.brief.isEmpty || !draft.media.isEmpty || !draft.conversation.isEmpty else {
                 savedSerial = changeSerial; saveStatus = "Ready"; NativeDraftRecovery.remove(owner: recoveryOwner); return
@@ -101,12 +109,13 @@ final class ProductStore: ObservableObject {
         let next = ProductDraft(try await request("/api/drafts/\(id)"))
         polling?.cancel(); results = .null
         draft = next; changeSerial = 0; savedSerial = 0; saveStatus = "Saved"; selectedTab = 0
+        mediaNotice = ""
         if !next.editable || next.status == "partial" { try await refreshResults() }
     }
     func newPost() async throws {
         try await save(); polling?.cancel(); results = .null
         let selected = draft.selected
-        draft = ProductDraft(); draft.selected = selected
+        draft = ProductDraft(); draft.selected = selected; mediaNotice = ""
         changeSerial = 0; savedSerial = 0; saveStatus = "Ready"; selectedTab = 0
     }
     func switchBrand(_ id: Int) async throws {
@@ -163,6 +172,7 @@ final class ProductStore: ObservableObject {
             "active_platform": .string(draft.active), "media_asset_ids": draft.mediaIDs,
             "recent_messages": .array(draft.conversation.suffix(12).map { .object(["role": $0["role"], "content": $0["content"]]) })]))
         var action = plan["action"].string
+        mediaNotice = plan["media_inspection"].array.contains(where: { $0["status"].string != "inspected" }) ? "Some media could not be inspected. Check the caption against your upload." : ""
         var platforms = plan["platforms"].strings.isEmpty ? draft.selected : plan["platforms"].strings
         if ["publish", "schedule"].contains(action) && !draft.variants.object.values.contains(where: { $0["posts"].strings.contains(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) }) { action = "create"; platforms = draft.selected }
         if action == "create" || action == "add_platforms" {
@@ -208,6 +218,11 @@ final class ProductStore: ObservableObject {
     private func writingInstruction(_ value: String, instagram: Bool) -> String {
         guard instagram && draft.workspace["instagram_format"].string == "story" else { return value }
         return String(value.prefix(4400)) + "\nFor Instagram only: write concise Story planning copy for one visual, not a feed caption or hashtags. Text is a separate planning note; do not claim it is added to the uploaded visual."
+    }
+    func validateAttachments(_ mimes: [String]) throws {
+        let count = draft.media.count + mimes.count
+        let video = mimes.contains(where: { $0.hasPrefix("video/") }) || draft.media.contains(where: { $0["kind"].string == "video" })
+        guard count <= 10, !video || count == 1 else { throw ZovaFailure.server("Use one video or up to ten images per post.") }
     }
     func upload(_ url: URL, name: String, mime: String) async throws {
         guard draft.editable else { throw ZovaFailure.server("Start a new post to attach media.") }
@@ -259,9 +274,9 @@ final class ProductStore: ObservableObject {
     }
     func clear() {
         authority += 1; autosave?.cancel(); polling?.cancel()
-        NativeDraftRecovery.remove(owner: recoveryOwner); NativeMediaFiles.clear(); recovery = .null
+        NativeDraftRecovery.removeUser(account["profile"]["id"].int); NativeMediaFiles.clear(); recovery = .null
         changeSerial = 0; savedSerial = 0; pendingReview = false; showReview = false
-        draft = ProductDraft(); drafts = []; schedules = []; series = []; account = .null; results = .null
+        draft = ProductDraft(); drafts = []; schedules = []; series = []; account = .null; results = .null; mediaNotice = ""
     }
     private var recoveryOwner: String { "\(account["profile"]["id"].int):\(brand)" }
     private func persistRecovery() {
@@ -272,6 +287,7 @@ final class ProductStore: ObservableObject {
     func restoreRecovery(asNew: Bool = false) async throws {
         guard !recovery.isNull else { return }
         var restored = ProductDraft(recovery)
+        let originalID = restored.id
         if asNew { restored.id = nil; restored.revision = 0; restored.status = "draft" }
         else if let id = restored.id {
             let current = ProductDraft(try await request("/api/drafts/\(id)"))
@@ -279,8 +295,16 @@ final class ProductStore: ObservableObject {
                 throw ZovaFailure.server("This post changed elsewhere. Use Save as new draft to keep both versions.")
             }
         }
-        if draft.id != restored.id && dirty { try await save() }
+        if draft.id != originalID && dirty { try await save() }
         draft = restored; changeSerial += 1; recovery = .null; persistRecovery(); try await save()
+    }
+    func savedVersion() async throws -> ProductDraft {
+        guard let id = draft.id ?? (recovery["id"].int > 0 ? recovery["id"].int : nil) else { throw ZovaFailure.server("This idea has not been saved to your account yet.") }
+        return ProductDraft(try await request("/api/drafts/\(id)"))
+    }
+    func useSavedVersion(_ saved: ProductDraft) {
+        autosave?.cancel(); draft = saved; changeSerial = 0; savedSerial = 0
+        discardRecovery(); saveStatus = "Saved"; results = .null
     }
     func discardRecovery() { NativeDraftRecovery.remove(owner: recoveryOwner); recovery = .null }
 }

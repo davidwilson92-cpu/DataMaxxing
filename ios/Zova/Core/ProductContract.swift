@@ -113,6 +113,12 @@ struct ProductDraft: Equatable {
 }
 
 enum ProductLinks {
+    static func localDate(_ value: String, timezone: String) -> Date? {
+        let formatter = DateFormatter(); formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm"; formatter.isLenient = false
+        formatter.timeZone = TimeZone(identifier: timezone) ?? TimeZone(secondsFromGMT: 0)
+        return formatter.date(from: String(value.prefix(16)))
+    }
     static func displayDate(_ date: Date, timezone: String, time: Bool = true) -> String {
         let formatter = DateFormatter(); formatter.dateStyle = .medium; formatter.timeStyle = time ? .short : .none
         formatter.timeZone = TimeZone(identifier: timezone) ?? TimeZone(secondsFromGMT: 0)
@@ -128,8 +134,12 @@ enum ProductLinks {
     }
     static func date(_ value: String) -> Date? {
         let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let qualified = value.contains("+") || value.hasSuffix("Z") ? value : value + "Z"
-        if let date = f.date(from: qualified) { return date }
-        f.formatOptions = [.withInternetDateTime]; return f.date(from: qualified)
+        for candidate in [value, value + "Z"] {
+            f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = f.date(from: candidate) { return date }
+            f.formatOptions = [.withInternetDateTime]
+            if let date = f.date(from: candidate) { return date }
+        }
+        return nil
     }
 }

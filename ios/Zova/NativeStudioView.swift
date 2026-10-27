@@ -29,7 +29,9 @@ struct NativeStudioView: View {
     @State private var options = false
     @State private var importer = false
     @State private var camera = false
-    @State private var picker: PhotosPickerItem?
+    @State private var picker: [PhotosPickerItem] = []
+    @State private var recoveryExport: URL?
+    @State private var compared: ProductDraft?
     @FocusState private var captionEditing: Bool
     @State private var discardRecovery = false
     var body: some View {
@@ -44,13 +46,15 @@ struct NativeStudioView: View {
                                 Text("There’s a copy saved on this iPhone.").font(.callout)
                                 Button("Resume editing") { run { try await store.restoreRecovery() } }
                                 Button("Save as new draft") { run { try await store.restoreRecovery(asNew: true) } }
+                                Button("Compare saved version") { run { compared = try await store.savedVersion() } }
+                                Button("Save a copy to Files") { exportRecovery() }
                                 Button("Discard local copy", role: .destructive) { discardRecovery = true }
                             }
                         }
                         if store.saveStatus.hasPrefix("Not saved") {
                             Button("Retry save") { run { try await store.save() } }
                         }
-                        if store.draft.conversation.isEmpty && store.draft.variants.object.isEmpty && !focused {
+                        if store.draft.conversation.isEmpty && store.draft.variants.object.isEmpty && store.draft.composer.isEmpty && !focused {
                             VStack(spacing: 18) {
                                 Text("How can we grow your\nengagement today?").font(.system(size: 29, weight: .bold)).multilineTextAlignment(.center)
                                 Text("Share your ideas. Zova’s AI helps shape them into a plan and posts in your voice.").foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -69,13 +73,14 @@ struct NativeStudioView: View {
                             }
                         }
                         if !store.draft.variants.object.isEmpty { caption }
+                        if !store.mediaNotice.isEmpty { Text(store.mediaNotice).font(.caption).foregroundStyle(.secondary) }
                         if !store.draft.workspace["pending_message"].string.isEmpty && !store.busy {
                             Button("Retry this idea") { run { try await store.send(retry: true) } }.buttonStyle(.bordered)
                         }
                         if !store.results.isNull {
                             ZovaCard { NativeInlineStatus(value: store.results); Button("Refresh results") { run { try await store.refreshResults() } } }
                         }
-                        if store.busy { HStack { ProgressView(); Text("Working…").font(.callout).foregroundStyle(.secondary) }.accessibilityIdentifier("studio-working") }
+                        if store.busy && !store.backgroundSaving { HStack { ProgressView(); Text("Working…").font(.callout).foregroundStyle(.secondary) }.accessibilityIdentifier("studio-working") }
                         Color.clear.frame(height: 1).id("bottom")
                     }.padding(.horizontal, 18).padding(.vertical, 16)
                 }.scrollDismissesKeyboard(.interactively)
@@ -87,30 +92,51 @@ struct NativeStudioView: View {
             .confirmationDialog("Discard the unsaved copy on this iPhone? Your server draft stays unchanged.", isPresented: $discardRecovery, titleVisibility: .visible) { Button("Discard local copy", role: .destructive) { store.discardRecovery() } }
             .sheet(isPresented: $history) { NativeHistoryView().environmentObject(store) }
             .sheet(isPresented: $options) { NativePostOptionsView().environmentObject(store) }
-            .fileImporter(isPresented: $importer, allowedContentTypes: [.image, .movie]) { result in
+            .sheet(isPresented: Binding(get: { recoveryExport != nil }, set: { if !$0 { clearRecoveryExport() } }), onDismiss: clearRecoveryExport) {
+                if let recoveryExport { NativeShare(items: [recoveryExport]) }
+            }
+            .sheet(isPresented: Binding(get: { compared != nil }, set: { if !$0 { compared = nil } })) {
+                if let compared { NativeRecoveryComparison(saved: compared) { run { store.useSavedVersion(try await store.savedVersion()); self.compared = nil } }.environmentObject(store) }
+            }
+            .fileImporter(isPresented: $importer, allowedContentTypes: [.image, .movie], allowsMultipleSelection: true) { result in
                 switch result {
-                case .success(let url):
+                case .success(let urls):
                     run {
-                        guard url.startAccessingSecurityScopedResource() else { throw ZovaFailure.server("Choose that file again to allow access.") }
-                        defer { url.stopAccessingSecurityScopedResource() }
-                        try await store.upload(url, name: url.lastPathComponent, mime: UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
+                        try store.validateAttachments(urls.map { UTType(filenameExtension: $0.pathExtension)?.preferredMIMEType ?? "application/octet-stream" })
+                        for url in urls {
+                            guard url.startAccessingSecurityScopedResource() else { throw ZovaFailure.server("Choose that file again to allow access.") }
+                            defer { url.stopAccessingSecurityScopedResource() }
+                            try await store.upload(url, name: url.lastPathComponent, mime: UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
+                        }
                     }
                 case .failure(let error): store.handle(error)
                 }
             }
             .sheet(isPresented: $camera) { NativeCamera(selected: { url, mime in camera = false; run { defer { try? FileManager.default.removeItem(at: url) }; try await store.upload(url, name: url.lastPathComponent, mime: mime) } }, failed: { error in camera = false; store.handle(error) }) }
             .onChange(of: captionEditing) { _, editing in if editing { store.draft.addHistory() } }
-            .onChange(of: picker) { _, item in
-                guard let item else { return }
+            .onChange(of: picker) { _, items in
+                guard !items.isEmpty else { return }
                 run {
-                    defer { picker = nil }
-                    guard let media = try await item.loadTransferable(type: PickedMedia.self) else { throw ZovaFailure.server("This photo or video could not be opened.") }
-                    defer { try? FileManager.default.removeItem(at: media.url) }
-                    try await store.upload(media.url, name: media.url.lastPathComponent, mime: UTType(filenameExtension: media.url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
+                    defer { picker = [] }
+                    try store.validateAttachments(items.map { $0.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) ? "video/mp4" : "image/jpeg" })
+                    for item in items {
+                        guard let media = try await item.loadTransferable(type: PickedMedia.self) else { throw ZovaFailure.server("This photo or video could not be opened.") }
+                        defer { try? FileManager.default.removeItem(at: media.url) }
+                        try await store.upload(media.url, name: media.url.lastPathComponent, mime: UTType(filenameExtension: media.url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
+                    }
                 }
             }
+            .onDisappear { clearRecoveryExport() }
     }
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
+    private func exportRecovery() {
+        do {
+            let file = try NativeMediaFiles.create(extension: "json")
+            try (store.recovery.isNull ? store.draft.payload : store.recovery).encoded().write(to: file, options: [.atomic, .completeFileProtection])
+            recoveryExport = file
+        } catch { store.handle(error) }
+    }
+    private func clearRecoveryExport() { NativeMediaFiles.remove(recoveryExport); recoveryExport = nil }
     private var header: some View {
         VStack(spacing: 5) {
             HStack(spacing: 10) {
@@ -149,7 +175,7 @@ struct NativeStudioView: View {
             ForEach(Array(store.draft.variants[store.draft.active]["posts"].strings.enumerated()), id: \.offset) { index, _ in
                 TextField("Edit caption", text: Binding(get: { store.caption(store.draft.active, index: index) }, set: { store.editCaption(store.draft.active, index: index, text: $0) }), axis: .vertical)
                     .lineLimit(4...20).padding(16).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 16))
-                    .focused($captionEditing).disabled(store.busy || !store.draft.editable).accessibilityIdentifier("caption-\(index)")
+                    .focused($captionEditing).disabled((store.busy && !store.backgroundSaving) || !store.draft.editable).accessibilityIdentifier("caption-\(index)")
             }
             ForEach(store.draft.media, id: \.["id"].int) { NativeAssetPreview(asset: $0) }
             if store.draft.editable {
@@ -172,8 +198,8 @@ struct NativeStudioView: View {
                         HStack { NativeAssetPreview(asset: asset, compact: true); Button { store.removeMedia(asset["id"].int) } label: { Image(systemName: "xmark.circle.fill") }.accessibilityLabel("Remove " + asset["filename"].string) }.padding(5).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 12))
                     } } }
                 }
-                TextField("Start drafting your next post…", text: Binding(get: { store.draft.composer }, set: { store.draft.composer = String($0.prefix(12000)); store.changed() }), axis: .vertical)
-                    .lineLimit(2...5).focused($focused).accessibilityIdentifier("post-composer").disabled(store.busy)
+                TextField("Describe your post. Zova drafts the caption…", text: Binding(get: { store.draft.composer }, set: { store.draft.composer = String($0.prefix(12000)); store.changed() }), axis: .vertical)
+                    .lineLimit(2...5).focused($focused).accessibilityIdentifier("post-composer").disabled(store.busy && !store.backgroundSaving)
                 HStack(spacing: 8) {
                     ForEach(SocialPlatform.allCases) { platform in
                         Button {
@@ -187,7 +213,7 @@ struct NativeStudioView: View {
                 }
                 HStack {
                     Menu {
-                        PhotosPicker(selection: $picker, matching: .any(of: [.images, .videos])) { Label("Photo library", systemImage: "photo") }
+                        PhotosPicker(selection: $picker, maxSelectionCount: max(1, 10 - store.draft.media.count), selectionBehavior: .ordered, matching: .any(of: [.images, .videos])) { Label("Photo library", systemImage: "photo") }
                         Button("Choose file", systemImage: "folder") { importer = true }
                         if UIImagePickerController.isSourceTypeAvailable(.camera) { Button("Camera", systemImage: "camera") { camera = true } }
                     } label: { Image(systemName: "plus").font(.title3).frame(width: 44, height: 44) }.accessibilityLabel("Add attachment").disabled(store.busy)

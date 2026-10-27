@@ -55,7 +55,7 @@ struct NativePerformanceView: View {
                     }
                 }
             }.padding(18)
-        }.refreshable { await update() }.task { await update() }
+        }.refreshable { await update() }.task(id: store.selectedTab) { if store.selectedTab == 2 { await update() } }
     }
     private func number(_ value: JSONValue) -> String { value.isNull ? "—" : value.int.formatted() }
     private func load() { Task { await update() } }

@@ -20,6 +20,7 @@ struct NativePublishView: View {
     @State private var review: JSONValue = .null
     @State private var suggestions: JSONValue = .null
     @State private var attempted = false
+    private var scheduleTimezone: String { store.draft.planned["timezone"].string.isEmpty ? store.timezone : store.draft.planned["timezone"].string }
     private var tiktok: JSONValue { contexts["tiktok"] }
     private var direct: Bool { platforms.contains("tiktok") && tiktok["posting_mode"].string != "inbox" }
     private var valid: Bool {
@@ -88,8 +89,8 @@ struct NativePublishView: View {
                 } else { Text("This connection sends videos to your TikTok inbox. Finish the caption, privacy and publishing in TikTok.").font(.callout) }
             }
             if mode == "schedule" {
-                DatePicker("Posting time", selection: $date, in: Date()...).environment(\.timeZone, TimeZone(identifier: store.timezone) ?? .current)
-                Text(store.timezone).font(.caption).foregroundStyle(.secondary)
+                DatePicker("Posting time", selection: $date, in: Date()...).environment(\.timeZone, TimeZone(identifier: scheduleTimezone) ?? .current)
+                Text(scheduleTimezone).font(.caption).foregroundStyle(.secondary)
                 Button("Suggest starting times") { run { suggestions = try await store.request("/api/ai/schedule", method: "POST", body: .object(["platforms": .strings(platforms), "context": .string(store.draft.brief)])) } }
                 if !suggestions.isNull {
                     Text(suggestions["note"].string).font(.caption)
@@ -108,6 +109,7 @@ struct NativePublishView: View {
     private func privacyName(_ value: String) -> String { ["SELF_ONLY":"Only me", "PUBLIC_TO_EVERYONE":"Everyone", "MUTUAL_FOLLOW_FRIENDS":"Friends", "FOLLOWER_OF_CREATOR":"Followers"][value] ?? value }
     private func load() async throws {
         try await store.save()
+        if let planned = ProductLinks.localDate(store.draft.planned["local_time"].string, timezone: scheduleTimezone), planned > Date() { date = planned }
         platforms = store.draft.selected.filter { !store.draft.variants[$0]["posts"].array.isEmpty }
         if platforms.isEmpty { throw ZovaFailure.server("Choose a platform with a caption first.") }
         try await loadContexts()

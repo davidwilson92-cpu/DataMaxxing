@@ -6,7 +6,7 @@ enum NativeMediaFiles {
     static func create(extension ext: String) throws -> URL {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                attributes: [.protectionKey: FileProtectionType.complete])
-        let suffix = ext.lowercased().filter { $0.isASCII && $0.isLetter || $0.isNumber }
+        let suffix = ext.lowercased().filter { $0.isASCII && ($0.isLetter || $0.isNumber) }
         let url = directory.appendingPathComponent(UUID().uuidString + "." + String(suffix.prefix(12)))
         guard FileManager.default.createFile(atPath: url.path, contents: nil, attributes: [.protectionKey: FileProtectionType.complete]) else { throw ZovaFailure.unavailable }
         return url

@@ -37,6 +37,7 @@ final class NativeProductSession: ObservableObject {
         }
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { phase = .signedOut; return }
         #endif
+        await NativeUpgrade.clearLegacyWebDataIfNeeded()
         if !UserDefaults.standard.bool(forKey: "zova-installed") {
             try? KeychainVault.clear(); UserDefaults.standard.set(true, forKey: "zova-installed")
         }
@@ -63,7 +64,7 @@ final class NativeProductSession: ObservableObject {
         await store.perform {
             try await self.store.save()
             let target = "/connect/\(platform)?workspace=\(self.store.brand)"
-            let request = try await self.api.handoff(destination: target, browser: true)
+            let request = try await self.api.browserHandoff(destination: target)
             guard let url = request.url else { throw ZovaFailure.invalidResponse }
             do {
                 let outcome = try await self.social.connect(url: url, destination: target, configuration: self.configuration)
@@ -91,6 +92,7 @@ struct NativeProductRoot: View {
             if !launched { ZovaLaunchScreen(ready: session.phase != .opening) { launched = true }.zIndex(1) }
             if scenePhase != .active { ZovaDesign.dark.ignoresSafeArea().overlay(Image("ZovaMark").resizable().scaledToFit().frame(width: 72)).zIndex(2).accessibilityHidden(true) }
         }.task { await session.start() }.onOpenURL { session.returned($0) }
+            .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { session.returned(url) } }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background { Task { await session.store.perform { try await session.store.save() } } }
                 if phase == .active, session.phase == .product { Task { await session.store.perform { try await session.store.reloadAccount() } } }
