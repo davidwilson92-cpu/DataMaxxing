@@ -131,10 +131,12 @@ actor NativeAPI {
         return NativeWebSession(url: try configuration.endpoint(target), cookie: cookie)
     }
     func logout() async {
-        let pair = tokens ?? (try? KeychainVault.load())
+        // Rotate if needed before revoking the device. An expired access token
+        // cannot revoke the server session even while its product cookie works.
+        let token = try? await access()
         forget()
-        if let pair {
-            _ = try? await request("/api/v1/auth/logout", body: [:], token: pair.access)
+        if let token {
+            _ = try? await request("/api/v1/auth/logout", body: [:], token: token)
         }
     }
     func deviceSessions() async throws -> JSONValue {

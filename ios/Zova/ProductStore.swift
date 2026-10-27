@@ -8,6 +8,7 @@ final class ProductStore: ObservableObject {
     @Published var brand = 0
     @Published var draft = ProductDraft()
     @Published var drafts: [JSONValue] = []
+    @Published var moreDrafts = false
     @Published var schedules: [JSONValue] = []
     @Published var series: [JSONValue] = []
     @Published var selectedTab = 0
@@ -26,6 +27,7 @@ final class ProductStore: ObservableObject {
     private var savedSerial = 0
     private var authority = 0
     private var pendingReview = false
+    private var draftOffset = 0
     @Published var recovery: JSONValue = .null
     var dirty: Bool { changeSerial != savedSerial }
     var name: String { account["profile"]["name"].string }
@@ -116,9 +118,17 @@ final class ProductStore: ObservableObject {
     }
     func reloadAccount() async throws { account = try await request("/api/native/account") }
     func loadSchedule(search: String = "") async throws {
-        drafts = try await request("/api/drafts?q=" + ProductLinks.query(search)).array
+        try await loadDrafts(search: search)
         schedules = try await request("/api/schedules").array
         series = try await request("/api/series").array
+    }
+    func loadDrafts(search: String = "", more: Bool = false) async throws {
+        let offset = more ? draftOffset : 0
+        let rows = try await request("/api/drafts?q=" + ProductLinks.query(search) + "&offset=\(offset)").array
+        if !more { drafts = [] }
+        let existing = Set(drafts.map { $0["id"].int })
+        drafts += rows.filter { !existing.contains($0["id"].int) }
+        draftOffset = offset + rows.count; moreDrafts = rows.count == 100
     }
     func caption(_ platform: String, index: Int = 0) -> String {
         let posts = draft.variants[platform]["posts"].strings
@@ -134,6 +144,9 @@ final class ProductStore: ObservableObject {
         let text = (retry ? draft.workspace["pending_message"].string : draft.composer).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         guard !draft.selected.isEmpty else { throw ZovaFailure.server("Choose a platform first.") }
+        if retry && (draft.workspace["pending_media_asset_ids"] != draft.mediaIDs || draft.workspace["pending_link_url"].string != draft.workspace["link_url"].string) {
+            throw ZovaFailure.server("Your attachment or source link changed. Send a new message to use the current selection.")
+        }
         guard account["ai"]["allowed"].bool || !account["ai"]["required"].bool else { needsConsent = true; return }
         if !retry {
             draft.conversation.append(.object(["role": .string("user"), "content": .string(text), "media_asset_ids": draft.mediaIDs, "media": .array(draft.media)]))
@@ -146,15 +159,20 @@ final class ProductStore: ObservableObject {
         guard let id = draft.id else { throw ZovaFailure.invalidResponse }
         let plan = try await request("/api/conversation/plan", method: "POST", body: .object([
             "draft_id": .integer(id), "message": .string(text), "selected_platforms": .strings(draft.selected),
+            "platform_selection_explicit": .bool(draft.workspace["platform_selection_explicit"].bool),
             "active_platform": .string(draft.active), "media_asset_ids": draft.mediaIDs,
             "recent_messages": .array(draft.conversation.suffix(12).map { .object(["role": $0["role"], "content": $0["content"]]) })]))
-        let action = plan["action"].string
-        let platforms = plan["platforms"].strings
+        var action = plan["action"].string
+        var platforms = plan["platforms"].strings.isEmpty ? draft.selected : plan["platforms"].strings
+        if ["publish", "schedule"].contains(action) && !draft.variants.object.values.contains(where: { $0["posts"].strings.contains(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) }) { action = "create"; platforms = draft.selected }
         if action == "create" || action == "add_platforms" {
+            let previousSelection = draft.selected
+            if action == "add_platforms" { platforms = platforms.filter { draft.variants[$0].isNull } }
+            guard !platforms.isEmpty else { throw ZovaFailure.server("Those versions already exist. Tell Zova what to change in them.") }
             let brief = plan["brief"].string.isEmpty ? text : plan["brief"].string
             let fresh = action == "create" && !draft.variants.object.isEmpty
             var body: JSONValue = .object(["brief": .string(action == "add_platforms" ? draft.brief : brief),
-                "instruction": .string(action == "add_platforms" ? text : draft.instruction), "platforms": .strings(platforms),
+                "instruction": .string(writingInstruction(action == "add_platforms" ? text : draft.instruction, instagram: platforms.contains("instagram"))), "platforms": .strings(platforms),
                 "media_asset_ids": draft.mediaIDs, "link_url": draft.workspace["link_url"], "thread_length": .integer(draft.threadLength)])
             if body["link_url"].isNull { body["link_url"] = .string("") }
             if fresh { body["source_draft_id"] = .integer(id); body["source_revision"] = .integer(draft.revision) }
@@ -164,12 +182,13 @@ final class ProductStore: ObservableObject {
             guard generatedID > 0 else { throw ZovaFailure.invalidResponse }
             draft = ProductDraft(try await request("/api/drafts/\(generatedID)"))
             draft.active = platforms.first ?? draft.active
-            if fresh { draft.selected = platforms }
+            draft.selected = action == "add_platforms" ? SocialPlatform.allCases.map(\.rawValue).filter { (previousSelection + platforms).contains($0) } : platforms
         } else if action == "rewrite" {
             var updated = draft.variants
             for platform in platforms {
+                guard !draft.variants[platform]["posts"].array.isEmpty else { throw ZovaFailure.server("Add a \(SocialPlatform(rawValue: platform)?.title ?? platform) version first.") }
                 let reply = try await request("/api/ai/rewrite", method: "POST", body: .object([
-                    "platform": .string(platform), "posts": draft.variants[platform]["posts"], "instruction": .string(String((plan["brief"].string.isEmpty ? text : plan["brief"].string).prefix(1000))), "media_asset_ids": draft.mediaIDs]))
+                    "platform": .string(platform), "posts": draft.variants[platform]["posts"], "instruction": .string(writingInstruction(String((plan["brief"].string.isEmpty ? text : plan["brief"].string).prefix(700)), instagram: platform == "instagram")), "media_asset_ids": draft.mediaIDs]))
                 updated[platform]["posts"] = reply["posts"]
             }
             draft.addHistory(); draft.variants = updated
@@ -185,6 +204,10 @@ final class ProductStore: ObservableObject {
         draft.workspace["pending_media_asset_ids"] = .array([])
         changeSerial += 1; try await save()
         if action == "publish" || action == "schedule" { pendingReview = true }
+    }
+    private func writingInstruction(_ value: String, instagram: Bool) -> String {
+        guard instagram && draft.workspace["instagram_format"].string == "story" else { return value }
+        return String(value.prefix(4400)) + "\nFor Instagram only: write concise Story planning copy for one visual, not a feed caption or hashtags. Text is a separate planning note; do not claim it is added to the uploaded visual."
     }
     func upload(_ url: URL, name: String, mime: String) async throws {
         guard draft.editable else { throw ZovaFailure.server("Start a new post to attach media.") }

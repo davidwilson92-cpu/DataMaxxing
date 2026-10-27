@@ -30,6 +30,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(composer.waitForExistence(timeout: 12))
         composer.tap(); composer.typeText("A simple pottery tip")
         capture(app, "Native Studio — keyboard")
+        XCTAssertFalse(app.alerts.firstMatch.exists, "Typing must autosave without an alert: " + app.debugDescription)
         XCTAssertFalse(app.staticTexts["How can we grow your\nengagement today?"].exists)
         app.buttons["Send idea"].tap()
         XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 10))

@@ -71,3 +71,20 @@ def test_native_deletion_proof_is_bound_to_this_session(native):
     proof = client.get('/api/native/deletion-confirmation').json()['proof']
     reply = web.post('/account/deletion', data={'confirmation':'DELETE', 'current_password':'old-password-123', 'proof':proof})
     assert reply.status_code == 400
+
+
+def test_native_history_pagination_retains_owner_filter_and_revisions(native):
+    from nova.db import Draft
+    client, _, uid, _ = native
+    with SessionLocal() as db:
+        db.add_all([Draft(user_id=uid, brief=f'Native history {n}', revision=n) for n in range(105)])
+        db.commit()
+    first = client.get('/api/drafts').json()
+    second = client.get('/api/drafts?offset=100').json()
+    assert len(first) == 100 and len(second) == 5
+    assert not set(row['id'] for row in first).intersection(row['id'] for row in second)
+    assert all(type(row['revision']) is int for row in first + second)
+    assert client.get('/api/drafts?offset=-1').status_code == 422
+    assert client.get('/api/drafts?offset=100001').status_code == 422
+    found = client.get('/api/drafts?q=Native%20history%20104&offset=0').json()
+    assert len(found) == 1 and found[0]['brief'] == 'Native history 104'

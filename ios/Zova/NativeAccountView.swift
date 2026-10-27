@@ -6,6 +6,7 @@ struct NativeAccountView: View {
     @Binding var strategy: Bool
     @State private var name = ""
     @State private var voice: [String: String] = [:]
+    @State private var preferredLength = 220
     @State private var currentPassword = ""
     @State private var newPassword = ""
     @State private var confirmation = ""
@@ -34,8 +35,10 @@ struct NativeAccountView: View {
                 group("Your voice", icon: "waveform") {
                     Text("Your edits take priority. With AI sharing on, approved captions shape your next draft.").font(.callout).foregroundStyle(.secondary)
                     ForEach(voiceFields, id: \.1) { title, key in NativeField(title: title, text: Binding(get: { voice[key] ?? "" }, set: { voice[key] = $0 }), lines: key == "timezone" ? 1 : 2) }
-                    Button("Save voice") { run { var fields = voice; fields["preferred_post_length"] = String(store.account["voice"]["preferred_post_length"].int); _ = try await store.api.form("/account/preferences", fields: fields, brand: store.brand); try await store.reloadAccount(); saved = "Voice saved." } }.buttonStyle(ZovaPrimary())
+                    Stepper("Typical caption · \(preferredLength) characters", value: $preferredLength, in: 30...4000, step: 10)
+                    Button("Save voice") { run { var fields = voice; fields["preferred_post_length"] = String(preferredLength); _ = try await store.api.form("/account/preferences", fields: fields, brand: store.brand); try await store.reloadAccount(); fillVoice(); saved = "Voice saved." } }.buttonStyle(ZovaPrimary())
                     Button("Scan recent posts") { run { let reply = try await store.request("/api/voice/scan-socials", method: "POST", body: .object([:])); try await store.reloadAccount(); fillVoice(); saved = reply["message"].string.isEmpty ? "Voice refreshed." : reply["message"].string } }
+                    Button("Learn from my writing examples") { run { _ = try await store.request("/api/voice/learn", method: "POST", body: .object(["content": .string(voice["example_posts"] ?? "")])); try await store.reloadAccount(); fillVoice(); saved = "Voice refreshed from your examples." } }.disabled((voice["example_posts"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     if !store.account["voice"]["approved_examples"].array.isEmpty {
                         DisclosureGroup("Recent approved captions") {
                             ForEach(Array(store.account["voice"]["approved_examples"].strings.enumerated()), id: \.offset) { _, text in Text(text).font(.callout).padding(.vertical, 8) }
@@ -93,7 +96,7 @@ struct NativeAccountView: View {
                 }
                 Button(role: .destructive) { deleteSheet = true } label: { row("Delete account", icon: "trash", arrow: "chevron.right") }
             }.padding(22).disabled(store.busy)
-        }.background(ZovaDesign.dark).foregroundStyle(.white).tint(ZovaDesign.violet).preferredColorScheme(.dark)
+        }.background(ZovaDesign.dark).foregroundStyle(.white).tint(ZovaDesign.violet)
             .task { name = store.name; fillVoice() }
             .sheet(isPresented: $guide) { NativeGuideView().environmentObject(store) }
             .sheet(isPresented: $deleteSheet) { NativeDeletionView(session: session).environmentObject(store) }
@@ -101,9 +104,10 @@ struct NativeAccountView: View {
                 Button("Unlink", role: .destructive) { guard let id = unlinkID else { return }; unlinkID = nil; run { _ = try await store.api.form("/account/connections/\(id)/unlink", fields: [:], brand: store.brand); try await store.reloadAccount() } }
             }
             .onDisappear { currentPassword = ""; newPassword = ""; confirmation = "" }
+            .onChange(of: store.selectedTab) { _, index in if index != 3 { currentPassword = ""; newPassword = ""; confirmation = "" } }
     }
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
-    private func fillVoice() { for (_, key) in voiceFields { voice[key] = store.account["voice"][key].string } }
+    private func fillVoice() { for (_, key) in voiceFields { voice[key] = store.account["voice"][key].string }; preferredLength = max(30, min(4000, store.account["voice"]["preferred_post_length"].int)) }
     private func row(_ title: String, icon: String, arrow: String) -> some View { HStack(spacing: 14) { Image(systemName: icon).frame(width: 24); Text(title).font(.headline); Spacer(); Image(systemName: arrow).font(.caption) }.frame(minHeight: 44) }
     private func group<Content: View>(_ title: String, icon: String, @ViewBuilder content: @escaping () -> Content) -> some View {
         VStack(spacing: 14) { DisclosureGroup { VStack(alignment: .leading, spacing: 16, content: content).padding(.vertical, 16) } label: { HStack(spacing: 14) { Image(systemName: icon).frame(width: 24); Text(title).font(.headline) }.frame(minHeight: 44) }; Divider().overlay(.white.opacity(0.15)) }

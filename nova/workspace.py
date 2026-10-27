@@ -201,8 +201,8 @@ def draft_media_previews(db, rows, user_id):
             asset=assets.get(aid)
             if not asset or asset.brand_id!=row.brand_id:continue
             if asset.mime_type.startswith('image/'):
-                result[row.id]={'kind':'image','url':f'/media/preview/{asset.id}'}
+                result[row.id]={'id':asset.id,'filename':asset.filename,'kind':'image','url':f'/media/preview/{asset.id}'}
                 break
             if asset.mime_type.startswith('video/'):
-                result.setdefault(row.id,{'kind':'video'})
+                result.setdefault(row.id,{'id':asset.id,'filename':asset.filename,'kind':'video'})
     return result

@@ -90,6 +90,11 @@ struct ProductDraft: Equatable {
         title = value["display_title"].string; brief = value["brief"].string
         instruction = value["instruction"].string; threadLength = max(1, value["thread_length"].int)
         variants = value["variants"]; workspace = value["workspace"]; planned = value["planned"]
+        if workspace["selected_platforms"].strings.isEmpty && !workspace["platform_selection_explicit"].bool {
+            let available = Set(value["platforms"].strings + variants.object.keys)
+            selected = SocialPlatform.allCases.map(\.rawValue).filter { available.contains($0) }
+        }
+        if !variants.object.isEmpty && variants[active].isNull { active = selected.first(where: { !variants[$0].isNull }) ?? variants.object.keys.sorted().first ?? "x" }
     }
     var payload: JSONValue {
         .object(["brief": .string(brief), "instruction": .string(instruction),
@@ -108,6 +113,11 @@ struct ProductDraft: Equatable {
 }
 
 enum ProductLinks {
+    static func displayDate(_ date: Date, timezone: String, time: Bool = true) -> String {
+        let formatter = DateFormatter(); formatter.dateStyle = .medium; formatter.timeStyle = time ? .short : .none
+        formatter.timeZone = TimeZone(identifier: timezone) ?? TimeZone(secondsFromGMT: 0)
+        return formatter.string(from: date)
+    }
     static func external(_ text: String) -> URL? {
         guard let url = URL(string: text), url.scheme == "https", url.host != nil,
               url.user == nil, url.password == nil else { return nil }

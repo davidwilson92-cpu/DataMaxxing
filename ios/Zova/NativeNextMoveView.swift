@@ -6,6 +6,7 @@ struct NativeNextMoveView: View {
     @State var planning = false
     @State private var revision = 0
     @State private var saved = false
+    @State private var hasConfirmed = false
     @State private var description = ""
     @State private var direction = ""
     @State private var strategy: JSONValue = .null
@@ -16,6 +17,9 @@ struct NativeNextMoveView: View {
     @State private var index = 0
     @State private var refinements: [Int: String] = [:]
     @State private var note = ""
+    @State private var reviewSteps = false
+    @State private var reminding = false
+    @State private var remindAt = Date().addingTimeInterval(86400)
     private var current: JSONValue { moves.indices.contains(index) ? moves[index] : .null }
     var body: some View {
         ScrollView {
@@ -37,6 +41,13 @@ struct NativeNextMoveView: View {
             }.padding(20)
         }.background(.white).preferredColorScheme(.light).foregroundStyle(ZovaDesign.ink).tint(ZovaDesign.purple)
             .task { run { try await load() } }.interactiveDismissDisabled(store.busy)
+            .sheet(isPresented: $reminding) {
+                VStack(alignment: .leading, spacing: 20) {
+                    NativeSheetHeader(title: "Remind me")
+                    DatePicker("When", selection: $remindAt, in: Date()...Date().addingTimeInterval(366 * 86400))
+                    Button("Save reminder") { run { try await feedback("snoozed"); reminding = false } }.buttonStyle(ZovaPrimary()).disabled(store.busy)
+                }.padding(22).presentationDetents([.medium])
+            }
     }
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
     private var proposal: some View {
@@ -45,6 +56,7 @@ struct NativeNextMoveView: View {
                 HStack { NativePlatformMark(platform: current["platform"].string, light: true); Text(current["format"].string == "story" ? "Story" : "Post").font(.caption); Spacer() }
                 Text(current["title"].string).font(.system(size: 25, weight: .bold)).fixedSize(horizontal: false, vertical: true)
                 Button {
+                    if current["kind"].string == "review" { reviewSteps = true; return }
                     run {
                         try await store.save()
                         let id = current["draft_id"].int
@@ -52,19 +64,32 @@ struct NativeNextMoveView: View {
                         guard reply["draft_id"].int > 0 else { throw ZovaFailure.invalidResponse }
                         try await store.openDraft(reply["draft_id"].int); dismiss()
                     }
-                } label: { HStack { Text(current["draft_id"].int > 0 ? "Open draft" : "Draft post"); Spacer(); Image(systemName: "arrow.right") }.padding(.horizontal, 14) }.buttonStyle(ZovaPrimary()).disabled(store.busy)
+                } label: { HStack { Text(current["kind"].string == "review" ? "See steps" : current["draft_id"].int > 0 ? "Open draft" : "Draft post"); Spacer(); Image(systemName: "arrow.right") }.padding(.horizontal, 14) }.buttonStyle(ZovaPrimary()).disabled(store.busy)
             }.padding(20).foregroundStyle(.white).background(ZovaDesign.hero, in: RoundedRectangle(cornerRadius: 21))
             VStack(alignment: .leading, spacing: 9) {
-                Text("AI recommendation").font(.subheadline.bold())
+                HStack {
+                    Text("AI recommendation").font(.subheadline.bold()); Spacer()
+                    Menu {
+                        Button("Refresh ideas") { run { try await generate() } }
+                        Button("Already done") { run { try await feedback("complete") } }
+                        Button("Not for me") { run { try await feedback("dismissed") } }
+                        Button("Remind me") { reminding = true }
+                    } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }.accessibilityLabel("Idea options").disabled(store.busy)
+                }
                 Text(concise(current["reason"].string, words: 32)).font(.callout)
                 if !current["basis"].string.isEmpty { Text(current["basis"].string).font(.caption).foregroundStyle(.secondary) }
+                if reviewSteps && current["kind"].string == "review" {
+                    Text(current["brief"].string).font(.callout)
+                    Button("Mark done") { run { try await feedback("complete"); reviewSteps = false } }
+                }
             }.padding(16).frame(maxWidth: .infinity, alignment: .leading).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 15))
-            if !current["source"].isNull {
-                DisclosureGroup("Source") {
+            if !current["source"].isNull || current["performance_evidence"]["available"].bool {
+                DisclosureGroup("Evidence") {
                     VStack(alignment: .leading, spacing: 8) {
                         if current["stale"].bool { Text("This evidence needs refreshing.") }
                         if let url = ProductLinks.external(current["source"]["url"].string) { Link(current["source"]["title"].string.isEmpty ? "Read source ↗" : current["source"]["title"].string, destination: url) }
                         Text(current["source"]["checked_at"].string).font(.caption).foregroundStyle(.secondary)
+                        if !current["performance_evidence"]["note"].string.isEmpty { Text(current["performance_evidence"]["note"].string).font(.caption) }
                     }.padding(.top, 8)
                 }.font(.caption)
             }
@@ -104,7 +129,7 @@ struct NativeNextMoveView: View {
                     run {
                         if !saved {
                             let reply = try await store.request("/api/strategy/confirm", method: "POST", body: .object(["revision": .integer(revision), "strategy": strategy]))
-                            revision = reply["revision"].int; strategy = reply["confirmed"]; saved = true; moves = []; index = 0
+                            revision = reply["revision"].int; strategy = reply["confirmed"]; saved = true; hasConfirmed = true; moves = []; index = 0
                         } else { planning = false; try await generate() }
                     }
                 }.buttonStyle(ZovaPrimary()).disabled(store.busy)
@@ -118,6 +143,7 @@ struct NativeNextMoveView: View {
     private func load() async throws {
         let data = try await store.request("/api/strategy")
         revision = data["revision"].int; saved = !data["confirmed"]["goal"].string.isEmpty
+        hasConfirmed = saved
         strategy = data["proposal"]["strategy"].isNull ? (saved ? data["confirmed"] : data["defaults"]) : data["proposal"]["strategy"]
         description = strategy["description"].string.isEmpty ? strategy["goal"].string : strategy["description"].string
         direction = strategy["content_direction"].string.isEmpty ? strategy["themes"].string : strategy["content_direction"].string
@@ -141,7 +167,7 @@ struct NativeNextMoveView: View {
         let context = current["strategy_context"]
         if context["one_off"].bool {
             body["brief"] = context["topic"].string.isEmpty ? context["goal"] : context["topic"]; body["platforms"] = context["platforms"]
-        } else if !saved { body["brief"] = .string(topic); body["platforms"] = .strings(store.draft.selected) }
+        } else if !hasConfirmed { body["brief"] = .string(topic); body["platforms"] = .strings(store.draft.selected) }
         if refine { body["refine_action_id"] = current["id"]; body["refinement"] = .string(refinements[current["id"].int] ?? "") }
         let reply = try await store.request("/api/strategy/recommend", method: "POST", body: body)
         let items = reply["items"].array
@@ -154,5 +180,13 @@ struct NativeNextMoveView: View {
         index = previous < moves.count ? previous : max(0, moves.count - items.count)
         if moves.count > 60 { let removed = moves.count - 60; moves.removeFirst(removed); index = max(0, index - removed) }
         note = ""
+    }
+    private func feedback(_ status: String) async throws {
+        guard !current.isNull else { return }
+        var body = JSONValue.object(["status": .string(status)])
+        if status == "snoozed" { body["remind_at"] = .string(ISO8601DateFormatter().string(from: remindAt)) }
+        _ = try await store.request("/api/strategy/actions/\(current["id"].int)/feedback", method: "POST", body: body)
+        moves.remove(at: index); index = min(index, max(0, moves.count - 1)); reviewSteps = false
+        note = status == "snoozed" ? "Reminder saved." : status == "complete" ? "Marked done." : "Feedback saved."
     }
 }

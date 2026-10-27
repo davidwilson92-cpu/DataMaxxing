@@ -6,7 +6,7 @@ struct NativePerformanceView: View {
     @State private var dashboard: JSONValue = .null
     @State private var question = ""
     @State private var answer = ""
-    private let metrics = [("Views / impressions", "impressions"), ("Engagements", "engagements"), ("Comments", "comments"), ("Followers", "followers"), ("Posts", "posts")]
+    private let metrics = [("Views / impressions", "impressions"), ("Engagements", "engagements"), ("Likes", "likes"), ("Comments", "comments"), ("Shares", "shares"), ("Followers", "followers"), ("Posts", "posts")]
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -21,7 +21,7 @@ struct NativePerformanceView: View {
                         DisclosureGroup("How to read these results") { Text("Available lifetime counters for a sample of posts published in this period—not growth during the period. Followers are current totals. A dash means a metric is unavailable. Compare the same platform and format.").font(.caption).foregroundStyle(.secondary) }
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                             ForEach(metrics, id: \.1) { title, key in
-                                if !dashboard["summary"][key].isNull { ZovaCard { Text(title).font(.caption); Text(number(dashboard["summary"][key])).font(.title.bold()) } }
+                                ZovaCard { Text(title).font(.caption); Text(number(dashboard["summary"][key])).font(.title.bold()) }
                             }
                         }
                         Text("Platform performance").font(.headline)
@@ -51,6 +51,7 @@ struct NativePerformanceView: View {
                         Button("Ask Zova") { Task { await store.perform { let reply = try await store.request("/api/insights", method: "POST", body: .object(["question": .string(question), "days": .integer(days)])); answer = reply["answer"].string } } }.buttonStyle(ZovaPrimary()).disabled(store.busy || question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         if !answer.isEmpty { ZovaCard { Text(answer).textSelection(.enabled) } }
                         Text(dashboard["note"].string).font(.caption).foregroundStyle(.secondary)
+                        if let date = ProductLinks.date(dashboard["fetched_at"].string) { Text("Checked " + ProductLinks.displayDate(date, timezone: store.timezone)).font(.caption).foregroundStyle(.secondary) }
                     }
                 }
             }.padding(18)

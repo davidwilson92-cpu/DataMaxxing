@@ -17,6 +17,7 @@ final class NativeProductSession: ObservableObject {
         if ProcessInfo.processInfo.arguments.contains("--test-fresh-install") { try? KeychainVault.clear() }
         if ProcessInfo.processInfo.arguments.contains("--native-fixture") {
             NativeProductFixtures.reset()
+            NativeDraftRecovery.remove(owner: "1:0")
             let configuration = URLSessionConfiguration.ephemeral
             configuration.protocolClasses = [NativeProductFixtures.self]
             api = NativeAPI(configuration: .bundled, transport: configuration)
@@ -144,14 +145,8 @@ struct NativeProductTabs: View {
     private let tabs = [("Studio", "square.and.pencil"), ("Schedule", "calendar"), ("Performance", "chart.bar"), ("Account", "person.crop.circle")]
     var body: some View {
         VStack(spacing: 0) {
-            Group {
-                switch store.selectedTab {
-                case 0: NativeStudioView(nextMove: $nextMove, strategy: $strategy)
-                case 1: NativeScheduleView()
-                case 2: NativePerformanceView()
-                default: NativeAccountView(session: session, strategy: $strategy)
-                }
-            }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            NativeProductPages(session: session, nextMove: $nextMove, strategy: $strategy).id(store.brand)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             if !keyboard {
                 HStack(spacing: 0) {
                     ForEach(tabs.indices, id: \.self) { index in
@@ -175,5 +170,31 @@ struct NativeProductTabs: View {
             .onChange(of: store.signedOut) { _, value in if value { Task { await session.logout() } } }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboard = true }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboard = false }
+    }
+}
+
+/// Keep edits and scroll positions when moving between tabs. A brand change
+/// replaces this container so no other brand's UI state can remain visible.
+private struct NativeProductPages: View {
+    @ObservedObject var session: NativeProductSession
+    @EnvironmentObject var store: ProductStore
+    @Binding var nextMove: Bool
+    @Binding var strategy: Bool
+    @State private var visited: Set<Int> = [0]
+    var body: some View {
+        ZStack {
+            ForEach(visited.sorted(), id: \.self) { index in
+                page(index).opacity(store.selectedTab == index ? 1 : 0)
+                    .allowsHitTesting(store.selectedTab == index).accessibilityHidden(store.selectedTab != index)
+            }
+        }.onChange(of: store.selectedTab) { _, index in visited.insert(index) }
+    }
+    @ViewBuilder private func page(_ index: Int) -> some View {
+        switch index {
+        case 0: NativeStudioView(nextMove: $nextMove, strategy: $strategy)
+        case 1: NativeScheduleView()
+        case 2: NativePerformanceView()
+        default: NativeAccountView(session: session, strategy: $strategy)
+        }
     }
 }

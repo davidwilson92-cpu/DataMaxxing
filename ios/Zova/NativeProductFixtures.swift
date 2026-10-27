@@ -62,7 +62,7 @@ final class NativeProductFixtures: URLProtocol {
         if path.hasPrefix("/api/drafts/"), let id = Int(path.split(separator: "/").last ?? "") {
             guard var value = saved[id] else { return (404, .object(["detail": .string("Draft not found")]), [:]) }
             if request.httpMethod == "PATCH" {
-                guard input["revision"].int == value["revision"].int else { return (409, .object(["detail": .string("This draft changed.")]), [:]) }
+                guard input["revision"].int == value["revision"].int else { return (409, .object(["detail": .string("Synthetic draft revision mismatch: expected \(value["revision"].int), received \(input["revision"].int).")]), [:]) }
                 for (key, field) in input.object { value[key] = field }; value["revision"] = .integer(value["revision"].int + 1); saved[id] = value
             }
             if request.httpMethod == "DELETE" { saved.removeValue(forKey: id); return (204, .null, [:]) }

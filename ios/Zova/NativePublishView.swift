@@ -192,7 +192,11 @@ struct NativeReviewSnapshot: View {
                     if !options["audio"].isNull { Text("Music: " + options["audio"]["title"].string + " · " + options["audio"]["artist"].string); Text("Music \(options["audio"]["audio_volume"].int)% · Original audio \(options["audio"]["video_volume"].int)%. The combined audio cannot be previewed before publishing.").font(.caption) }
                 }
             }
-            ForEach(snapshot["media"].array, id: \.["id"].int) { NativeAssetPreview(asset: $0) }
+            ForEach(Array(snapshot["media"].array.enumerated()), id: \.offset) { index, value in
+                if snapshot["media_asset_ids"].array.indices.contains(index) {
+                    NativeAssetPreview(asset: .object(value.object.merging(["id": snapshot["media_asset_ids"].array[index]]) { _, new in new }))
+                }
+            }
             if !snapshot["link_url"].string.isEmpty { Text("Source link: " + snapshot["link_url"].string).font(.caption) }
             if let date = ProductLinks.date(snapshot["scheduled_utc"].string) {
                 Text("Scheduled: " + scheduledLabel(date) + " · " + snapshot["timezone"].string).font(.headline)

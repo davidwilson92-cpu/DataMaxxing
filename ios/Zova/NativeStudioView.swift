@@ -207,16 +207,19 @@ struct NativeHistoryView: View {
     @State private var query = ""
     var body: some View {
         NavigationStack {
-            List(store.drafts, id: \.["id"].int) { row in
-                Button { Task { await store.perform { try await store.openDraft(row["id"].int); dismiss() } } } label: {
-                    VStack(alignment: .leading, spacing: 6) { Text(row["title"].string).foregroundStyle(.primary); Text(row["status"].string.capitalized).font(.caption).foregroundStyle(.secondary) }
+            List {
+                ForEach(store.drafts, id: \.["id"].int) { row in
+                    Button { Task { await store.perform { try await store.openDraft(row["id"].int); dismiss() } } } label: {
+                        VStack(alignment: .leading, spacing: 6) { Text(row["title"].string).foregroundStyle(.primary); Text(row["status"].string.capitalized).font(.caption).foregroundStyle(.secondary) }
+                    }
                 }
+                if store.moreDrafts { Button("Load older posts") { Task { await store.perform { try await store.loadDrafts(search: query, more: true) } } }.disabled(store.busy) }
             }.navigationTitle("Your posts").searchable(text: $query)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
                 .task { await load() }.onSubmit(of: .search) { Task { await load() } }
         }
     }
-    private func load() async { await store.perform { store.drafts = try await store.request("/api/drafts?q=" + ProductLinks.query(query)).array } }
+    private func load() async { await store.perform { try await store.loadDrafts(search: query) } }
 }
 
 struct NativeCamera: UIViewControllerRepresentable {

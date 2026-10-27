@@ -26,20 +26,21 @@ struct NativeScheduleView: View {
                 ForEach(shownSchedules, id: \.["id"].int) { row in
                     Button { selected = row } label: {
                         ZovaCard {
-                            HStack { NativePlatformMark(platform: row["platform"].string); Text(row["status"].string.capitalized).font(.caption); Spacer(); if let date = ProductLinks.date(row["scheduled_at"].string) { Text(date.formatted(date: .abbreviated, time: .shortened)).font(.caption) } }
+                            HStack { NativePlatformMark(platform: row["platform"].string); Text(row["status"].string.capitalized).font(.caption); Spacer(); if let date = ProductLinks.date(row["scheduled_at"].string) { Text(ProductLinks.displayDate(date, timezone: store.timezone)).font(.caption) } }
                             Text(row["title"].string).font(.headline).foregroundStyle(.primary).lineLimit(2)
                             if !row["account_name"].string.isEmpty { Text(row["account_name"].string).font(.caption).foregroundStyle(.secondary) }
                         }
                     }.buttonStyle(.plain)
                 }
                 ForEach(shownDrafts, id: \.["id"].int) { row in
-                    NativeDraftRow(row: row) { run { try await store.loadSchedule(search: search) } }
+                    NativeDraftRow(row: row) { try await store.loadSchedule(search: search) }
                 }
-                if store.drafts.count >= 100 || store.schedules.count >= 100 { Text("Showing the latest 100 items. Search or choose a calendar month to narrow the results.").font(.caption).foregroundStyle(.secondary) }
+                if store.moreDrafts { Button("Load older posts") { run { try await store.loadDrafts(search: search, more: true) } }.disabled(store.busy) }
+                if store.schedules.count >= 100 { Text("Showing up to 100 scheduled deliveries. Choose a calendar month to narrow the results.").font(.caption).foregroundStyle(.secondary) }
                 Text("Times shown in " + store.timezone).font(.caption).foregroundStyle(.secondary)
             }.padding(18)
         }.task { await load() }.refreshable { await load() }
-            .sheet(isPresented: Binding(get: { !selected.isNull }, set: { if !$0 { selected = .null } })) { NativeScheduleEdit(row: selected) { reload() }.environmentObject(store) }
+            .sheet(isPresented: Binding(get: { !selected.isNull }, set: { if !$0 { selected = .null } })) { NativeScheduleEdit(row: selected) { try await store.loadSchedule(search: search); try await loadMonth() }.environmentObject(store) }
             .sheet(isPresented: $recurring) { NativeSeriesView().environmentObject(store) }
     }
     private var shownSchedules: [JSONValue] {
@@ -95,13 +96,14 @@ struct NativeScheduleView: View {
 struct NativeDraftRow: View {
     @EnvironmentObject var store: ProductStore
     let row: JSONValue
-    let changed: () -> Void
+    let changed: () async throws -> Void
     @State private var rename = false
     @State private var title = ""
     @State private var delete = false
     var body: some View {
         ZovaCard {
             HStack(alignment: .top) {
+                if !row["thumbnail"].isNull { NativeAssetPreview(asset: row["thumbnail"], compact: true) }
                 Button { run { try await store.openDraft(row["id"].int) } } label: { VStack(alignment: .leading, spacing: 7) { Text(row["title"].string).font(.headline).foregroundStyle(.primary).lineLimit(2); Text(row["status"].string.capitalized).font(.caption).foregroundStyle(.secondary) } }.buttonStyle(.plain)
                 Spacer()
                 Menu { Button("Rename") { title = row["title"].string; rename = true }; if ["draft", "failed", "cancelled"].contains(row["status"].string) { Button("Delete", role: .destructive) { delete = true } } } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }.accessibilityLabel("Post options")
@@ -110,9 +112,9 @@ struct NativeDraftRow: View {
             ForEach(Array(row["links"].array.enumerated()), id: \.offset) { _, link in if let url = ProductLinks.external(link["url"].string) { Link("View on " + (SocialPlatform(rawValue: link["platform"].string)?.title ?? "social") + " ↗", destination: url).font(.caption) } }
         }.alert("Rename post", isPresented: $rename) {
             TextField("Title", text: $title)
-            Button("Save") { run { let latest = try await store.request("/api/drafts/\(row["id"].int)"); _ = try await store.api.form("/drafts/\(row["id"].int)/title", fields: ["title": title, "revision": String(latest["revision"].int)], brand: store.brand); changed() } }
+            Button("Save") { run { _ = try await store.api.form("/drafts/\(row["id"].int)/title", fields: ["title": title, "revision": String(row["revision"].int)], brand: store.brand); try await changed() } }
             Button("Cancel", role: .cancel) { }
-        }.confirmationDialog("Delete this unsubmitted draft?", isPresented: $delete) { Button("Delete draft", role: .destructive) { run { _ = try await store.request("/api/drafts/\(row["id"].int)", method: "DELETE"); changed() } } }
+        }.confirmationDialog("Delete this unsubmitted draft?", isPresented: $delete) { Button("Delete draft", role: .destructive) { run { _ = try await store.request("/api/drafts/\(row["id"].int)", method: "DELETE"); try await changed() } } }
     }
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
 }
@@ -121,7 +123,7 @@ struct NativeScheduleEdit: View {
     @EnvironmentObject var store: ProductStore
     @Environment(\.dismiss) var dismiss
     let row: JSONValue
-    let changed: () -> Void
+    let changed: () async throws -> Void
     @State private var date = Date()
     @State private var confirmCancel = false
     @State private var confirmEdit = false
@@ -133,20 +135,21 @@ struct NativeScheduleEdit: View {
             if row["status"].string == "scheduled" {
                 DatePicker("Posting time", selection: $date, in: Date()...).environment(\.timeZone, TimeZone(identifier: store.timezone) ?? .current)
                 Text(store.timezone).font(.caption)
-                Button("Save new time") { run { _ = try await store.request("/api/schedules/\(row["id"].int)/reschedule", method: "POST", body: .object(["scheduled_local": .string(ISO8601DateFormatter().string(from: date)), "expected_updated_at": row["updated_at"]])); dismiss(); changed() } }.buttonStyle(ZovaPrimary())
+                Button("Save new time") { run { _ = try await store.request("/api/schedules/\(row["id"].int)/reschedule", method: "POST", body: .object(["scheduled_local": .string(ISO8601DateFormatter().string(from: date)), "expected_updated_at": row["updated_at"]])); try await changed(); dismiss() } }.buttonStyle(ZovaPrimary())
                 Button("Edit caption / media") { confirmEdit = true }
                 Button("Cancel scheduled post", role: .destructive) { confirmCancel = true }
             } else { Button("Open post and results") { run { try await store.openDraft(row["draft_id"].int); dismiss() } }.buttonStyle(ZovaPrimary()) }
         }.padding(22).disabled(store.busy) }.preferredColorScheme(.light).onAppear { date = ProductLinks.date(row["scheduled_at"].string) ?? Date().addingTimeInterval(3600) }
             .confirmationDialog("Stop all unsent deliveries for this post and edit it? You will need to review and schedule it again.", isPresented: $confirmEdit) {
                 Button("Stop deliveries and edit") { run { _ = try await store.request("/api/schedules/drafts/\(row["draft_id"].int)/edit", method: "POST", body: .object(["revision": row["draft_revision"]])); try await store.openDraft(row["draft_id"].int); dismiss() } }
-            }.confirmationDialog("Cancel this scheduled delivery?", isPresented: $confirmCancel) { Button("Cancel delivery", role: .destructive) { run { _ = try await store.request("/api/schedules/\(row["id"].int)/cancel", method: "POST", body: .object(["expected_updated_at": row["updated_at"]])); dismiss(); changed() } } }
+            }.confirmationDialog("Cancel this scheduled delivery?", isPresented: $confirmCancel) { Button("Cancel delivery", role: .destructive) { run { _ = try await store.request("/api/schedules/\(row["id"].int)/cancel", method: "POST", body: .object(["expected_updated_at": row["updated_at"]])); try await changed(); dismiss() } } }
     }
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
 }
 
 struct NativeSeriesView: View {
     @EnvironmentObject var store: ProductStore
+    @Environment(\.dismiss) var dismiss
     @State private var building = false
     @State private var start = Date().addingTimeInterval(86400)
     @State private var frequency = "weekly"
@@ -240,7 +243,7 @@ struct NativeSeriesView: View {
                         HStack {
                             Button(item["draft_id"].int > 0 ? "Open draft" : "Start draft") { run {
                                 let reply = item["draft_id"].int > 0 ? JSONValue.object(["draft_id": item["draft_id"]]) : try await store.request("/api/series/occurrences/\(item["id"].int)/draft", method: "POST", body: .object([:]))
-                                try await store.openDraft(reply["draft_id"].int)
+                                try await store.openDraft(reply["draft_id"].int); dismiss()
                             } }
                             Menu("More") {
                                 Button("Change time") { occurrence = item; occurrenceRevision = series["revision"].int; movedDate = ProductLinks.date(item["due_at"].string) ?? Date(); future = false }
