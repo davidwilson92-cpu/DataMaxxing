@@ -33,8 +33,10 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.exists, "Background saving must keep the keyboard open")
         XCTAssertFalse(app.alerts.firstMatch.exists, "Typing must autosave without an alert: " + app.debugDescription)
         XCTAssertFalse(app.staticTexts["How can we grow your\nengagement today?"].exists)
-        app.buttons["Send idea"].tap()
-        XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 10))
+        let send = app.buttons["Send idea"]
+        let ready = expectation(for: NSPredicate(format: "enabled == true AND hittable == true"), evaluatedWith: send)
+        wait(for: [ready], timeout: 10); send.tap()
+        XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.staticTexts["A simple pottery tip"].exists)
         XCTAssertFalse((composer.value as? String ?? "").contains("A simple pottery tip"))
         capture(app, "Native Studio — proposed caption")

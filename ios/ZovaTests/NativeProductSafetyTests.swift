@@ -156,6 +156,29 @@ final class NativeProductSafetyTests: XCTestCase {
         XCTAssertEqual(store.draft.mediaIDs, .array([.integer(4)]))
         store.clear()
     }
+    func testSendDuringBackgroundSaveWaitsForRevisionAndRunsOnce() async throws {
+        let api = try api(), store = ProductStore(api: api)
+        let saving = expectation(description: "autosave started"), generated = expectation(description: "one generation")
+        generated.assertForOverFulfill = true
+        try await store.start()
+        ProductTestTransport.respond = { request in
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            if request.httpMethod == "PATCH", value["workspace"]["composer"].string == "An idea" {
+                saving.fulfill(); return (status, try! value.encoded(), headers, 0.2)
+            }
+            if request.url?.path == "/api/ai/generate" { generated.fulfill() }
+            return (status, try! value.encoded(), headers, 0)
+        }
+        store.draft.composer = "An idea"; store.changed()
+        await fulfillment(of: [saving], timeout: 3)
+        XCTAssertTrue(store.backgroundSaving)
+        await store.perform { try await store.send() }
+        await fulfillment(of: [generated], timeout: 3)
+        XCTAssertNil(store.error); XCTAssertTrue(store.draft.composer.isEmpty)
+        XCTAssertFalse(store.draft.variants.object.isEmpty)
+        XCTAssertEqual(store.draft.conversation.filter { $0["role"].string == "user" }.count, 1)
+        store.clear()
+    }
     func testTypingDuringBackgroundSaveRetainsNewestTextAndDoesNotCancelPatch() async throws {
         let api = try api(), store = ProductStore(api: api), saving = expectation(description: "debounced PATCH started")
         try await store.start()

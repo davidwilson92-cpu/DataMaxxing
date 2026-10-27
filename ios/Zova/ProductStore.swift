@@ -30,6 +30,7 @@ final class ProductStore: ObservableObject {
     private var authority = 0
     private var pendingReview = false
     private var draftOffset = 0
+    private var saveWaiters: [CheckedContinuation<Void, Never>] = []
     @Published var recovery: JSONValue = .null
     var dirty: Bool { changeSerial != savedSerial }
     var name: String { account["profile"]["name"].string }
@@ -50,10 +51,18 @@ final class ProductStore: ObservableObject {
         self.error = error.localizedDescription
     }
     func perform(_ work: @escaping @MainActor () async throws -> Void) async {
-        guard !busy else { return }; busy = true; error = nil
+        let epoch = authority
+        // A tap can arrive in the same frame as autosave starts. Finish that
+        // PATCH before using its revision; never silently discard the tap.
+        if busy && backgroundSaving {
+            await withCheckedContinuation { saveWaiters.append($0) }
+        }
+        guard epoch == authority, !Task.isCancelled, !busy else { return }; busy = true; error = nil
         var succeeded = false
         defer {
             busy = false
+            let waiting = saveWaiters; saveWaiters.removeAll()
+            waiting.forEach { $0.resume() }
             if succeeded, pendingReview { pendingReview = false; showReview = true }
             if succeeded, dirty { queueAutosave() }
         }
