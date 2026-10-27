@@ -11,7 +11,7 @@ struct NativePerformanceView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                HStack { Text("Performance").font(.title2.bold()); Spacer(); Button { load() } label: { Image(systemName: "arrow.clockwise").frame(width: 44, height: 44) }.accessibilityLabel("Refresh performance") }
+                NativeAdaptiveRow { Text("Performance").font(.title2.bold()); Spacer(); Button { load() } label: { Image(systemName: "arrow.clockwise").frame(width: 44, height: 44) }.accessibilityLabel("Refresh performance") }
                 Picker("Posts published in", selection: $days) { Text("Last 7 days").tag(7); Text("Last 30 days").tag(30) }.pickerStyle(.segmented).onChange(of: days) { _, _ in load() }.disabled(store.busy)
                 if store.busy { ProgressView("Reading your accounts…") }
                 if !dashboard.isNull {

@@ -149,8 +149,10 @@ struct NativeDeletionView: View {
             NativeField(title: "Type DELETE to confirm", text: $confirmation, lines: 1)
             Button("Delete my account", role: .destructive) {
                 Task { await store.perform {
-                    _ = try await store.api.form("/account/deletion", fields: ["confirmation": confirmation, "current_password": password, "proof": proof], brand: store.brand)
-                    password = ""; await session.logout(); session.message = "Your deletion request was received. Account access has been closed."
+                    let reply = try await store.api.form("/account/deletion", fields: ["confirmation": confirmation, "current_password": password, "proof": proof], brand: store.brand)
+                    let receipt = ProductLinks.deletionReceipt(reply["destination"].string, configuration: session.configuration)
+                    password = ""; await session.logout(); session.deletionReceipt = receipt
+                    session.message = "Your deletion request was received. Account access is closed; data erasure is still pending."
                 } }
             }.buttonStyle(.borderedProminent).tint(.red).disabled(store.busy || confirmation != "DELETE" || password.isEmpty || proof.isEmpty)
             Link("Deletion policy", destination: try! session.configuration.endpoint("/data-deletion"))

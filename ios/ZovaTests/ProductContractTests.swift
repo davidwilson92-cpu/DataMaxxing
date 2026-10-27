@@ -2,6 +2,14 @@ import XCTest
 @testable import Zova
 
 final class ProductContractTests: XCTestCase {
+    func testDeletionReceiptOnlyAcceptsTheExactOwnedOpaqueStatusPath() throws {
+        let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
+        let path = "/data-deletion/status/" + String(repeating: "a", count: 64)
+        XCTAssertEqual(ProductLinks.deletionReceipt(path, configuration: configuration)?.absoluteString, "https://zova-social.com" + path)
+        for invalid in ["", "/account", path + "?next=https://example.com", path + "#other", path + "/", String(path.dropLast()), "https://zova-social.com" + path, "//example.com" + path, "/data-deletion/status/../account", "/data-deletion/status/" + String(repeating: "z", count: 64)] {
+            XCTAssertNil(ProductLinks.deletionReceipt(invalid, configuration: configuration))
+        }
+    }
     func testScheduleOffsetsAndNaiveServerUTCRemainDistinctFromLocalTimes() throws {
         let utc = try XCTUnwrap(ProductLinks.date("2026-10-27T17:30:00Z"))
         XCTAssertEqual(ProductLinks.date("2026-10-27T12:30:00-05:00"), utc)

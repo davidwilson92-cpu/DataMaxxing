@@ -70,6 +70,9 @@ final class NativeProductFixtures: URLProtocol {
             return ok(.object(["message": .string("Voice updated from recent captions.")]))
         }
         if path == "/api/native/deletion-confirmation" { return ok(.object(["proof": .string("synthetic-session-bound-proof")])) }
+        if path == "/account/deletion", request.httpMethod == "POST" {
+            return (303, .null, ["Location": "/data-deletion/status/" + String(repeating: "a", count: 64)])
+        }
         if path == "/api/native/schedule-summary" { return ok(.object(["drafts": .integer(saved.count), "scheduled": .integer(1), "overdue": .integer(0), "unconfirmed": .integer(0)])) }
         if path == "/api/strategy" { return ok(.object(["revision": .integer(strategyRevision), "confirmed": storedStrategy, "defaults": strategy, "proposal": storedProposal])) }
         if path == "/api/strategy/actions" { return ok(actions()) }

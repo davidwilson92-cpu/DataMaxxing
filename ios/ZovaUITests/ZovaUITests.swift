@@ -149,12 +149,20 @@ final class ZovaUITests: XCTestCase {
         assertTarget(app.buttons["calendar-day-1"], app: app)
     }
     func testLargestTextKeepsProductActionsReachable() {
-        let app = XCUIApplication(); app.launchArguments = ["--native-fixture", "--accessibility-text"]; app.launch()
+        let app = XCUIApplication()
+        // Exercise UIKit's size preference too, including newly presented sheets.
+        app.launchArguments = ["--native-fixture", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
         XCTAssertTrue(app.buttons["next-move"].waitForExistence(timeout: 12))
         assertTarget(app.buttons["Your posts"], app: app)
+        for tab in ["Studio", "Schedule", "Performance", "Account"] {
+            assertTarget(app.buttons["tab-" + tab], app: app)
+            XCTAssertLessThanOrEqual(app.buttons["tab-" + tab].frame.height, 80, "Navigation must leave room for content")
+        }
         capture(app, "Native Studio — largest accessibility text")
         app.buttons["next-move"].tap()
         XCTAssertTrue(app.staticTexts["next-move-title"].waitForExistence(timeout: 8))
+        XCTAssertGreaterThan(app.staticTexts["next-move-title"].frame.height, 60, "The presented sheet must inherit the large text preference")
         capture(app, "Native Next Move — largest accessibility text")
         reveal(app.buttons["Draft post"], in: app)
         assertTarget(app.buttons["Draft post"], app: app)
@@ -162,6 +170,7 @@ final class ZovaUITests: XCTestCase {
         app.buttons["tab-Schedule"].tap()
         XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout: 8))
         reveal(app.buttons["Next month"], in: app); assertTarget(app.buttons["Next month"], app: app)
+        reveal(app.buttons["calendar-day-1"], in: app)
         capture(app, "Native Schedule — scaled calendar")
         app.buttons["tab-Performance"].tap()
         XCTAssertTrue(app.staticTexts["Performance"].waitForExistence(timeout: 8))
@@ -184,6 +193,12 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 10))
         for tab in ["Schedule", "Performance", "Account", "Studio"] {
             app.buttons["tab-" + tab].tap()
+            switch tab {
+            case "Schedule": XCTAssertTrue(app.buttons["calendar-day-1"].waitForExistence(timeout: 8))
+            case "Performance": XCTAssertTrue(app.staticTexts["1,240"].waitForExistence(timeout: 8))
+            case "Account": XCTAssertTrue(app.buttons["Your details"].waitForExistence(timeout: 8))
+            default: XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 8)); app.swipeDown()
+            }
             capture(app, "Native landscape — " + tab)
         }
         XCTAssertTrue(app.textFields["caption-0"].exists)
@@ -219,7 +234,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["No posts scheduled this month."].waitForExistence(timeout: 8))
         XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
     }
-    func testDeletionIsReachableButRequiresPasswordAndExplicitConfirmation() {
+    func testDeletionRequiresPasswordAndConfirmationAndKeepsItsReceipt() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         XCTAssertTrue(app.buttons["tab-Account"].waitForExistence(timeout: 12)); app.buttons["tab-Account"].tap()
         let deletion = app.buttons["Delete account"]; reveal(deletion, in: app); deletion.tap()
@@ -227,8 +242,16 @@ final class ZovaUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Delete my account"].isEnabled)
         XCTAssertTrue(app.textFields["Type DELETE to confirm"].exists)
         capture(app, "Native account deletion — explicit protected request")
-        app.buttons["Close Delete account"].tap()
-        XCTAssertTrue(app.buttons["tab-Account"].exists)
+        // Offline fixture only: this never contacts or deletes a real account.
+        app.secureTextFields["Current password"].tap(); app.secureTextFields["Current password"].typeText("Synthetic-fixture-password")
+        XCTAssertFalse(app.buttons["Delete my account"].isEnabled)
+        app.textFields["Type DELETE to confirm"].tap(); app.textFields["Type DELETE to confirm"].typeText("DELETE")
+        let submit = app.buttons["Delete my account"]; reveal(submit, in: app); submit.tap()
+        XCTAssertTrue(app.links["deletion-receipt"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Your deletion request was received. Account access is closed; data erasure is still pending."].exists)
+        XCTAssertFalse(app.secureTextFields["Current password"].exists)
+        reveal(app.links["deletion-receipt"], in: app)
+        capture(app, "Native deletion — receipt available after sign-out")
         XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
     }
     func testScheduleCanBeReviewedRescheduledAndCancelledExplicitly() {

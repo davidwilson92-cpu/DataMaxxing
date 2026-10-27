@@ -12,6 +12,7 @@ final class NativeProductSession: ObservableObject {
     @Published var working = false
     @Published var connectingPlatform: String?
     @Published var message: String?
+    @Published var deletionReceipt: URL?
     init() {
         NativeMediaFiles.clear()
         #if DEBUG
@@ -47,7 +48,7 @@ final class NativeProductSession: ObservableObject {
         catch { message = error.localizedDescription; phase = .signedOut }
     }
     func login() async {
-        guard !working else { return }; working = true; message = nil
+        guard !working else { return }; working = true; message = nil; deletionReceipt = nil
         defer { working = false }
         do {
             try await api.ensureAvailable()
@@ -59,7 +60,7 @@ final class NativeProductSession: ObservableObject {
         } catch { message = error.localizedDescription }
     }
     func logout() async {
-        store.clear(); await api.logout(); phase = .signedOut
+        deletionReceipt = nil; store.clear(); await api.logout(); phase = .signedOut
     }
     func reauthenticate() async {
         store.clear(preserveRecovery: true); await api.forget(); phase = .signedOut
@@ -116,6 +117,10 @@ struct NativeProductRoot: View {
                 Text("Use your existing Zova account, or create one in the secure sign-in window.").font(.subheadline).foregroundStyle(.white.opacity(0.75))
                 Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isn’t analysed.").font(.footnote).foregroundStyle(.white.opacity(0.75))
                 if let message = session.message { Text(message).font(.callout).accessibilityAddTraits(.updatesFrequently) }
+                if let receipt = session.deletionReceipt {
+                    Link("View deletion status", destination: receipt).frame(minHeight: 44)
+                        .accessibilityIdentifier("deletion-receipt")
+                }
                 welcomeLinks
                 Text(buildLabel).font(.caption).foregroundStyle(.secondary)
             }.padding(28).frame(maxWidth: 560)
@@ -163,9 +168,15 @@ struct NativeProductTabs: View {
                         Button {
                             Task { await store.perform { try await store.save(); store.selectedTab = index } }
                         } label: {
-                            VStack(spacing: 5) { Image(systemName: tabs[index].1).font(.system(size: 22)); Text(tabs[index].0).font(.caption) }
+                            VStack(spacing: 5) {
+                                Image(systemName: tabs[index].1).font(.system(size: 22))
+                                Text(tabs[index].0).font(.caption).dynamicTypeSize(...DynamicTypeSize.large).lineLimit(1)
+                            }
                                 .frame(maxWidth: .infinity, minHeight: 58).foregroundStyle(store.selectedTab == index ? ZovaDesign.violet : .white.opacity(0.8))
-                        }.accessibilityIdentifier("tab-" + tabs[index].0).disabled(store.busy)
+                        }.accessibilityLabel(tabs[index].0)
+                            .accessibilityAddTraits(store.selectedTab == index ? .isSelected : [])
+                            .accessibilityShowsLargeContentViewer { Label(tabs[index].0, systemImage: tabs[index].1) }
+                            .accessibilityIdentifier("tab-" + tabs[index].0).disabled(store.busy)
                     }
                 }.padding(.horizontal, 6).background(ZovaDesign.dark.ignoresSafeArea(edges: .bottom))
             }

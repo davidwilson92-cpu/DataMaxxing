@@ -121,6 +121,13 @@ struct ProductDraft: Equatable {
 }
 
 enum ProductLinks {
+    static func deletionReceipt(_ destination: String, configuration: ZovaConfiguration) -> URL? {
+        let prefix = "/data-deletion/status/"
+        guard destination.hasPrefix(prefix) else { return nil }
+        let code = destination.dropFirst(prefix.count)
+        guard code.count == 64, code.allSatisfy({ "0123456789abcdef".contains($0) }) else { return nil }
+        return try? configuration.endpoint(destination)
+    }
     static func localDate(_ value: String, timezone: String) -> Date? {
         let formatter = DateFormatter(); formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm"; formatter.isLenient = false

@@ -7,7 +7,12 @@ explanation, guaranteed 44pt secondary controls, scalable calendar/Next Move tex
 adaptive rows and a scrolling composer in landscape/accessibility layouts.
 New simulator journeys cover large text, landscape, scanned voice presentation,
 Schedule edit-to-draft/list navigation, protected deletion entry and touch targets.
-These changes are NOT in signed build12; fresh native/application CI is pending.
+First candidate 9e62dbc passed 727 SQLite / 728 PostgreSQL and 39 native unit /
+16 UI tests. Visual review then found oversized tab labels and incomplete sheet
+large-text coverage. Follow-up fixes navigation with Large Content Viewer,
+strengthens real content-size testing and retains the deletion-status receipt
+after submitting. Fresh follow-up validation is pending. These changes are NOT
+in signed build12.
 External release remains held. No customer charge or backend migration change.
 
 Read-only production reconciliation now identifies the original tester's schedule
