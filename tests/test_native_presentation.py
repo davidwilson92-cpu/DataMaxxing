@@ -1,6 +1,4 @@
 """Native presentation uses the established device/brand security boundary."""
-import json
-
 import pytest
 from fastapi.testclient import TestClient
 from nova.app import app
@@ -40,8 +38,6 @@ def test_native_account_contract_exposes_only_owned_presentation(native):
 
 def test_native_account_brands_and_revoked_device_are_rejected(native):
     client, _, uid, pair = native
-    foreign, _, foreign_id, _ = __import__('test_account_integrity').account()
-    # account() returns client, uid, token, cookie; use the canonical fixture id.
     from test_account_integrity import account
     _, other_uid, _, _ = account()
     with SessionLocal() as db:

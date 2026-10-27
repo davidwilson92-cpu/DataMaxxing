@@ -12,11 +12,27 @@ final class NativeProductSession: ObservableObject {
     @Published var working = false
     @Published var message: String?
     init() {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--test-fresh-install") { try? KeychainVault.clear() }
+        if ProcessInfo.processInfo.arguments.contains("--native-fixture") {
+            NativeProductFixtures.reset()
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.protocolClasses = [NativeProductFixtures.self]
+            api = NativeAPI(configuration: .bundled, transport: configuration)
+            store = ProductStore(api: api)
+            return
+        }
+        #endif
         api = NativeAPI(configuration: .bundled)
         store = ProductStore(api: api)
     }
     func start() async {
         #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--native-fixture") {
+            try? KeychainVault.save(NativeTokens(access: String(repeating: "a", count: 64), refresh: String(repeating: "r", count: 64), expires: Date().addingTimeInterval(900)))
+            do { try await store.start(); phase = .product } catch { message = error.localizedDescription; phase = .signedOut }
+            return
+        }
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { phase = .signedOut; return }
         #endif
         if !UserDefaults.standard.bool(forKey: "zova-installed") {
@@ -84,18 +100,37 @@ struct NativeProductRoot: View {
                 HStack { Image("ZovaMark").resizable().scaledToFit().frame(width: 40); Text("Zova").font(.largeTitle.bold()) }
                 Text("Because content\nis the fun part.").font(.system(size: 48, weight: .bold, design: .rounded)).minimumScaleFactor(0.65)
                 Text("Turn your ideas into captions and a content plan with Zova, your AI social media manager.").font(.title3).foregroundStyle(.white.opacity(0.75))
-                Button { Task { await session.login() } } label: { HStack { if session.working { ProgressView().tint(.white) }; Text(session.working ? "Opening sign-in…" : "Continue to Zova") } }.buttonStyle(ZovaPrimary()).disabled(session.working).accessibilityIdentifier("continue-zova")
+                signInButton
                 Text("Use your existing Zova account, or create one in the secure sign-in window.").font(.subheadline).foregroundStyle(.white.opacity(0.75))
                 Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isn’t analysed.").font(.footnote).foregroundStyle(.white.opacity(0.75))
                 if let message = session.message { Text(message).font(.callout).accessibilityAddTraits(.updatesFrequently) }
-                HStack(spacing: 24) {
-                    ForEach([("Privacy", "/privacy-policy"), ("Terms", "/terms-of-service"), ("Help", "/help")], id: \.0) { title, path in
-                        Button(title) { if let url = try? session.configuration.endpoint(path) { UIApplication.shared.open(url) } }
-                    }
-                }.tint(ZovaDesign.violet)
-                Text("Beta · " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") + " (" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "") + ")").font(.caption).foregroundStyle(.secondary)
+                welcomeLinks
+                Text(buildLabel).font(.caption).foregroundStyle(.secondary)
             }.padding(28).frame(maxWidth: 560)
         }.background(ZovaDesign.dark).foregroundStyle(.white).preferredColorScheme(.dark)
+    }
+    private var signInButton: some View {
+        Button { Task { await session.login() } } label: {
+            HStack {
+                if session.working { ProgressView().tint(.white) }
+                Text(session.working ? "Opening sign-in…" : "Continue to Zova")
+            }
+        }.buttonStyle(ZovaPrimary()).disabled(session.working).accessibilityIdentifier("continue-zova")
+    }
+    private var welcomeLinks: some View {
+        HStack(spacing: 24) {
+            welcomeLink("Privacy", path: "/privacy-policy")
+            welcomeLink("Terms", path: "/terms-of-service")
+            welcomeLink("Help", path: "/help")
+        }.tint(ZovaDesign.violet)
+    }
+    private func welcomeLink(_ title: String, path: String) -> some View {
+        Button(title) { if let url = try? session.configuration.endpoint(path) { UIApplication.shared.open(url) } }
+    }
+    private var buildLabel: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+        return "Beta · \(version) (\(build))"
     }
 }
 
