@@ -1,0 +1,143 @@
+import SwiftUI
+
+@MainActor
+final class NativeProductSession: ObservableObject {
+    enum Phase { case opening, signedOut, product }
+    let configuration = ZovaConfiguration.bundled
+    let api: NativeAPI
+    let store: ProductStore
+    let signIn = NativeSignIn()
+    let social = NativeSignIn()
+    @Published var phase: Phase = .opening
+    @Published var working = false
+    @Published var message: String?
+    init() {
+        api = NativeAPI(configuration: .bundled)
+        store = ProductStore(api: api)
+    }
+    func start() async {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { phase = .signedOut; return }
+        #endif
+        if !UserDefaults.standard.bool(forKey: "zova-installed") {
+            try? KeychainVault.clear(); UserDefaults.standard.set(true, forKey: "zova-installed")
+        }
+        guard (try? KeychainVault.load()) != nil else { phase = .signedOut; return }
+        do { try await api.ensureAvailable(); try await store.start(); phase = .product }
+        catch { message = error.localizedDescription; phase = .signedOut }
+    }
+    func login() async {
+        guard !working else { return }; working = true; message = nil
+        defer { working = false }
+        do {
+            try await api.ensureAvailable()
+            let verifier = try NativeProof.random(48), state = try NativeProof.random()
+            let returned = try await signIn.open(configuration: configuration, challenge: NativeProof.challenge(verifier), state: state)
+            let code = try NativeProof.code(from: returned, configuration: configuration, state: state)
+            try await api.exchange(code: code, verifier: verifier)
+            store.signedOut = false; try await store.start(); phase = .product
+        } catch { message = error.localizedDescription }
+    }
+    func logout() async {
+        store.clear(); await api.logout(); phase = .signedOut
+    }
+    func connect(_ platform: String) async {
+        await store.perform {
+            try await self.store.save()
+            let target = "/connect/\(platform)?workspace=\(self.store.brand)"
+            let request = try await self.api.handoff(destination: target, browser: true)
+            guard let url = request.url else { throw ZovaFailure.invalidResponse }
+            do {
+                let outcome = try await self.social.connect(url: url, destination: target, configuration: self.configuration)
+                try await self.store.reloadAccount()
+                if ["connection_failed", "no_pages"].contains(outcome) { throw ZovaFailure.server("The connection did not finish. Check the account permissions and try again.") }
+            } catch ZovaFailure.cancelled { try await self.store.reloadAccount() }
+        }
+    }
+    func returned(_ url: URL) { if social.isActive { social.received(url) } else { signIn.received(url) } }
+}
+
+struct NativeProductRoot: View {
+    @StateObject private var session = NativeProductSession()
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var launched = false
+    var body: some View {
+        ZStack {
+            Group {
+                switch session.phase {
+                case .opening: ZovaDesign.dark.ignoresSafeArea().overlay(ProgressView("Opening Zova…").tint(ZovaDesign.violet).foregroundStyle(.white))
+                case .signedOut: welcome
+                case .product: NativeProductTabs(session: session).environmentObject(session.store)
+                }
+            }
+            if !launched { ZovaLaunchScreen(ready: session.phase != .opening) { launched = true }.zIndex(1) }
+            if scenePhase != .active { ZovaDesign.dark.ignoresSafeArea().overlay(Image("ZovaMark").resizable().scaledToFit().frame(width: 72)).zIndex(2).accessibilityHidden(true) }
+        }.task { await session.start() }.onOpenURL { session.returned($0) }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .background { Task { await session.store.perform { try await session.store.save() } } }
+                if phase == .active, session.phase == .product { Task { await session.store.perform { try await session.store.reloadAccount() } } }
+            }
+    }
+    private var welcome: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack { Image("ZovaMark").resizable().scaledToFit().frame(width: 40); Text("Zova").font(.largeTitle.bold()) }
+                Text("Because content\nis the fun part.").font(.system(size: 48, weight: .bold, design: .rounded)).minimumScaleFactor(0.65)
+                Text("Turn your ideas into captions and a content plan with Zova, your AI social media manager.").font(.title3).foregroundStyle(.white.opacity(0.75))
+                Button { Task { await session.login() } } label: { HStack { if session.working { ProgressView().tint(.white) }; Text(session.working ? "Opening sign-in…" : "Continue to Zova") } }.buttonStyle(ZovaPrimary()).disabled(session.working).accessibilityIdentifier("continue-zova")
+                Text("Use your existing Zova account, or create one in the secure sign-in window.").font(.subheadline).foregroundStyle(.white.opacity(0.75))
+                Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isn’t analysed.").font(.footnote).foregroundStyle(.white.opacity(0.75))
+                if let message = session.message { Text(message).font(.callout).accessibilityAddTraits(.updatesFrequently) }
+                HStack(spacing: 24) {
+                    ForEach([("Privacy", "/privacy-policy"), ("Terms", "/terms-of-service"), ("Help", "/help")], id: \.0) { title, path in
+                        Button(title) { if let url = try? session.configuration.endpoint(path) { UIApplication.shared.open(url) } }
+                    }
+                }.tint(ZovaDesign.violet)
+                Text("Beta · " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") + " (" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "") + ")").font(.caption).foregroundStyle(.secondary)
+            }.padding(28).frame(maxWidth: 560)
+        }.background(ZovaDesign.dark).foregroundStyle(.white).preferredColorScheme(.dark)
+    }
+}
+
+struct NativeProductTabs: View {
+    @ObservedObject var session: NativeProductSession
+    @EnvironmentObject var store: ProductStore
+    @State private var nextMove = false
+    @State private var strategy = false
+    @State private var keyboard = false
+    private let tabs = [("Studio", "square.and.pencil"), ("Schedule", "calendar"), ("Performance", "chart.bar"), ("Account", "person.crop.circle")]
+    var body: some View {
+        VStack(spacing: 0) {
+            Group {
+                switch store.selectedTab {
+                case 0: NativeStudioView(nextMove: $nextMove, strategy: $strategy)
+                case 1: NativeScheduleView()
+                case 2: NativePerformanceView()
+                default: NativeAccountView(session: session, strategy: $strategy)
+                }
+            }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            if !keyboard {
+                HStack(spacing: 0) {
+                    ForEach(tabs.indices, id: \.self) { index in
+                        Button {
+                            Task { await store.perform { try await store.save(); store.selectedTab = index } }
+                        } label: {
+                            VStack(spacing: 5) { Image(systemName: tabs[index].1).font(.system(size: 22)); Text(tabs[index].0).font(.caption) }
+                                .frame(maxWidth: .infinity, minHeight: 58).foregroundStyle(store.selectedTab == index ? ZovaDesign.violet : .white.opacity(0.8))
+                        }.accessibilityIdentifier("tab-" + tabs[index].0).disabled(store.busy)
+                    }
+                }.padding(.horizontal, 6).background(ZovaDesign.dark.ignoresSafeArea(edges: .bottom))
+            }
+        }.background(store.selectedTab == 3 ? ZovaDesign.dark : .white).preferredColorScheme(store.selectedTab == 3 ? .dark : .light)
+            .tint(ZovaDesign.purple)
+            .sheet(isPresented: $nextMove) { NativeNextMoveView().environmentObject(store) }
+            .sheet(isPresented: $strategy) { NativeNextMoveView(planning: true).environmentObject(store) }
+            .sheet(isPresented: $store.showReview) { NativePublishView(mode: store.reviewMode).environmentObject(store).interactiveDismissDisabled(store.busy) }
+            .sheet(isPresented: $store.needsConsent) { NativeAIConsentView().environmentObject(store) }
+            .sheet(isPresented: $store.showIntro) { NativeGuideView(introduction: true).environmentObject(store) }
+            .alert("Zova", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button("OK") { store.error = nil } } message: { Text(store.error ?? "") }
+            .onChange(of: store.signedOut) { _, value in if value { Task { await session.logout() } } }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboard = true }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboard = false }
+    }
+}

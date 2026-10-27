@@ -296,10 +296,10 @@ struct ZovaApp: App {
             if ProcessInfo.processInfo.arguments.contains("--test-launch-screen") {
                 LaunchScreenTestHost()
             } else {
-                ZovaRoot()
+                NativeProductRoot()
             }
             #else
-            ZovaRoot()
+            NativeProductRoot()
             #endif
         }
     }

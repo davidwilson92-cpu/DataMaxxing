@@ -190,6 +190,8 @@ app.add_middleware(BodyLimitMiddleware)
 app.include_router(recovery_router)
 from .ai_consent import router as ai_consent_router
 app.include_router(ai_consent_router)
+from .native_presentation import router as native_presentation_router
+app.include_router(native_presentation_router)
 from .schedule_routes import router as schedule_router
 app.include_router(schedule_router)
 from .strategy import router as strategy_router, strategy_context
