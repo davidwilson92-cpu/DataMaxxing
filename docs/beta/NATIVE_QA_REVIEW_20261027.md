@@ -1,5 +1,8 @@
 # Native build 12 review against the original tester workbook
 
+Follow-up work is recorded in [NATIVE_QA_FIXES_20261027.md](NATIVE_QA_FIXES_20261027.md).
+The audit below preserves the build-12 findings before those subsequent fixes.
+
 Reviewed 27 October 2026. This audits native iOS **0.1.0 (12)** against the original tracker. It does not claim every original scenario was rerun on a phone.
 
 ## Decision

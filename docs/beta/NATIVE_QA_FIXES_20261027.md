@@ -55,6 +55,16 @@ these do not execute production erasure.
 - Follow-up candidate validation, visual review and signing remain pending.
   Do not use either build-12 or 9e62dbc results as proof of the follow-up changes.
 
+The b450725 follow-up passed application CI40579704797 (727 SQLite / 728
+PostgreSQL) and all40 native unit tests. Native UI CI40579704520 passed14/16:
+the deletion test queried a Link although the captured hierarchy showed a
+Button with the exact receipt identifier and correct signed-out message; the
+large-text calendar test used only vertical swipes although day1 was outside the
+horizontal viewport. Neither failure is treated as a pass. Corrections query
+the actual control and exercise both calendar axes, then select the day. The
+receipt label now has a44pt hit area; large-text Studio has a shorter readable
+placeholder and header labels retain their full height. A fresh run is required.
+
 ## Production reconciliation (read-only)
 
 The original workbook tester's record was identified directly:

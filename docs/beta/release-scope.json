@@ -84,7 +84,7 @@
     "scripts/unit_economics.py": "0a8000a24aacf5eb089d1abf3313944b41db98ad0fb7dcadeb84340fa8e4cb45",
     "tests/test_beta_monitoring.py": "2b0d70eedcae37c97a2c505261a23b72ebdf5ed8dbb9fb72bfbc264a6e93ed84",
     "Dockerfile": "7b0b7c205cdb3ba441f835057bc8019bb0dbb949330c12f14d276317446680ea",
-    "ios/Zova/NativeStudioView.swift": "f76bc460e62ed57028891988988e93e961da035fb8ab19b888bf6efddb6ad08f",
+    "ios/Zova/NativeStudioView.swift": "0eed78f3ded056e9ad8ec934880b27b01e981ac659ae454ed965486792828660",
     "tests/test_conversation_intent.py": "bd2e8f8f269264a9103c72db1adee5a3f802efcf42da410e0f2e90ab876439f2",
     "tests/test_instagram_audio.py": "4b14c35e7b1cb9a0e7288e36a4adc402e1c526d4a1b192246f87c7bfcf3381de",
     "nova/trends.py": "8d4643ecfd9df0c72d77b9d29ab31adcde1298f510a43b8cc2d5f859bb28e945",
@@ -117,7 +117,7 @@
     "nova/static/facebook-brand.svg": "b06d18d844ed621b89faffb1a33440cc0ec4f1ffea9f36191f50db19a47c59a6",
     "tests/test_trends.py": "00b68f815a2e6f2f17d409ab9fda5a3a2cfebf907be505db943139b2ce133dc7",
     "tests/test_beta_release.py": "420c63f29fba8af7c5c3eaf97f29b4c4abaa623473897fa812d55bd140170130",
-    "ios/ZovaUITests/ZovaUITests.swift": "8ae9bdfa1480f63d5f3cad8dd8fc5be471e515309427aca343748565c7c62371",
+    "ios/ZovaUITests/ZovaUITests.swift": "30e75c4a228b019dc995dcf1b2a861467779697e81179e91c4dfee5f00ad3f44",
     "tests/mobile_connect_client.test.cjs": "5693f358ffab98f1c0a972bf42953d9240c290de02a561c271e8e93b3645a1b5",
     "nova/instagram_audio.py": "02bfb167fea77b5d7757ff9bd6b2602f9a30d0c07e614fe68d89b764e9b362c5",
     "nova/templates/terms.html": "8d8e93b6560e44fdd1c7e5a366330370a49d1531272c63998ee6cd43e15d0628",
@@ -283,7 +283,7 @@
     "nova/templates/connection_review.html": "1bd53f4b5d37093fc18b4012d3303ac664b816af1d93c7435c1a00e59b293b4b",
     "ios/Zova/ZovaApp.swift": "f36da384075d105b2b86081c13a6ea61ac2d21008d0e64cc7c93b9dcb4fb276e",
     "nova/templates/offer_summary.html": "f39fa1ef9ab901a9250bc2fd84ec97a004b3224569de8aed8cf216565e52a2ed",
-    "ios/Zova/NativeProductRoot.swift": "147e9287217b8e126d7e28c334a3817d74c37be4e178d1c63a83cadba12916b7",
+    "ios/Zova/NativeProductRoot.swift": "894083c061789b82c9c528b9762c90de8f7df572242ec66c9fbe599c8e5a2af5",
     "ios/Zova/Assets.xcassets/ZovaMark.imageset/zova-mark.png": "30f7f0aff1e3e6a6401946cdb75d4d3cce0e4eae45e7025cfa95d07735eead49",
     "infra/aws/beta.template.json": "8610594d5b86fa0cf7236080acfa026a0eeedb023c706648f15f14621d0263e0",
     "tests/strategy_preview.py": "d3936268d7bc81bfae4c1689deaf5266d79634f68a3ace03e7ad00bb60378a96",
@@ -321,5 +321,5 @@
   },
   "release_class": "limited-beta",
   "reviewed_update": "2026-10-27 native QA gap fixes; first candidate passed application and native CI, visual review found tab-label wrapping and sheet text-size test weakness. Follow-up applies Large Content Viewer to compact tabs, verifies UIKit text-size in sheets, and preserves a strictly validated deletion receipt after sign-out. Backend/auth/billing unchanged. Fresh follow-up CI pending; external release held, charges disabled, all 79 commercial findings retained.",
-  "source_candidate": "Native tracker follow-up candidate after 3723b64; runtime validation and signed build pending; external release held"
+  "source_candidate": "Native QA follow-up after b450725: receipt control and two-axis calendar regression corrections; fresh validation pending; external release held"
 }

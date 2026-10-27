@@ -132,6 +132,22 @@ final class ZovaUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(element.frame.minX, app.frame.minX - 1)
         XCTAssertLessThanOrEqual(element.frame.maxX, app.frame.maxX + 1)
     }
+    private func revealCalendarDay(_ day: XCUIElement, in app: XCUIApplication) {
+        // A large-text month grid scrolls on two axes. Keep the target row in
+        // view before panning horizontally; vertical swipes alone cannot find it.
+        for _ in 0..<12 {
+            let frame = day.frame
+            if day.isHittable && frame.minX >= 0 && frame.maxX <= app.frame.maxX { return }
+            if frame.minY < app.frame.minY + 85 { app.swipeDown(); continue }
+            if frame.maxY > app.frame.maxY - 100 { app.swipeUp(); continue }
+            let y = (frame.midY - app.frame.minY) / app.frame.height
+            let left = app.coordinate(withNormalizedOffset: CGVector(dx: 0.16, dy: y))
+            let right = app.coordinate(withNormalizedOffset: CGVector(dx: 0.84, dy: y))
+            if frame.maxX > app.frame.maxX { right.press(forDuration: 0.05, thenDragTo: left) }
+            else { left.press(forDuration: 0.05, thenDragTo: right) }
+        }
+        assertTarget(day, app: app)
+    }
     func testThreadExplanationAndSecondaryTargets() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         XCTAssertTrue(app.buttons["brand-selector"].waitForExistence(timeout: 12))
@@ -170,7 +186,9 @@ final class ZovaUITests: XCTestCase {
         app.buttons["tab-Schedule"].tap()
         XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout: 8))
         reveal(app.buttons["Next month"], in: app); assertTarget(app.buttons["Next month"], app: app)
-        reveal(app.buttons["calendar-day-1"], in: app)
+        let day = app.buttons["calendar-day-1"]
+        revealCalendarDay(day, in: app); assertTarget(day, app: app); day.tap()
+        XCTAssertTrue(app.buttons["Show month"].waitForExistence(timeout: 5))
         capture(app, "Native Schedule — scaled calendar")
         app.buttons["tab-Performance"].tap()
         XCTAssertTrue(app.staticTexts["Performance"].waitForExistence(timeout: 8))
@@ -247,10 +265,11 @@ final class ZovaUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Delete my account"].isEnabled)
         app.textFields["Type DELETE to confirm"].tap(); app.textFields["Type DELETE to confirm"].typeText("DELETE")
         let submit = app.buttons["Delete my account"]; reveal(submit, in: app); submit.tap()
-        XCTAssertTrue(app.links["deletion-receipt"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["deletion-receipt"].waitForExistence(timeout: 8), app.debugDescription)
         XCTAssertTrue(app.staticTexts["Your deletion request was received. Account access is closed; data erasure is still pending."].exists)
         XCTAssertFalse(app.secureTextFields["Current password"].exists)
-        reveal(app.links["deletion-receipt"], in: app)
+        reveal(app.buttons["deletion-receipt"], in: app)
+        assertTarget(app.buttons["deletion-receipt"], app: app)
         capture(app, "Native deletion — receipt available after sign-out")
         XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
     }

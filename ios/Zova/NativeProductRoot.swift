@@ -118,7 +118,9 @@ struct NativeProductRoot: View {
                 Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isn’t analysed.").font(.footnote).foregroundStyle(.white.opacity(0.75))
                 if let message = session.message { Text(message).font(.callout).accessibilityAddTraits(.updatesFrequently) }
                 if let receipt = session.deletionReceipt {
-                    Link("View deletion status", destination: receipt).frame(minHeight: 44)
+                    Link(destination: receipt) {
+                        Text("View deletion status").frame(minHeight: 44).contentShape(Rectangle())
+                    }
                         .accessibilityIdentifier("deletion-receipt")
                 }
                 welcomeLinks

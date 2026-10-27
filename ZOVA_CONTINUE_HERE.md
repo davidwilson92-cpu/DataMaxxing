@@ -1,5 +1,30 @@
 # Native iPhone replacement — build 12 externally approved; owner holds release
 
+## Active native QA follow-up
+
+The owner asked to fix the gaps in the original tester audit. Candidate b450725
+follows 9e62dbc with X-format clarity, 44pt controls, large-text/landscape handling,
+honest connection progress and retained deletion-status receipt. Native fixture
+journeys cover voice refresh/reopen, schedule edit/two-post navigation, protected
+deletion/receipt and layout targets. No backend, auth or billing contract changed.
+Application CI40579704797 passed 727 SQLite / 728 PostgreSQL, browser, recovery,
+audits and beta guard. First-candidate native CI40576732230 passed 39 unit / 16 UI;
+visual review caught tab-label wrapping and a sheet test-size override weakness.
+Both are corrected in b450725; its native CI40579704520/40579716105 is pending.
+Do not sign until current native validation and screenshots have been reviewed.
+Codemagic selector now loads the correct native branch; no build started yet.
+
+Read-only production reconciliation identifies the original tester's schedule1 /
+draft45 / owner19 and publication10 as cancelled. No active schedules remain;
+unrelated pending/unknown publication records stay untouched. One deletion request
+for account21 has access revoked and a blocker-free read-only plan (no media,
+drafts, social connections or billing), due3 November. Explicit owner approval
+for a maintenance window and this irreversible erasure is pending; do not execute
+without that approval and the tested runbook. Real Facebook and populated voice
+scan/reopen were requested from the owner and remain pending. External hold,
+customer charges off, Render hosting and inactive monitor are unchanged.
+Details: docs/beta/NATIVE_QA_FIXES_20261027.md. Preserve the original audit below.
+
 Latest audit: docs/beta/NATIVE_QA_REVIEW_20261027.md checks the original workbook's
 57 cases, seven bugs and five UX observations against unchanged native build12.
 Fresh focused tests: 164 passed. Do not claim all tracker items closed: thread

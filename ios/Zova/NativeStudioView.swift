@@ -169,10 +169,10 @@ struct NativeStudioView: View {
     private var headerActions: some View {
         NativeAdaptiveRow(spacing: 10) {
             Button { focused = false; captionEditing = false; run { try await store.newPost() } } label: {
-                Label("New post", systemImage: "plus").font(.caption.weight(.medium)).frame(minHeight: 44).contentShape(Rectangle())
+                Label("New post", systemImage: "plus").font(.caption.weight(.medium)).fixedSize(horizontal: false, vertical: true).frame(minHeight: 44).contentShape(Rectangle())
             }.disabled(store.busy).accessibilityIdentifier("new-post")
             Button { focused = false; captionEditing = false; nextMove = true } label: {
-                Label("Next move", systemImage: "sparkles").font(.subheadline.bold()).padding(.horizontal, 13).padding(.vertical, 8).frame(minHeight: 44).foregroundStyle(.white).background(ZovaDesign.hero, in: Capsule())
+                Label("Next move", systemImage: "sparkles").font(.subheadline.bold()).fixedSize(horizontal: false, vertical: true).padding(.horizontal, 13).padding(.vertical, 8).frame(minHeight: 44).foregroundStyle(.white).background(ZovaDesign.hero, in: Capsule())
             }.accessibilityIdentifier("next-move").disabled(store.busy)
         }
     }
@@ -229,8 +229,8 @@ struct NativeStudioView: View {
                         HStack { NativeAssetPreview(asset: asset, compact: true); Button { store.removeMedia(asset["id"].int) } label: { Image(systemName: "xmark.circle.fill").frame(width: 44, height: 44).contentShape(Rectangle()) }.accessibilityLabel("Remove " + asset["filename"].string) }.padding(5).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 12))
                     } } }
                 }
-                TextField("Describe your post. Zova drafts the caption…", text: Binding(get: { store.draft.composer }, set: { store.draft.composer = String($0.prefix(12000)); store.changed() }), axis: .vertical)
-                    .lineLimit(1...5).focused($focused).accessibilityIdentifier("post-composer").disabled(store.busy && !store.backgroundSaving)
+                TextField(textSize.isAccessibilitySize ? "Your idea…" : "Describe your post. Zova drafts the caption…", text: Binding(get: { store.draft.composer }, set: { store.draft.composer = String($0.prefix(12000)); store.changed() }), axis: .vertical)
+                    .lineLimit(1...5).focused($focused).accessibilityLabel("Describe your post").accessibilityIdentifier("post-composer").disabled(store.busy && !store.backgroundSaving)
                 HStack(spacing: 8) {
                     ForEach(SocialPlatform.allCases) { platform in
                         Button {
