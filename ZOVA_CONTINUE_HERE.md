@@ -1,4 +1,21 @@
-# Native QA fixes — build 13 Testing internally; external release held
+# Native QA fixes — build 13 Testing internally and externally
+
+## External release instruction — 28 October 2026
+
+The owner explicitly lifted the earlier external hold: "I need release for my
+testers." Release validated build 0.1.0 (13) to the existing Zova Social External
+Beta group, submit for Apple's beta review if required, and notify existing testers
+when eligible. No further release permission is needed. This supersedes the
+historical hold statements below and in the 27 October evidence files.
+
+After the owner signed back in, build 13 was assigned to Zova Social External Beta
+and submitted with Automatically notify testers enabled. Apple immediately accepted
+it; the external group's Builds page explicitly showed 0.1.0 (13) — Testing.
+Existing external testers can update now using the same TestFlight invitation.
+No need to notify/release superseded build 12. Keep customer charges disabled,
+Render hosting, and the existing tester limit.
+
+Evidence: docs/beta/evidence/native-qa-20261027/zova-build13-external-testing-20261028.png.
 
 ## Active native QA follow-up
 

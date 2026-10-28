@@ -36,7 +36,7 @@
     "tests/test_instagram_formats.py": "4dec61e71263fdf24d484fb9b4ebf80f37071d1f0a6faae855c4111cde39a09d",
     "tests/test_analytics_integrity.py": "3f551599ae2d3cf86ce27227547a82bffc0f5546620350bb9f2799fcbf847e64",
     "ios/Zova/NativeAPI.swift": "498a66a2e9fe3ca27b04a090df005743e1d8018fdd2a789cadcc144b249b6fb9",
-    "docs/beta/KNOWN_GAPS.md": "3241e5a9146f4a043d7569b4fa88e521d7c7b496b112b0c05a47d779ce97864c",
+    "docs/beta/KNOWN_GAPS.md": "3ae91991059d2371cf7f1ab2373e5740ce7e6c4849e2fdd0d665d5720314741d",
     "nova/analytics_view.py": "ad7c57fe706a4a4ecd805fd9c3446ba01bb33f143c8e0f3cf83eff795bb138a9",
     "nova/conversation.py": "ff3c2f4a7ffb81f7beef674364e124d606dd9ef42521c0b55a29eff532752c21",
     "tests/test_media_privacy.py": "e1acd2589aa35dec8999082a208b7b06572e8aa67fe0165cbfae1b6873e28915",

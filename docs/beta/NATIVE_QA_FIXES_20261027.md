@@ -190,3 +190,16 @@ Testing notes are saved. Owner can update without deleting the app. No external
 group was assigned to build 13 and no external Notify Testers action was taken.
 Build 12 remains externally Approved/held; existing external build 11 is unchanged.
 Evidence: `evidence/native-qa-20261027/zova-build13-internal-testing.png`.
+
+## External release — 28 October 2026
+
+The owner explicitly lifted the hold and requested the latest version for testers.
+After renewed Apple sign-in, build 13 was added to the existing Zova Social External
+Beta group (f3f15099-0bec-49dc-8347-cd55beb805c0), using the saved testing notes and
+Automatically notify testers enabled. Submit for Review immediately completed with
+the group showing **0.1.0 (13) — Testing**. Two existing external testers have access;
+the existing public invitation remains https://testflight.apple.com/join/BxawFPCu.
+No runtime, hosting, customer-billing or tester-limit changes were made. Build 12's
+old Approved/Notify Testers state is superseded by available build 13.
+
+Evidence: `evidence/native-qa-20261027/zova-build13-external-testing-20261028.png`.

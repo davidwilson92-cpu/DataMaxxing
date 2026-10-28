@@ -1,5 +1,14 @@
 # Beta known gaps and required follow-up
 
+## External distribution update — 28 October 2026
+
+Owner explicitly lifted the earlier hold and requested release to existing testers.
+Build 0.1.0 (13), unchanged validated runtime 9504809, was added to Zova Social
+External Beta and submitted with automatic tester notifications enabled. Apple
+immediately accepted it; the external group visibly shows build 13 as Testing.
+The historical hold below is superseded. No runtime, billing or hosting change;
+all outstanding commercial findings and evidence limits remain as recorded.
+
 ## Native tracker follow-up — 27 October 2026
 
 Runtime 9504809 corrects X format clarity, target sizes, adaptive large-text/landscape
