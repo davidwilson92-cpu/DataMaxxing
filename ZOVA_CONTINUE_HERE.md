@@ -1,5 +1,21 @@
 # Native QA fixes — build 13 Testing internally and externally
 
+## LinkedIn setup continuation — 28 October 2026
+
+Resume the existing work recorded in chat "Start LinkedIn API integration"
+(01a16f89-7592-7f32-bc69-61770aadecc1), not a new registration attempt from scratch.
+Prior owner authorised creation of a Zova Social company Page, but LinkedIn blocked
+it for insufficient connections. The member profile was renamed Zova Social;
+that did not create the company Page or a developer application. Current developer
+portal still has no apps. Clicking Company now requires workplace verification;
+the linked verification hub offers government-ID identity verification. No company
+Page/app has been saved, no credentials issued, no runtime files changed.
+
+Asked the owner to switch LinkedIn to the established David Wilson personal profile
+or complete verification directly. Existing app registration remains prepared
+with Zova Social / https://zova-social.com/privacy. Do not create duplicates or
+claim LinkedIn is integrated. See docs/beta/LINKEDIN_SETUP_20261028.md.
+
 ## External release instruction — 28 October 2026
 
 The owner explicitly lifted the earlier external hold: "I need release for my
