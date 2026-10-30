@@ -42,10 +42,12 @@ enum ZovaDesign {
 }
 
 struct ZovaPrimary: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.font(.body.weight(.semibold)).multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true).padding(.vertical, 10).frame(maxWidth: .infinity, minHeight: 48)
-            .foregroundStyle(.white).background(ZovaDesign.purple.opacity(configuration.isPressed ? 0.7 : 1), in: RoundedRectangle(cornerRadius: 13))
+            .foregroundStyle(isEnabled ? Color.white : ZovaDesign.ink.opacity(0.65))
+            .background(isEnabled ? ZovaDesign.purple.opacity(configuration.isPressed ? 0.7 : 1) : ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 13))
     }
 }
 struct ZovaCard<Content: View>: View {
