@@ -52,7 +52,7 @@ actor NativeAPI {
         struct Config: Decodable { let enabled: Bool; let redirect_uri: String }
         let value = try JSONDecoder().decode(Config.self, from: data)
         guard value.enabled, value.redirect_uri == configuration.callback.absoluteString else {
-            throw ZovaFailure.server("The iPhone beta isn’t available on this server yet. Please try again later.")
+            throw ZovaFailure.server("The iPhone app isn’t available on this server yet. Please try again later.")
         }
     }
     func exchange(code: String, verifier: String) async throws {

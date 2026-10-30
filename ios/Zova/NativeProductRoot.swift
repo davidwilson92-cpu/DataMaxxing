@@ -150,7 +150,7 @@ struct NativeProductRoot: View {
     private var buildLabel: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
-        return "Beta · \(version) (\(build))"
+        return "Version \(version) (\(build))"
     }
 }
 

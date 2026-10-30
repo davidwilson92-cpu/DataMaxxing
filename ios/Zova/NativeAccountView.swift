@@ -95,8 +95,8 @@ struct NativeAccountView: View {
                     legal("Security information", "/security"); legal("Privacy", "/privacy-policy"); legal("Terms", "/terms-of-service")
                 }
                 group("Plan & help", icon: "questionmark.circle") {
-                    Text("Testing access").font(.headline)
-                    Text("Customer charges are disabled. No payment card is needed for this beta.").font(.callout).foregroundStyle(.secondary)
+                    Text("Free access").font(.headline)
+                    Text("No payment card or subscription is required.").font(.callout).foregroundStyle(.secondary)
                     Button("Guide") { guide = true }
                     Link("Contact support", destination: URL(string: "mailto:support@zova-social.com")!)
                 }

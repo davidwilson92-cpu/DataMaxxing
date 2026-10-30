@@ -1,11 +1,12 @@
 {
   "authorised_on": "2026-10-10",
+  "candidate_review": "2026-10-30 App Store 1.0.0 candidate preparation; exact validation pending; not submitted",
   "commercial_ready": false,
   "external_beta_authorised_on": "2026-10-20",
   "files": {
     ".dockerignore": "51c4771bdeb44187f3a945240540f3bbb48e5ecc2f3807c143c4b768e74da6bb",
     ".gitattributes": "64fcd23fa58cbdc3fcf7764de36a61437f2c59f1b1546b98966715c42165fe33",
-    ".github/workflows/ios-beta.yml": "fed9551dd7024dc1411da8fd511ff3984344464b0546d929cc78571a9f48941d",
+    ".github/workflows/ios-beta.yml": "4545b5234bf06d6de973c25c1e2e7a2b038f457d2c96bfb54b9c3d8b2ccb8776",
     ".github/workflows/validate.yml": "c06a6198802ed712e1a4014338e9012cbeb1a29751b3c11418400d8ce33149fc",
     "AGENTS.md": "8d238a8ffd7a11b1b00b8ff3e196a171d5316d646ec0653c2fa83d3d196817ae",
     "Dockerfile": "7b0b7c205cdb3ba441f835057bc8019bb0dbb949330c12f14d276317446680ea",
@@ -38,14 +39,14 @@
     "ios/Zova/Core/NativeProtocol.swift": "f4f4df990f4375c2692ba40f88ecf7cbc4f5d5e7b57234e06ad6c0ea0035ab6a",
     "ios/Zova/Core/ProductContract.swift": "ca8b38dd700abeecdd813ff218c3984db903682438603295b91d833b25dc5a84",
     "ios/Zova/KeychainVault.swift": "a4e42df1c47f88bb7f079cdc5d4a8d5501c9407c7b37be3131433c0358a82abd",
-    "ios/Zova/NativeAPI.swift": "498a66a2e9fe3ca27b04a090df005743e1d8018fdd2a789cadcc144b249b6fb9",
-    "ios/Zova/NativeAccountView.swift": "a69a78963883de1e69be7ee4322fcfcdd8bca7ba7d791c3b9f80de57c0d23051",
+    "ios/Zova/NativeAPI.swift": "84093e514995e3a29b6a638c99318c0164c911565a77b4c58039d1bb31c6bd43",
+    "ios/Zova/NativeAccountView.swift": "98fe1f8906f18280add14ba6dfee8b39e2adf5753a0cdfa8dbd4a16616c49ae6",
     "ios/Zova/NativeDraftPreview.swift": "e42b5160587aa8ac32376afc6d011fb0cc2d7c2ff3ed71101dbf874eacbdf6da",
     "ios/Zova/NativeNextMoveView.swift": "a946212259326e36aaeb8b5358f3f1d3bb3120804891e60d555a8b5ba8039ebb",
     "ios/Zova/NativePerformanceView.swift": "dd1fc098309f939845423a4817fa8b364816f1604c532ad309e9cc278668e803",
     "ios/Zova/NativePostOptionsView.swift": "7fbeded30f61b1dfea4125e290b8187a3c4cebbd6036b28f02414ce4f98f994f",
     "ios/Zova/NativeProductFixtures.swift": "b832f51973d1cff9b48edf33a09fb203377d4ab553c1d63e67646c273e8457b5",
-    "ios/Zova/NativeProductRoot.swift": "910bb1cd4bf41ab28ac2b1c1c226c4043dba5f7deb435bd63ed2929c495fa1e9",
+    "ios/Zova/NativeProductRoot.swift": "c343a91b4f86ddae5ec34a873927e62c44fd2ff470c477b90098f1b34a7b0879",
     "ios/Zova/NativePublishView.swift": "e6a704b397746257f34fb0c26c44171cbf9b5f43c3ecc9f23559aa16a9e9fb66",
     "ios/Zova/NativeRecoveryComparison.swift": "ea68195fae542b08170b748417a93f4fe7eb97065dcfeef1ef3ebc7eedb9c9b5",
     "ios/Zova/NativeScheduleListing.swift": "f9086ba2e12b874350b0bd3ad3beac43c8e48a2ced62bbdd33374872f102b12b",
@@ -63,7 +64,7 @@
     "ios/ZovaTests/NativeUpgradeTests.swift": "213211b0f3ab18b5d52755ce345bc93b1cb37eab2d3f15e3951c85f9bfaf0a4a",
     "ios/ZovaTests/ProductContractTests.swift": "f4a4a4e730d28b31946d2aea0bd98ce606271d3465ed703cc22fe008edaff415",
     "ios/ZovaUITests/ZovaUITests.swift": "faefe793403730bad5b375c3672491f05be6f6d6859fe72f558bd105faccba95",
-    "ios/project.yml": "1a43c93f2e76d2300b51a070eab696fab89f6a6d28bec75fd2720de79cd27086",
+    "ios/project.yml": "87cb1550ae599fc981ce3aba13d1f0672018fb32299a52776b924922ed49e7b7",
     "nova/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "nova/access_logging.py": "ca1b8af68d41766694a253d780b48c78838384d985d3e7bcf7c7266696e102fd",
     "nova/account_deletion.py": "825b7b4ec27d61e9ab182c3bc5d70def2071218712303d4e970f99db543195e2",
@@ -329,6 +330,5 @@
   },
   "release_class": "limited-beta",
   "reviewed_update": "2026-10-27 native QA gap fixes; first candidate passed application and native CI, visual review found tab-label wrapping and sheet text-size test weakness. Follow-up applies Large Content Viewer to compact tabs, verifies UIKit text-size in sheets, and preserves a strictly validated deletion receipt after sign-out. Backend/auth/billing unchanged. Fresh follow-up CI pending; external release held, charges disabled, all 79 commercial findings retained.",
-  "source_candidate": "Native QA follow-up after b450725: receipt control and two-axis calendar regression corrections; fresh validation pending; external release held",
-  "candidate_review": "2026-10-30 beta tester remediation; validation in progress; not released"
+  "source_candidate": "Based on verified 761153c runtime plus neutral release copy/version; all known gaps and commercial_ready=false retained"
 }
