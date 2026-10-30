@@ -1,6 +1,6 @@
 {
   "authorised_on": "2026-10-10",
-  "candidate_review": "2026-10-30 App Store candidate: native new Facebook connections unavailable until customer approval; existing grants and Instagram preserved; exact validation required",
+  "candidate_review": "2026-10-30 App Store candidate: Facebook availability gate plus bounded calendar test drag correcting evidenced overshoot; runtime unchanged from b6910fc; exact validation required",
   "commercial_ready": false,
   "external_beta_authorised_on": "2026-10-20",
   "files": {
@@ -63,7 +63,7 @@
     "ios/ZovaTests/NativeProtocolTests.swift": "dd97398e10712c8c913c04467186a3dc28ac0d2e0e1f1e1a690cb7f064056b6a",
     "ios/ZovaTests/NativeUpgradeTests.swift": "213211b0f3ab18b5d52755ce345bc93b1cb37eab2d3f15e3951c85f9bfaf0a4a",
     "ios/ZovaTests/ProductContractTests.swift": "a9858475bfbadafcee007bc790b0d6293996e13cc48d842082858bc896023245",
-    "ios/ZovaUITests/ZovaUITests.swift": "4e7b1b0d346dde9e7177f1cff15f1300ae65aed42523fbe3ee65ecf4d5ffbe24",
+    "ios/ZovaUITests/ZovaUITests.swift": "74cc713d73183774a37f35e4a96e12fe1b793e2cc1b07055f0f066df81686f34",
     "ios/project.yml": "87cb1550ae599fc981ce3aba13d1f0672018fb32299a52776b924922ed49e7b7",
     "nova/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "nova/access_logging.py": "ca1b8af68d41766694a253d780b48c78838384d985d3e7bcf7c7266696e102fd",

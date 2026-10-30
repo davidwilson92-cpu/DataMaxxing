@@ -175,18 +175,21 @@ final class ZovaUITests: XCTestCase {
         XCTAssertLessThanOrEqual(element.frame.maxX, app.frame.maxX + 1)
     }
     private func revealCalendarDay(_ day: XCUIElement, in app: XCUIApplication) {
-        // A large-text month grid scrolls on two axes. Keep the target row in
-        // view before panning horizontally; vertical swipes alone cannot find it.
+        // Keep the row in view, then pan only far enough to expose the day.
+        // Full-width flicks can overshoot a scaled cell and oscillate forever.
         for _ in 0..<12 {
             let frame = day.frame
             if day.isHittable && frame.minX >= 0 && frame.maxX <= app.frame.maxX { return }
             if frame.minY < app.frame.minY + 85 { app.swipeDown(); continue }
             if frame.maxY > app.frame.maxY - 100 { app.swipeUp(); continue }
             let y = (frame.midY - app.frame.minY) / app.frame.height
-            let left = app.coordinate(withNormalizedOffset: CGVector(dx: 0.16, dy: y))
-            let right = app.coordinate(withNormalizedOffset: CGVector(dx: 0.84, dy: y))
-            if frame.maxX > app.frame.maxX { right.press(forDuration: 0.05, thenDragTo: left) }
-            else { left.press(forDuration: 0.05, thenDragTo: right) }
+            let moveLeft = frame.maxX > app.frame.maxX - 24
+            let overflow = moveLeft ? frame.maxX - (app.frame.maxX - 24) : app.frame.minX + 24 - frame.minX
+            let distance = min(120, max(30, overflow)) / app.frame.width
+            let startX: CGFloat = moveLeft ? 0.80 : 0.20
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: startX, dy: y))
+            let end = app.coordinate(withNormalizedOffset: CGVector(dx: startX + (moveLeft ? -distance : distance), dy: y))
+            start.press(forDuration: 0.15, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.3)
         }
         assertTarget(day, app: app)
     }
