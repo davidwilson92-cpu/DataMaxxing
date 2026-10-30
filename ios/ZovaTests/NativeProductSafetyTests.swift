@@ -1,0 +1,336 @@
+import XCTest
+import UIKit
+@testable import Zova
+
+@MainActor
+final class NativeProductSafetyTests: XCTestCase {
+    override func tearDown() { try? KeychainVault.clear(); NativeDraftRecovery.remove(owner: "1:0"); NativeMediaFiles.clear() }
+    private func api() throws -> NativeAPI {
+        NativeProductFixtures.reset(); NativeDraftRecovery.remove(owner: "1:0")
+        NativeResumeState.saveBrand(0, user: 1); NativeResumeState.saveDraft(nil, user: 1, brand: 0); NativeResumeState.saveIntro(-1, user: 1)
+        try KeychainVault.save(NativeTokens(access: String(repeating: "a", count: 64), refresh: String(repeating: "r", count: 64), expires: Date().addingTimeInterval(900)))
+        let configuration = URLSessionConfiguration.ephemeral; configuration.protocolClasses = [ProductTestTransport.self]
+        ProductTestTransport.respond = { request in
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            return (status, try! value.encoded(), headers, 0)
+        }
+        return NativeAPI(configuration: .bundled, transport: configuration)
+    }
+    func testResumePointersAreSeparatedByUserAndBrand() {
+        NativeResumeState.saveBrand(4, user: 91001)
+        NativeResumeState.saveDraft(88, user: 91001, brand: 4)
+        NativeResumeState.saveDraft(99, user: 91001, brand: 5)
+        XCTAssertEqual(NativeResumeState.brand(user: 91001), 4)
+        XCTAssertEqual(NativeResumeState.draft(user: 91001, brand: 4), 88)
+        XCTAssertEqual(NativeResumeState.draft(user: 91001, brand: 5), 99)
+        XCTAssertEqual(NativeResumeState.draft(user: 91002, brand: 4), 0)
+        NativeResumeState.saveDraft(nil, user: 91001, brand: 4)
+        XCTAssertEqual(NativeResumeState.draft(user: 91001, brand: 4), 0)
+    }
+    func testSavedConversationReopensAfterRestart() async throws {
+        let service = try api(), first = ProductStore(api: service)
+        try await first.start()
+        first.draft.composer = "A saved idea"; first.changed(); try await first.save()
+        let id = first.draft.id
+        let second = ProductStore(api: service)
+        try await second.start()
+        XCTAssertEqual(second.draft.id, id)
+        XCTAssertEqual(second.draft.composer, "A saved idea")
+        try await second.newPost()
+        let third = ProductStore(api: service); try await third.start()
+        XCTAssertNil(third.draft.id)
+    }
+    func testProductRequestsKeepDeviceTokensOutOfCookieTransport() async throws {
+        let api = try api()
+        let expected = expectation(description: "owned product request")
+        ProductTestTransport.respond = { request in
+            if request.url?.path == "/api/native/account" {
+                XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Cookie"), "nova_session=ios.synthetic-fixture")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Origin"), "https://zova-social.com")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "X-Zova-Brand"), "12")
+                XCTAssertEqual(request.url?.host, "zova-social.com")
+                expected.fulfill()
+            }
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            return (status, try! value.encoded(), headers, 0)
+        }
+        _ = try await api.product("/api/native/account", brand: 12)
+        await fulfillment(of: [expected], timeout: 3)
+        do { _ = try await api.product("https://untrusted.example/steal"); XCTFail("External request accepted") }
+        catch ZovaFailure.unsafeURL { }
+    }
+    func testServerFailureDoesNotReplayPublish() async throws {
+        let api = try api(); let once = expectation(description: "one publication attempt"); once.assertForOverFulfill = true
+        ProductTestTransport.respond = { request in
+            if request.url?.path == "/api/publish" { once.fulfill(); return (502, Data("{}".utf8), [:], 0) }
+            let (status, value, headers) = NativeProductFixtures.response(request); return (status, try! value.encoded(), headers, 0)
+        }
+        do { _ = try await api.product("/api/publish", method: "POST", body: .object(["review_token": .string("synthetic")])) ; XCTFail("Expected failure") }
+        catch let issue as ProductError { XCTAssertEqual(issue.status, 502) }
+        await fulfillment(of: [once], timeout: 3)
+    }
+    func testNewSignInCannotReusePreviousUsersProductCookie() async throws {
+        let api = try api()
+        var cookieGeneration = 0
+        var productCookies: [String] = []
+        ProductTestTransport.respond = { request in
+            if request.url?.path == "/api/v1/auth/token" {
+                let pair = JSONValue.object(["access_token": .string(String(repeating: "b", count: 64)), "refresh_token": .string(String(repeating: "s", count: 64)), "expires_in": .integer(900), "token_type": .string("Bearer")])
+                return (200, try! pair.encoded(), [:], 0)
+            }
+            if request.url?.path == "/api/v1/native-web-session" {
+                cookieGeneration += 1
+                return (200, Data("{\"destination\":\"/studio\"}".utf8), ["Set-Cookie": "nova_session=ios.owner-\(cookieGeneration); Path=/; Max-Age=900; Secure; HttpOnly; SameSite=Lax"], 0)
+            }
+            if request.url?.path == "/api/native/account" { productCookies.append(request.value(forHTTPHeaderField: "Cookie") ?? "") }
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            return (status, try! value.encoded(), headers, 0)
+        }
+        _ = try await api.product("/api/native/account")
+        try await api.exchange(code: String(repeating: "c", count: 43), verifier: String(repeating: "v", count: 64))
+        _ = try await api.product("/api/native/account")
+        XCTAssertEqual(productCookies, ["nova_session=ios.owner-1", "nova_session=ios.owner-2"])
+    }
+    func testSignOutResetsBrandAndPrivatePresentationState() throws {
+        let store = ProductStore(api: try api())
+        store.brand = 12; store.selectedTab = 3; store.needsConsent = true; store.showIntro = true
+        store.moreDrafts = true; store.error = "Previous account detail"; store.reviewMode = "schedule"
+        store.clear()
+        XCTAssertEqual(store.brand, 0); XCTAssertEqual(store.selectedTab, 0)
+        XCTAssertFalse(store.needsConsent); XCTAssertFalse(store.showIntro); XCTAssertFalse(store.moreDrafts)
+        XCTAssertNil(store.error); XCTAssertEqual(store.reviewMode, "publish")
+    }
+    func testAccountFormCannotReportSuccessAfterLoginRedirectOrValidationError() async throws {
+        let api = try api()
+        for target in ["/login?next=/account", "/account?error=current_password", "https://untrusted.example/"] {
+            ProductTestTransport.respond = { request in
+                if request.url?.path == "/account/password" { return (303, Data(), ["Location": target], 0) }
+                let (status, value, headers) = NativeProductFixtures.response(request)
+                return (status, try! value.encoded(), headers, 0)
+            }
+            do {
+                _ = try await api.form("/account/password", fields: ["current_password": "synthetic-only"])
+                XCTFail("Unsafe or failed redirect was reported as saved")
+            } catch { }
+        }
+    }
+    func testLateProductResponseCannotRepopulateSignedOutAccount() async throws {
+        let api = try api(), store = ProductStore(api: api), started = expectation(description: "account requested")
+        ProductTestTransport.respond = { request in
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            if request.url?.path == "/api/native/account" { started.fulfill(); return (status, try! value.encoded(), headers, 0.2) }
+            return (status, try! value.encoded(), headers, 0)
+        }
+        let pending = Task { try await store.reloadAccount() }
+        await fulfillment(of: [started], timeout: 3)
+        store.clear(); await api.forget()
+        do { try await pending.value; XCTFail("Stale account accepted") } catch { }
+        XCTAssertTrue(store.account.isNull); XCTAssertNil(try KeychainVault.load())
+    }
+    func testOptionalIntroFailureDoesNotBlockAuthenticatedStudio() async throws {
+        let store = ProductStore(api: try api())
+        ProductTestTransport.respond = { request in
+            if request.url?.path == "/api/studio/intro/claim" { return (503, Data(), [:], 0) }
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            return (status, try! value.encoded(), headers, 0)
+        }
+        try await store.start()
+        XCTAssertEqual(store.account["profile"]["id"].int, 1)
+        XCTAssertFalse(store.showIntro); XCTAssertEqual(store.draft.selected, ["instagram"])
+        store.clear()
+    }
+    func testFailedSaveBlocksNavigationAndRetainsRecovery() async throws {
+        let api = try api(), store = ProductStore(api: api)
+        try await store.start(); try await store.openDraft(24)
+        store.draft.composer = "Keep this idea"; store.changed()
+        ProductTestTransport.respond = { request in
+            if request.httpMethod == "PATCH" { return (409, Data("{\"detail\":\"Draft changed elsewhere\"}".utf8), [:], 0) }
+            let (status, value, headers) = NativeProductFixtures.response(request); return (status, try! value.encoded(), headers, 0)
+        }
+        do { try await store.newPost(); XCTFail("Navigation must stop on conflict") } catch { }
+        XCTAssertEqual(store.draft.id, 24); XCTAssertEqual(store.draft.composer, "Keep this idea")
+        XCTAssertEqual(NativeDraftRecovery.load(owner: "1:0")["workspace"]["composer"].string, "Keep this idea")
+        store.clear()
+    }
+    func testSendingPersistsTranscriptAndEditableCaptionWithoutPublication() async throws {
+        let api = try api(), store = ProductStore(api: api)
+        try await store.start(); store.draft.composer = "A useful pottery tip"; store.changed()
+        await store.perform { try await store.send() }
+        XCTAssertNil(store.error); XCTAssertTrue(store.draft.composer.isEmpty)
+        XCTAssertEqual(store.draft.conversation.first?["content"].string, "A useful pottery tip")
+        XCTAssertFalse(store.caption("instagram").isEmpty); XCTAssertTrue(store.draft.editable)
+        let id = try XCTUnwrap(store.draft.id); try await store.openDraft(id)
+        XCTAssertFalse(store.caption("instagram").isEmpty); XCTAssertTrue(store.draft.composer.isEmpty)
+        store.clear()
+    }
+    func testFollowUpDoesNotRepeatSentAttachmentOrLoseItFromPost() async throws {
+        let store = ProductStore(api: try api())
+        try await store.start()
+        store.draft.workspace["media"] = .array([.object(["id": .integer(4), "kind": .string("video"), "filename": .string("synthetic.mp4")])])
+        store.draft.workspace["media_asset_ids"] = .array([.integer(4)])
+        store.draft.composer = "A pottery tip"; store.changed()
+        await store.perform { try await store.send() }
+        XCTAssertNil(store.error); XCTAssertTrue(store.draft.unsentMedia.isEmpty)
+        store.draft.composer = "Make it shorter"; store.changed()
+        await store.perform { try await store.send() }
+        XCTAssertNil(store.error)
+        XCTAssertEqual(store.draft.conversation.count, 2)
+        XCTAssertEqual(store.draft.conversation[0]["media_asset_ids"], .array([.integer(4)]))
+        XCTAssertTrue(store.draft.conversation[1]["media"].array.isEmpty)
+        XCTAssertEqual(store.draft.mediaIDs, .array([.integer(4)]))
+        store.clear()
+    }
+    func testSendDuringBackgroundSaveWaitsForRevisionAndRunsOnce() async throws {
+        let api = try api(), store = ProductStore(api: api)
+        let saving = expectation(description: "autosave started"), generated = expectation(description: "one generation")
+        generated.assertForOverFulfill = true
+        try await store.start()
+        ProductTestTransport.respond = { request in
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            if request.httpMethod == "PATCH", value["workspace"]["composer"].string == "An idea" {
+                saving.fulfill(); return (status, try! value.encoded(), headers, 0.2)
+            }
+            if request.url?.path == "/api/ai/generate" { generated.fulfill() }
+            return (status, try! value.encoded(), headers, 0)
+        }
+        store.draft.composer = "An idea"; store.changed()
+        await fulfillment(of: [saving], timeout: 3)
+        XCTAssertTrue(store.backgroundSaving)
+        await store.perform { try await store.send() }
+        await fulfillment(of: [generated], timeout: 3)
+        XCTAssertNil(store.error); XCTAssertTrue(store.draft.composer.isEmpty)
+        XCTAssertFalse(store.draft.variants.object.isEmpty)
+        XCTAssertEqual(store.draft.conversation.filter { $0["role"].string == "user" }.count, 1)
+        store.clear()
+    }
+    func testTypingDuringBackgroundSaveRetainsNewestTextAndDoesNotCancelPatch() async throws {
+        let api = try api(), store = ProductStore(api: api), saving = expectation(description: "debounced PATCH started")
+        try await store.start()
+        ProductTestTransport.respond = { request in
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            if request.httpMethod == "PATCH" { saving.fulfill(); return (status, try! value.encoded(), headers, 0.2) }
+            return (status, try! value.encoded(), headers, 0)
+        }
+        store.draft.composer = "First words"; store.changed()
+        await fulfillment(of: [saving], timeout: 3)
+        XCTAssertTrue(store.backgroundSaving)
+        store.draft.composer = "First words and the next sentence"; store.changed()
+        try await Task.sleep(for: .milliseconds(350))
+        XCTAssertNil(store.error); XCTAssertEqual(store.draft.composer, "First words and the next sentence")
+        XCTAssertTrue(store.dirty)
+        ProductTestTransport.respond = { request in
+            let (status, value, headers) = NativeProductFixtures.response(request); return (status, try! value.encoded(), headers, 0)
+        }
+        await store.perform { try await store.save() }
+        XCTAssertNil(store.error); XCTAssertFalse(store.dirty)
+        let saved = try await store.savedVersion()
+        XCTAssertEqual(saved.composer, "First words and the next sentence")
+        store.clear()
+    }
+    func testConflictingCurrentDraftCanRecoverAsNewWithoutRetryingOriginal() async throws {
+        let api = try api(), store = ProductStore(api: api)
+        try await store.start(); try await store.openDraft(24)
+        store.draft.revision = 0; store.draft.composer = "Local conflict"; store.changed()
+        store.recovery = NativeDraftRecovery.load(owner: "1:0")
+        try await store.restoreRecovery(asNew: true)
+        XCTAssertNotEqual(store.draft.id, 24); XCTAssertEqual(store.draft.composer, "Local conflict")
+        let original = try await store.request("/api/drafts/24")
+        XCTAssertEqual(original["revision"].int, 1); XCTAssertEqual(original["workspace"]["composer"].string, "")
+        store.clear()
+    }
+    func testSignOutRemovesAllBrandsLocalRecoveryOnlyForThatUser() throws {
+        var draft = ProductDraft(); draft.composer = "Synthetic private work"
+        for owner in ["1:0", "1:12", "2:0"] { try NativeDraftRecovery.save(draft, owner: owner) }
+        defer { NativeDraftRecovery.removeUser(2) }
+        NativeDraftRecovery.removeUser(1)
+        XCTAssertTrue(NativeDraftRecovery.load(owner: "1:0").isNull)
+        XCTAssertTrue(NativeDraftRecovery.load(owner: "1:12").isNull)
+        XCTAssertFalse(NativeDraftRecovery.load(owner: "2:0").isNull)
+    }
+    func testExpiredLoginLocksUIButKeepsUnsavedDraftForSameOwner() async throws {
+        let store = ProductStore(api: try api())
+        try await store.start()
+        store.draft.composer = "An idea written just before the session expired"; store.changed()
+        store.clear(preserveRecovery: true)
+        XCTAssertTrue(store.account.isNull); XCTAssertTrue(store.draft.composer.isEmpty)
+        XCTAssertFalse(NativeDraftRecovery.load(owner: "1:0").isNull)
+        XCTAssertTrue(NativeDraftRecovery.load(owner: "2:0").isNull)
+        try await store.start(); try await store.restoreRecovery(asNew: true)
+        XCTAssertEqual(store.draft.composer, "An idea written just before the session expired")
+        store.clear(); XCTAssertTrue(NativeDraftRecovery.load(owner: "1:0").isNull)
+    }
+    func testAttachmentSelectionRejectsMixedMediaBeforeAnyUpload() throws {
+        let store = ProductStore(api: try api())
+        XCTAssertNoThrow(try store.validateAttachments(Array(repeating: "image/jpeg", count: 10)))
+        XCTAssertThrowsError(try store.validateAttachments(Array(repeating: "image/jpeg", count: 11)))
+        XCTAssertThrowsError(try store.validateAttachments(["video/mp4", "image/jpeg"]))
+        store.draft.workspace["media"] = .array([.object(["id": .integer(1), "kind": .string("video")])])
+        XCTAssertThrowsError(try store.validateAttachments(["image/jpeg"]))
+    }
+    func testRecoveryCannotOverwriteChangedServerDraft() async throws {
+        let api = try api(), store = ProductStore(api: api)
+        try await store.start()
+        var old = ProductDraft(NativeProductFixtures.draft(24)); old.revision = 0; old.composer = "Recover separately"
+        try NativeDraftRecovery.save(old, owner: "1:0"); store.recovery = NativeDraftRecovery.load(owner: "1:0")
+        do { try await store.restoreRecovery(); XCTFail("Stale recovery must not overwrite") } catch { }
+        XCTAssertFalse(store.recovery.isNull)
+        try await store.restoreRecovery(asNew: true)
+        XCTAssertNotEqual(store.draft.id, 24); XCTAssertEqual(store.draft.composer, "Recover separately")
+        XCTAssertTrue(NativeDraftRecovery.load(owner: "another-user:0").isNull)
+        store.clear()
+    }
+    func testFileBackedMultipartAndCleanupCannotDeleteUnownedFile() throws {
+        let source = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+        let original = Data(repeating: 17, count: 130_000); try original.write(to: source)
+        defer { try? FileManager.default.removeItem(at: source) }
+        let body = try NativeMediaFiles.multipart(file: source, filename: "clip\"\r\n.mp4", mime: "video/mp4", boundary: "test-boundary")
+        let data = try Data(contentsOf: body)
+        XCTAssertNotNil(data.range(of: original)); XCTAssertTrue(String(decoding: data.prefix(150), as: UTF8.self).contains("filename=\"clip.mp4\""))
+        NativeMediaFiles.remove(source); XCTAssertTrue(FileManager.default.fileExists(atPath: source.path))
+        NativeMediaFiles.remove(body); XCTAssertFalse(FileManager.default.fileExists(atPath: body.path))
+        let ownedCopy = try NativeMediaFiles.copyOwned(source, extension: "mp4")
+        XCTAssertEqual(try Data(contentsOf: ownedCopy), original)
+        NativeMediaFiles.clear()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: ownedCopy.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: source.path))
+    }
+    func testAttachmentConversionProducesReadableJPEGWithoutDeletingSource() throws {
+        let file = try NativeMediaFiles.create(extension: "png")
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 80, height: 40), format: format).image { context in
+            UIColor.purple.setFill(); context.fill(CGRect(x: 0, y: 0, width: 80, height: 40))
+        }
+        try XCTUnwrap(image.pngData()).write(to: file)
+        defer { NativeMediaFiles.remove(file) }
+        let converted = try NativeMediaFiles.compatibleImage(file)
+        defer { NativeMediaFiles.remove(converted) }
+        XCTAssertEqual(converted.pathExtension, "jpg")
+        let bytes = try Data(contentsOf: converted)
+        XCTAssertEqual(Array(bytes.prefix(2)), [0xff, 0xd8])
+        XCTAssertEqual(try XCTUnwrap(UIImage(data: bytes)).size, CGSize(width: 80, height: 40))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
+    }
+    func testOversizedPhotoIsRejectedAndMultipartTemporaryFileIsRemoved() throws {
+        let file = try NativeMediaFiles.create(extension: "jpg")
+        defer { NativeMediaFiles.remove(file) }
+        try Data(repeating: 1, count: 15 * 1024 * 1024 + 1).write(to: file)
+        let before = try FileManager.default.contentsOfDirectory(atPath: NativeMediaFiles.directory.path)
+        XCTAssertThrowsError(try NativeMediaFiles.multipart(file: file, filename: "large.jpg", mime: "image/jpeg", boundary: "test-boundary"))
+        XCTAssertEqual(Set(before), Set(try FileManager.default.contentsOfDirectory(atPath: NativeMediaFiles.directory.path)))
+    }
+}
+
+private final class ProductTestTransport: URLProtocol {
+    static var respond: ((URLRequest) -> (Int, Data, [String: String], Double))!
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let (status, bytes, headers, delay) = Self.respond(request)
+        DispatchQueue.global().asyncAfter(deadline: .now() + delay) { [self] in
+            client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: ["Content-Type":"application/json"].merging(headers) { _, new in new })!, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: bytes); client?.urlProtocolDidFinishLoading(self)
+        }
+    }
+    override func stopLoading() { }
+}

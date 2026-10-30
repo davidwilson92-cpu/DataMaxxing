@@ -8,6 +8,7 @@ let studioLoading = true;
 let saveLabel = 'Ready';
 let workspaceEpoch=0;
 let retryTurn=null;
+let conversationKind='post';
 const editableDraft = () => ['draft','failed','partial','cancelled'].includes(currentDraftStatus);
 
 function setAutosaveStatus(text){
@@ -27,7 +28,7 @@ function addAssistantMessage(text,extra=''){
 function draftPayload(){
   return {brief:lastBrief,instruction:'',platforms:Object.keys(variants),variants,revision:draftRevision,thread_length:+document.getElementById('threadLength').value,
     workspace:{instagram_format:instagramFormat(),instagram_audio:window.zovaInstagramMusic?.snapshot()||null,media_asset_ids:uploadedMediaIds,video_duration:uploadedVideoDuration,link_url:document.getElementById('linkUrl').value,
-      conversation,text_history:textHistory,composer:document.getElementById('brief').value,pending_message:retryTurn?.text||'',pending_media_asset_ids:retryTurn?.mediaIds||[],pending_link_url:retryTurn?.link||'',selected_platforms:selectedPlatforms(),platform_selection_explicit:platformSelectionExplicit,active_platform:currentPlatform}};
+      conversation,conversation_kind:conversationKind,text_history:textHistory,composer:document.getElementById('brief').value,pending_message:retryTurn?.text||'',pending_media_asset_ids:retryTurn?.mediaIds||[],pending_link_url:retryTurn?.link||'',selected_platforms:selectedPlatforms(),platform_selection_explicit:platformSelectionExplicit,active_platform:currentPlatform}};
 }
 function scheduleAutosave(){
   if(studioLoading || !editableDraft())return;
@@ -127,7 +128,7 @@ async function sendMessage(retryText=null){
     if(plan.media_inspection?.length)showMediaInspection(plan.media_inspection);scrollChat(true);addThinking();
     if(plan.action==='answer'){removeThinking();addAssistantMessage(plan.reply||'What would you like to create or change?');}
     else if(plan.action==='insight'){
-      const result=await api('/api/insights',{method:'POST',headers,body:JSON.stringify({question:text})});if(epoch!==workspaceEpoch)return;removeThinking();addAssistantMessage(result.answer);
+      const result=await api('/api/insights',{method:'POST',headers,body:JSON.stringify({question:text})});if(epoch!==workspaceEpoch)return;removeThinking();addAssistantMessage(result.answer);conversationKind='insight';
     }else if(plan.action==='publish'||plan.action==='schedule'){
       removeThinking();await saveDraftNow();
       if(!Object.keys(variants).length)addAssistantMessage('Create a draft first, then review it before publishing.');
@@ -176,7 +177,7 @@ async function loadRequestedDraft(){
     if(!id)return;
     const row=await api(`/api/drafts/${encodeURIComponent(id)}`),ws=row.workspace||{};
     if(epoch!==workspaceEpoch)return;
-    currentDraftTitle=row.display_title||row.title||'';platformSelectionExplicit=row.workspace?.platform_selection_explicit===true;retryTurn=null;
+    currentDraftTitle=row.display_title||row.title||'';platformSelectionExplicit=row.workspace?.platform_selection_explicit===true;retryTurn=null;conversationKind=ws.conversation_kind||'post';
     plannedOccurrence=row.planned||null;
     publicationStates={};textHistory=ws.text_history||[];variants=row.variants||{};currentDraftId=row.id;draftRevision=row.revision||0;currentDraftStatus=row.status||'draft';lastBrief=row.brief||'';
     currentPlatform=ws.active_platform||row.platforms?.[0]||'x';if(Object.keys(variants).length&&!variants[currentPlatform])currentPlatform=Object.keys(variants)[0];
@@ -199,7 +200,7 @@ async function loadRequestedDraft(){
 async function newConversation(){
   if(sendingMessage||studioLoading)return;
   try{await saveDraftNow();}catch(error){addAssistantMessage('Your changes could not be saved. Retry saving before starting a new chat.');return;}
-  workspaceEpoch++;retryTurn=null;currentDraftTitle='';
+  workspaceEpoch++;retryTurn=null;currentDraftTitle='';conversationKind='post';
   clearTimeout(autosaveTimer);invalidateReview();mediaUploadVersion++;mediaUploading=false;
   document.getElementById('instagramFormat').value='post';
   window.zovaInstagramMusic?.reset();

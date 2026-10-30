@@ -303,6 +303,8 @@ def _tiktok_refresh(conn: SocialConnection, db: Session) -> str:
 
 
 def access_token(conn: SocialConnection, db: Session) -> str:
+    if json_meta(conn).get('connection_health') == 'reconnect':
+        raise RuntimeError('Access was revoked or expired. Reconnect this social account.')
     expires = conn.expires_at
     if expires and expires.tzinfo is None:
         expires = expires.replace(tzinfo=timezone.utc)
@@ -366,6 +368,8 @@ def selected_connection(db, user_id, platform, connection_id=None):
     conn = db.get(SocialConnection,connection_id) if connection_id else connection_for(db,user_id,platform)
     if not conn or conn.user_id!=user_id or conn.platform!=platform or not conn.active:
         raise RuntimeError('The reviewed account is no longer connected. Review the destination again.')
+    if json_meta(conn).get('connection_health') == 'reconnect':
+        raise RuntimeError('Access was revoked or expired. Reconnect this social account.')
     return conn
 
 
@@ -415,6 +419,9 @@ def upsert_connection(
     # Reconnection must not retain permissions the new direct token did not grant.
     conn.scope = scope if conn.platform in {'x', 'facebook', 'tiktok'} or (metadata or {}).get('auth_provider') == 'instagram_login' else (scope or conn.scope)
     conn.active = True
+    refreshed_meta = json_meta(conn)
+    refreshed_meta.pop('connection_health', None); refreshed_meta.pop('health_checked_at', None)
+    save_meta(conn, refreshed_meta)
     if metadata is not None:
         save_meta(conn, metadata)
     attach_instagram_audio_grant(conn,audio_user_token if (metadata or {}).get('auth_provider')=='facebook_login' else None,audio_user_token_expires_in,scope)

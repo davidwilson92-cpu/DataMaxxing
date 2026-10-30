@@ -53,6 +53,7 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/studio_mobile_layout.cjs
           NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/next_move_focus_browser.cjs
           NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/studio_intro_browser.cjs
+          NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/account_fields_browser.cjs
       - run: python -m pip_audit --format json -o dependency-audit.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -61,6 +62,7 @@ jobs:
           path: |
             test-results.xml
             dependency-audit.json
+            ${{ runner.temp }}/zova-preview.log
   postgres-release:
     runs-on: ubuntu-latest
     services:

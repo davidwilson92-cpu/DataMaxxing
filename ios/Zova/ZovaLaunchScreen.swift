@@ -85,20 +85,29 @@ struct ZovaLaunchScreen: View {
 struct LaunchScreenTestHost: View {
     @State private var ready = false
     @State private var covered = true
+    @State private var started = false
     var body: some View {
         ZStack {
             Color.white.ignoresSafeArea()
             Text("Launch destination").foregroundStyle(.black).accessibilityIdentifier("launch-destination")
                 .accessibilityHidden(covered)
             if !covered { Text("Ready").accessibilityIdentifier("launch-completed") }
-            if covered {
+            if !started {
+                // Start after XCTest has attached; simulator launch/idle time is unrelated
+                // to the real cover's readiness and eight-second recovery deadline.
+                Button("Start launch") { started = true }
+                    .accessibilityIdentifier("start-launch-test")
+            } else if covered {
                 ZovaLaunchScreen(ready: ready, motionOverride: ProcessInfo.processInfo.arguments.contains("--launch-reduce-motion")) { covered = false }
             }
         }
-        .task {
+        .task(id: started) {
+            guard started else { return }
             guard !ProcessInfo.processInfo.arguments.contains("--launch-never-ready") else { return }
-            try? await Task.sleep(for: .seconds(4))
-            ready = true
+            do {
+                try await Task.sleep(for: .seconds(4))
+                ready = true
+            } catch { /* The test host was removed. */ }
         }
         .preferredColorScheme(covered ? .dark : .light)
     }

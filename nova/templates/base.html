@@ -6,6 +6,7 @@
 {% if metrics_enabled %}<meta name="zova-product-metrics" content="enabled">{% endif %}
 {% if brand %}<meta name="zova-workspace" content="{{ brand.id }}"><script src="/static/brand-context.js?v=2"></script>{% endif %}
 {% if user %}<script src="/static/ai-privacy.js?v=20261019-choice"></script>{% endif %}
+{% if user %}<script defer src="/static/connection-health.js?v=20261030"></script>{% endif %}
 <link rel="stylesheet" href="/static/brand-context.css?v=1">
 <meta name="facebook-domain-verification" content="gc093o7nv5q19ykf4y2sxm82ujegg9">
 <title>{% block title %}Zova{% endblock %}</title>

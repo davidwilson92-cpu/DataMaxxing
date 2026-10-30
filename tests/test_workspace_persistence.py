@@ -60,7 +60,7 @@ def test_history_previews_recheck_user_and_brand_and_ignore_stored_urls():
         row.workspace_json=json.dumps({'media_asset_ids':[foreign.id,other_brand.id,own.id], 'media':[{'kind':'image','url':'https://untrusted.example/track'}]})
         db.commit()
     rows=client.get('/api/drafts').json()
-    assert rows[0]['thumbnail']=={'kind':'image','url':f'/media/preview/{own_id}'}
+    assert rows[0]['thumbnail']=={'id':own_id,'filename':'own.png','kind':'image','url':f'/media/preview/{own_id}'}
     assert all(r['id']!=draft['id'] for r in other.get('/api/drafts').json())
     assert other.get(f'/media/preview/{own_id}').status_code==404
     with SessionLocal() as db:
@@ -75,6 +75,6 @@ def test_history_video_has_lightweight_marker_not_remote_media_url():
     draft=client.post('/api/drafts',json={}).json()
     with SessionLocal() as db:
         video=MediaAsset(user_id=uid,filename='video.mp4',mime_type='video/mp4',storage_key='synthetic',public_url='https://example.test/video')
-        db.add(video);db.flush()
+        db.add(video);db.flush();video_id=video.id
         db.get(Draft,draft['id']).workspace_json=json.dumps({'media_asset_ids':[video.id]});db.commit()
-    assert client.get('/api/drafts').json()[0]['thumbnail']=={'kind':'video'}
+    assert client.get('/api/drafts').json()[0]['thumbnail']=={'id':video_id,'filename':'video.mp4','kind':'video'}
