@@ -1287,7 +1287,8 @@ def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db))
     answer=insight_fallback(dashboard,body.question,body.days)
     # Analysis of numbers supplied by the creator does not require OAuth. The
     # normal AI consent and allowance checks still apply inside ai_action.
-    supplied_figures = bool(re.search(r'\d[\d,.]*\s*(?:k\s*)?(?:views?|saves?|comments?|clicks?|sales?|likes?|orders?|conversions?)\b', body.question, re.I))
+    supplied_figures = bool(re.search(r'\d', body.question) and re.search(
+        r'\b(?:views?|saves?|comments?|clicks?|sales?|likes?|orders?|conversions?)\b', body.question, re.I))
     if (connected or supplied_figures) and os.environ.get("OPENAI_API_KEY"):
         try:
             with allowances.ai_action(db,user.id):

@@ -49,14 +49,16 @@ def test_structured_response_keeps_no_storage(monkeypatch):
     ai._request_response('Synthetic', max_output_tokens=1000, response_schema=ai._posts_schema(5))
 
 
-def test_supplied_numbers_can_be_analysed_without_social_connection(monkeypatch):
+@pytest.mark.parametrize('question', ['Reel A 100 clicks, 2 sales; B 80 clicks, 8 sales. Compare.',
+    'Compare these figures: A clicks=100 sales=2; B clicks=80 sales=8.'])
+def test_supplied_numbers_can_be_analysed_without_social_connection(monkeypatch, question):
     module = importlib.import_module('nova.app')
     monkeypatch.setenv('OPENAI_API_KEY','synthetic')
     monkeypatch.setattr(module, 'analytics_for_user', lambda *a: {})
     monkeypatch.setattr(module, 'recent_posts_for_user', lambda *a, **k: {'posts':[]})
     monkeypatch.setattr(ai, 'analyse_performance', lambda **k: 'Based on your supplied figures, B converted 8 of 80 clicks: 10%.')
     client,*_ = account()
-    result = client.post('/api/insights',json={'question':'Reel A 100 clicks, 2 sales; B 80 clicks, 8 sales. Compare.'})
+    result = client.post('/api/insights',json={'question': question})
     assert result.status_code == 200 and '10%' in result.json()['answer']
     assert result.json()['has_signal'] is False  # Never relabel supplied data as provider evidence.
 
@@ -70,6 +72,26 @@ def test_editorial_model_is_separate_and_restored_after_failure(monkeypatch):
     monkeypatch.setattr(ai, '_responses', fail)
     with pytest.raises(RuntimeError): ai.editorial_response('synthetic')
     assert ai._model() == 'gpt-5-mini'
+
+
+def test_next_move_and_repair_use_exact_three_action_schema(monkeypatch):
+    from nova import strategy
+    calls = []
+    def respond(prompt, **options):
+        assert 'one image or one video' in prompt
+        assert 'not a caption' in prompt
+        calls.append(options['response_schema'])
+        return '{"actions":[]}'
+    monkeypatch.setattr(ai, '_responses', respond)
+    for key in ['action_schema', 'schema']:
+        strategy.model_json(1, 'Synthetic instruction', {key: strategy.ActionText.model_json_schema()})
+    assert calls[0] == calls[1]
+    actions = calls[0]['properties']['actions']
+    assert actions['minItems'] == actions['maxItems'] == 3
+    item = actions['items']
+    assert item['additionalProperties'] is False
+    assert set(item['required']) == set(item['properties'])
+    assert item['properties']['needs']['type'] == 'string'
 
 
 def test_performance_conversation_stays_accessible_without_cluttering_schedule():

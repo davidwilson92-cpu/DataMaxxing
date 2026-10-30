@@ -104,6 +104,7 @@ struct NativeAccountView: View {
             }.padding(22).disabled(store.busy)
         }.background(ZovaDesign.dark).foregroundStyle(.white).tint(ZovaDesign.violet)
             .task { name = store.name; brandName = store.account["brand"]["name"].string; fillVoice() }
+            .onChange(of: store.account["brand"]["id"].int) { _, _ in brandName = store.account["brand"]["name"].string; fillVoice(); saved = "" }
             .scrollDismissesKeyboard(.interactively)
             .sheet(isPresented: $timezonePicker) { NativeTimezonePicker(selection: Binding(get: { voice["timezone"] ?? store.timezone }, set: { voice["timezone"] = $0 })) }
             .sheet(isPresented: $guide) { NativeGuideView().environmentObject(store) }

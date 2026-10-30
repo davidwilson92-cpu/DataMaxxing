@@ -41,7 +41,7 @@ struct NativePublishView: View {
                     settings
                     Button("Review final post") { run { try await buildReview() } }.buttonStyle(ZovaPrimary()).disabled(store.busy || !valid || attempted)
                 } else {
-                    NativeReviewSnapshot(snapshot: review["snapshot"])
+                    NativeReviewSnapshot(snapshot: review["snapshot"], timezone: scheduleTimezone)
                     Button("Edit caption / media") { review = .null; dismiss() }.buttonStyle(.bordered).disabled(store.busy || attempted)
                     Button(mode == "schedule" ? "Confirm schedule" : review["snapshot"]["targets"]["tiktok"]["requires_tiktok_completion"].bool && platforms.count == 1 ? "Send to TikTok inbox" : "Confirm publish") {
                         run { try await confirm() }
@@ -206,6 +206,8 @@ struct TikTokDeclaration: View {
 }
 struct NativeReviewSnapshot: View {
     let snapshot: JSONValue
+    var timezone: String? = nil
+    private var displayTimezone: String { timezone ?? snapshot["timezone"].string }
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             ForEach(snapshot["platforms"].strings, id: \.self) { platform in
@@ -236,13 +238,13 @@ struct NativeReviewSnapshot: View {
             }
             if !snapshot["link_url"].string.isEmpty { Text("Source link: " + snapshot["link_url"].string).font(.caption) }
             if let date = ProductLinks.date(snapshot["scheduled_utc"].string) {
-                Text("Scheduled: " + scheduledLabel(date) + " · " + snapshot["timezone"].string).font(.headline)
+                Text("Scheduled: " + scheduledLabel(date) + " · " + displayTimezone).font(.headline)
             } else { Text("Publish these reviewed versions now?").font(.headline) }
         }
     }
     private func scheduledLabel(_ date: Date) -> String {
         let formatter = DateFormatter(); formatter.dateStyle = .medium; formatter.timeStyle = .short
-        formatter.timeZone = TimeZone(identifier: snapshot["timezone"].string) ?? TimeZone(secondsFromGMT: 0)
+        formatter.timeZone = TimeZone(identifier: displayTimezone) ?? TimeZone(secondsFromGMT: 0)
         return formatter.string(from: date)
     }
 }

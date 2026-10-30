@@ -23,9 +23,11 @@ def evaluate(models):
         ('supplied_results', lambda: ai.analyse_performance(question='These are hypothetical figures I supply, not connected data: Reel A: 10,000 views, 80 saves, 40 comments, 100 clicks, 2 sales. Reel B: 4,000 views, 120 saves, 20 comments, 80 clicks, 8 sales. Which should I repeat for sales? Suggest one fair experiment.', dashboard={}, preferences=voice)),
     ]
     original = os.environ.get('OPENAI_MODEL')
+    original_content = os.environ.get('OPENAI_CONTENT_MODEL')
     try:
         for model in models:
             os.environ['OPENAI_MODEL'] = model
+            os.environ['OPENAI_CONTENT_MODEL'] = model
             for name, operation in cases:
                 started = time.monotonic()
                 try: result = {'output': operation()}
@@ -34,6 +36,8 @@ def evaluate(models):
     finally:
         if original is None: os.environ.pop('OPENAI_MODEL', None)
         else: os.environ['OPENAI_MODEL'] = original
+        if original_content is None: os.environ.pop('OPENAI_CONTENT_MODEL', None)
+        else: os.environ['OPENAI_CONTENT_MODEL'] = original_content
 
 
 if __name__ == '__main__':

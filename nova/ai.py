@@ -155,7 +155,7 @@ Be specific but never invent biographical facts. Describe observed patterns, voc
 CREATOR WRITING SAMPLE:
 {content_sample[:30000]}
 """
-    data = _parse_json(_responses(prompt, max_output_tokens=1200))
+    data = _parse_json(editorial_response(prompt, max_output_tokens=1600))
     if not isinstance(data, dict):
         raise RuntimeError("AI returned an invalid voice profile")
     required = ("summary", "writing_tone", "audience", "topics", "things_to_avoid")

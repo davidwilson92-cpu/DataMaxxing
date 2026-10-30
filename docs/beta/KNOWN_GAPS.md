@@ -1,5 +1,26 @@
 # Beta known gaps and required follow-up
 
+## Latest tester remediation — 30 October 2026 (candidate, not deployed)
+
+All 51 new workbook findings and 12 virtual-tester themes are mapped in
+QA_REMEDIATION_20261030.md and its JSON companion. Candidate changes cover native
+chat/brand restoration, review/thread/connection recovery, forms, timezone display,
+voice saves and more faithful AI drafting. Initial native CI41024819019 passed
+42 unit and 18 UI tests plus iPhone Release compilation. Final refinements require
+fresh exact-candidate validation; consult the remediation report for final evidence.
+
+Facebook Page permissions pages_show_list, pages_read_engagement and
+pages_manage_posts are still Not submitted in Meta; administrator success is not
+external-tester eligibility. Live TikTok uses the restricted test app key and inbox
+mode despite approved production Direct Post; credential/mode correction awaits
+the owner's action-time confirmation. First-attempt Instagram connection and the
+real iPhone photo/iCloud picker remain device/provider acceptance checks.
+
+GPT-6.1 Terra performed better than live GPT-5 mini in synthetic creative tests;
+optional OPENAI_CONTENT_MODEL routing is prepared but not enabled in production.
+The retained 79-section commercial register is unchanged. Charges stay disabled;
+Render remains the host. No commercial-ready or zero-defect claim is authorised.
+
 ## External distribution update — 28 October 2026
 
 Owner explicitly lifted the earlier hold and requested release to existing testers.
