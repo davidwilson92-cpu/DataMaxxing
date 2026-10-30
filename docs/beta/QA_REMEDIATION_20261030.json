@@ -12,7 +12,11 @@
       "reported_priority": "Low",
       "disposition": "retained-security",
       "action": "Zova branding retained; OpenAI remains accurately named in AI-sharing/privacy disclosures. Hiding the processor is not a valid branding fix.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Retained privacy/security/provider constraint; not a defect to bypass"
+      ],
+      "closure": "retained-requirement"
     },
     {
       "id": "QA-02",
@@ -22,7 +26,11 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Native welcome legal links moved beside the main sign-in action. Large accessibility text may still require scrolling.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Account/welcome screenshots and source inspection; native accessibility/landscape UI suite"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-03",
@@ -32,7 +40,14 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Independent eye controls inside password fields; forgot-password below/right; prominent Create an account action.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/account_fields_browser.cjs",
+        "nova/static/account-fields.js",
+        "nova/templates/auth.html",
+        "nova/templates/recovery.html"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-04",
@@ -42,7 +57,14 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Complete domain validation in browser and existing server normalization. No restriction to .com.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/account_fields_browser.cjs",
+        "nova/static/account-fields.js",
+        "nova/templates/auth.html",
+        "nova/templates/recovery.html"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-05",
@@ -52,7 +74,11 @@
       "reported_priority": "Medium",
       "disposition": "retained-security",
       "action": "Keep iOS system authentication consent and account-bound confirmation; these protect account switching and secure return. No unsafe auto-accept.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Retained privacy/security/provider constraint; not a defect to bypass"
+      ],
+      "closure": "retained-requirement"
     },
     {
       "id": "QA-06",
@@ -62,7 +88,14 @@
       "reported_priority": "Medium",
       "disposition": "adapted",
       "action": "Visible live length/match checklist; retain the server 10–256-character policy rather than weakening to eight or forcing arbitrary character classes.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/account_fields_browser.cjs",
+        "nova/static/account-fields.js",
+        "nova/templates/auth.html",
+        "nova/templates/recovery.html"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-07",
@@ -72,7 +105,14 @@
       "reported_priority": "Low",
       "disposition": "implemented",
       "action": "Separate eye controls for password and confirmation.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/account_fields_browser.cjs",
+        "nova/static/account-fields.js",
+        "nova/templates/auth.html",
+        "nova/templates/recovery.html"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-08",
@@ -82,7 +122,14 @@
       "reported_priority": "Low",
       "disposition": "implemented",
       "action": "Country select matches the dark authentication theme.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/account_fields_browser.cjs",
+        "nova/static/account-fields.js",
+        "nova/templates/auth.html",
+        "nova/templates/recovery.html"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-09",
@@ -92,7 +139,12 @@
       "reported_priority": "Medium",
       "disposition": "adapted",
       "action": "Registration queues a hashed, time-limited verification link; Account offers resend. Verification remains optional for existing beta access; a mail outage never invalidates registration.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/test_welcome_verification.py",
+        "nova/verification.py:welcome_verification"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-10",
@@ -102,7 +154,12 @@
       "reported_priority": "Medium",
       "disposition": "adapted",
       "action": "Unfinished first-run native guide resumes its step; Skip completes it. Optional social/voice setup stays in Account. No subscription gate or required plan-selection during free beta.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/Zova/ProductStore.swift: saved native guide state",
+        "tests/studio_intro_browser.cjs: first visit/skip/replay/persistence"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-11",
@@ -112,7 +169,14 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Recovery pages now use the dark branded form treatment.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/account_fields_browser.cjs",
+        "nova/static/account-fields.js",
+        "nova/templates/auth.html",
+        "nova/templates/recovery.html"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-12",
@@ -122,7 +186,14 @@
       "reported_priority": "Medium",
       "disposition": "adapted",
       "action": "Recovery checklist matches the real 10–256-character server policy and confirmation requirement.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/account_fields_browser.cjs",
+        "nova/static/account-fields.js",
+        "nova/templates/auth.html",
+        "nova/templates/recovery.html"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-13",
@@ -132,7 +203,14 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "New-password and confirmation visibility controls on recovery.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/account_fields_browser.cjs",
+        "nova/static/account-fields.js",
+        "nova/templates/auth.html",
+        "nova/templates/recovery.html"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-14",
@@ -142,7 +220,12 @@
       "reported_priority": "Medium",
       "disposition": "existing-verified",
       "action": "Existing + New post saves previous work before starting a blank chat; no duplicate Reset action.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/Zova/NativeStudioView.swift: New post focus",
+        "ios/ZovaTests/NativeProductSafetyTests.swift:testFailedSaveBlocksNavigationAndRetainsRecovery"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-15",
@@ -152,7 +235,12 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Restore the last server draft separately for each user/brand; protected unsaved recovery takes precedence. New post deliberately clears the resume pointer.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/ZovaTests/NativeProductSafetyTests.swift:testResumePointersAreSeparatedByUserAndBrand",
+        "ios/ZovaTests/NativeProductSafetyTests.swift:testSavedConversationReopensAfterRestart"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-16",
@@ -162,7 +250,13 @@
       "reported_priority": "Low",
       "disposition": "implemented",
       "action": "Centre the empty composer until focus/content; retain the owner-requested blank Studio and accessible scrolling layout.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Studio screenshot review",
+        "ios/ZovaUITests/ZovaUITests.swift:testNativeComposerMovesSentIdeaIntoTranscriptAndKeepsEditableCaption",
+        "ios/ZovaUITests/ZovaUITests.swift:testAccessibilityLargestTextKeepsProductActionsReachable"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-17",
@@ -172,7 +266,13 @@
       "reported_priority": "Low",
       "disposition": "implemented",
       "action": "Assistant messages have a pale rounded bubble distinct from the caption editor.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Studio screenshot review",
+        "ios/ZovaUITests/ZovaUITests.swift:testNativeComposerMovesSentIdeaIntoTranscriptAndKeepsEditableCaption",
+        "ios/ZovaUITests/ZovaUITests.swift:testAccessibilityLargestTextKeepsProductActionsReachable"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-18",
@@ -182,7 +282,12 @@
       "reported_priority": "Low",
       "disposition": "implemented",
       "action": "New post focuses the composer after saving.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/Zova/NativeStudioView.swift: New post focus",
+        "ios/ZovaTests/NativeProductSafetyTests.swift:testFailedSaveBlocksNavigationAndRetainsRecovery"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-19",
@@ -192,7 +297,13 @@
       "reported_priority": "Low",
       "disposition": "implemented",
       "action": "Save status and centred publishing-approval reassurance are separate lines.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Studio screenshot review",
+        "ios/ZovaUITests/ZovaUITests.swift:testNativeComposerMovesSentIdeaIntoTranscriptAndKeepsEditableCaption",
+        "ios/ZovaUITests/ZovaUITests.swift:testAccessibilityLargestTextKeepsProductActionsReachable"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-20",
@@ -202,7 +313,12 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Review stays open with available caption-platform choices and inline guidance when no destination is ready.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/ZovaUITests/ZovaUITests.swift:testReviewRetainsAllThreadPostsAndDisconnectedDestination",
+        "ios/Zova/NativePublishView.swift"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-21",
@@ -212,7 +328,12 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Native review directly opens the relevant provider connection and refreshes its context; web review links directly to that provider.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/ZovaUITests/ZovaUITests.swift:testReviewRetainsAllThreadPostsAndDisconnectedDestination",
+        "ios/Zova/NativePublishView.swift"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-22",
@@ -222,7 +343,12 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Initial and final review show every thread item, numbered when more than one.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/ZovaUITests/ZovaUITests.swift:testReviewRetainsAllThreadPostsAndDisconnectedDestination",
+        "ios/Zova/NativePublishView.swift"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-23",
@@ -232,7 +358,13 @@
       "reported_priority": "High",
       "disposition": "adapted",
       "action": "Read-only provider checks on foreground/visible app, bounded to once per minute. Proven revoked access displays reconnect; timeouts/429 remain unavailable, never falsely revoked. Not instantaneous push notification.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/test_connection_health.py",
+        "nova/static/connection-health.js",
+        "ios/Zova/ProductStore.swift"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-24",
@@ -242,7 +374,12 @@
       "reported_priority": "Medium",
       "disposition": "device-retest",
       "action": "Photos picker is presented outside the attachment menu. Uses the privacy-preserving iOS picker, which does not need whole-library permission. Real-device restricted/iCloud/photo/video checks remain required.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Presentation fix implemented; real-device/iCloud/restricted/photo/video acceptance remains open.",
+      "evidence": [
+        "ios/Zova/NativeStudioView.swift: PhotosPicker presentation outside menu",
+        "Physical iPhone picker acceptance pending"
+      ],
+      "closure": "device-acceptance-pending"
     },
     {
       "id": "QA-25",
@@ -252,7 +389,11 @@
       "reported_priority": "High",
       "disposition": "implemented",
       "action": "Source URL stays local while typing; validate on Done, inline error, sheet remains open. No partial-URL autosave.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/ZovaUITests/ZovaUITests.swift:testPostOptionsBuffersIncompleteLinkAndKeyboardDismissesOnBackground"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-26",
@@ -262,7 +403,12 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Disconnected account stays in review with direct Connect and Remove actions; no global dismissal on context error.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/ZovaUITests/ZovaUITests.swift:testReviewRetainsAllThreadPostsAndDisconnectedDestination",
+        "ios/Zova/NativePublishView.swift"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-27",
@@ -272,7 +418,13 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Review/schedule initialization is a structured task; context errors stay inline and preserve the sheet.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/ZovaUITests/ZovaUITests.swift:testScheduleCanBeReviewedRescheduledAndCancelledExplicitly",
+        "ios/ZovaTests/ProductContractTests.swift:testScheduleOffsetsAndNaiveServerUTCRemainDistinctFromLocalTimes",
+        "ios/Zova/NativePublishView.swift: scheduleTimezone carried into snapshot"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-28",
@@ -282,7 +434,13 @@
       "reported_priority": "Low",
       "disposition": "implemented",
       "action": "Suggested times rendered through the local date formatter, not raw ISO strings.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/ZovaUITests/ZovaUITests.swift:testScheduleCanBeReviewedRescheduledAndCancelledExplicitly",
+        "ios/ZovaTests/ProductContractTests.swift:testScheduleOffsetsAndNaiveServerUTCRemainDistinctFromLocalTimes",
+        "ios/Zova/NativePublishView.swift: scheduleTimezone carried into snapshot"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-29",
@@ -292,7 +450,13 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "New schedule uses device timezone; an existing planned occurrence retains its explicit timezone. Suggestion label and conversion use the displayed zone.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/ZovaUITests/ZovaUITests.swift:testScheduleCanBeReviewedRescheduledAndCancelledExplicitly",
+        "ios/ZovaTests/ProductContractTests.swift:testScheduleOffsetsAndNaiveServerUTCRemainDistinctFromLocalTimes",
+        "ios/Zova/NativePublishView.swift: scheduleTimezone carried into snapshot"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-30",
@@ -302,7 +466,12 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Checked-at display uses the device timezone.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/Zova/NativePerformanceView.swift: nativeDate uses device timezone",
+        "Native Performance screenshot review"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-31",
@@ -312,7 +481,11 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Window tap recognizer dismisses keyboard without consuming text input, buttons or scroll gestures; scroll-to-dismiss retained.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/ZovaUITests/ZovaUITests.swift:testPostOptionsBuffersIncompleteLinkAndKeyboardDismissesOnBackground"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-32",
@@ -322,7 +495,12 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Persist selected brand by user/base URL; restore only a brand still present in the authenticated owner list.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/ZovaTests/NativeProductSafetyTests.swift:testResumePointersAreSeparatedByUserAndBrand",
+        "ios/ZovaTests/NativeProductSafetyTests.swift:testSavedConversationReopensAfterRestart"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-33",
@@ -332,7 +510,11 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Primary purple account-connect buttons with white text and accessible targets.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Account/welcome screenshots and source inspection; native accessibility/landscape UI suite"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-34",
@@ -342,7 +524,11 @@
       "reported_priority": "High",
       "disposition": "external-blocker",
       "action": "Meta dashboard on 30 Oct: pages_show_list, pages_read_engagement and pages_manage_posts remain Not submitted. Existing Instagram approvals are intact. Public Facebook connection is not certified until review and a non-role account test.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Open external blocker: three Facebook Page permissions Not submitted. Owner/app-role success is insufficient.",
+      "evidence": [
+        "Meta live App Review dashboard inspected 2026-10-30"
+      ],
+      "closure": "external-blocker"
     },
     {
       "id": "QA-35",
@@ -352,7 +538,12 @@
       "reported_priority": "Medium",
       "disposition": "device-retest",
       "action": "Keep the existing secure web authentication route and return-state validation. Tester first-attempt Instagram issue needs clean-session physical-device reproduction; prior owner success does not close this report.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Not closed: secure flow retained; fresh physical-device/provider reproduction required.",
+      "evidence": [
+        "Existing native OAuth callback/state/cancellation protocol tests",
+        "Tester recording and first-attempt physical-device acceptance pending"
+      ],
+      "closure": "device-acceptance-pending"
     },
     {
       "id": "QA-36",
@@ -362,7 +553,13 @@
       "reported_priority": "High",
       "disposition": "configuration-blocker",
       "action": "Tester capture says non_sandbox_target. Read-only comparison confirmed the live Render service uses the sandbox client key, not the approved production key. Production credential correction/Direct Post activation requires the pending specific approval; no credentials copied into this report.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Open configuration/approval blocker; no production credential or posting-mode change made.",
+      "evidence": [
+        "Tester non_sandbox_target capture",
+        "Read-only Render key identity comparison",
+        "TikTok production and test dashboard review"
+      ],
+      "closure": "external-blocker"
     },
     {
       "id": "QA-37",
@@ -372,7 +569,11 @@
       "reported_priority": "Medium",
       "disposition": "provider-limit",
       "action": "Instagram publishing API requires Creator/Business. Explain this before connecting; personal-account automatic publishing cannot be implemented honestly.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Retained privacy/security/provider constraint; not a defect to bypass"
+      ],
+      "closure": "retained-requirement"
     },
     {
       "id": "QA-38",
@@ -382,7 +583,11 @@
       "reported_priority": "Medium",
       "disposition": "existing-verified",
       "action": "Native unlink already requires confirmation; cancel does not unlink.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/Zova/NativeAccountView.swift: unlink confirmation dialog"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-39",
@@ -392,7 +597,11 @@
       "reported_priority": "Low",
       "disposition": "implemented",
       "action": "Multiline strategy fields explicitly lead-align text and placeholder.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Account/welcome screenshots and source inspection; native accessibility/landscape UI suite"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-40",
@@ -402,7 +611,12 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Strategy work is cancelled on close; cancellation releases busy state and is not surfaced as a connection error. Replacement work awaits previous cleanup.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "ios/Zova/NativeNextMoveView.swift: task cancellation and awaited cleanup",
+        "ios/ZovaUITests/ZovaUITests.swift:testStrategyEditsPersistAndIdeaOpensInNativeStudio"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-41",
@@ -412,7 +626,11 @@
       "reported_priority": "Low",
       "disposition": "implemented",
       "action": "Searchable timezone list plus Use this iPhone timezone; no manual identifier entry.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Account/welcome screenshots and source inspection; native accessibility/landscape UI suite"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-42",
@@ -422,7 +640,12 @@
       "reported_priority": "Medium",
       "disposition": "device-retest",
       "action": "Native voice saves now receive direct JSON instead of redirects; repeated saves and persistence covered by authenticated API tests. Original device/network failure still needs recheck after upgrade.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Four repeated authenticated saves persist and return JSON; native fixture UI passes are separate from pending physical mobile-network acceptance.",
+      "evidence": [
+        "tests/test_native_presentation.py:test_repeated_native_voice_saves_reply_directly_and_persist",
+        "ios/ZovaUITests/ZovaUITests.swift:testVoiceScanPopulatesFieldsAndSurvivesAccountNavigation"
+      ],
+      "closure": "device-acceptance-pending"
     },
     {
       "id": "QA-43",
@@ -432,7 +655,11 @@
       "reported_priority": "Medium",
       "disposition": "adapted",
       "action": "Centred, accessible nonmodal saved feedback; avoids adding another blocking popup.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Account/welcome screenshots and source inspection; native accessibility/landscape UI suite"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-44",
@@ -442,7 +669,11 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Add and Rename primary buttons have consistent contrast, spacing and targets.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Account/welcome screenshots and source inspection; native accessibility/landscape UI suite"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-45",
@@ -452,7 +683,11 @@
       "reported_priority": "Low",
       "disposition": "implemented",
       "action": "Current brand name is prefilled and restored after Account load.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Account/welcome screenshots and source inspection; native accessibility/landscape UI suite"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-46",
@@ -462,7 +697,13 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Visible password length/match feedback, disabled invalid submit, server validation messages, session revocation preserved on successful change.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/test_account_integrity.py:test_password_persists_and_revokes_old_session",
+        "tests/test_password_upgrade.py",
+        "ios/Zova/NativeAccountView.swift: NativePasswordField and validation"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-47",
@@ -472,7 +713,13 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Update password label across native and web.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/test_account_integrity.py:test_password_persists_and_revokes_old_session",
+        "tests/test_password_upgrade.py",
+        "ios/Zova/NativeAccountView.swift: NativePasswordField and validation"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-48",
@@ -482,7 +729,11 @@
       "reported_priority": "Medium",
       "disposition": "existing-verified",
       "action": "Security & privacy remains an icon-labelled expandable group; improved password controls/checklist. No return to excessive pills/cards.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Account/welcome screenshots and source inspection; native accessibility/landscape UI suite"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-49",
@@ -492,7 +743,11 @@
       "reported_priority": "Medium",
       "disposition": "implemented",
       "action": "Verification action is a clear primary button when email is unverified.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Account/welcome screenshots and source inspection; native accessibility/landscape UI suite"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-50",
@@ -502,7 +757,11 @@
       "reported_priority": "Medium",
       "disposition": "existing-verified",
       "action": "Sign out remains alongside account identity at the top with a 44pt target; no duplicate destructive navigation.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "Native Account/welcome screenshots and source inspection; native accessibility/landscape UI suite"
+      ],
+      "closure": "candidate-addressed"
     },
     {
       "id": "QA-51",
@@ -512,7 +771,39 @@
       "reported_priority": "High",
       "disposition": "adapted",
       "action": "Foreground status banner with reconnect action; saved work preserved, no forced modal loop, no false revocation on temporary provider failure.",
-      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+      "validation": "Reviewed in candidate source and relevant automated suite; no physical-device pass implied. See evidence references and remaining acceptance in companion report.",
+      "evidence": [
+        "tests/test_connection_health.py",
+        "nova/static/connection-health.js",
+        "ios/Zova/ProductStore.swift"
+      ],
+      "closure": "candidate-addressed"
     }
+  ],
+  "candidate_runtime": "0173121a24ad39b0043f0d6cb335d79d8d48c8c2",
+  "source_coverage_verified": true,
+  "validation": {
+    "application_ci": "https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/41027383524",
+    "application_result": "success",
+    "sqlite_passed": 754,
+    "sqlite_skipped": 2,
+    "postgres_passed": 755,
+    "postgres_skipped": 1,
+    "counts_note": "SQLite and PostgreSQL run substantially the same cases, not independent unique scenarios.",
+    "native_ci": "https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/41027383573",
+    "native_result": "success",
+    "source_coverage": "All 51 distinct sheet/row/title findings matched against read-only workbook extraction.",
+    "native_unit_passed": 42,
+    "native_ui_passed": 18,
+    "native_failures": 0,
+    "iphone_release_compile": "success",
+    "screenshots_reviewed": 31,
+    "physical_device_acceptance": "pending on candidate build"
+  },
+  "additional_gaps": [
+    "TikTok approved revision describes web-only; actual native browser-OAuth journey requires scope review before wider launch.",
+    "TikTok production video.list and user.info.stats approval absent; automatic feed metrics and voice import not certified.",
+    "Stronger editorial model routing prepared but not enabled; GPT-5 mini is deprecated and is not a long-term routing recommendation.",
+    "Retained 79-section security/operations register remains open; no zero-defect or commercial-ready certification."
   ]
 }
