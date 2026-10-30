@@ -352,6 +352,8 @@ final class ZovaUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--test-launch-screen"]
         app.launch()
+        XCTAssertTrue(app.buttons["start-launch-test"].waitForExistence(timeout: 10))
+        app.buttons["start-launch-test"].tap()
         XCTAssertTrue(app.otherElements["zova-launch"].waitForExistence(timeout: 2))
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Zova branded launch portrait"; screenshot.lifetime = .keepAlways
@@ -364,6 +366,8 @@ final class ZovaUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--test-launch-screen", "--launch-reduce-motion"]
         app.launch()
+        XCTAssertTrue(app.buttons["start-launch-test"].waitForExistence(timeout: 10))
+        app.buttons["start-launch-test"].tap()
         XCTAssertTrue(app.otherElements["zova-launch"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.staticTexts["launch-completed"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.otherElements["zova-launch"].exists)
@@ -375,6 +379,8 @@ final class ZovaUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
         app.launch()
+        XCTAssertTrue(app.buttons["start-launch-test"].waitForExistence(timeout: 10))
+        app.buttons["start-launch-test"].tap()
         XCTAssertTrue(app.otherElements["zova-launch"].waitForExistence(timeout: 2))
         // Full framebuffer avoids XCTest's stale application crop after rotation.
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
