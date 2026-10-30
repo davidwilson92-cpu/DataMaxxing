@@ -1,0 +1,103 @@
+Browser tab: 2, Title: "x-chatgpt-poster ・ Web Service ・ Render Dashboard", URL: "https://dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/shell".
+0 AXWebArea x-chatgpt-poster ・ Web Service ・ Render Dashboard, URL: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/shell
+	1 container
+		2 container root
+			3 container
+				4 link Description: Render, Value: dashboard.render.com/
+				5 pop up button (collapsed) M My Workspace, ID: menu-_r_3_, Secondary Actions: Expand
+					6 text M
+					7 text My Workspace
+				8 container Breadcrumbs
+					9 content list
+						10 link Description: Projects, Value: dashboard.render.com/
+						11 container
+							12 link Description: x-chatgpt-poster, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg
+							13 pop up button (collapsed) Description: Switch Service, ID: menu-_r_p_, Secondary Actions: Expand
+						14 container
+							99 text Shell
+							16 pop up button (collapsed) Description: Switch page, ID: menu-_r_r_, Secondary Actions: Expand
+				17 button Search CTRL + K
+					18 text Search
+					19 text CTRL
+					20 text +
+					21 text K
+				22 pop up button (collapsed) New, ID: menu-_r_5_, Secondary Actions: Expand
+				23 pop up button (collapsed) Upgrade, ID: menu-_r_n_, Secondary Actions: Expand
+				24 pop up button (collapsed) Help, ID: menu-_r_7_, Secondary Actions: Expand
+					25 image Help
+				26 pop up button (collapsed) Description: Account menu, ID: menu-_r_9_, Secondary Actions: Expand
+			27 container
+				28 splitter Description: Resize sidebar, Value: 294
+				29 link Description: Dashboard, Value: dashboard.render.com/
+				30 text x-chatgpt-poster
+				31 content list
+					32 link Description: Deploys, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/deploys
+					33 link Description: Settings, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/settings
+				34 container
+					35 text MONITOR
+					36 content list MONITOR
+						37 link Description: Events, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/events
+						38 link Description: Logs, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/logs
+						39 link Description: Metrics, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/metrics
+				40 container
+					41 text MANAGE
+					42 content list MANAGE
+						43 link Description: Compute, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/compute
+						44 link Description: Environment, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/env
+						45 link Description: Shell, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/shell
+						46 link Description: Previews, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/previews
+						47 link Description: Disk, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/disks
+						48 link Description: One-Off Jobs, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/jobs
+				49 container Promotions
+					50 container Introducing Workflows
+						51 container
+							52 heading Introducing Workflows, Value: 3
+								53 text Introducing Workflows
+							54 text An orchestration and execution engine for long-running, distributed tasks.
+							55 button Learn more
+								56 text Learn more
+								57 image
+							58 button Dismiss promo
+				59 container
+					60 content list Description: Footer navigation, ID: footer-nav-items
+						61 link Description: Changelog, Value: render.com/changelog
+					62 link Description: Status, Value: status.render.com/
+					63 button Collapse
+			98 container
+				100 heading Web Shell, Value: 2
+					101 text Web Shell
+				102 container
+					103 text Run commands inside your service without setting up SSH. To make SSH available,
+					104 link Description: add an SSH public key., Value: dashboard.render.com/u/settings?add-ssh-key=1#ssh-public-keys
+				105 container
+					106 text Select an instance
+					107 pop up button (disabled, collapsed) Select an instance Instance 5k5rk, Secondary Actions: Expand
+				108 button Maximize
+					109 image
+					110 text Maximize
+				111 container
+					112 content list
+						116 text mini", "tiktok_production_key": true, "tiktok_direct": true, "tiktok_scopes": "user.info.basic,video.publish", "ti
+						117 text ktok_callback": ["https://zova-social.com/oauth/tiktok/callback"], "secret_configured": true, "billing": {"STRIPE_
+						118 text MODE": "test", "STRIPE_LIVE_CHECKOUT_ENABLED": "false", "REQUIRE_SUBSCRIPTION": "false", "PLAN_LIMITS_ENABLED": "f
+						119 text alse"}, "publications": [["x", "unknown", 2], ["x", "published", 2], ["instagram", "published", 7], ["instagram", 
+						120 text "unknown", 1], ["x", "cancelled", 1], ["facebook", "published", 1], ["tiktok", "pending", 1]]}
+						121 text root@srv-d9rqg6navr4c739thoeg-556c4b88fb-5k5rk:/app# python - <<'ZOVA_TERRA'
+						122 text import json; from types import SimpleNamespace; from nova.ai import generate_variants
+						123 text r=generate_variants(brief='Brixton gym, six staff. One-off beginner class this Saturday at 10am, 12 places, GBP 12
+						124 text  per person. Invite people to book at https://example.com/book. No free trial or recurring class.',instruction='On
+						125 text e short Facebook caption. Warm and plain. Do not publish.',platforms=['facebook'],thread_length=1,preferences=Simp
+						126 text leNamespace(writing_tone='Warm, direct, no hype',things_to_avoid='invented offers',preferred_post_length=300),link
+						127 text _url='https://example.com/book')
+						128 text print(json.dumps({'result':r,'tiktok_media_prefix_configured':bool(__import__('os').getenv('TIKTOK_VERIFIED_MEDIA_
+						129 text PREFIX')),'private_test_mode':__import__('nova.tiktok_policy',fromlist=['private_test_mode']).private_test_mode()}
+						130 text ))
+						131 text ZOVA_TERRA
+						132 text {"result": {"facebook": {"posts": ["Join us at our Brixton gym for a one-off beginner class this Saturday at 10am.
+						133 text  There are 12 places, at \u00a312 per person. Book at https://example.com/book"]}}, "tiktok_media_prefix_configure
+						134 text d": false, "private_test_mode": false}
+						135 text root@srv-d9rqg6navr4c739thoeg-556c4b88fb-5k5rk:/app# 
+					136 text python - <<'ZOVA_TERRA' import json; from types import SimpleNamespace; from nova.ai import generate_variants r=generate_variants(brief='Brixton gym, six staff. One-off beginner class this Saturday at 10am, 12 places, GBP 12 per person. Invite people to book at https://example.com/book. No free trial or recurring class.',instruction='One short Facebook caption. Warm and plain. Do not publish.',platforms=['facebook'],thread_length=1,preferences=SimpleNamespace(writing_tone='Warm, direct, no hype',things_to_avoid='invented offers',preferred_post_length=300),link_url='https://example.com/book') print(json.dumps({'result':r,'tiktok_media_prefix_configured':bool(__import__('os').getenv('TIKTOK_VERIFIED_MEDIA_PREFIX')),'private_test_mode':__import__('nova.tiktok_policy',fromlist=['private_test_mode']).private_test_mode()})) ZOVA_TERRA python - <<'ZOVA_TERRA' import json; from types import SimpleNamespace; from nova.ai import generate_variants r=generate_variants(brief='Brixton gym, six staff. One-off beginner class this Saturday at 10am, 12 places, GBP 12 per person. Invite people to book at https://example.com/book. No free trial or recurring class.',instruction='One short Facebook caption. Warm and plain. Do not publish.',platforms=['facebook'],thread_length=1,preferences=SimpleNamespace(writing_tone='Warm, direct, no hype',things_to_avoid='invented offers',preferred_post_length=300),link_url='https://example.com/book') print(json.dumps({'result':r,'tiktok_media_prefix_configured':bool(__import__('os').getenv('TIKTOK_VERIFIED_MEDIA_PREFIX')),'private_test_mode':__import__('nova.tiktok_policy',fromlist=['private_test_mode']).private_test_mode()})) ZOVA_TERRA {"result": {"facebook": {"posts": ["Join us at our Brixton gym for a one-off beginner class this Saturday at 10am. There are 12 places, at \u00a312 per person. Book at https://example.com/book"]}}, "tiktok_media_prefix_configured": false, "private_test_mode": false} root@srv-d9rqg6navr4c739thoeg-556c4b88fb-5k5rk:/app#
+				115 text field (settable) Terminal input
+
+The focused UI element is 115 text field (settable) Terminal input
