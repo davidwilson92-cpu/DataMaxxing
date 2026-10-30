@@ -17,7 +17,7 @@ struct NativePerformanceView: View {
                 if !dashboard.isNull {
                     let platforms = dashboard["platforms"].object
                     if !platforms.values.contains(where: { $0["connected"].bool }) {
-                        ZovaCard { Text("See what connects with your audience").font(.title3.bold()); Text("Connect an account to see results and decide what to try next."); Button("Connect an account") { store.selectedTab = 3 }.buttonStyle(ZovaPrimary()) }
+                        ZovaCard { Text("See what connects with your audience").font(.title3.bold()); Text("Connect an account for live results, or paste your figures below."); Button("Connect an account") { store.accountSection = "Social accounts"; store.selectedTab = 3 }.buttonStyle(ZovaPrimary()) }
                     } else {
                         DisclosureGroup("How to read these results") { Text("Available lifetime counters for a sample of posts published in this period—not growth during the period. Followers are current totals. A dash means a metric is unavailable. Compare the same platform and format.").font(.caption).foregroundStyle(.secondary) }
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: textSize.isAccessibilitySize ? 1 : 2), spacing: 12) {
@@ -48,15 +48,16 @@ struct NativePerformanceView: View {
                                 if let url = ProductLinks.external(row["url"].string) { Link("View post ↗", destination: url) }
                             }
                         }
-                        NativeField(title: "Ask about your results", text: $question, prompt: "What’s working? What should I create next?", lines: 2)
-                        Button("Ask Zova") { Task { await store.perform { let reply = try await store.request("/api/insights", method: "POST", body: .object(["question": .string(question), "days": .integer(days)])); answer = reply["answer"].string } } }.buttonStyle(ZovaPrimary()).disabled(store.busy || question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        if !answer.isEmpty { ZovaCard { Text(answer).textSelection(.enabled) } }
                         Text(dashboard["note"].string).font(.caption).foregroundStyle(.secondary)
-                        if let date = ProductLinks.date(dashboard["fetched_at"].string) { Text("Checked " + ProductLinks.displayDate(date, timezone: store.timezone)).font(.caption).foregroundStyle(.secondary) }
+                        if let date = ProductLinks.date(dashboard["fetched_at"].string) { Text("Checked " + ProductLinks.displayDate(date, timezone: TimeZone.current.identifier)).font(.caption).foregroundStyle(.secondary) }
                     }
+                    NativeField(title: "Ask about your results", text: $question, prompt: "What worked? Or paste views, clicks and sales to compare.", lines: 2)
+                    Button("Ask Zova") { Task { await store.perform { let reply = try await store.request("/api/insights", method: "POST", body: .object(["question": .string(question), "days": .integer(days)])); answer = reply["answer"].string } } }.buttonStyle(ZovaPrimary()).disabled(store.busy || question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if !answer.isEmpty { ZovaCard { Text(answer).textSelection(.enabled) } }
                 }
             }.padding(18)
         }.refreshable { await update() }.task(id: store.selectedTab) { if store.selectedTab == 2 { await update() } }
+            .scrollDismissesKeyboard(.interactively)
     }
     private func number(_ value: JSONValue) -> String { value.isNull ? "—" : value.int.formatted() }
     private func load() { Task { await update() } }

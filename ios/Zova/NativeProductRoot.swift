@@ -20,6 +20,7 @@ final class NativeProductSession: ObservableObject {
         if ProcessInfo.processInfo.arguments.contains("--native-fixture") {
             NativeProductFixtures.reset(tiktok: ProcessInfo.processInfo.arguments.contains("--fixture-tiktok"))
             NativeDraftRecovery.remove(owner: "1:0")
+            NativeResumeState.saveBrand(0, user: 1); NativeResumeState.saveDraft(nil, user: 1, brand: 0)
             let configuration = URLSessionConfiguration.ephemeral
             configuration.protocolClasses = [NativeProductFixtures.self]
             api = NativeAPI(configuration: .bundled, transport: configuration)
@@ -114,6 +115,7 @@ struct NativeProductRoot: View {
                 Text("Because content\nis the fun part.").font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
                 Text("Turn your ideas into captions and a content plan with Zova, your AI social media manager.").font(.title3).foregroundStyle(.white.opacity(0.75))
                 signInButton
+                welcomeLinks
                 Text("Use your existing Zova account, or create one in the secure sign-in window.").font(.subheadline).foregroundStyle(.white.opacity(0.75))
                 Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isn’t analysed.").font(.footnote).foregroundStyle(.white.opacity(0.75))
                 if let message = session.message { Text(message).font(.callout).accessibilityAddTraits(.updatesFrequently) }
@@ -123,7 +125,6 @@ struct NativeProductRoot: View {
                     }
                         .accessibilityIdentifier("deletion-receipt")
                 }
-                welcomeLinks
                 Text(buildLabel).font(.caption).foregroundStyle(.secondary)
             }.padding(28).frame(maxWidth: 560)
         }.background(ZovaDesign.dark).foregroundStyle(.white).preferredColorScheme(.dark)
@@ -154,6 +155,7 @@ struct NativeProductRoot: View {
 }
 
 struct NativeProductTabs: View {
+    @Environment(\.scenePhase) private var scenePhase
     @ObservedObject var session: NativeProductSession
     @EnvironmentObject var store: ProductStore
     @State private var nextMove = false
@@ -183,16 +185,23 @@ struct NativeProductTabs: View {
                 }.padding(.horizontal, 6).background(ZovaDesign.dark.ignoresSafeArea(edges: .bottom))
             }
         }.background(store.selectedTab == 3 ? ZovaDesign.dark : .white).preferredColorScheme(store.selectedTab == 3 ? .dark : .light)
-            .tint(ZovaDesign.purple)
+            .tint(ZovaDesign.purple).background(NativeKeyboardDismiss().allowsHitTesting(false))
             .sheet(isPresented: $nextMove) { NativeNextMoveView().environmentObject(store) }
             .sheet(isPresented: $strategy) { NativeNextMoveView(planning: true).environmentObject(store) }
-            .sheet(isPresented: $store.showReview) { NativePublishView(mode: store.reviewMode).environmentObject(store).interactiveDismissDisabled(store.busy) }
+            .sheet(isPresented: $store.showReview) { NativePublishView(mode: store.reviewMode, connect: { await session.connect($0) }).environmentObject(store).interactiveDismissDisabled(store.busy) }
             .sheet(isPresented: $store.needsConsent) { NativeAIConsentView().environmentObject(store) }
             .sheet(isPresented: $store.showIntro) { NativeGuideView(introduction: true).environmentObject(store) }
             .alert("Zova", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button("OK") { store.error = nil } } message: { Text(store.error ?? "") }
             .onChange(of: store.signedOut) { _, value in if value { Task { await session.reauthenticate() } } }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboard = true }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboard = false }
+            .task(id: scenePhase) {
+                guard scenePhase == .active else { return }
+                while !Task.isCancelled {
+                    await store.refreshConnections()
+                    do { try await Task.sleep(for: .seconds(60)) } catch { return }
+                }
+            }
     }
 }
 

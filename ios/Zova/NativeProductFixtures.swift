@@ -18,7 +18,9 @@ final class NativeProductFixtures: URLProtocol {
     static func reset(tiktok: Bool = false) {
         lock.lock(); defer { lock.unlock() }
         primaryPlatform = tiktok ? "tiktok" : "instagram"
+        if ProcessInfo.processInfo.arguments.contains("--fixture-thread") { primaryPlatform = "x" }
         saved = [24: draft(24)]; batch = 0
+        if primaryPlatform == "x" { saved[24]?["variants"]["x"]["posts"] = .strings((1...5).map { "Synthetic thread part \($0)" }) }
         var second = draft(23); second["brief"] = .string("Autumn class dates"); second["variants"][primaryPlatform]["posts"] = .strings(["Autumn classes are open for booking."]); saved[23] = second
         emptyVoiceScan = ProcessInfo.processInfo.arguments.contains("--fixture-empty-voice")
         storedVoice = .object(["writing_tone": .string("Warm and practical"), "audience": .string("Local beginners"), "topics": .string("Pottery"), "timezone": .string("Europe/London"), "preferred_post_length": .integer(220)])
@@ -63,6 +65,7 @@ final class NativeProductFixtures: URLProtocol {
             return ok(.object(["presentation_version": .integer(1), "profile": .object(["id": .integer(1), "name": .string("Synthetic creator"), "email": .string("creator@example.test"), "email_verified": .bool(true)]), "brand": .object(["id": .integer(0), "name": .string("My pottery studio"), "choices": .array([.object(["id": .integer(0), "name": .string("My pottery studio")])])]), "voice": storedVoice, "connections": .array([.object(["id": .integer(1), "platform": .string(primaryPlatform), "name": .string("Pottery Studio"), "username": .string("pottery")])]), "ai": .object(["allowed": .bool(true), "required": .bool(true), "version": .string("2026-10-19")])]))
         }
         if path == "/api/studio/intro/claim" { return ok(.object(["show": .bool(false)])) }
+        if path == "/api/connections/check" { return ok(.object(["connections": .array([])])) }
         if path == "/api/voice/scan-socials" {
             if emptyVoiceScan { return ok(.object(["message": .string("No readable recent captions were found. Your saved voice is unchanged.")])) }
             storedVoice["writing_tone"] = .string("Warm, curious and conversational")
@@ -132,6 +135,7 @@ final class NativeProductFixtures: URLProtocol {
         }
         if path.hasPrefix("/api/publications/") { return ok(.object(["draft_status": .string("draft"), "results": .object([:])])) }
         if path == "/api/publish-context" {
+            if ProcessInfo.processInfo.arguments.contains("--fixture-unconnected") { return ok(.object(["platforms": .object([primaryPlatform: .object(["error": .string("Connect this account before publishing.")])])])) }
             var context = JSONValue.object(["connection_id": .integer(1), "accounts": .array([.object(["id": .integer(1), "name": .string("Pottery Studio")])])])
             if primaryPlatform == "tiktok" {
                 context["posting_mode"] = .string("direct")

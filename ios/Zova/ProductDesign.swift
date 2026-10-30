@@ -2,6 +2,35 @@ import SwiftUI
 import AVKit
 import ImageIO
 
+/// Observe background taps without consuming buttons, scrolling or text input.
+struct NativeKeyboardDismiss: UIViewRepresentable {
+    final class Host: UIView, UIGestureRecognizerDelegate {
+        private weak var installedWindow: UIWindow?
+        private lazy var tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            installedWindow?.removeGestureRecognizer(tap)
+            installedWindow = window
+            tap.cancelsTouchesInView = false; tap.delegate = self
+            window?.addGestureRecognizer(tap)
+        }
+        func detach() { installedWindow?.removeGestureRecognizer(tap) }
+        @objc private func dismissKeyboard() { installedWindow?.endEditing(true) }
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            var view = touch.view
+            while let current = view {
+                if current is UITextField || current is UITextView || current is UIControl { return false }
+                view = current.superview
+            }
+            return true
+        }
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool { true }
+    }
+    func makeUIView(context: Context) -> Host { Host() }
+    func updateUIView(_ uiView: Host, context: Context) { }
+    static func dismantleUIView(_ uiView: Host, coordinator: ()) { uiView.detach() }
+}
+
 enum ZovaDesign {
     static let ink = Color(red: 0.08, green: 0.06, blue: 0.12)
     static let purple = Color(red: 0.49, green: 0.23, blue: 0.92)
@@ -60,6 +89,7 @@ struct NativeField: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title).font(.subheadline.weight(.semibold))
             TextField(title, text: $text, prompt: Text(prompt), axis: .vertical).lineLimit(lines...max(lines, 8))
+                .multilineTextAlignment(.leading)
                 .padding(13).background(.background, in: RoundedRectangle(cornerRadius: 12))
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(ZovaDesign.line, lineWidth: 1))
                 .accessibilityIdentifier(title)
@@ -72,6 +102,41 @@ struct NativeSheetHeader: View {
     var body: some View {
         HStack { Text(title).font(.title3.bold()); Spacer(); Button { dismiss() } label: { Image(systemName: "xmark").frame(width: 44, height: 44).background(ZovaDesign.pale, in: Circle()) }.accessibilityLabel("Close " + title) }
     }
+}
+
+struct NativePasswordField: View {
+    let title: String
+    @Binding var text: String
+    var newPassword = false
+    @State private var visible = false
+    var body: some View {
+        HStack {
+            Group {
+                if visible { TextField(title, text: $text) }
+                else { SecureField(title, text: $text) }
+            }.textContentType(newPassword ? .newPassword : .password).textInputAutocapitalization(.never).autocorrectionDisabled()
+            Button { visible.toggle() } label: { Image(systemName: visible ? "eye.slash" : "eye").frame(width: 44, height: 44) }
+                .accessibilityLabel((visible ? "Hide " : "Show ") + title.lowercased())
+        }.padding(.leading, 12).background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+struct NativeTimezonePicker: View {
+    @Binding var selection: String
+    @State private var search = ""
+    var body: some View {
+        NavigationStack {
+            List(TimeZone.knownTimeZoneIdentifiers.filter { search.isEmpty || $0.replacingOccurrences(of: "_", with: " ").localizedCaseInsensitiveContains(search) }, id: \.self) { value in
+                Button { selection = value } label: { HStack { Text(value.replacingOccurrences(of: "_", with: " ")); Spacer(); if selection == value { Image(systemName: "checkmark") } } }
+            }.searchable(text: $search).navigationTitle("Timezone")
+                .safeAreaInset(edge: .top) { Button("Use this iPhone’s timezone") { selection = TimeZone.current.identifier }.padding() }
+                .toolbar { ToolbarItem(placement: .confirmationAction) { NativeTimezoneDone() } }
+        }.preferredColorScheme(.light).tint(ZovaDesign.purple)
+    }
+}
+private struct NativeTimezoneDone: View {
+    @Environment(\.dismiss) var dismiss
+    var body: some View { Button("Done") { dismiss() } }
 }
 
 struct NativeAssetPreview: View {

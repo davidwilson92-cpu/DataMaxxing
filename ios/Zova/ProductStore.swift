@@ -12,6 +12,7 @@ final class ProductStore: ObservableObject {
     @Published var schedules: [JSONValue] = []
     @Published var series: [JSONValue] = []
     @Published var selectedTab = 0
+    @Published var accountSection = ""
     @Published var busy = false
     @Published var backgroundSaving = false
     @Published var error: String?
@@ -44,7 +45,7 @@ final class ProductStore: ObservableObject {
         return result
     }
     func handle(_ error: Error) {
-        if error is CancellationError { return }
+        if error is CancellationError || (error as? URLError)?.code == .cancelled || Task.isCancelled { return }
         if case ZovaFailure.signInRequired = error { signedOut = true; return }
         if let issue = error as? ProductError, issue.code == "ai_permission_required" { needsConsent = true; return }
         if let issue = error as? ProductError, issue.status == 409, dirty { recovery = NativeDraftRecovery.load(owner: recoveryOwner) }
@@ -68,14 +69,25 @@ final class ProductStore: ObservableObject {
         }
         do { try await work(); succeeded = true } catch { saveStatus = dirty ? "Not saved — try again" : saveStatus; handle(error) }
     }
-    func start() async throws {
+    func start(restoreBrand: Bool = true) async throws {
         account = try await request("/api/native/account")
-        let connected = account["connections"].array.map { $0["platform"].string }
+        let user = account["profile"]["id"].int
+        let lastBrand = NativeResumeState.brand(user: user)
+        if restoreBrand, lastBrand != brand, account["brand"]["choices"].array.contains(where: { $0["id"].int == lastBrand }) {
+            brand = lastBrand; account = try await request("/api/native/account")
+        }
+        let connected = account["connections"].array.filter { $0["status"].string != "reconnect" }.map { $0["platform"].string }
         draft.selected = SocialPlatform.allCases.map(\.rawValue).filter { connected.contains($0) }
         recovery = NativeDraftRecovery.load(owner: recoveryOwner)
+        let lastDraft = NativeResumeState.draft(user: user, brand: brand)
+        if recovery.isNull, lastDraft > 0 {
+            do { try await openDraft(lastDraft) }
+            catch let error as ProductError where error.status == 404 { NativeResumeState.saveDraft(nil, user: user, brand: brand) }
+        }
         do {
             let intro = try await request("/api/studio/intro/claim", method: "POST", body: .object([:]))
-            showIntro = intro["show"].bool
+            if intro["show"].bool { NativeResumeState.saveIntro(0, user: user) }
+            showIntro = intro["show"].bool || (NativeResumeState.intro(user: user).map { $0 >= 0 } ?? false)
         } catch ZovaFailure.signInRequired { throw ZovaFailure.signInRequired }
         catch is CancellationError { throw CancellationError() }
         catch { showIntro = false } // Optional guidance must not block a valid account.
@@ -115,6 +127,7 @@ final class ProductStore: ObservableObject {
         let reply = try await request("/api/drafts/\(id)", method: "PATCH", body: draft.payload)
         draft.revision = reply["revision"].int
         savedSerial = serial; saveStatus = dirty ? "Unsaved changes" : "Saved"
+        NativeResumeState.saveDraft(id, user: account["profile"]["id"].int, brand: brand)
         if dirty { persistRecovery() } else { NativeDraftRecovery.remove(owner: recoveryOwner) }
     }
     func openDraft(_ id: Int) async throws {
@@ -122,6 +135,7 @@ final class ProductStore: ObservableObject {
         let next = ProductDraft(try await request("/api/drafts/\(id)"))
         polling?.cancel(); results = .null
         draft = next; changeSerial = 0; savedSerial = 0; saveStatus = "Saved"; selectedTab = 0
+        NativeResumeState.saveDraft(id, user: account["profile"]["id"].int, brand: brand)
         mediaNotice = ""
         if !next.editable || next.status == "partial" { try await refreshResults() }
     }
@@ -129,6 +143,7 @@ final class ProductStore: ObservableObject {
         try await save(); polling?.cancel(); results = .null
         let selected = draft.selected
         draft = ProductDraft(); draft.selected = selected; mediaNotice = ""
+        NativeResumeState.saveDraft(nil, user: account["profile"]["id"].int, brand: brand)
         changeSerial = 0; savedSerial = 0; saveStatus = "Ready"; selectedTab = 0
     }
     func switchBrand(_ id: Int) async throws {
@@ -136,9 +151,16 @@ final class ProductStore: ObservableObject {
         try await save(); authority += 1; polling?.cancel()
         brand = id; draft = ProductDraft(); results = .null; mediaNotice = ""
         changeSerial = 0; savedSerial = 0; drafts = []; schedules = []; series = []
-        try await start(); selectedTab = 0
+        NativeResumeState.saveBrand(id, user: account["profile"]["id"].int)
+        try await start(restoreBrand: false); selectedTab = 0
     }
     func reloadAccount() async throws { account = try await request("/api/native/account") }
+    func refreshConnections() async {
+        guard !busy, !account["connections"].array.isEmpty else { return }
+        do { _ = try await request("/api/connections/check", method: "POST", body: .object([:])); try await reloadAccount() }
+        catch ZovaFailure.signInRequired { signedOut = true }
+        catch { } // Offline checks retain the previous status; never claim a revocation.
+    }
     func loadSchedule(search: String = "") async throws {
         try await loadDrafts(search: search)
         schedules = try await request("/api/schedules").array
@@ -219,6 +241,7 @@ final class ProductStore: ObservableObject {
         } else if action == "insight" {
             let reply = try await request("/api/insights", method: "POST", body: .object(["question": .string(String(text.prefix(2000))), "days": .integer(7)]))
             draft.conversation.append(.object(["role": .string("assistant"), "content": reply["answer"]]))
+            draft.workspace["conversation_kind"] = .string("insight")
         } else if action == "publish" || action == "schedule" {
             reviewMode = action
         } else if !plan["reply"].string.isEmpty {
@@ -302,6 +325,7 @@ final class ProductStore: ObservableObject {
         changeSerial = 0; savedSerial = 0; pendingReview = false; showReview = false
         draft = ProductDraft(); drafts = []; schedules = []; series = []; account = .null; results = .null; mediaNotice = ""
         brand = 0; selectedTab = 0; draftOffset = 0; moreDrafts = false
+        accountSection = ""
         needsConsent = false; showIntro = false; reviewMode = "publish"; error = nil; saveStatus = "Ready"
     }
     private var recoveryOwner: String { "\(account["profile"]["id"].int):\(brand)" }

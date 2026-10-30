@@ -10,6 +10,20 @@ PLATFORMS={'x','instagram','facebook','tiktok'}
 MAX_WORKSPACE_MEDIA=200
 
 
+def draft_kind(row):
+    """Performance conversations remain in Studio history, outside saved posts."""
+    try:
+        workspace = json.loads(row.workspace_json or '{}')
+        variants = json.loads(row.variants_json or '{}')
+        if (row.status == 'draft' and workspace.get('conversation_kind') == 'insight'
+                and not workspace.get('media_asset_ids') and not workspace.get('composer')
+                and not any(v.get('posts') for v in variants.values() if isinstance(v, dict))):
+            return 'conversation'
+    except (TypeError, ValueError, AttributeError):
+        pass
+    return 'post'
+
+
 def delete_unsubmitted_draft(db,row):
     from .db import Publication,PublishReview,ScheduledPost,Activity
     if row.status not in EDITABLE or any(db.scalar(select(model.id).where(model.draft_id==row.id).limit(1)) for model in (Publication,ScheduledPost,Activity)):
@@ -157,6 +171,7 @@ def clean_workspace(value, db, user_id, *, previous_workspace=None):
             'instagram_format':instagram_format, 'instagram_audio':audio, 'video_duration':max(0,min(duration,36000)), 'link_url':link,'conversation':messages,
             'text_history':clean_text_history(value.get('text_history',[])), 'composer':str(value.get('composer',''))[:12000], 'selected_platforms':[p for p in selected if p in PLATFORMS][:4],
             'platform_selection_explicit':explicit, 'pending_message':pending, **retry_context,
+            'conversation_kind':'insight' if value.get('conversation_kind') == 'insight' else 'post',
             'active_platform':value.get('active_platform') if value.get('active_platform') in PLATFORMS else 'x'}
 
 

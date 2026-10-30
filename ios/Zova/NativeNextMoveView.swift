@@ -18,6 +18,7 @@ struct NativeNextMoveView: View {
     @State private var refinements: [Int: String] = [:]
     @State private var note = ""
     @State private var reviewSteps = false
+    @State private var work: Task<Void, Never>?
     private var current: JSONValue { moves.indices.contains(index) ? moves[index] : .null }
     var body: some View {
         ScrollView {
@@ -39,8 +40,13 @@ struct NativeNextMoveView: View {
             }.padding(20)
         }.background(.white).preferredColorScheme(.light).foregroundStyle(ZovaDesign.ink).tint(ZovaDesign.purple)
             .task { run { try await load() } }.interactiveDismissDisabled(store.busy)
+            .onDisappear { work?.cancel(); work = nil }
+            .scrollDismissesKeyboard(.interactively)
     }
-    private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
+    private func run(_ operation: @escaping @MainActor () async throws -> Void) {
+        let previous = work; previous?.cancel()
+        work = Task { await previous?.value; guard !Task.isCancelled else { return }; await store.perform(operation) }
+    }
     private var proposal: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 20) {

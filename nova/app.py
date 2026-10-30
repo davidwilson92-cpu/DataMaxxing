@@ -8,6 +8,7 @@ import html
 import json
 import logging
 import os
+import re
 import secrets
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
@@ -19,7 +20,7 @@ from zoneinfo import ZoneInfo
 import httpx
 import jwt
 from oauthlib.oauth1 import Client as OAuth1Client
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import Response, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -256,7 +257,7 @@ def signup_page(request: Request, error: str | None = None):
     return templates.TemplateResponse(request, "auth.html", template_context(request, heading="Create your Zova account", subheading="Use your email to create a workspace. Connect your social accounts afterwards, or skip that step.", action="/signup", button="Create Zova account", saved=saved, countries=sorted(pycountry.countries,key=lambda c:c.name), error=error, apple_ready=apple_configured()))
 
 @app.post("/signup")
-def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str, Form()], password: Annotated[str, Form()], password_confirmation: Annotated[str, Form()], country: Annotated[str, Form()] = "", accept_terms: Annotated[str | None, Form()] = None, marketing_consent: Annotated[str | None, Form()] = None, db: Session=Depends(get_db)):
+def signup(request: Request, background_tasks: BackgroundTasks, name: Annotated[str, Form()], email: Annotated[str, Form()], password: Annotated[str, Form()], password_confirmation: Annotated[str, Form()], country: Annotated[str, Form()] = "", accept_terms: Annotated[str | None, Form()] = None, marketing_consent: Annotated[str | None, Form()] = None, db: Session=Depends(get_db)):
     def retry(location, status=303):
         response=RedirectResponse(location,status)
         response.set_cookie('zova_signup_input',encrypt(json.dumps({'name':name[:160],'email':email[:320],'country':country[:2],'expires':utcnow().timestamp()+600})),max_age=600,httponly=True,secure=base_url().startswith('https://'),samesite='lax',path='/signup')
@@ -275,6 +276,8 @@ def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str,
     db.info.update(brand_id=0,brand_user_id=user.id);request.state.brand_id=0
     get_preferences(db,user.id)
     readiness.event(user.id,'signup',user.id)
+    from .verification import welcome_verification
+    welcome_verification(user, background_tasks)
     from .mobile_auth import resume_destination
     resp=RedirectResponse(resume_destination(request.cookies.get('zova_mobile_grant'), db) or "/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
 
@@ -595,7 +598,9 @@ def drafts_page(request:Request,db:Session=Depends(get_db)):
     has_more=len(rows)>30
     rows=rows[:30]
     drafts=[]
+    from .workspace import draft_kind
     for row in rows:
+        if draft_kind(row) == 'conversation': continue
         try:platforms=json.loads(row.platforms_json or "[]")
         except (TypeError,json.JSONDecodeError):platforms=[]
         try:
@@ -701,7 +706,10 @@ def save_preferences(request:Request,writing_tone:Annotated[str,Form()]="",audie
     try:ZoneInfo(timezone_name)
     except Exception:timezone_name="Europe/London"
     mark_edits(prefs,dict(writing_tone=writing_tone[:5000],audience=audience[:5000],topics=topics[:5000],things_to_avoid=things_to_avoid[:5000],example_posts=example_posts[:12000],preferred_post_length=max(30,min(preferred_post_length,4000)),timezone=timezone_name))
-    db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=voice",303)
+    db.commit()
+    if 'application/json' in request.headers.get('accept', ''):
+        return {'saved': True}
+    return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=voice",303)
 
 @app.post('/account/voice/clear-examples')
 def clear_voice_examples(request:Request, db:Session=Depends(get_db)):
@@ -1182,7 +1190,7 @@ def api_drafts(request:Request,offset:int=Query(0,ge=0,le=100000),status:str=Que
     elif status!='all':statement=statement.where(Draft.status==status)
     if query:statement=statement.where(or_(Draft.title.icontains(query,autoescape=True),Draft.brief.icontains(query,autoescape=True),Draft.variants_json.icontains(query,autoescape=True),Draft.workspace_json.icontains(query,autoescape=True)))
     rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).offset(offset).limit(100)).all()
-    from .workspace import draft_media_previews
+    from .workspace import draft_media_previews, draft_kind
     previews=draft_media_previews(db,rows,user.id)
     output=[]
     for r in rows:
@@ -1190,7 +1198,7 @@ def api_drafts(request:Request,offset:int=Query(0,ge=0,le=100000),status:str=Que
         title=draft_title(r)
         try:platforms=json.loads(r.platforms_json or "[]")
         except (TypeError,ValueError):platforms=[]
-        output.append({"id":r.id,"revision":r.revision,"thumbnail":previews.get(r.id),"title":title[:100],"brief":r.brief,"platforms":platforms,"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
+        output.append({"id":r.id,"kind":draft_kind(r),"revision":r.revision,"thumbnail":previews.get(r.id),"title":title[:100],"brief":r.brief,"platforms":platforms,"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
     return output
 
 @app.get("/api/drafts/{draft_id}")
@@ -1277,7 +1285,10 @@ def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db))
     summary=dashboard.get('summary') or {}
     connected=any(value.get('connected') for value in dashboard['platforms'].values())
     answer=insight_fallback(dashboard,body.question,body.days)
-    if connected and os.environ.get("OPENAI_API_KEY"):
+    # Analysis of numbers supplied by the creator does not require OAuth. The
+    # normal AI consent and allowance checks still apply inside ai_action.
+    supplied_figures = bool(re.search(r'\d[\d,.]*\s*(?:k\s*)?(?:views?|saves?|comments?|clicks?|sales?|likes?|orders?|conversions?)\b', body.question, re.I))
+    if (connected or supplied_figures) and os.environ.get("OPENAI_API_KEY"):
         try:
             with allowances.ai_action(db,user.id):
                 answer=ai.analyse_performance(question=body.question,dashboard=dashboard,preferences=get_preferences(db,user.id))
@@ -1320,6 +1331,8 @@ def help_page(request:Request):
 
 from .operations import router as operations_router
 app.include_router(operations_router)
+from .connection_health import router as connection_health_router
+app.include_router(connection_health_router)
 app.include_router(readiness.router)
 from .verification import router as verification_router
 app.include_router(verification_router)

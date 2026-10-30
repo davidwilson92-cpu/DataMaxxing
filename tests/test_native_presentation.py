@@ -36,6 +36,17 @@ def test_native_account_contract_exposes_only_owned_presentation(native):
     assert reply.headers['cache-control'] == 'no-store'
 
 
+def test_repeated_native_voice_saves_reply_directly_and_persist(native):
+    client, *_ = native
+    for index in range(4):
+        reply = client.post('/account/preferences', headers={'Accept':'application/json'},
+            data={'writing_tone':f'Precise and dry {index}', 'timezone':'Asia/Karachi'}, follow_redirects=False)
+        assert reply.status_code == 200 and reply.json() == {'saved':True}
+        profile = client.get('/api/native/account').json()
+        assert profile['voice']['writing_tone'] == f'Precise and dry {index}'
+        assert profile['voice']['timezone'] == 'Asia/Karachi'
+
+
 def test_native_account_brands_and_revoked_device_are_rejected(native):
     client, _, uid, pair = native
     from test_account_integrity import account

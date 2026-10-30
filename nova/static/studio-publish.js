@@ -48,7 +48,7 @@ async function requestPublishConfirmation(mode,scheduledLocal=null,targets=null,
     const blocked=reviewPlatforms.filter(p=>reviewContexts[p]?.error);
     if(blocked.length){
       const ready=reviewPlatforms.filter(p=>!blocked.includes(p));
-      reviewHost().innerHTML=`<section class="chat-confirmation"><h3>Choose what to review now</h3><p>${blocked.map(platformName).join(', ')} need a connection or permission check. Their versions remain saved here.</p><a href="/account#socials">Manage connections</a>${ready.length?`<button class="button primary" onclick="requestPublishConfirmation('${mode}',null,${esc(JSON.stringify(ready))})">Review ${ready.map(platformName).join(', ')} only</button>`:''}</section>`;openReview();return;
+      reviewHost().innerHTML=`<section class="chat-confirmation"><h3>Choose what to review now</h3><p>${blocked.map(platformName).join(', ')} need a connection or permission check. Their versions remain saved here.</p>${blocked.map(p=>`<a class="button ghost" href="${esc(window.zovaWorkspaceUrl?.('/connect/'+p)||'/connect/'+p)}">Connect ${platformName(p)}</a>`).join('')}${ready.length?`<button class="button primary" onclick="requestPublishConfirmation('${mode}',null,${esc(JSON.stringify(ready))})">Review ${ready.map(platformName).join(', ')} only</button>`:''}</section>`;openReview();return;
     }
     const needsSettings=mode==='schedule'||reviewPlatforms.includes('tiktok')||reviewPlatforms.some(p=>(reviewContexts[p]?.accounts||[]).length>1);
     if(!needsSettings)return buildPublicationReview();

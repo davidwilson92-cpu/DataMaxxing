@@ -4,6 +4,8 @@ struct NativePublishView: View {
     @EnvironmentObject var store: ProductStore
     @Environment(\.dismiss) var dismiss
     let mode: String
+    var connect: (String) async -> Void = { _ in }
+    @State private var notice = ""
     @State private var contexts: JSONValue = .null
     @State private var platforms: [String] = []
     @State private var connections: [String: Int] = [:]
@@ -20,7 +22,7 @@ struct NativePublishView: View {
     @State private var review: JSONValue = .null
     @State private var suggestions: JSONValue = .null
     @State private var attempted = false
-    private var scheduleTimezone: String { store.draft.planned["timezone"].string.isEmpty ? store.timezone : store.draft.planned["timezone"].string }
+    private var scheduleTimezone: String { store.draft.planned["timezone"].string.isEmpty ? TimeZone.current.identifier : store.draft.planned["timezone"].string }
     private var tiktok: JSONValue { contexts["tiktok"] }
     private var direct: Bool { platforms.contains("tiktok") && tiktok["posting_mode"].string != "inbox" }
     private var valid: Bool {
@@ -34,6 +36,7 @@ struct NativePublishView: View {
             VStack(alignment: .leading, spacing: 18) {
                 NativeSheetHeader(title: review.isNull ? "Review post" : mode == "schedule" ? "Confirm schedule" : "Confirm publish")
                 if store.busy { ProgressView("Checking…") }
+                if !notice.isEmpty { Text(notice).font(.callout).foregroundStyle(.red); Button("Try again") { run { try await loadContexts() } }.disabled(store.busy || attempted) }
                 if review.isNull {
                     settings
                     Button("Review final post") { run { try await buildReview() } }.buttonStyle(ZovaPrimary()).disabled(store.busy || !valid || attempted)
@@ -45,19 +48,43 @@ struct NativePublishView: View {
                     }.buttonStyle(ZovaPrimary()).disabled(store.busy || attempted).accessibilityIdentifier("confirm-publication")
                 }
             }.padding(20)
-        }.preferredColorScheme(.light).tint(ZovaDesign.purple).task { run { try await load() } }
+        }.preferredColorScheme(.light).tint(ZovaDesign.purple).task { await perform { try await load() } }
             .onChange(of: privacy) { _, value in consent = false; if !["PUBLIC_TO_EVERYONE", "MUTUAL_FOLLOW_FRIENDS"].contains(value) { partnership = false } }
             .onChange(of: commercial) { _, value in consent = false; if !value { ownBrand = false; partnership = false } }
             .onChange(of: ownBrand) { _, _ in consent = false }.onChange(of: partnership) { _, _ in consent = false }
     }
-    private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
+    private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await perform(work) } }
+    private func perform(_ work: @escaping @MainActor () async throws -> Void) async {
+        await store.perform {
+            notice = ""
+            do { try await work() }
+            catch is CancellationError { }
+            catch ZovaFailure.signInRequired { store.handle(ZovaFailure.signInRequired) }
+            catch let issue as ProductError where issue.code == "ai_permission_required" { notice = "Enable AI sharing in Account → Security & privacy to suggest times. You can still choose a time yourself." }
+            catch { notice = error.localizedDescription }
+        }
+    }
     private var settings: some View {
         VStack(alignment: .leading, spacing: 16) {
+            Text("Choose where to post").font(.headline)
+            ForEach(SocialPlatform.allCases.filter { !store.draft.variants[$0.rawValue]["posts"].array.isEmpty }) { item in
+                Toggle(item.title, isOn: Binding(get: { platforms.contains(item.rawValue) }, set: { selected in
+                    if selected { platforms.append(item.rawValue) } else { platforms.removeAll { $0 == item.rawValue } }
+                    consent = false; privacy = ""; run { try await loadContexts() }
+                }))
+            }
+            if platforms.isEmpty { Text("Select a platform above. Your captions stay saved.").font(.callout).foregroundStyle(.secondary) }
             ForEach(platforms, id: \.self) { platform in
                 HStack { NativePlatformMark(platform: platform); Text(SocialPlatform(rawValue: platform)?.title ?? platform).font(.headline); Spacer() }
+                ForEach(Array(store.draft.variants[platform]["posts"].strings.enumerated()), id: \.offset) { index, caption in
+                    VStack(alignment: .leading, spacing: 5) {
+                        if store.draft.variants[platform]["posts"].array.count > 1 { Text("Post \(index + 1) of \(store.draft.variants[platform]["posts"].array.count)").font(.caption.bold()) }
+                        Text(caption).font(.callout).textSelection(.enabled)
+                    }.padding(12).frame(maxWidth: .infinity, alignment: .leading).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 10))
+                }
                 if !contexts[platform]["error"].isNull {
                     Text(contexts[platform]["error"].string).font(.callout).foregroundStyle(.secondary)
-                    Button("Open social accounts") { store.selectedTab = 3; dismiss() }
+                    Button("Connect " + (SocialPlatform(rawValue: platform)?.title ?? platform)) { Task { await connect(platform); await perform { try await loadContexts() } } }.buttonStyle(ZovaPrimary())
                     Button("Remove from this review") { platforms.removeAll { $0 == platform } }
                 } else {
                     Picker("Account", selection: Binding(get: { connections[platform, default: 0] }, set: { connections[platform] = $0; consent = false; privacy = ""; run { try await loadContexts() } })) {
@@ -97,10 +124,10 @@ struct NativePublishView: View {
                 Button("Suggest starting times") { run { suggestions = try await store.request("/api/ai/schedule", method: "POST", body: .object(["platforms": .strings(platforms), "context": .string(store.draft.brief)])) } }
                 if !suggestions.isNull {
                     Text(suggestions["note"].string).font(.caption)
-                    Text("Suggested times in " + store.timezone).font(.caption).foregroundStyle(.secondary)
+                    Text("Suggested times in " + scheduleTimezone).font(.caption).foregroundStyle(.secondary)
                     ForEach(suggestions["suggestions"].object.keys.sorted(), id: \.self) { platform in
                         ForEach(Array(suggestions["suggestions"][platform].array.enumerated()), id: \.offset) { _, item in
-                            Button(item["label"].string + " · " + item["local_time"].string) {
+                            Button(suggestionLabel(item)) {
                                 let formatter = DateFormatter(); formatter.dateFormat = "yyyy-MM-dd'T'HH:mm"; formatter.timeZone = TimeZone(identifier: store.timezone)
                                 if let value = formatter.date(from: String(item["local_time"].string.prefix(16))) { date = value }
                             }
@@ -111,14 +138,18 @@ struct NativePublishView: View {
         }.disabled(store.busy)
     }
     private func privacyName(_ value: String) -> String { ["SELF_ONLY":"Only me", "PUBLIC_TO_EVERYONE":"Everyone", "MUTUAL_FOLLOW_FRIENDS":"Friends", "FOLLOWER_OF_CREATOR":"Followers"][value] ?? value }
+    private func suggestionLabel(_ item: JSONValue) -> String {
+        guard let date = ProductLinks.localDate(item["local_time"].string, timezone: store.timezone) else { return item["label"].string }
+        return ProductLinks.displayDate(date, timezone: scheduleTimezone)
+    }
     private func load() async throws {
         try await store.save()
         if let planned = ProductLinks.localDate(store.draft.planned["local_time"].string, timezone: scheduleTimezone), planned > Date() { date = planned }
         platforms = store.draft.selected.filter { !store.draft.variants[$0]["posts"].array.isEmpty }
-        if platforms.isEmpty { throw ZovaFailure.server("Choose a platform with a caption first.") }
         try await loadContexts()
     }
     private func loadContexts() async throws {
+        guard !platforms.isEmpty else { contexts = .null; return }
         let reply = try await store.request("/api/publish-context", method: "POST", body: .object(["platforms": .strings(platforms), "variants": store.draft.variants, "connection_ids": .object(connections.mapValues { .integer($0) })]))
         contexts = reply["platforms"]
         for platform in platforms { connections[platform] = contexts[platform]["connection_id"].int }

@@ -146,7 +146,7 @@ def test_account_management_and_social_voice_waiting_state():
     page = client.get("/account", cookies=signup.cookies).text
     assert 'action="/account/profile"' in page
     assert 'action="/account/password"' in page
-    assert "Connected socials" in page and "Change password" in page
+    assert "Connected socials" in page and "Update password" in page
     response = client.post("/api/voice/scan-socials", cookies=signup.cookies)
     assert response.json()["status"] == "waiting"
 

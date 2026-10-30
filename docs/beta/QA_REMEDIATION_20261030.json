@@ -1,0 +1,518 @@
+{
+  "source": "Zova Social Mobile App - iOS QA Feedback report by Zain Dev Studio.xlsx",
+  "source_issue_count": 51,
+  "reviewed_on": "2026-10-30",
+  "released": false,
+  "items": [
+    {
+      "id": "QA-01",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 2,
+      "title": "Suggestion: Display the 'Zova AI' text instead of OpenAI for branding purposes",
+      "reported_priority": "Low",
+      "disposition": "retained-security",
+      "action": "Zova branding retained; OpenAI remains accurately named in AI-sharing/privacy disclosures. Hiding the processor is not a valid branding fix.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-02",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 5,
+      "title": " Improve Visibility of the Legal Policies Section on the One View Screen",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Native welcome legal links moved beside the main sign-in action. Large accessibility text may still require scrolling.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-03",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 6,
+      "title": "Suggestion: Improve Password Field and Button Layout on the Login Screen",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Independent eye controls inside password fields; forgot-password below/right; prominent Create an account action.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-04",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 7,
+      "title": "Field Accepts Invalid Email Addresses Without a Valid Domain Extension",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Complete domain validation in browser and existing server normalization. No restriction to .com.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-05",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 8,
+      "title": "Login Confirmation Prompt Appears on Every Login Attempt",
+      "reported_priority": "Medium",
+      "disposition": "retained-security",
+      "action": "Keep iOS system authentication consent and account-bound confirmation; these protect account switching and secure return. No unsafe auto-accept.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-06",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 11,
+      "title": "Implement Strong Password Validation with a Visible Requirements Checklist",
+      "reported_priority": "Medium",
+      "disposition": "adapted",
+      "action": "Visible live length/match checklist; retain the server 10–256-character policy rather than weakening to eight or forcing arbitrary character classes.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-07",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 12,
+      "title": "Suggestion: Instead of the 'Show' password button, use the eye toggle button within the Password field",
+      "reported_priority": "Low",
+      "disposition": "implemented",
+      "action": "Separate eye controls for password and confirmation.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-08",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 13,
+      "title": "Suggestion: Align the Country Field Color with the App Theme",
+      "reported_priority": "Low",
+      "disposition": "implemented",
+      "action": "Country select matches the dark authentication theme.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-09",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 14,
+      "title": "Email Verification Flow Is Missing",
+      "reported_priority": "Medium",
+      "disposition": "adapted",
+      "action": "Registration queues a hashed, time-limited verification link; Account offers resend. Verification remains optional for existing beta access; a mail outage never invalidates registration.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-10",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 15,
+      "title": "Incomplete Onboarding Steps Are Skipped After Logging Back In",
+      "reported_priority": "Medium",
+      "disposition": "adapted",
+      "action": "Unfinished first-run native guide resumes its step; Skip completes it. Optional social/voice setup stays in Account. No subscription gate or required plan-selection during free beta.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-11",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 17,
+      "title": "The Forgot password screen theme should match with the app theme",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Recovery pages now use the dark branded form treatment.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-12",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 18,
+      "title": "Implement Strong Password Validation with a Visible Requirements Checklist on Forgot Password screen as well",
+      "reported_priority": "Medium",
+      "disposition": "adapted",
+      "action": "Recovery checklist matches the real 10–256-character server policy and confirmation requirement.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-13",
+      "source_sheet": "Onboarding and Auth Screens",
+      "source_row": 19,
+      "title": "The password view and hide toggle button is missing on the new password setup screen",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "New-password and confirmation visibility controls on recovery.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-14",
+      "source_sheet": "Studio Screen",
+      "source_row": 2,
+      "title": "Add a button to reset the AI-chat",
+      "reported_priority": "Medium",
+      "disposition": "existing-verified",
+      "action": "Existing + New post saves previous work before starting a blank chat; no duplicate Reset action.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-15",
+      "source_sheet": "Studio Screen",
+      "source_row": 3,
+      "title": "The chat with the AI get disappear by closing and re-opening the app",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Restore the last server draft separately for each user/brand; protected unsaved recovery takes precedence. New post deliberately clears the resume pointer.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-16",
+      "source_sheet": "Studio Screen",
+      "source_row": 4,
+      "title": "Suggestion: Remove the extra padding and move the input field for the post into center for the first view",
+      "reported_priority": "Low",
+      "disposition": "implemented",
+      "action": "Centre the empty composer until focus/content; retain the owner-requested blank Studio and accessible scrolling layout.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-17",
+      "source_sheet": "Studio Screen",
+      "source_row": 5,
+      "title": "Add the box around the first AI-response",
+      "reported_priority": "Low",
+      "disposition": "implemented",
+      "action": "Assistant messages have a pale rounded bubble distinct from the caption editor.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-18",
+      "source_sheet": "Studio Screen",
+      "source_row": 8,
+      "title": "The keyboard should open automatically when the user tap on the 'New post button' ",
+      "reported_priority": "Low",
+      "disposition": "implemented",
+      "action": "New post focuses the composer after saving.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-19",
+      "source_sheet": "Studio Screen",
+      "source_row": 9,
+      "title": "Suggestion: Move the placeholder text to the center align",
+      "reported_priority": "Low",
+      "disposition": "implemented",
+      "action": "Save status and centred publishing-approval reassurance are separate lines.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-20",
+      "source_sheet": "Studio Screen",
+      "source_row": 10,
+      "title": "Social Media Account Selection Is Missing from the “Review Post” Popup",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Review stays open with available caption-platform choices and inline guidance when no destination is ready.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-21",
+      "source_sheet": "Studio Screen",
+      "source_row": 11,
+      "title": "Open Social Account” Button Redirects to Settings Instead of the Connection Screen",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Native review directly opens the relevant provider connection and refreshes its context; web review links directly to that provider.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-22",
+      "source_sheet": "Studio Screen",
+      "source_row": 12,
+      "title": "Generated Threads Are Not Displayed in the Review Post Popup",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Initial and final review show every thread item, numbered when more than one.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-23",
+      "source_sheet": "Studio Screen",
+      "source_row": 13,
+      "title": "Update Revoked Social Account Status Immediately on the Studio Screen",
+      "reported_priority": "High",
+      "disposition": "adapted",
+      "action": "Read-only provider checks on foreground/visible app, bounded to once per minute. Proven revoked access displays reconnect; timeouts/429 remain unavailable, never falsely revoked. Not instantaneous push notification.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-24",
+      "source_sheet": "Studio Screen",
+      "source_row": 14,
+      "title": "iPhone Photo Library Does Not Open and Missing Permission Requests",
+      "reported_priority": "Medium",
+      "disposition": "device-retest",
+      "action": "Photos picker is presented outside the attachment menu. Uses the privacy-preserving iOS picker, which does not need whole-library permission. Real-device restricted/iCloud/photo/video checks remain required.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-25",
+      "source_sheet": "Studio Screen",
+      "source_row": 15,
+      "title": "Unable to Edit or Update the Link in Post Options",
+      "reported_priority": "High",
+      "disposition": "implemented",
+      "action": "Source URL stays local while typing; validate on Done, inline error, sheet remains open. No partial-URL autosave.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-26",
+      "source_sheet": "Studio Screen",
+      "source_row": 16,
+      "title": "Review Post Popup Closes When Selecting an Unconnected Social Media Account",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Disconnected account stays in review with direct Connect and Remove actions; no global dismissal on context error.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-27",
+      "source_sheet": "Schedule Post Screen",
+      "source_row": 2,
+      "title": "Schedule Popup Automatically Closes on First Attempt",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Review/schedule initialization is a structured task; context errors stay inline and preserve the sheet.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-28",
+      "source_sheet": "Schedule Post Screen",
+      "source_row": 3,
+      "title": "Improvement:  Fix Date and Time Formatting in the Suggested Starting Time on the Schedule Post Screen",
+      "reported_priority": "Low",
+      "disposition": "implemented",
+      "action": "Suggested times rendered through the local date formatter, not raw ISO strings.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-29",
+      "source_sheet": "Schedule Post Screen",
+      "source_row": 4,
+      "title": "Use the Device's Local Time Zone on the Schedule Post Screen",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "New schedule uses device timezone; an existing planned occurrence retains its explicit timezone. Suggestion label and conversion use the displayed zone.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-30",
+      "source_sheet": "Performance Screen",
+      "source_row": 2,
+      "title": "Display Account Performance Check-In Time Based on the Device’s Local Time",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Checked-at display uses the device timezone.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-31",
+      "source_sheet": "Performance Screen",
+      "source_row": 3,
+      "title": "Dismiss the Keyboard When Tapping Outside Input Fields",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Window tap recognizer dismisses keyboard without consuming text input, buttons or scroll gestures; scroll-to-dismiss retained.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-32",
+      "source_sheet": "Performance Screen",
+      "source_row": 4,
+      "title": "Selected Brand Automatically Resets to Default After App Restart",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Persist selected brand by user/base URL; restore only a brand still present in the authenticated owner list.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-33",
+      "source_sheet": "Profile Screen",
+      "source_row": 3,
+      "title": "Improve the Visibility of Social Media Account Connect Buttons",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Primary purple account-connect buttons with white text and accessible targets.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-34",
+      "source_sheet": "Profile Screen",
+      "source_row": 4,
+      "title": "Facebook Account Connection Fails with “Facebook Is Unavailable for This App” Error",
+      "reported_priority": "High",
+      "disposition": "external-blocker",
+      "action": "Meta dashboard on 30 Oct: pages_show_list, pages_read_engagement and pages_manage_posts remain Not submitted. Existing Instagram approvals are intact. Public Facebook connection is not certified until review and a non-role account test.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-35",
+      "source_sheet": "Profile Screen",
+      "source_row": 5,
+      "title": "Instagram Connection Requires Multiple Attempts",
+      "reported_priority": "Medium",
+      "disposition": "device-retest",
+      "action": "Keep the existing secure web authentication route and return-state validation. Tester first-attempt Instagram issue needs clean-session physical-device reproduction; prior owner success does not close this report.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-36",
+      "source_sheet": "Profile Screen",
+      "source_row": 6,
+      "title": "TikTok Connection Fails",
+      "reported_priority": "High",
+      "disposition": "configuration-blocker",
+      "action": "Tester capture says non_sandbox_target. Read-only comparison confirmed the live Render service uses the sandbox client key, not the approved production key. Production credential correction/Direct Post activation requires the pending specific approval; no credentials copied into this report.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-37",
+      "source_sheet": "Profile Screen",
+      "source_row": 7,
+      "title": "Why does the Instagram connection need a professional account?",
+      "reported_priority": "Medium",
+      "disposition": "provider-limit",
+      "action": "Instagram publishing API requires Creator/Business. Explain this before connecting; personal-account automatic publishing cannot be implemented honestly.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-38",
+      "source_sheet": "Profile Screen",
+      "source_row": 8,
+      "title": "Improve the Unlink Account Flow with a Confirmation Popup",
+      "reported_priority": "Medium",
+      "disposition": "existing-verified",
+      "action": "Native unlink already requires confirmation; cancel does not unlink.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-39",
+      "source_sheet": "Profile Screen",
+      "source_row": 11,
+      "title": "Improvement: Fix the placeholder text alignment to the start on the input field",
+      "reported_priority": "Low",
+      "disposition": "implemented",
+      "action": "Multiline strategy fields explicitly lead-align text and placeholder.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-40",
+      "source_sheet": "Profile Screen",
+      "source_row": 12,
+      "title": "Settings Screen Gets Stuck on the “Updating” Loader",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Strategy work is cancelled on close; cancellation releases busy state and is not surfaced as a connection error. Replacement work awaits previous cleanup.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-41",
+      "source_sheet": "Profile Screen",
+      "source_row": 15,
+      "title": "Add the dropdown of the timezone selection",
+      "reported_priority": "Low",
+      "disposition": "implemented",
+      "action": "Searchable timezone list plus Use this iPhone timezone; no manual identifier entry.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-42",
+      "source_sheet": "Profile Screen",
+      "source_row": 16,
+      "title": "The connection lost error appears multiple times during updating the voice content",
+      "reported_priority": "Medium",
+      "disposition": "device-retest",
+      "action": "Native voice saves now receive direct JSON instead of redirects; repeated saves and persistence covered by authenticated API tests. Original device/network failure still needs recheck after upgrade.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-43",
+      "source_sheet": "Profile Screen",
+      "source_row": 17,
+      "title": "Improvement: Center the “Status Updated” Popup on the Screen",
+      "reported_priority": "Medium",
+      "disposition": "adapted",
+      "action": "Centred, accessible nonmodal saved feedback; avoids adding another blocking popup.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-44",
+      "source_sheet": "Profile Screen",
+      "source_row": 20,
+      "title": "Improve the Visibility and Usability of the “Add Brand” and “Rename Current” Buttons",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Add and Rename primary buttons have consistent contrast, spacing and targets.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-45",
+      "source_sheet": "Profile Screen",
+      "source_row": 21,
+      "title": "Automatically Populate the Current Account Name in the “Rename Current” Input Field",
+      "reported_priority": "Low",
+      "disposition": "implemented",
+      "action": "Current brand name is prefilled and restored after Account load.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-46",
+      "source_sheet": "Profile Screen",
+      "source_row": 24,
+      "title": "Change Password Button Does Not Work or Display Validation Messages",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Visible password length/match feedback, disabled invalid submit, server validation messages, session revocation preserved on successful change.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-47",
+      "source_sheet": "Profile Screen",
+      "source_row": 25,
+      "title": "Improve the “Change Password” Button Text for Better Usability",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Update password label across native and web.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-48",
+      "source_sheet": "Profile Screen",
+      "source_row": 26,
+      "title": "Improve the Security and Privacy Section Design for Better Usability",
+      "reported_priority": "Medium",
+      "disposition": "existing-verified",
+      "action": "Security & privacy remains an icon-labelled expandable group; improved password controls/checklist. No return to excessive pills/cards.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-49",
+      "source_sheet": "Profile Screen",
+      "source_row": 29,
+      "title": "Improve the “Send Verification Email” Button Color for Better Visibility",
+      "reported_priority": "Medium",
+      "disposition": "implemented",
+      "action": "Verification action is a clear primary button when email is unverified.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-50",
+      "source_sheet": "Profile Screen",
+      "source_row": 30,
+      "title": "Improve the Visibility and Design of the “Sign Out” Button",
+      "reported_priority": "Medium",
+      "disposition": "existing-verified",
+      "action": "Sign out remains alongside account identity at the top with a 44pt target; no duplicate destructive navigation.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    },
+    {
+      "id": "QA-51",
+      "source_sheet": "Profile Screen",
+      "source_row": 33,
+      "title": " Display a Reconnection Popup When Social Account Access Is Revoked",
+      "reported_priority": "High",
+      "disposition": "adapted",
+      "action": "Foreground status banner with reconnect action; saved work preserved, no forced modal loop, no false revocation on temporary provider failure.",
+      "validation": "Candidate automated checks in progress; see validation section. No physical-device pass implied."
+    }
+  ]
+}

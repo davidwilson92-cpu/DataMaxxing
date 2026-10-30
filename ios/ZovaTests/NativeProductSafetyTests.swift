@@ -7,6 +7,7 @@ final class NativeProductSafetyTests: XCTestCase {
     override func tearDown() { try? KeychainVault.clear(); NativeDraftRecovery.remove(owner: "1:0"); NativeMediaFiles.clear() }
     private func api() throws -> NativeAPI {
         NativeProductFixtures.reset(); NativeDraftRecovery.remove(owner: "1:0")
+        NativeResumeState.saveBrand(0, user: 1); NativeResumeState.saveDraft(nil, user: 1, brand: 0); NativeResumeState.saveIntro(-1, user: 1)
         try KeychainVault.save(NativeTokens(access: String(repeating: "a", count: 64), refresh: String(repeating: "r", count: 64), expires: Date().addingTimeInterval(900)))
         let configuration = URLSessionConfiguration.ephemeral; configuration.protocolClasses = [ProductTestTransport.self]
         ProductTestTransport.respond = { request in
@@ -14,6 +15,30 @@ final class NativeProductSafetyTests: XCTestCase {
             return (status, try! value.encoded(), headers, 0)
         }
         return NativeAPI(configuration: .bundled, transport: configuration)
+    }
+    func testResumePointersAreSeparatedByUserAndBrand() {
+        NativeResumeState.saveBrand(4, user: 91001)
+        NativeResumeState.saveDraft(88, user: 91001, brand: 4)
+        NativeResumeState.saveDraft(99, user: 91001, brand: 5)
+        XCTAssertEqual(NativeResumeState.brand(user: 91001), 4)
+        XCTAssertEqual(NativeResumeState.draft(user: 91001, brand: 4), 88)
+        XCTAssertEqual(NativeResumeState.draft(user: 91001, brand: 5), 99)
+        XCTAssertEqual(NativeResumeState.draft(user: 91002, brand: 4), 0)
+        NativeResumeState.saveDraft(nil, user: 91001, brand: 4)
+        XCTAssertEqual(NativeResumeState.draft(user: 91001, brand: 4), 0)
+    }
+    func testSavedConversationReopensAfterRestart() async throws {
+        let service = try api(), first = ProductStore(api: service)
+        try await first.start()
+        first.draft.composer = "A saved idea"; first.changed(); try await first.save()
+        let id = first.draft.id
+        let second = ProductStore(api: service)
+        try await second.start()
+        XCTAssertEqual(second.draft.id, id)
+        XCTAssertEqual(second.draft.composer, "A saved idea")
+        try await second.newPost()
+        let third = ProductStore(api: service); try await third.start()
+        XCTAssertNil(third.draft.id)
     }
     func testProductRequestsKeepDeviceTokensOutOfCookieTransport() async throws {
         let api = try api()

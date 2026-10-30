@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% block body_class %}recovery-page{% endblock %}
 {% block title %}Account recovery | Zova{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/account-access.css?v=20261025">{% endblock %}
+{% block head %}<script defer src="/static/account-fields.js?v=20261030"></script><link rel="stylesheet" href="/static/account-access.css?v=20261025">{% endblock %}
 {% block body %}
 <main class="legal-wrap">
   <h1>{{ 'Choose a new password' if reset else 'Recover your account' }}</h1>

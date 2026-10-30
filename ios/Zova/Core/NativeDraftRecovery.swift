@@ -32,3 +32,18 @@ enum NativeDraftRecovery {
         for file in files where file.lastPathComponent.hasPrefix(prefix) { try? FileManager.default.removeItem(at: file) }
     }
 }
+
+/// Only server identifiers are retained here. Content stays in protected recovery
+/// storage or on the server, which rechecks user and brand ownership on every load.
+enum NativeResumeState {
+    private static func key(_ user: Int, _ suffix: String) -> String {
+        let scope = ZovaConfiguration.bundled.base.absoluteString + ":\(user):" + suffix
+        return "zova-resume-" + SHA256.hash(data: Data(scope.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+    static func brand(user: Int) -> Int { UserDefaults.standard.integer(forKey: key(user, "brand")) }
+    static func saveBrand(_ brand: Int, user: Int) { guard user > 0 else { return }; UserDefaults.standard.set(brand, forKey: key(user, "brand")) }
+    static func draft(user: Int, brand: Int) -> Int { UserDefaults.standard.integer(forKey: key(user, "draft:\(brand)")) }
+    static func intro(user: Int) -> Int? { UserDefaults.standard.object(forKey: key(user, "intro")) as? Int }
+    static func saveIntro(_ step: Int, user: Int) { guard user > 0 else { return }; UserDefaults.standard.set(step, forKey: key(user, "intro")) }
+    static func saveDraft(_ draft: Int?, user: Int, brand: Int) { guard user > 0 else { return }; UserDefaults.standard.set(draft ?? 0, forKey: key(user, "draft:\(brand)")) }
+}

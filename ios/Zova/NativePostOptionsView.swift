@@ -5,15 +5,19 @@ struct NativePostOptionsView: View {
     @Environment(\.dismiss) var dismiss
     @State private var music = false
     @State private var export: URL?
+    @State private var link = ""
+    @State private var instructions = ""
+    @State private var validation = ""
     var body: some View {
         ScrollView { VStack(alignment: .leading, spacing: 20) {
             NativeSheetHeader(title: "Post options")
             if store.draft.selected.contains("instagram") {
                 if store.draft.workspace["instagram_format"].string == "story" { Text("Only your photo or video appears in the Story. Caption, links and music are not added automatically.").font(.caption).foregroundStyle(.secondary) }
-                Button(store.draft.workspace["instagram_audio"].isNull ? "Add Instagram music" : "Music · " + store.draft.workspace["instagram_audio"]["title"].string) { music = true }
+                Button(store.draft.workspace["instagram_audio"].isNull ? "Instagram music options" : "Music · " + store.draft.workspace["instagram_audio"]["title"].string) { music = true }
             }
-            NativeField(title: "Source link", text: Binding(get: { store.draft.workspace["link_url"].string }, set: { store.draft.workspace["link_url"] = .string($0); store.changed() }), prompt: "https://…", lines: 1)
-            NativeField(title: "Writing instructions", text: Binding(get: { store.draft.instruction }, set: { store.draft.instruction = String($0.prefix(5000)); store.changed() }), prompt: "Anything Zova should keep in mind", lines: 2)
+            NativeField(title: "Source link", text: $link, prompt: "https://…", lines: 1)
+            if !validation.isEmpty { Text(validation).font(.caption).foregroundStyle(.red) }
+            NativeField(title: "Writing instructions", text: $instructions, prompt: "Anything Zova should keep in mind", lines: 2)
             ForEach(store.draft.media, id: \.["id"].int) { asset in
                 ZovaCard {
                     NativeAssetPreview(asset: asset)
@@ -25,11 +29,22 @@ struct NativePostOptionsView: View {
                     }
                 }
             }
-            Button("Done") { run { try await store.save(); dismiss() } }.buttonStyle(ZovaPrimary())
+            Button("Done") {
+                let value = link.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard value.isEmpty || ProductLinks.external(value) != nil else { validation = "Enter a complete https:// link, or leave it empty."; return }
+                validation = ""
+                run {
+                    store.draft.workspace["link_url"] = .string(value)
+                    store.draft.instruction = String(instructions.prefix(5000)); store.changed()
+                    try await store.save(); dismiss()
+                }
+            }.buttonStyle(ZovaPrimary())
         }.padding(22).disabled(store.busy && !store.backgroundSaving) }.preferredColorScheme(.light)
             .sheet(isPresented: $music) { NativeMusicView().environmentObject(store) }
             .sheet(isPresented: Binding(get: { export != nil }, set: { if !$0 { cleanExport() } })) { if let export { NativeShare(items: [export]) } }
             .onDisappear { cleanExport() }
+            .onAppear { link = store.draft.workspace["link_url"].string; instructions = store.draft.instruction }
+            .scrollDismissesKeyboard(.interactively)
     }
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
     private func cleanExport() { NativeMediaFiles.remove(export); export = nil }

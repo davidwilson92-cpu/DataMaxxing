@@ -29,18 +29,33 @@ struct NativeStudioView: View {
     @State private var importer = false
     @State private var camera = false
     @State private var picker: [PhotosPickerItem] = []
+    @State private var photoLibrary = false
     @State private var recoveryExport: URL?
     @State private var compared: ProductDraft?
     @FocusState private var captionEditing: Bool
     @State private var discardRecovery = false
     @State private var previewMode: String?
     private var scrollingComposer: Bool { textSize.isAccessibilitySize || verticalSize == .compact }
+    private var emptyLanding: Bool {
+        !scrollingComposer && !focused && !store.busy && store.recovery.isNull && store.results.isNull &&
+        store.draft.conversation.isEmpty && store.draft.variants.object.isEmpty &&
+        !store.account["connections"].array.contains { $0["status"].string == "reconnect" }
+    }
     var body: some View {
         VStack(spacing: 0) {
             if !scrollingComposer || (!focused && !captionEditing) { header }
+            if emptyLanding { Spacer(minLength: 0) }
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 22) {
+                        let reconnect = store.account["connections"].array.filter { $0["status"].string == "reconnect" }
+                        if !reconnect.isEmpty {
+                            ZovaCard {
+                                Text("Reconnect " + reconnect.map { SocialPlatform(rawValue: $0["platform"].string)?.title ?? $0["platform"].string }.joined(separator: ", ")).font(.headline)
+                                Text("Access has expired or been removed. Your drafts are safe.").font(.callout)
+                                Button("Reconnect account") { store.accountSection = "Social accounts"; store.selectedTab = 3 }
+                            }
+                        }
                         if !store.recovery.isNull {
                             ZovaCard {
                                 Text("Recover unsaved changes").font(.headline)
@@ -67,7 +82,7 @@ struct NativeStudioView: View {
                                             Button("Remove from post") { store.removeMedia(asset["id"].int) }.font(.caption).disabled(store.busy)
                                         } else { Text(store.draft.mediaIDs.array.contains(asset["id"]) ? "Attached to post" : "Not in current post").font(.caption).foregroundStyle(.secondary) }
                                     }
-                                }.padding(16).background(message["role"].string == "user" ? ZovaDesign.pale : .clear, in: RoundedRectangle(cornerRadius: 20))
+                                }.padding(16).background(ZovaDesign.pale, in: RoundedRectangle(cornerRadius: 20))
                                 if message["role"].string != "user" { Spacer(minLength: 24) }
                             }
                         }
@@ -95,14 +110,16 @@ struct NativeStudioView: View {
                         }
                     }
                     .onChange(of: focused) { _, editing in if editing && scrollingComposer { proxy.scrollTo("composer", anchor: .top) } }
-            }
+            }.frame(maxHeight: emptyLanding ? 20 : .infinity)
             if store.draft.editable {
                 if captionEditing {
                     HStack { Text("Editing caption").font(.caption).foregroundStyle(.secondary); Spacer(); Button("Done") { captionEditing = false }.accessibilityIdentifier("finish-editing") }
                         .padding(.horizontal, 18).frame(minHeight: 44).background(Color.white)
                 } else if !scrollingComposer { composer }
             } else { Button("+ New post") { run { try await store.newPost() } }.buttonStyle(ZovaPrimary()).padding(18) }
+            if emptyLanding { Spacer(minLength: 0) }
         }.foregroundStyle(ZovaDesign.ink)
+            .photosPicker(isPresented: $photoLibrary, selection: $picker, maxSelectionCount: max(1, 10 - store.draft.media.count), selectionBehavior: .ordered, matching: .any(of: [.images, .videos]), preferredItemEncoding: .compatible)
             .confirmationDialog("Discard the unsaved copy on this iPhone? Your server draft stays unchanged.", isPresented: $discardRecovery, titleVisibility: .visible) { Button("Discard local copy", role: .destructive) { store.discardRecovery() } }
             .sheet(isPresented: $history) { NativeHistoryView().environmentObject(store) }
             .sheet(isPresented: $options) { NativePostOptionsView().environmentObject(store) }
@@ -176,7 +193,7 @@ struct NativeStudioView: View {
     }
     private var headerActions: some View {
         NativeAdaptiveRow(spacing: 10) {
-            Button { focused = false; captionEditing = false; run { try await store.newPost() } } label: {
+            Button { captionEditing = false; run { try await store.newPost(); focused = true } } label: {
                 Label("New post", systemImage: "plus").font(.caption.weight(.medium)).fixedSize(horizontal: false, vertical: true).frame(minHeight: 44).contentShape(Rectangle())
             }.disabled(store.busy).accessibilityIdentifier("new-post")
             Button { focused = false; captionEditing = false; nextMove = true } label: {
@@ -270,7 +287,7 @@ struct NativeStudioView: View {
                 }
                 HStack {
                     Menu {
-                        PhotosPicker(selection: $picker, maxSelectionCount: max(1, 10 - store.draft.media.count), selectionBehavior: .ordered, matching: .any(of: [.images, .videos]), preferredItemEncoding: .compatible) { Label("Photo library", systemImage: "photo") }
+                        Button("Photo library", systemImage: "photo") { focused = false; photoLibrary = true }
                         Button("Choose file", systemImage: "folder") { importer = true }
                         if UIImagePickerController.isSourceTypeAvailable(.camera) { Button("Camera", systemImage: "camera") { openCamera() } }
                     } label: { Image(systemName: "plus").font(.title3).frame(width: 44, height: 44) }.accessibilityLabel("Add attachment").disabled(store.busy)
@@ -281,7 +298,7 @@ struct NativeStudioView: View {
                         .disabled(store.busy || store.draft.composer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }.padding(14).background(Color.white, in: RoundedRectangle(cornerRadius: 22)).overlay(RoundedRectangle(cornerRadius: 22).stroke(focused ? ZovaDesign.purple : ZovaDesign.line)).padding(.horizontal, 14)
-            if !focused { NativeAdaptiveRow(spacing: 6) { Text(store.saveStatus); Text("Nothing posts without your approval.") }.font(.caption2).foregroundStyle(.secondary).padding(.horizontal, 18) }
+            if !focused { VStack(spacing: 4) { Text(store.saveStatus).accessibilityAddTraits(.updatesFrequently); Text("Nothing posts without your approval.") }.font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(.horizontal, 18) }
         }.padding(.bottom, 8)
     }
     private func openCamera() {

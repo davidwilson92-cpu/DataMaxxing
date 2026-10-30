@@ -2,6 +2,36 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testReviewRetainsAllThreadPostsAndDisconnectedDestination() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture", "--fixture-thread", "--fixture-unconnected"]; app.launch()
+        XCTAssertTrue(app.buttons["next-move"].waitForExistence(timeout: 12)); app.buttons["next-move"].tap()
+        XCTAssertTrue(app.buttons["Draft post"].waitForExistence(timeout: 8)); app.buttons["Draft post"].tap()
+        let review = app.buttons["review-draft"]; XCTAssertTrue(review.waitForExistence(timeout: 8)); reveal(review, in: app); review.tap()
+        XCTAssertTrue(app.staticTexts["Synthetic thread part 1"].waitForExistence(timeout: 8))
+        reveal(app.staticTexts["Synthetic thread part 5"], in: app)
+        XCTAssertTrue(app.buttons["Connect X"].exists)
+        XCTAssertFalse(app.buttons["Review final post"].isEnabled)
+        capture(app, "Review — five posts retained with connection recovery")
+        app.buttons["Remove from this review"].tap()
+        XCTAssertTrue(app.staticTexts["Select a platform above. Your captions stay saved."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Close Review post"].exists)
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+    }
+
+    func testPostOptionsBuffersIncompleteLinkAndKeyboardDismissesOnBackground() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        XCTAssertTrue(app.buttons["Post options"].waitForExistence(timeout: 12)); app.buttons["Post options"].tap()
+        let link = app.textFields["Source link"]
+        XCTAssertTrue(link.waitForExistence(timeout: 5)); link.tap(); link.typeText("htt")
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        app.staticTexts["Post options"].firstMatch.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Close Post options"].exists, "Invalid partial URL must keep the sheet open")
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        capture(app, "Post options — incomplete link retained inline")
+    }
     func testNativeProductTabsAndNextMoveContainNoEmbeddedWebScreens() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         XCTAssertTrue(app.buttons["next-move"].waitForExistence(timeout: 12))

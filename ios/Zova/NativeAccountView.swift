@@ -16,6 +16,7 @@ struct NativeAccountView: View {
     @State private var saved = ""
     @State private var unlinkID: Int?
     @State private var devices: JSONValue = .null
+    @State private var timezonePicker = false
     private let voiceFields = [("Writing tone", "writing_tone"), ("Audience", "audience"), ("Topics", "topics"), ("Things to avoid", "things_to_avoid"), ("Writing examples", "example_posts"), ("Account timezone", "timezone")]
     var body: some View {
         ScrollView {
@@ -23,18 +24,20 @@ struct NativeAccountView: View {
                 Text("Account").font(.title2.bold())
                 NativeAdaptiveRow { VStack(alignment: .leading, spacing: 5) { Text(store.name).font(.headline); Text(store.account["profile"]["email"].string).font(.caption).foregroundStyle(.secondary) }; Button("Sign out") { run { try await store.save(); await session.logout() } }.font(.caption).frame(minWidth: 44, minHeight: 44).disabled(store.busy) }
                 if store.busy { ProgressView(session.connectingPlatform.map { "Connecting to " + $0 + "…" } ?? "Updating…") }
-                if !saved.isEmpty { Text(saved).font(.callout).foregroundStyle(ZovaDesign.violet) }
+                if !saved.isEmpty { Text(saved).font(.callout).foregroundStyle(ZovaDesign.violet).frame(maxWidth: .infinity).multilineTextAlignment(.center).accessibilityAddTraits(.updatesFrequently) }
                 group("Your details", icon: "person") {
                     NativeField(title: "Name", text: $name, lines: 1)
                     Button("Save details") { run { _ = try await store.api.form("/account/profile", fields: ["display_name": name], brand: store.brand); try await store.reloadAccount(); saved = "Details saved." } }.buttonStyle(ZovaPrimary())
                     if !store.account["profile"]["email_verified"].bool {
-                        Button("Send verification email") { run { _ = try await store.api.form("/account/verify-email", fields: [:], brand: store.brand); saved = "Check your inbox for the verification email." } }
+                        Text("Email not verified").font(.caption).foregroundStyle(.secondary)
+                        Button("Send verification email") { run { _ = try await store.api.form("/account/verify-email", fields: [:], brand: store.brand); saved = "Check your inbox for the verification email." } }.buttonStyle(ZovaPrimary())
                     }
                 }
                 Button { strategy = true } label: { row("Your strategy", icon: "sparkles", arrow: "arrow.up.right") }
                 group("Your voice", icon: "waveform") {
                     Text("Your edits take priority. With AI sharing on, approved captions shape your next draft.").font(.callout).foregroundStyle(.secondary)
-                    ForEach(voiceFields, id: \.1) { title, key in NativeField(title: title, text: Binding(get: { voice[key] ?? "" }, set: { voice[key] = $0 }), lines: key == "timezone" ? 1 : 2) }
+                    ForEach(voiceFields.filter { $0.1 != "timezone" }, id: \.1) { title, key in NativeField(title: title, text: Binding(get: { voice[key] ?? "" }, set: { voice[key] = $0 }), lines: 2) }
+                    Button { timezonePicker = true } label: { HStack { Text("Timezone"); Spacer(); Text((voice["timezone"] ?? store.timezone).replacingOccurrences(of: "_", with: " ")); Image(systemName: "chevron.right") }.font(.callout).frame(minHeight: 44) }
                     Stepper("Typical caption · \(preferredLength) characters", value: $preferredLength, in: 30...4000, step: 10)
                     Button("Save voice") { run { var fields = voice; fields["preferred_post_length"] = String(preferredLength); _ = try await store.api.form("/account/preferences", fields: fields, brand: store.brand); try await store.reloadAccount(); fillVoice(); saved = "Voice saved." } }.buttonStyle(ZovaPrimary())
                     Button("Scan recent posts") { run { let reply = try await store.request("/api/voice/scan-socials", method: "POST", body: .object([:])); try await store.reloadAccount(); fillVoice(); saved = reply["message"].string.isEmpty ? "Voice refreshed." : reply["message"].string } }.frame(minHeight: 44)
@@ -54,9 +57,9 @@ struct NativeAccountView: View {
                             let connections = store.account["connections"].array.filter { $0["platform"].string == platform.rawValue }
                             if connections.isEmpty { Text("Not connected").font(.callout).foregroundStyle(.secondary) }
                             ForEach(connections, id: \.["id"].int) { connection in
-                                NativeAdaptiveRow { Text(connection["name"].string + " · Connected").font(.callout); Button("Unlink", role: .destructive) { unlinkID = connection["id"].int }.font(.caption).frame(minWidth: 44, minHeight: 44) }
+                                NativeAdaptiveRow { Text(connection["name"].string + (connection["status"].string == "reconnect" ? " · Reconnect needed" : connection["status"].string == "unavailable" ? " · Check unavailable" : " · Connected")).font(.callout); Button("Unlink", role: .destructive) { unlinkID = connection["id"].int }.font(.caption).frame(minWidth: 44, minHeight: 44) }
                             }
-                            Button(connections.isEmpty ? "Connect " + platform.title : "Connection options") { Task { await session.connect(platform.rawValue) } }.frame(minHeight: 44)
+                            Button(connections.isEmpty ? "Connect " + platform.title : "Connection options") { Task { await session.connect(platform.rawValue) } }.buttonStyle(ZovaPrimary())
                             if platform == .instagram { Text("Creator or Business account required. You can also connect through Facebook if linked to a Page.").font(.caption).foregroundStyle(.secondary) }
                         }.padding(.vertical, 10)
                         Divider()
@@ -68,18 +71,20 @@ struct NativeAccountView: View {
                     }
                     NativeField(title: "Brand name", text: $brandName, lines: 1)
                     HStack {
-                        Button("Add brand") { run { _ = try await store.api.form("/brands", fields: ["name": brandName], brand: store.brand); try await store.reloadAccount(); brandName = "" } }
-                        Button("Rename current") { run { _ = try await store.api.form("/brands/\(store.brand)/name", fields: ["name": brandName], brand: store.brand); try await store.reloadAccount(); brandName = "" } }
+                        Button("Add brand") { run { _ = try await store.api.form("/brands", fields: ["name": brandName], brand: store.brand); try await store.reloadAccount(); brandName = store.account["brand"]["name"].string; saved = "Brand added." } }.buttonStyle(ZovaPrimary())
+                        Button("Rename current") { run { _ = try await store.api.form("/brands/\(store.brand)/name", fields: ["name": brandName], brand: store.brand); try await store.reloadAccount(); saved = "Brand renamed." } }.buttonStyle(ZovaPrimary())
                     }.disabled(brandName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 group("Security & privacy", icon: "checkmark.shield") {
-                    SecureField("Current password", text: $currentPassword).textContentType(.password).padding(12).background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
-                    SecureField("New password", text: $newPassword).textContentType(.newPassword).padding(12).background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
-                    SecureField("Confirm new password", text: $confirmation).textContentType(.newPassword).padding(12).background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
-                    Button("Change password") { run {
+                    NativePasswordField(title: "Current password", text: $currentPassword)
+                    NativePasswordField(title: "New password", text: $newPassword, newPassword: true)
+                    NativePasswordField(title: "Confirm new password", text: $confirmation, newPassword: true)
+                    Label("10–256 characters", systemImage: (10...256).contains(newPassword.count) ? "checkmark.circle.fill" : "circle").font(.caption)
+                    Label("Passwords match", systemImage: !confirmation.isEmpty && newPassword == confirmation ? "checkmark.circle.fill" : "circle").font(.caption)
+                    Button("Update password") { run {
                         _ = try await store.api.form("/account/password", fields: ["current_password": currentPassword, "new_password": newPassword, "new_password_confirmation": confirmation], brand: store.brand)
                         currentPassword = ""; newPassword = ""; confirmation = ""; await session.logout()
-                    } }.disabled(currentPassword.isEmpty || newPassword.count < 10 || newPassword != confirmation)
+                    } }.buttonStyle(ZovaPrimary()).disabled(currentPassword.isEmpty || !(10...256).contains(newPassword.count) || newPassword != confirmation)
                     Text("Changing your password signs out existing sessions.").font(.caption).foregroundStyle(.secondary)
                     Button("Review AI sharing") { store.needsConsent = true }
                     Text(store.account["ai"]["allowed"].bool ? "AI sharing is on." : "AI sharing is off.").font(.caption)
@@ -98,7 +103,9 @@ struct NativeAccountView: View {
                 Button(role: .destructive) { deleteSheet = true } label: { row("Delete account", icon: "trash", arrow: "chevron.right") }
             }.padding(22).disabled(store.busy)
         }.background(ZovaDesign.dark).foregroundStyle(.white).tint(ZovaDesign.violet)
-            .task { name = store.name; fillVoice() }
+            .task { name = store.name; brandName = store.account["brand"]["name"].string; fillVoice() }
+            .scrollDismissesKeyboard(.interactively)
+            .sheet(isPresented: $timezonePicker) { NativeTimezonePicker(selection: Binding(get: { voice["timezone"] ?? store.timezone }, set: { voice["timezone"] = $0 })) }
             .sheet(isPresented: $guide) { NativeGuideView().environmentObject(store) }
             .sheet(isPresented: $deleteSheet) { NativeDeletionView(session: session).environmentObject(store) }
             .confirmationDialog("Unlink this account? Unsent posts using this connection will be cancelled.", isPresented: Binding(get: { unlinkID != nil }, set: { if !$0 { unlinkID = nil } })) {
@@ -107,11 +114,11 @@ struct NativeAccountView: View {
             .onDisappear { currentPassword = ""; newPassword = ""; confirmation = "" }
             .onChange(of: store.selectedTab) { _, index in if index != 3 { currentPassword = ""; newPassword = ""; confirmation = "" } }
     }
-    private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
+    private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform { saved = ""; try await work() } } }
     private func fillVoice() { for (_, key) in voiceFields { voice[key] = store.account["voice"][key].string }; preferredLength = max(30, min(4000, store.account["voice"]["preferred_post_length"].int)) }
     private func row(_ title: String, icon: String, arrow: String) -> some View { HStack(spacing: 14) { Image(systemName: icon).frame(width: 24); Text(title).font(.headline); Spacer(); Image(systemName: arrow).font(.caption) }.frame(minHeight: 44) }
     private func group<Content: View>(_ title: String, icon: String, @ViewBuilder content: @escaping () -> Content) -> some View {
-        VStack(spacing: 14) { DisclosureGroup { VStack(alignment: .leading, spacing: 16, content: content).padding(.vertical, 16) } label: { HStack(spacing: 14) { Image(systemName: icon).frame(width: 24); Text(title).font(.headline) }.frame(minHeight: 44) }; Divider().overlay(.white.opacity(0.15)) }
+        VStack(spacing: 14) { DisclosureGroup(isExpanded: Binding(get: { store.accountSection == title }, set: { store.accountSection = $0 ? title : "" })) { VStack(alignment: .leading, spacing: 16, content: content).padding(.vertical, 16) } label: { HStack(spacing: 14) { Image(systemName: icon).frame(width: 24); Text(title).font(.headline) }.frame(minHeight: 44) }; Divider().overlay(.white.opacity(0.15)) }
     }
     private func legal(_ title: String, _ path: String) -> some View { Link(title, destination: try! session.configuration.endpoint(path)) }
 }
@@ -173,8 +180,8 @@ struct NativeGuideView: View {
                 ZovaCard { Image(systemName: steps[index].0).font(.largeTitle).foregroundStyle(ZovaDesign.purple); Text(steps[index].1).font(.title2.bold()); Text(steps[index].2) }
             }
             if introduction {
-                Button(page == 2 ? "Start creating" : "Next") { if page < 2 { page += 1 } else { dismiss() } }.buttonStyle(ZovaPrimary())
-                Button("Skip intro") { dismiss() }.frame(minHeight: 44)
+                Button(page == 2 ? "Start creating" : "Next") { if page < 2 { page += 1; NativeResumeState.saveIntro(page, user: store.account["profile"]["id"].int) } else { finish() } }.buttonStyle(ZovaPrimary())
+                Button("Skip intro") { finish() }.frame(minHeight: 44)
             } else {
                 Text("Your work and accounts").font(.headline)
                 Text("One post is a single update. An X thread is a series of connected posts, read in order.")
@@ -189,5 +196,8 @@ struct NativeGuideView: View {
                 Link("Contact support", destination: URL(string: "mailto:support@zova-social.com")!)
             }
         }.padding(22) }.preferredColorScheme(.light)
+            .onAppear { if introduction { page = max(0, min(2, NativeResumeState.intro(user: store.account["profile"]["id"].int) ?? 0)) } }
+            .onDisappear { if introduction { NativeResumeState.saveIntro(-1, user: store.account["profile"]["id"].int) } }
     }
+    private func finish() { NativeResumeState.saveIntro(-1, user: store.account["profile"]["id"].int); dismiss() }
 }

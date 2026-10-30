@@ -85,8 +85,9 @@ struct NativeScheduleView: View {
                 Text("All statuses").tag("all"); Text("Drafts").tag("draft"); Text("Scheduled").tag("scheduled")
                 Text("Published").tag("published"); Text("Needs review").tag("needs_review"); Text("Awaiting results").tag("awaiting_results")
             }.pickerStyle(.menu).onChange(of: filter) { _, _ in reload() }.disabled(store.busy)
-            if store.drafts.isEmpty && !store.busy { Text(search.isEmpty && filter == "all" ? "Create a post in Studio. Save it or choose a time." : "No matching posts. Try another search.").font(.callout).foregroundStyle(.secondary) }
-            ForEach(store.drafts, id: \.["id"].int) { row in
+            let posts = store.drafts.filter { $0["kind"].string != "conversation" }
+            if posts.isEmpty && !store.busy { Text(search.isEmpty && filter == "all" ? "Create a post in Studio. Saved conversations remain in Studio → Your posts." : "No matching posts. Try another search.").font(.callout).foregroundStyle(.secondary) }
+            ForEach(posts, id: \.["id"].int) { row in
                 NativeDraftRow(row: row, open: {
                     if row["status"].string == "scheduled" { try await findSchedule(row["id"].int) }
                     else { try await store.openDraft(row["id"].int) }
