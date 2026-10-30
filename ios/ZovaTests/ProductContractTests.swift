@@ -2,6 +2,20 @@ import XCTest
 @testable import Zova
 
 final class ProductContractTests: XCTestCase {
+    func testFacebookAvailabilityRequiresCustomerApprovalOrAnExistingPage() {
+        var account: JSONValue = .object(["connection_options": .object(["facebook": .object(["available": .bool(true)])])])
+        XCTAssertFalse(ProductConnections.canConnect("facebook", account: account))
+        for platform in ["instagram", "x", "tiktok"] {
+            XCTAssertTrue(ProductConnections.canConnect(platform, account: account))
+        }
+        account["connections"] = .array([.object(["platform": .string("instagram")])])
+        XCTAssertFalse(ProductConnections.canConnect("facebook", account: account))
+        account["connections"] = .array([.object(["platform": .string("facebook"), "status": .string("reconnect")])])
+        XCTAssertTrue(ProductConnections.canConnect("facebook", account: account))
+        account["connections"] = .array([])
+        account["connection_options"] = .object(["facebook": .object(["customer_access": .bool(true)])])
+        XCTAssertTrue(ProductConnections.canConnect("facebook", account: account))
+    }
     func testDeletionReceiptOnlyAcceptsTheExactOwnedOpaqueStatusPath() throws {
         let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
         let path = "/data-deletion/status/" + String(repeating: "a", count: 64)

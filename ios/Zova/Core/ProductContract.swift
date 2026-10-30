@@ -46,6 +46,18 @@ enum SocialPlatform: String, CaseIterable, Identifiable {
     var title: String { ["x": "X", "instagram": "Instagram", "facebook": "Facebook", "tiktok": "TikTok"][rawValue]! }
 }
 
+enum ProductConnections {
+    static let facebookNotice = "Facebook connections are coming soon. You can still prepare and save Facebook captions."
+
+    static func canConnect(_ platform: String, account: JSONValue) -> Bool {
+        guard platform == "facebook" else { return true }
+        // Existing Page grants keep their reconnect path. Credential presence
+        // alone is not evidence that Meta approved access for new customers.
+        return account["connections"].array.contains { $0["platform"].string == "facebook" }
+            || account["connection_options"]["facebook"]["customer_access"].bool
+    }
+}
+
 struct ProductError: LocalizedError {
     let status: Int
     let code: String

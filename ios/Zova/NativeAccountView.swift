@@ -59,7 +59,11 @@ struct NativeAccountView: View {
                             ForEach(connections, id: \.["id"].int) { connection in
                                 NativeAdaptiveRow { Text(connection["name"].string + (connection["status"].string == "reconnect" ? " · Reconnect needed" : connection["status"].string == "unavailable" ? " · Check unavailable" : " · Connected")).font(.callout); Button("Unlink", role: .destructive) { unlinkID = connection["id"].int }.font(.caption).frame(minWidth: 44, minHeight: 44) }
                             }
-                            Button(connections.isEmpty ? "Connect " + platform.title : "Connection options") { Task { await session.connect(platform.rawValue) } }.buttonStyle(ZovaPrimary())
+                            if ProductConnections.canConnect(platform.rawValue, account: store.account) {
+                                Button(connections.isEmpty ? "Connect " + platform.title : "Connection options") { Task { await session.connect(platform.rawValue) } }.buttonStyle(ZovaPrimary())
+                            } else {
+                                Text(ProductConnections.facebookNotice).font(.callout).foregroundStyle(.secondary).accessibilityIdentifier("facebook-coming-soon")
+                            }
                             if platform == .instagram { Text("Creator or Business account required. You can also connect through Facebook if linked to a Page.").font(.caption).foregroundStyle(.secondary) }
                         }.padding(.vertical, 10)
                         Divider()

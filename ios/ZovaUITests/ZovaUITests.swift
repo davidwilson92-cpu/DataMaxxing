@@ -2,6 +2,18 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testUnapprovedFacebookConnectionIsExplainedWithoutOpeningLogin() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        XCTAssertTrue(app.buttons["tab-Account"].waitForExistence(timeout: 12)); app.buttons["tab-Account"].tap()
+        let socials = app.buttons["Social accounts"]
+        XCTAssertTrue(socials.waitForExistence(timeout: 8)); socials.tap()
+        let notice = app.staticTexts["facebook-coming-soon"]
+        reveal(notice, in: app)
+        XCTAssertTrue(notice.exists)
+        XCTAssertFalse(app.buttons["Connect Facebook"].exists)
+        XCTAssertTrue(app.buttons["Connection options"].exists, "Existing Instagram connection remains available")
+        capture(app, "Native Facebook availability before Meta customer approval")
+    }
     func testReviewRetainsAllThreadPostsAndDisconnectedDestination() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture", "--fixture-thread", "--fixture-unconnected"]; app.launch()
         XCTAssertTrue(app.buttons["next-move"].waitForExistence(timeout: 12)); app.buttons["next-move"].tap()
