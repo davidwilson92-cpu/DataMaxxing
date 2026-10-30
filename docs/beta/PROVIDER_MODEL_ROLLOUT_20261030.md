@@ -17,7 +17,9 @@ Owner request: activate approved TikTok Direct Post, use Terra, and allow custom
 
 ## TikTok acceptance still required
 
-Existing connections were created against the former app/mode and must reconnect for production `video.publish`. The owner has been asked to complete the connection on iPhone through Zova's final confirmation, with no publishing requested. Credential configuration and media delivery checks are complete; a fresh real-user token exchange and authorised Direct Post result have not yet been verified.
+Follow-up at 11:10 UTC: owner reported successful iPhone connection. Read-only production checks found TikTok OAuth started at 11:06:35 and consumed successfully, but the returned Zova PendingConnection was still unused (expires 11:17:05); no SocialConnection had been saved/updated in the preceding four hours. This establishes successful provider sign-in/return, not completion of Zova's final account confirmation. Asked the owner to confirm the displayed account in the returned Zova browser screen, or restart Connect if that screen was closed/expired. No pending payload, credential or confirmation code was exposed or reused, and no post was sent. Await actual saved connection before certifying the new grant or requesting a publishing test.
+
+Existing connections were created against the former app/mode and must reconnect for production `video.publish`. The owner has been asked to complete the connection on iPhone through Zova's final confirmation, with no publishing requested. Credential configuration, media delivery checks and a successful provider return are established; a fresh final saved connection and authorised Direct Post result have not yet been verified.
 
 The old TikTok pending publication8 could not be resolved before the switch: read-only status check raised RuntimeError. Preserve its receipt and pending/unknown handling. Do not resend, mark it failed/published, or erase it to tidy the rollout. Reconnecting cannot retroactively turn an old sandbox/inbox receipt into a production direct-post receipt.
 
