@@ -1,11 +1,12 @@
 {
   "authorised_on": "2026-10-10",
-  "candidate_review": "2026-10-30 App Store candidate: Facebook availability gate plus bounded calendar test drag correcting evidenced overshoot; runtime unchanged from b6910fc; exact validation required",
+  "candidate_review": "2026-10-30 App Store candidate: Facebook availability gate, precise accessibility test pan and actual medium-iPhone screenshot workflow; runtime unchanged from b6910fc; full native validation and capture required",
   "commercial_ready": false,
   "external_beta_authorised_on": "2026-10-20",
   "files": {
     ".dockerignore": "51c4771bdeb44187f3a945240540f3bbb48e5ecc2f3807c143c4b768e74da6bb",
     ".gitattributes": "64fcd23fa58cbdc3fcf7764de36a61437f2c59f1b1546b98966715c42165fe33",
+    ".github/workflows/app-store-screenshots.yml": "be4099fa140af7ef45a1f6f4b7f90a1fe45b34fba8e757cf9ce2329509bb0f79",
     ".github/workflows/ios-beta.yml": "4545b5234bf06d6de973c25c1e2e7a2b038f457d2c96bfb54b9c3d8b2ccb8776",
     ".github/workflows/validate.yml": "c06a6198802ed712e1a4014338e9012cbeb1a29751b3c11418400d8ce33149fc",
     "AGENTS.md": "8d238a8ffd7a11b1b00b8ff3e196a171d5316d646ec0653c2fa83d3d196817ae",
