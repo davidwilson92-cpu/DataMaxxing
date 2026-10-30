@@ -256,6 +256,10 @@ struct NativeStudioView: View {
                 }
                 TextField(textSize.isAccessibilitySize ? "Your idea…" : "Describe your post. Zova drafts the caption…", text: Binding(get: { store.draft.composer }, set: { store.draft.composer = String($0.prefix(12000)); store.changed() }), axis: .vertical)
                     .lineLimit(1...5).focused($focused).accessibilityLabel("Describe your post").accessibilityIdentifier("post-composer").disabled(store.busy && !store.backgroundSaving)
+                    // The expanded multiline field must focus across its whole hit area,
+                    // including the space around large accessibility text.
+                    .contentShape(Rectangle())
+                    .simultaneousGesture(TapGesture().onEnded { focused = true })
                 HStack(spacing: 8) {
                     ForEach(SocialPlatform.allCases) { platform in
                         Button {
