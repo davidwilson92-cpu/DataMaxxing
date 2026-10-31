@@ -215,11 +215,12 @@ actor NativeAPI {
         return try JSONDecoder().decode(JSONValue.self, from: result)
     }
 
-    func downloadAsset(_ id: Int, filename: String, brand: Int) async throws -> URL {
+    func downloadAsset(_ id: Int, filename: String, brand: Int, thumbnail: Bool = false) async throws -> URL {
         guard id > 0 else { throw ZovaFailure.unsafeURL }
         // This authenticated endpoint streams owned media; preview redirects are
         // intentionally avoided so a social/media host never receives credentials.
-        let (request, epoch) = try await productRequest("/media/download/\(id)", method: "GET", contentType: nil, brand: brand)
+        let path = thumbnail ? "/media/thumbnail/\(id)" : "/media/download/\(id)"
+        let (request, epoch) = try await productRequest(path, method: "GET", contentType: nil, brand: brand)
         let (download, raw) = try await session.download(for: request)
         defer { try? FileManager.default.removeItem(at: download) }
         guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
@@ -228,7 +229,7 @@ actor NativeAPI {
         guard response.statusCode == 200,
               let size = try FileManager.default.attributesOfItem(atPath: download.path)[.size] as? NSNumber,
               size.intValue > 0, size.intValue <= 160 * 1024 * 1024 else { throw ZovaFailure.unavailable }
-        let destination = try NativeMediaFiles.create(extension: (filename as NSString).pathExtension)
+        let destination = try NativeMediaFiles.create(extension: thumbnail ? "jpg" : (filename as NSString).pathExtension)
         do {
             try FileManager.default.removeItem(at: destination)
             try FileManager.default.moveItem(at: download, to: destination)

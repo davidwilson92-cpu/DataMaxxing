@@ -830,7 +830,17 @@ def follower_count(db: Session, conn: SocialConnection) -> int | None:
     return value if type(value) is int and value >= 0 else None
 
 
-def analytics_for_user(db: Session, user_id: int) -> dict[str, Any]:
+def analytics_for_user(db: Session, user_id: int, account_only: bool = False, refresh: bool = False) -> dict[str, Any]:
+    if account_only:
+        from .social_reads import read_accounts
+        observations, unavailable = read_accounts(db, user_id, kind='followers', refresh=refresh)
+        result = {platform: {'connected': False} for platform in ('x', 'instagram', 'facebook', 'tiktok')}
+        for platform, observation in observations.items():
+            result[platform] = {'connected': True, 'account': observation['account'], 'followers': observation['value']}
+        for platform in unavailable:
+            result[platform] = {'connected': True, 'error': 'Platform metrics unavailable'}
+        result['_checked_at'] = min((item['fetched_at'] for item in observations.values()), default=utcnow().isoformat())
+        return result
     result: dict[str, Any] = {}
     for platform in ["x", "instagram", "facebook", "tiktok"]:
         try:
@@ -861,62 +871,52 @@ def analytics_for_user(db: Session, user_id: int) -> dict[str, Any]:
     return result
 
 
-def recent_posts_for_user(db: Session, user_id: int, limit: int = 12, *, quick: bool = False) -> dict[str, Any]:
-    deadline = time.monotonic() + 8.0
-    posts: list[dict[str, Any]] = []
-    unavailable: list[str] = []
-    for platform in ["x", "instagram", "facebook", "tiktok"]:
-        try:
-            conn = None
-            conn = connection_for(db, user_id, platform)
-            if quick:
-                # Recommendation reads must not trigger slow token renewal or mutations.
-                if time.monotonic() >= deadline or (conn.expires_at and conn.expires_at.replace(tzinfo=None) <= utcnow().replace(tzinfo=None)):
-                    raise RuntimeError('Feed needs a later refresh')
-                token = decrypt(conn.encrypted_access_token)
-            else:
-                token = access_token(conn, db)
-            feed_timeout = min(2.0, max(0.1, deadline-time.monotonic())) if quick else 30.0
-            if platform == "x":
-                response = httpx.get(f"https://api.x.com/2/users/{conn.account_id}/tweets", headers={"Authorization": f"Bearer {token}"}, params={"max_results": 10, "exclude": "retweets,replies", "tweet.fields": "created_at,public_metrics,attachments", "expansions": "attachments.media_keys", "media.fields": "url,preview_image_url,type"}, timeout=feed_timeout)
-                if response.status_code >= 400: raise RuntimeError("X feed unavailable")
-                media = {item.get("media_key"): item for item in response.json().get("includes", {}).get("media", [])}
-                for item in response.json().get("data", []):
-                    metrics = item.get("public_metrics") or {}; keys = (item.get("attachments") or {}).get("media_keys") or []; visual = media.get(keys[0], {}) if keys else {}
-                    posts.append({"platform":"x","id":str(item.get("id")),"text":item.get("text") or "","created_at":item.get("created_at") or "","url":f"https://x.com/{conn.username or 'i'}/status/{item.get('id')}","image_url":visual.get("preview_image_url") or visual.get("url") or "","likes":metrics.get("like_count"),"comments":metrics.get("reply_count"),"shares":metrics.get("retweet_count"),"views":metrics.get("impression_count")})
-            elif platform == "instagram":
-                graph = instagram_graph_base(conn)
-                response = httpx.get(f"{graph}/{conn.account_id}/media", params={"fields":"id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count","limit":10,"access_token":token}, timeout=feed_timeout)
-                if response.status_code >= 400: raise RuntimeError("Instagram feed unavailable")
-                for item in response.json().get("data", []):posts.append({"platform":"instagram","id":str(item.get("id")),"text":item.get("caption") or "","created_at":item.get("timestamp") or "","format":item.get("media_type"),"url":item.get("permalink") or "","image_url":item.get("thumbnail_url") or item.get("media_url") or "","likes":item.get("like_count"),"comments":item.get("comments_count"),"shares":None,"views":None})
-            elif platform == "facebook":
-                version = os.environ.get("META_GRAPH_VERSION", "v23.0")
-                url = f"https://graph.facebook.com/{version}/{conn.account_id}/posts"
-                page_fields = "id,message,created_time,permalink_url,full_picture,shares"
-                params = {"fields": page_fields + ",reactions.limit(0).summary(true),comments.limit(0).summary(true)", "limit": 10}
-                headers = {"Authorization": f"Bearer {token}"}
-                response = httpx.get(url, params=params, headers=headers, timeout=feed_timeout)
-                if response.status_code in (400, 403) and response.json().get("error", {}).get("code") == 10:
-                    # Meta can allow Page posts while denying user interaction summaries.
-                    params = {**params, "fields": page_fields}
-                    response = httpx.get(url, params=params, headers=headers, timeout=feed_timeout)
-                if response.status_code >= 400: raise RuntimeError("Facebook feed unavailable")
-                for item in response.json().get("data", []):posts.append({"platform":"facebook","id":str(item.get("id")),"text":item.get("message") or "","created_at":item.get("created_time") or "","url":item.get("permalink_url") or "","image_url":item.get("full_picture") or "","likes":((item.get("reactions") or {}).get("summary") or {}).get("total_count"),"comments":((item.get("comments") or {}).get("summary") or {}).get("total_count"),"shares":(item.get("shares") or {}).get("count"),"views":None})
-            else:
-                if "video.list" not in (conn.scope or "").replace(" ", ",").split(","):
-                    raise RuntimeError("TikTok feed access is not approved")
-                response = httpx.post("https://open.tiktokapis.com/v2/video/list/", headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"}, params={"fields":"id,title,video_description,cover_image_url,share_url,create_time,like_count,comment_count,share_count,view_count"}, json={"max_count":10}, timeout=feed_timeout)
-                if response.status_code >= 400: raise RuntimeError("TikTok feed unavailable")
-                for item in response.json().get("data", {}).get("videos", []):
-                    created = datetime.fromtimestamp(int(item.get("create_time") or 0),tz=timezone.utc).isoformat() if item.get("create_time") else ""
-                    posts.append({"platform":"tiktok","id":str(item.get("id")),"text":item.get("video_description") or item.get("title") or "","created_at":created,"format":"video","url":item.get("share_url") or "","image_url":item.get("cover_image_url") or "","likes":item.get("like_count"),"comments":item.get("comment_count"),"shares":item.get("share_count"),"views":item.get("view_count")})
-        except RuntimeError:
-            if conn is not None: unavailable.append(platform)
-            continue
-        except Exception as exc:
-            log.warning("%s recent posts unavailable", platform); unavailable.append(platform)
-    posts.sort(key=lambda item: item.get("created_at") or "", reverse=True)
-    return {"posts":posts[:max(1,min(limit,30))],"unavailable":unavailable}
+def _recent_posts(conn, platform, token, feed_timeout):
+    """Pure provider read; never receives a database session."""
+    posts = []
+    if platform == "x":
+        response = httpx.get(f"https://api.x.com/2/users/{conn.account_id}/tweets", headers={"Authorization": f"Bearer {token}"}, params={"max_results": 10, "exclude": "retweets,replies", "tweet.fields": "created_at,public_metrics,attachments", "expansions": "attachments.media_keys", "media.fields": "url,preview_image_url,type"}, timeout=feed_timeout)
+        if response.status_code >= 400: raise RuntimeError("X feed unavailable")
+        media = {item.get("media_key"): item for item in response.json().get("includes", {}).get("media", [])}
+        for item in response.json().get("data", []):
+            metrics = item.get("public_metrics") or {}; keys = (item.get("attachments") or {}).get("media_keys") or []; visual = media.get(keys[0], {}) if keys else {}
+            posts.append({"platform":"x","id":str(item.get("id")),"text":item.get("text") or "","created_at":item.get("created_at") or "","url":f"https://x.com/{conn.username or 'i'}/status/{item.get('id')}","image_url":visual.get("preview_image_url") or visual.get("url") or "","likes":metrics.get("like_count"),"comments":metrics.get("reply_count"),"shares":metrics.get("retweet_count"),"views":metrics.get("impression_count")})
+    elif platform == "instagram":
+        graph = instagram_graph_base(conn)
+        response = httpx.get(f"{graph}/{conn.account_id}/media", params={"fields":"id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count","limit":10,"access_token":token}, timeout=feed_timeout)
+        if response.status_code >= 400: raise RuntimeError("Instagram feed unavailable")
+        for item in response.json().get("data", []):posts.append({"platform":"instagram","id":str(item.get("id")),"text":item.get("caption") or "","created_at":item.get("timestamp") or "","format":item.get("media_type"),"url":item.get("permalink") or "","image_url":item.get("thumbnail_url") or item.get("media_url") or "","likes":item.get("like_count"),"comments":item.get("comments_count"),"shares":None,"views":None})
+    elif platform == "facebook":
+        version = os.environ.get("META_GRAPH_VERSION", "v23.0")
+        url = f"https://graph.facebook.com/{version}/{conn.account_id}/posts"
+        page_fields = "id,message,created_time,permalink_url,full_picture,shares"
+        params = {"fields": page_fields + ",reactions.limit(0).summary(true),comments.limit(0).summary(true)", "limit": 10}
+        headers = {"Authorization": f"Bearer {token}"}
+        response = httpx.get(url, params=params, headers=headers, timeout=feed_timeout)
+        if response.status_code in (400, 403) and response.json().get("error", {}).get("code") == 10:
+            # Meta can allow Page posts while denying user interaction summaries.
+            params = {**params, "fields": page_fields}
+            response = httpx.get(url, params=params, headers=headers, timeout=feed_timeout)
+        if response.status_code >= 400: raise RuntimeError("Facebook feed unavailable")
+        for item in response.json().get("data", []):posts.append({"platform":"facebook","id":str(item.get("id")),"text":item.get("message") or "","created_at":item.get("created_time") or "","url":item.get("permalink_url") or "","image_url":item.get("full_picture") or "","likes":((item.get("reactions") or {}).get("summary") or {}).get("total_count"),"comments":((item.get("comments") or {}).get("summary") or {}).get("total_count"),"shares":(item.get("shares") or {}).get("count"),"views":None})
+    else:
+        if "video.list" not in (conn.scope or "").replace(" ", ",").split(","):
+            raise RuntimeError("TikTok feed access is not approved")
+        response = httpx.post("https://open.tiktokapis.com/v2/video/list/", headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"}, params={"fields":"id,title,video_description,cover_image_url,share_url,create_time,like_count,comment_count,share_count,view_count"}, json={"max_count":10}, timeout=feed_timeout)
+        if response.status_code >= 400: raise RuntimeError("TikTok feed unavailable")
+        for item in response.json().get("data", {}).get("videos", []):
+            created = datetime.fromtimestamp(int(item.get("create_time") or 0),tz=timezone.utc).isoformat() if item.get("create_time") else ""
+            posts.append({"platform":"tiktok","id":str(item.get("id")),"text":item.get("video_description") or item.get("title") or "","created_at":created,"format":"video","url":item.get("share_url") or "","image_url":item.get("cover_image_url") or "","likes":item.get("like_count"),"comments":item.get("comment_count"),"shares":item.get("share_count"),"views":item.get("view_count")})
+    return posts
+
+
+def recent_posts_for_user(db: Session, user_id: int, limit: int = 12, *, quick: bool = False, refresh: bool = False) -> dict[str, Any]:
+    from .social_reads import read_accounts
+    observations, unavailable = read_accounts(db, user_id, kind='feed', quick=quick, refresh=refresh)
+    posts = [post for observation in observations.values() for post in observation['value']]
+    posts.sort(key=lambda item: item.get('created_at') or '', reverse=True)
+    checked = min((item['fetched_at'] for item in observations.values()), default=utcnow().isoformat())
+    return {'posts': posts[:max(1, min(limit, 30))], 'unavailable': unavailable, 'fetched_at': checked}
 
 
 def recent_content_for_connection(db: Session, conn: SocialConnection, limit: int = 20) -> list[str]:

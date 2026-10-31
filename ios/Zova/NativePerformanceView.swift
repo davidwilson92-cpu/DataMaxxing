@@ -11,7 +11,7 @@ struct NativePerformanceView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                NativeAdaptiveRow { Text("Performance").font(.title2.bold()); Spacer(); Button { load() } label: { Image(systemName: "arrow.clockwise").frame(width: 44, height: 44) }.accessibilityLabel("Refresh performance") }
+                NativeAdaptiveRow { Text("Performance").font(.title2.bold()); Spacer(); Button { load(refresh: true) } label: { Image(systemName: "arrow.clockwise").frame(width: 44, height: 44) }.accessibilityLabel("Refresh performance") }
                 Picker("Posts published in", selection: $days) { Text("Last 7 days").tag(7); Text("Last 30 days").tag(30) }.pickerStyle(.segmented).onChange(of: days) { _, _ in load() }.disabled(store.busy)
                 if store.busy { ProgressView("Reading your accounts…") }
                 if !dashboard.isNull {
@@ -56,10 +56,10 @@ struct NativePerformanceView: View {
                     if !answer.isEmpty { ZovaCard { Text(answer).textSelection(.enabled) } }
                 }
             }.padding(18)
-        }.refreshable { await update() }.task(id: store.selectedTab) { if store.selectedTab == 2 { await update() } }
+        }.refreshable { await update(refresh: true) }.task(id: store.selectedTab) { if store.selectedTab == 2 { await update() } }
             .scrollDismissesKeyboard(.interactively)
     }
     private func number(_ value: JSONValue) -> String { value.isNull ? "—" : value.int.formatted() }
-    private func load() { Task { await update() } }
-    private func update() async { await store.perform { answer = ""; dashboard = try await store.request("/api/analytics/dashboard?days=\(days)") } }
+    private func load(refresh: Bool = false) { Task { await update(refresh: refresh) } }
+    private func update(refresh: Bool = false) async { await store.perform { answer = ""; dashboard = try await store.request("/api/analytics/dashboard?days=\(days)&refresh=\(refresh)") } }
 }

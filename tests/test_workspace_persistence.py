@@ -60,7 +60,8 @@ def test_history_previews_recheck_user_and_brand_and_ignore_stored_urls():
         row.workspace_json=json.dumps({'media_asset_ids':[foreign.id,other_brand.id,own.id], 'media':[{'kind':'image','url':'https://untrusted.example/track'}]})
         db.commit()
     rows=client.get('/api/drafts').json()
-    assert rows[0]['thumbnail']=={'id':own_id,'filename':'own.png','kind':'image','url':f'/media/preview/{own_id}'}
+    assert rows[0]['thumbnail']=={'id':own_id,'filename':'own.png','kind':'image',
+        'url':f'/media/preview/{own_id}', 'thumbnail_url':f'/media/thumbnail/{own_id}'}
     assert all(r['id']!=draft['id'] for r in other.get('/api/drafts').json())
     assert other.get(f'/media/preview/{own_id}').status_code==404
     with SessionLocal() as db:

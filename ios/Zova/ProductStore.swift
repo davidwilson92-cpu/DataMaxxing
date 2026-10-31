@@ -162,9 +162,14 @@ final class ProductStore: ObservableObject {
         catch { } // Offline checks retain the previous status; never claim a revocation.
     }
     func loadSchedule(search: String = "") async throws {
-        try await loadDrafts(search: search)
-        schedules = try await request("/api/schedules").array
-        series = try await request("/api/series").array
+        let epoch = authority
+        async let savedPosts: Void = loadDrafts(search: search)
+        async let upcoming = request("/api/schedules")
+        async let recurring = request("/api/series")
+        let (_, nextSchedules, nextSeries) = try await (savedPosts, upcoming, recurring)
+        guard epoch == authority, !Task.isCancelled else { throw CancellationError() }
+        schedules = nextSchedules.array
+        series = nextSeries.array
     }
     func loadDrafts(search: String = "", more: Bool = false, status: String = "all") async throws {
         let offset = more ? draftOffset : 0
@@ -293,9 +298,9 @@ final class ProductStore: ObservableObject {
         draft.workspace["media"] = .array(media); draft.workspace["media_asset_ids"] = .array(media.map { $0["id"] })
         draft.workspace["instagram_audio"] = .null; changed()
     }
-    func assetFile(_ asset: JSONValue) async throws -> URL {
+    func assetFile(_ asset: JSONValue, thumbnail: Bool = false) async throws -> URL {
         let epoch = authority
-        let url = try await api.downloadAsset(asset["id"].int, filename: asset["filename"].string, brand: brand)
+        let url = try await api.downloadAsset(asset["id"].int, filename: asset["filename"].string, brand: brand, thumbnail: thumbnail)
         guard epoch == authority, !Task.isCancelled else { NativeMediaFiles.remove(url); throw CancellationError() }
         return url
     }

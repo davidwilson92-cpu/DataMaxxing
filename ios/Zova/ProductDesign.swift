@@ -166,7 +166,7 @@ struct NativeAssetPreview: View {
         guard asset["id"].int > 0, !asset["unavailable"].bool else { failed = true; return }
         if compact && asset["kind"].string == "video" { return }
         do {
-            let url = try await store.assetFile(asset)
+            let url = try await store.assetFile(asset, thumbnail: compact)
             guard !Task.isCancelled else { NativeMediaFiles.remove(url); return }
             if asset["kind"].string == "video" {
                 localURL = url; player = AVPlayer(url: url)

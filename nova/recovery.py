@@ -17,6 +17,8 @@ from .customer_service import context as service_context
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).parent/'templates'))
+from .assets import url as asset_url
+templates.env.globals['asset_url'] = asset_url
 
 
 def recovery_ready():

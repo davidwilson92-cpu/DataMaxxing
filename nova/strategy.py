@@ -248,7 +248,8 @@ def recommend(request: Request, body: RecommendationRequest = RecommendationRequ
     with allowances.ai_action(db, uid):
         performance = recommendation_context(db,uid)
         try:
-            discovery = trends.discover(confirmed.get('themes',''), uid)
+            from .discovery_jobs import topics
+            discovery = topics(db, uid, confirmed.get('themes',''), revision)
         except HTTPException:
             raise
         except Exception:

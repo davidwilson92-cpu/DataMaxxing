@@ -81,11 +81,21 @@ def listing(request:Request,db=Depends(get_db)):
     from .security import current_user
     uid=current_user(request).id
     result=[]
-    for row in db.scalars(select(ContentSeries).where(ContentSeries.user_id==uid).order_by(ContentSeries.id.desc()).limit(30)):
+    rows = db.scalars(select(ContentSeries).where(ContentSeries.user_id==uid).order_by(ContentSeries.id.desc()).limit(30)).all()
+    occurrences = db.scalars(select(SeriesOccurrence).where(
+        SeriesOccurrence.user_id == uid, SeriesOccurrence.series_id.in_([row.id for row in rows])
+    ).order_by(SeriesOccurrence.position)).all() if rows else []
+    drafts = {draft.id: draft for draft in db.scalars(select(Draft).where(
+        Draft.user_id == uid, Draft.id.in_([item.draft_id for item in occurrences if item.draft_id])
+    ))} if occurrences else {}
+    by_series = {}
+    for item in occurrences:
+        by_series.setdefault(item.series_id, []).append(item)
+    for row in rows:
         spec=json.loads(row.spec_json)
         items=[]
-        for o in db.scalars(select(SeriesOccurrence).where(SeriesOccurrence.series_id==row.id).order_by(SeriesOccurrence.position)):
-            d=db.get(Draft,o.draft_id) if o.draft_id else None
+        for o in by_series.get(row.id, []):
+            d=drafts.get(o.draft_id)
             items.append({'id':o.id,'position':o.position,'due_at':o.due_at.replace(tzinfo=timezone.utc).isoformat(),'draft_id':o.draft_id,'status':o.status if o.status=='cancelled' else d.status if d else o.status})
         result.append({'id':row.id,'status':row.status,'revision':row.revision,'spec':spec,'occurrences':items})
     return result
