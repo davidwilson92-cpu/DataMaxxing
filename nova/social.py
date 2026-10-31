@@ -891,7 +891,15 @@ def recent_posts_for_user(db: Session, user_id: int, limit: int = 12, *, quick: 
                 for item in response.json().get("data", []):posts.append({"platform":"instagram","id":str(item.get("id")),"text":item.get("caption") or "","created_at":item.get("timestamp") or "","format":item.get("media_type"),"url":item.get("permalink") or "","image_url":item.get("thumbnail_url") or item.get("media_url") or "","likes":item.get("like_count"),"comments":item.get("comments_count"),"shares":None,"views":None})
             elif platform == "facebook":
                 version = os.environ.get("META_GRAPH_VERSION", "v23.0")
-                response = httpx.get(f"https://graph.facebook.com/{version}/{conn.account_id}/posts", params={"fields":"id,message,created_time,permalink_url,full_picture,reactions.limit(0).summary(true),comments.limit(0).summary(true),shares","limit":10,"access_token":token}, timeout=feed_timeout)
+                url = f"https://graph.facebook.com/{version}/{conn.account_id}/posts"
+                page_fields = "id,message,created_time,permalink_url,full_picture,shares"
+                params = {"fields": page_fields + ",reactions.limit(0).summary(true),comments.limit(0).summary(true)", "limit": 10}
+                headers = {"Authorization": f"Bearer {token}"}
+                response = httpx.get(url, params=params, headers=headers, timeout=feed_timeout)
+                if response.status_code in (400, 403) and response.json().get("error", {}).get("code") == 10:
+                    # Meta can allow Page posts while denying user interaction summaries.
+                    params = {**params, "fields": page_fields}
+                    response = httpx.get(url, params=params, headers=headers, timeout=feed_timeout)
                 if response.status_code >= 400: raise RuntimeError("Facebook feed unavailable")
                 for item in response.json().get("data", []):posts.append({"platform":"facebook","id":str(item.get("id")),"text":item.get("message") or "","created_at":item.get("created_time") or "","url":item.get("permalink_url") or "","image_url":item.get("full_picture") or "","likes":((item.get("reactions") or {}).get("summary") or {}).get("total_count"),"comments":((item.get("comments") or {}).get("summary") or {}).get("total_count"),"shares":(item.get("shares") or {}).get("count"),"views":None})
             else:
