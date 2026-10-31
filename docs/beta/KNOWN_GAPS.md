@@ -1,3 +1,7 @@
+# Distribution connector candidate - 31 October 2026
+
+New opt-in read-only export and first-touch web signup attribution are under validation. No production deployment or live data connection is claimed. All 79 broader findings remain open or retain their recorded status. Customer charges remain disabled. See DISTRIBUTION_CONNECTION_20261031.md.
+
 # Beta known gaps and required follow-up
 
 ## Latest tester remediation — 30 October 2026 (candidate, not deployed)
