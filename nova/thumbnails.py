@@ -41,8 +41,11 @@ def image_preview(asset):
                     if original.width * original.height > 40_000_000:
                         raise ValueError('Unsupported dimensions')
                     original.draft('RGB', (512, 512))
+                    # Resize before EXIF correction to avoid a second full-size
+                    # image allocation for a large PNG. The square bound is
+                    # invariant under rotation and mirroring.
+                    original.thumbnail((256, 256), Image.Resampling.LANCZOS)
                     image = ImageOps.exif_transpose(original)
-                    image.thumbnail((256, 256), Image.Resampling.LANCZOS)
                     if image.mode in ('RGBA', 'LA') or 'transparency' in image.info:
                         rgba = image.convert('RGBA')
                         image = Image.new('RGB', rgba.size, 'white')

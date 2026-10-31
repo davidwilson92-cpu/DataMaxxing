@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import contextvars
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -19,6 +20,16 @@ from concurrent.futures import ThreadPoolExecutor
 
 ROOT = Path(os.environ.get('BENCH_SOURCE_ROOT', Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(ROOT))
+
+
+def runtime_digest():
+    digest = hashlib.sha256()
+    for folder in ('nova', 'ios'):
+        for path in sorted((ROOT/folder).rglob('*')):
+            if path.is_file() and '__pycache__' not in path.parts and path.suffix != '.pyc':
+                digest.update(path.relative_to(ROOT).as_posix().encode())
+                digest.update(path.read_bytes().replace(b'\r\n', b'\n'))
+    return digest.hexdigest()
 
 
 def serve(port: int):
@@ -160,7 +171,7 @@ def serve(port: int):
     uvicorn.run(serving,host='127.0.0.1',port=port,access_log=False,log_level='warning')
 
 
-def benchmark(output: str, port: int, samples: int, browser: bool):
+def benchmark(output: str, port: int, samples: int, browser: bool, browser_only=False):
     import httpx
     run_root=Path(tempfile.mkdtemp(prefix='zova-performance-'))
     env={key:value for key,value in os.environ.items() if not any(part in key for part in
@@ -174,10 +185,13 @@ def benchmark(output: str, port: int, samples: int, browser: bool):
         REQUIRE_SUBSCRIPTION='false',PLAN_LIMITS_ENABLED='false',ZOVA_AI_CONSENT_REQUIRED='false',
         RATE_LIMIT_SCALE='100',BENCH_SQL_DELAY='0.002',BENCH_PROVIDER_DELAY='0.1')
     result={'source':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+        'runtime_sha256':runtime_digest(),
         'workload':{'drafts':1000,'series':10,'occurrences':100,'platforms':4,
                     'provider_delay_ms':100,'sql_round_trip_ms':2,'ai_delay_ms':300,'optional_research_delay_ms':1000,
                     'samples':samples,'static_compression':'gzip on both revisions, matching live edge',
                     'server':'production FastAPI/Uvicorn, isolated SQLite'},'routes':{}}
+    if browser_only:
+        result = json.loads(Path(output).read_text(encoding='utf-8'))
     with (run_root/'server.log').open('w') as log:
         process=subprocess.Popen([sys.executable,__file__,'--serve','--port',str(port)],
                                  cwd=ROOT,env=env,stdout=log,stderr=log)
@@ -202,7 +216,7 @@ def benchmark(output: str, port: int, samples: int, browser: bool):
                     ('generate','POST','/api/ai/generate',{'json':{'brief':'Write a gym tip','platforms':['instagram']}}),
                     ('compact_image','GET','/media/thumbnail/1' if (ROOT/'nova/thumbnails.py').exists() else '/media/download/1',{}),
                     ('css','GET','/static/nova.css?v=6.3',{}),('js','GET','/static/strategy.js?v=20261027',{})]
-                for name,method,path,kwargs in cases:
+                for name,method,path,kwargs in ([] if browser_only else cases):
                     values=[]
                     for _ in range(samples):
                         start=time.perf_counter()
@@ -219,15 +233,23 @@ def benchmark(output: str, port: int, samples: int, browser: bool):
                     print(name,result['routes'][name]['median_ms'],flush=True)
                     target=Path(output);target.parent.mkdir(parents=True,exist_ok=True)
                     target.write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
+                if browser:
+                    subprocess.run(['node', str(Path(__file__).with_name('benchmark_browser.cjs')),
+                        f'http://127.0.0.1:{port}', str(Path(output).resolve().with_name(Path(output).stem+'-browser.json'))],
+                        cwd=ROOT,check=True)
                 with ThreadPoolExecutor(max_workers=4) as pool:
                     start=time.perf_counter()
                     responses=list(pool.map(lambda _:client.get('/api/drafts'),range(4)))
                     result['concurrent_drafts']={'wall_ms':round((time.perf_counter()-start)*1000,2),
                                                  'statuses':[r.status_code for r in responses]}
-                if browser:
-                    subprocess.run(['node', str(Path(__file__).with_name('benchmark_browser.cjs')),
-                        f'http://127.0.0.1:{port}', str(Path(output).resolve().with_name(Path(output).stem+'-browser.json'))],
-                        cwd=ROOT,check=True)
+                    start=time.perf_counter()
+                    responses=list(pool.map(lambda _:client.get('/api/analytics/dashboard?refresh=true'),range(4)))
+                    result['concurrent_analytics']={'wall_ms':round((time.perf_counter()-start)*1000,2),
+                        'statuses':[r.status_code for r in responses],
+                        'provider_calls':sum(int(r.headers.get('x-benchmark-provider',0)) for r in responses)}
+                if browser_only:
+                    result['browser_runtime_sha256'] = runtime_digest()
+                Path(output).write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
         finally:
             process.terminate()
             process.wait(timeout=15)
@@ -241,6 +263,7 @@ if __name__=='__main__':
     parser.add_argument('--port',type=int,default=8791)
     parser.add_argument('--samples',type=int,default=5)
     parser.add_argument('--browser',action='store_true')
+    parser.add_argument('--browser-only',action='store_true')
     parser.add_argument('--output',default='performance-results.json')
     args=parser.parse_args()
-    serve(args.port) if args.serve else benchmark(args.output,args.port,args.samples,args.browser)
+    serve(args.port) if args.serve else benchmark(args.output,args.port,args.samples,args.browser or args.browser_only,args.browser_only)

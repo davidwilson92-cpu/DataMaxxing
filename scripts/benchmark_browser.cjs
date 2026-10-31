@@ -29,6 +29,7 @@ if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(base)) throw Error('Loopback benchmark o
       })).observe({type:'largest-contentful-paint',buffered:true});
     });
     async function capture(name, elapsed) {
+      await page.waitForFunction(() => performance.getEntriesByName('first-contentful-paint').length > 0, null, {timeout:5000}).catch(() => {});
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       result.runs.push({name,interaction_ms:Math.round(elapsed*100)/100,...await page.evaluate(() => ({
         fcp_ms:performance.getEntriesByName('first-contentful-paint')[0]?.startTime,
@@ -64,12 +65,19 @@ if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(base)) throw Error('Loopback benchmark o
     await page.locator('.next-move-launch').click();
     await page.locator('#strategyActions .move-hero').first().waitFor();
     await capture('next_move_open',performance.now()-started);
+    const remaining = await page.evaluate(() => moveItems.length - moveIndex);
+    for (let i=1;i<remaining;i++) await page.getByRole('button',{name:'Next idea',exact:true}).click();
     const previous = await page.locator('#strategyActions .move-hero h3').innerText();
     started=performance.now();
-    await page.locator('#recommendButton').click();
+    await page.getByRole('button',{name:'Next idea',exact:true}).click();
     await page.waitForFunction(text => document.querySelector('#strategyActions .move-hero h3')?.textContent !== text, previous);
     await page.waitForFunction(() => document.querySelector('#strategyPanel')?.getAttribute('aria-busy') === 'false');
     await capture('next_move_fresh',performance.now()-started);
+    await page.locator('#strategyClose').click();
+    started=performance.now();
+    await page.locator('.next-move-launch').click();
+    await page.locator('#strategyActions .move-hero').first().waitFor();
+    await capture('next_move_cached',performance.now()-started);
     await page.locator('#strategyClose').click();
     started=performance.now();
     await page.goto(base+'/analytics');
