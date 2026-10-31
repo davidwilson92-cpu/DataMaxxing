@@ -30,7 +30,7 @@ from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from . import ai, billing, brands, allowances, customer_service, readiness
+from . import ai, billing, brands, allowances, customer_service, readiness, distribution
 from .connections import connection_options, safe_login_next
 from .db import (
     Activity, AuthIdentity, AuthState, Creator, CreatorPreferences, Draft, MediaAsset, OAuth2Connection, OAuthState,
@@ -276,6 +276,7 @@ def signup(request: Request, background_tasks: BackgroundTasks, name: Annotated[
     db.info.update(brand_id=0,brand_user_id=user.id);request.state.brand_id=0
     get_preferences(db,user.id)
     readiness.event(user.id,'signup',user.id)
+    distribution.record_signup(user.id,request)
     from .verification import welcome_verification
     welcome_verification(user, background_tasks)
     from .mobile_auth import resume_destination
@@ -345,7 +346,9 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
         user.last_login_at = utcnow()
         db.commit()
     if not identity: db.add(AuthIdentity(user_id=user.id, provider="apple", subject=subject)); db.commit()
-    if created:readiness.event(user.id,'signup',user.id)
+    if created:
+        readiness.event(user.id,'signup',user.id)
+        distribution.record_signup(user.id,request)
     from .mobile_auth import resume_destination
     native_resume = resume_destination(state.partition('.')[2], db)
     resp = RedirectResponse(native_resume or ("/onboarding/socials" if created else "/studio"), 303); set_user_cookie(resp, user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
@@ -1335,6 +1338,8 @@ app.include_router(operations_router)
 from .connection_health import router as connection_health_router
 app.include_router(connection_health_router)
 app.include_router(readiness.router)
+app.include_router(distribution.router)
+app.middleware("http")(distribution.capture_reference)
 from .verification import router as verification_router
 app.include_router(verification_router)
 

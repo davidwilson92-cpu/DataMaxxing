@@ -1,0 +1,11 @@
+# Distribution connection candidate
+
+Base: production revision 761153c. Scope: opt-in GET /internal/distribution; encrypted first-touch web reference cookie; signup reference persistence; positive live invoice.paid receipts in the existing billing transaction. No new database schema, social publishing, charges, account/RLS migration or native binary changes.
+
+User authorised connecting the command centre. A distinct random DISTRIBUTION_READ_TOKEN must be configured in Render and as ZOVA_DISTRIBUTION_TOKEN in the local command centre. The token can read only this export, not operational routes. Disabled until configured; no admin or scheduler credential reuse. Export omits emails, names, content, Stripe identifiers and provider credentials. User IDs are pseudonymised with HMAC. Rotation changes pseudonyms; the command centre replaces complete snapshots rather than appending them.
+
+The local client pulls every 60 seconds while running, rejects redirects and malformed/incomplete pages, retains the last good snapshot on errors and marks stale data. Complete resync removes locally retained deleted accounts. Live and test subscriptions are separate; active subscriptions are not payment receipts. Records are local personal data and require the same device protection as other command-centre records.
+
+Attribution is first-touch web signup only, after enabling. UUID reference links are attribution hints, not evidence of entitlement to commission. Unknown references remain unmatched. No historical attribution, native deep-link attribution, revenue accounting, refunds or chargeback reconciliation is claimed. No real customer data has been exported in local validation. Local first-touch cookies expire after 30 days. Paid conversion receipts count only positive live invoice.paid events through the existing verified webhook handler, never test billing or redirects.
+
+Validation before scope refresh: 26 focused tests passed; full SQLite suite 757 passed, 2 skipped, 1 expected scope-drift failure. The exact manifest must pass after this deliberate review; PostgreSQL and full CI remain required. No deployment approval is implied by a test-only result. All79 original known findings retained.
