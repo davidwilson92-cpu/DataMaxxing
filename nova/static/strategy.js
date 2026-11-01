@@ -179,7 +179,7 @@ function nextMoveCard(a){
 }
 function renderNextMove(){
  moveIndex=Math.max(0,Math.min(moveIndex,moveItems.length-1));
- document.getElementById('strategyActions').innerHTML=moveItems.length?nextMoveCard(moveItems[moveIndex]):(hasConfirmedStrategy?'<div class="move-empty"><h3>Your next post starts here</h3><button class="button primary" onclick="refreshStrategyActions(this)">Find an idea</button></div>':`<div class="move-empty"><h3>What are you posting about?</h3><label for="quickMoveBrief" class="visually-hidden">Topic for your next post</label><textarea id="quickMoveBrief" rows="3" maxlength="2000" placeholder="A new product, a useful tip, a day behind the scenes…">${esc(quickMoveRequest?.brief||'')}</textarea><fieldset><legend>Platform</legend>${['instagram','tiktok','x','facebook'].map(p=>`<label class="inline-choice"><input type="radio" name="quick_move_platform" value="${p}" ${(quickMoveRequest?.platforms||[]).includes(p)?'checked':''}>${movePlatform(p)}</label>`).join('')}</fieldset><button class="button primary" onclick="quickNextMove(this)">Find my next post</button></div>`);
+ document.getElementById('strategyActions').innerHTML=moveItems.length?nextMoveCard(moveItems[moveIndex]):(hasConfirmedStrategy?'<div class="move-empty"><h3>Your next post starts here</h3><button class="button primary" onclick="refreshStrategyActions(this)">Find an idea</button></div>':`<div class="move-empty"><h3>What are you posting about?</h3>${(!quickMoveRequest?.brief && (document.getElementById('brief')?.value?.trim()||typeof lastBrief!=='undefined'&&lastBrief))?'<button type="button" id="useDraftTopic" onclick="useActiveDraftTopic()">Use this draft</button>':''}<label for="quickMoveBrief" class="visually-hidden">Topic for your next post</label><textarea id="quickMoveBrief" oninput="document.getElementById('useDraftTopic')?.toggleAttribute('hidden',Boolean(this.value.trim()))" rows="3" maxlength="2000" placeholder="A new product, a useful tip, a day behind the scenes…">${esc(quickMoveRequest?.brief||'')}</textarea><fieldset><legend>Platform</legend>${['instagram','tiktok','x','facebook'].map(p=>`<label class="inline-choice"><input type="radio" name="quick_move_platform" value="${p}" ${(quickMoveRequest?.platforms||[]).includes(p)?'checked':''}>${movePlatform(p)}</label>`).join('')}</fieldset><button class="button primary" onclick="quickNextMove(this)">Find my next post</button></div>`);
 }
 async function changeMove(direction,button){
  if(strategyPending||!moveItems.length)return;
@@ -215,6 +215,12 @@ function applyNextMoves(data,epoch=strategyViewEpoch,append=false,selectNew=fals
  document.getElementById('recommendButton').hidden=strategyPlanning||moveItems.length>0||!(hasConfirmedStrategy||quickMoveRequest);
  document.getElementById('recommendButton').setAttribute('aria-label',items.length?'Refresh ideas':'Find post ideas');
  return items;
+}
+function useActiveDraftTopic(){
+ const field=document.getElementById('quickMoveBrief');
+ if(!field)return;
+ field.value=(document.getElementById('brief')?.value.trim()||lastBrief||'').slice(0,2000);
+ field.dispatchEvent(new Event('input'));field.focus();
 }
 async function loadNextMoves(epoch=strategyViewEpoch){const data=await api('/api/strategy/actions');return applyNextMoves(data,epoch);}
 async function refreshStrategyActions(button){await strategyTask(button,async epoch=>{strategyStatus('Finding your next post…');await requestMoves(epoch,true);if(epoch===strategyViewEpoch){moveOffset=0;strategyStatus('');renderNextMove();}});}

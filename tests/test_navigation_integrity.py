@@ -16,7 +16,7 @@ class References(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
-        if tag == 'form':
+        if tag == 'form' and attrs.get('method','').lower() != 'dialog':
             self.targets.append((attrs.get('action', ''), attrs.get('method', 'get').upper()))
         elif tag in {'a', 'link', 'script', 'img', 'video', 'source'}:
             value = attrs.get('href') if tag in {'a', 'link'} else attrs.get('src')

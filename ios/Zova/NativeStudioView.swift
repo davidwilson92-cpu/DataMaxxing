@@ -24,6 +24,7 @@ struct NativeStudioView: View {
     @Binding var nextMove: Bool
     @Binding var strategy: Bool
     @FocusState private var focused: Bool
+    @State private var chooseDraftPlatform = false
     @State private var history = false
     @State private var options = false
     @State private var importer = false
@@ -89,10 +90,11 @@ struct NativeStudioView: View {
                         if !store.draft.variants.object.isEmpty { caption }
                         if !store.mediaNotice.isEmpty { Text(store.mediaNotice).font(.caption).foregroundStyle(.secondary) }
                         if !store.draft.workspace["pending_message"].string.isEmpty && !store.busy {
+                            Text("Try a specific request, such as “Draft a caption for Friday appointments”.").font(.caption)
                             Button("Retry this idea") { run { try await store.send(retry: true) } }.buttonStyle(.bordered)
                         }
                         if !store.results.isNull {
-                            ZovaCard { NativeInlineStatus(value: store.results); Button("Refresh results") { run { try await store.refreshResults() } } }
+                            ZovaCard { NativeInlineStatus(value: store.results); if store.draft.status == "published", let id = store.draft.id { ReportedPostResult(id: id).id(id) }; Button("Refresh results") { run { try await store.refreshResults() } } }
                         }
                         if store.busy && !store.backgroundSaving { HStack { ProgressView(); Text("Working…").font(.callout).foregroundStyle(.secondary) }.accessibilityIdentifier("studio-working") }
                         if scrollingComposer && store.draft.editable && !captionEditing { composer.id("composer") }
@@ -297,12 +299,13 @@ struct NativeStudioView: View {
                     } label: { Image(systemName: "plus").font(.title3).frame(width: 44, height: 44) }.accessibilityLabel("Add attachment").disabled(store.busy)
                     Button("Post options") { focused = false; captionEditing = false; options = true }.font(.subheadline).frame(minHeight: 44).disabled(store.busy)
                     Spacer()
-                    Button { focused = false; run { try await store.send() } } label: { Image(systemName: "arrow.up").font(.system(size: 22, weight: .bold)).foregroundStyle(.white).frame(width: 48, height: 48).background(ZovaDesign.purple.opacity(store.draft.composer.isEmpty ? 0.4 : 1), in: Circle()) }.accessibilityLabel("Send idea")
+                    Button { focused = false; if store.draft.selected.isEmpty { chooseDraftPlatform = true } else { run { try await store.send() } } } label: { Image(systemName: "arrow.up").font(.system(size: 22, weight: .bold)).foregroundStyle(.white).frame(width: 48, height: 48).background(ZovaDesign.purple.opacity(store.draft.composer.isEmpty ? 0.4 : 1), in: Circle()) }.accessibilityLabel("Send idea")
+                        .confirmationDialog("Where is this draft for?", isPresented: $chooseDraftPlatform, titleVisibility: .visible) { ForEach(SocialPlatform.allCases) { platform in Button(platform.title) { store.draft.selected = [platform.rawValue]; store.draft.workspace["platform_selection_explicit"] = .bool(true); store.changed(); run { try await store.send() } } } }
                         .accessibilityShowsLargeContentViewer { Label("Send idea", systemImage: "arrow.up") }
                         .disabled(store.busy || store.draft.composer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }.padding(14).background(Color.white, in: RoundedRectangle(cornerRadius: 22)).overlay(RoundedRectangle(cornerRadius: 22).stroke(focused ? ZovaDesign.purple : ZovaDesign.line)).padding(.horizontal, 14)
-            if !focused { VStack(spacing: 4) { Text(store.saveStatus).accessibilityAddTraits(.updatesFrequently); Text("Nothing posts without your approval.") }.font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(.horizontal, 18) }
+            if !focused { VStack(spacing: 4) { Text(store.saveStatus).accessibilityAddTraits(.updatesFrequently); if store.saveStatus == "Saved" && store.draft.id != nil { Button("View saved post") { previewMode = "preview" } }; Text("Nothing posts without your approval.") }.font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(.horizontal, 18) }
         }.padding(.bottom, 8)
     }
     private func openCamera() {
@@ -362,6 +365,36 @@ struct NativeCamera: UIViewControllerRepresentable {
                     try data.write(to: target, options: [.atomic, .completeFileProtection]); parent.selected(target, "image/jpeg")
                 } else { throw ZovaFailure.server("The camera could not save that attachment. Please try again.") }
             } catch { parent.failed(error); parent.dismiss() }
+        }
+    }
+}
+
+private struct ReportedPostResult: View {
+    @EnvironmentObject var store: ProductStore
+    let id: Int
+    @State private var expanded = false
+    @State private var original: String?
+    @State private var note = ""
+    @State private var status = ""
+    var body: some View {
+        DisclosureGroup("Your reported result", isExpanded: $expanded) {
+            NativeField(title: "Private note", text: $note, prompt: "For example, 3 booking enquiries", lines: 2)
+                .disabled(original == nil || store.busy)
+            Button("Save result") {
+                Task { await store.perform {
+                    guard let original else { return }
+                    let reply = try await store.request("/api/drafts/\(id)/reported-outcome", method: "PUT", body: .object(["previous": .string(original), "note": .string(note)]))
+                    note = reply["note"].string; self.original = note; status = "Result saved."
+                } }
+            }.disabled(original == nil || store.busy || note.count > 500)
+            Text(status).font(.caption)
+        }.task(id: expanded) {
+            guard expanded else { return }
+            do {
+                let result = try await store.request("/api/drafts/\(id)/reported-outcome")
+                try Task.checkCancellation()
+                original = result["note"].string; note = result["note"].string; status = ""
+            } catch { if !Task.isCancelled { original = nil; store.handle(error) } }
         }
     }
 }

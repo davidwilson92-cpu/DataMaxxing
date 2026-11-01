@@ -75,7 +75,7 @@ async function compareSaved(){
     threadHost('saveComparison').scrollIntoView({block:'start'});
   }catch(error){if(id===currentDraftId&&epoch===workspaceEpoch)threadHost('saveComparison').textContent=error.message;}
 }
-document.querySelectorAll('.platform-check input').forEach(node=>node.addEventListener('change',()=>{renderReadiness();if(node.checked&&!connectionData[node.value]?.length){connectionPlatform=node.value;document.getElementById('connectionTitle').textContent='Connect '+platformName(node.value);document.getElementById('connectionDescription').textContent='Select your '+platformName(node.value)+' account to publish there. You can also keep writing a draft without connecting yet.';document.getElementById('connectionPrompt').showModal();}}));
+document.querySelectorAll('.platform-check input').forEach(node=>node.addEventListener('change',renderReadiness));
 
 document.getElementById('instagramFormat').addEventListener('change',()=>{renderReadiness();refreshDraft();});
 let textHistory=[];
@@ -109,13 +109,6 @@ window.visualViewport?.addEventListener('resize',fitVisibleViewport);
 window.addEventListener('resize',fitVisibleViewport);
 fitVisibleViewport();
 
-let connectionPlatform=null;
-async function connectSelectedPlatform(button){
-  if(!connectionPlatform)return;
-  button.disabled=true;
-  try{await saveDraftNow();location.href=window.zovaWorkspaceUrl('/connect/'+encodeURIComponent(connectionPlatform));}
-  catch(error){document.getElementById('connectionDescription').textContent='Your work could not be saved. Close this prompt and retry saving before connecting.';button.disabled=false;}
-}
 let recentPosts=[];
 let historyRequest=0;
 function historyVisual(row){

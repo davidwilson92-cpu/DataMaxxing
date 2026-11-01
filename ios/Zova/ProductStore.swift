@@ -189,6 +189,7 @@ final class ProductStore: ObservableObject {
         guard posts.indices.contains(index) else { return }
         posts[index] = text; draft.variants[platform]["posts"] = .strings(posts); changed()
     }
+    var resumeConsentedSend: (() async throws -> Void)?
     func send(retry: Bool = false) async throws {
         guard draft.editable else { throw ZovaFailure.server("Start a new post to create another idea.") }
         let text = (retry ? draft.workspace["pending_message"].string : draft.composer).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -197,7 +198,15 @@ final class ProductStore: ObservableObject {
         if retry && (draft.workspace["pending_media_asset_ids"] != draft.mediaIDs || draft.workspace["pending_link_url"].string != draft.workspace["link_url"].string) {
             throw ZovaFailure.server("Your attachment or source link changed. Send a new message to use the current selection.")
         }
-        guard account["ai"]["allowed"].bool || !account["ai"]["required"].bool else { needsConsent = true; return }
+        guard account["ai"]["allowed"].bool || !account["ai"]["required"].bool else {
+            let epoch = authority, id = draft.id, original = draft, serial = changeSerial
+            resumeConsentedSend = { [weak self] in
+                guard let self, self.authority == epoch, self.draft.id == id, self.changeSerial == serial,
+                      self.draft.composer == original.composer else { return }
+                try await self.send(retry: retry)
+            }
+            needsConsent = true; return
+        }
         if !retry {
             let sentMedia = draft.unsentMedia
             draft.conversation.append(.object(["role": .string("user"), "content": .string(text), "media_asset_ids": .array(sentMedia.map { $0["id"] }), "media": .array(sentMedia)]))

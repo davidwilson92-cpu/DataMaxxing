@@ -596,6 +596,9 @@ def drafts_page(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
     query=request.query_params.get("q","").strip()[:200]
     statement=select(Draft).where(Draft.user_id==user.id)
+    if 'post' in request.query_params:
+        post=request.query_params['post']
+        statement=statement.where(Draft.id==(int(post) if post.isascii() and post.isdigit() and len(post)<=18 else -1))
     selected_status=request.query_params.get('status','all')
     if selected_status not in {'all','draft','scheduled','published','needs_review','awaiting_results'}:selected_status='all'
     if selected_status=='awaiting_results':statement=statement.where(Draft.id.in_(select(Publication.draft_id).where(Publication.user_id==user.id,Publication.brand_id==db.info.get('brand_id',0),Publication.status.in_(('unknown','pending','publishing','queued')))))
@@ -611,7 +614,7 @@ def drafts_page(request:Request,db:Session=Depends(get_db)):
     drafts=[]
     from .workspace import draft_kind
     for row in rows:
-        if draft_kind(row) == 'conversation': continue
+        if draft_kind(row) == 'conversation' and 'post' not in request.query_params: continue
         try:platforms=json.loads(row.platforms_json or "[]")
         except (TypeError,json.JSONDecodeError):platforms=[]
         try:
@@ -1231,6 +1234,45 @@ def api_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
     workspace=hydrate_workspace_media(json.loads(row.workspace_json or "{}"),db,user.id)
     return {"title":row.title,"display_title":draft_title(row),"planned":planned_context(db,row.id),"id":row.id,"brief":row.brief,"instruction":row.instruction,"revision":row.revision,"workspace":workspace,"platforms":json.loads(row.platforms_json or "[]"),"variants":json.loads(row.variants_json or "{}"),"thread_length":row.thread_length,"status":row.status,"created_at":row.created_at.isoformat(),"updated_at":row.updated_at.isoformat()}
 
+class ReportedOutcome(BaseModel):
+    previous: str = Field(max_length=500)
+    note: str = Field(max_length=500)
+
+
+def published_for_notes(db, user_id, draft_id):
+    row = db.scalar(select(Draft).where(Draft.id == draft_id, Draft.user_id == user_id,
+                    Draft.brand_id == db.info.get('brand_id', 0), Draft.status == 'published'))
+    if row is None:
+        raise HTTPException(404, 'Published post not found')
+    return row
+
+
+@app.get('/api/drafts/{draft_id}/reported-outcome')
+def read_reported_outcome(draft_id: int, request: Request, db: Session = Depends(get_db)):
+    row = published_for_notes(db, current_user(request).id, draft_id)
+    return {'note': json.loads(row.workspace_json or '{}').get('reported_outcome', '')}
+
+
+@app.put('/api/drafts/{draft_id}/reported-outcome')
+def save_reported_outcome(draft_id: int, body: ReportedOutcome, request: Request, db: Session = Depends(get_db)):
+    row = published_for_notes(db, current_user(request).id, draft_id)
+    workspace = json.loads(row.workspace_json or '{}')
+    previous = workspace.get('reported_outcome', '')
+    note = body.note.strip()
+    if previous == note:
+        return {'note': note}
+    if previous != body.previous:
+        raise HTTPException(409, 'The result changed. Reopen it before saving.')
+    workspace['reported_outcome'] = note
+    updated = db.execute(update(Draft).where(Draft.id == row.id, Draft.user_id == row.user_id,
+        Draft.brand_id == row.brand_id, Draft.status == 'published', Draft.workspace_json == row.workspace_json
+    ).values(workspace_json=json.dumps(workspace, ensure_ascii=False)))
+    if updated.rowcount != 1:
+        raise HTTPException(409, 'The post changed. Reopen it before saving.')
+    db.commit()
+    return {'note': note}
+
+
 @app.patch("/api/drafts/{draft_id}")
 def api_save_draft(draft_id:int,body:DraftSaveRequest,request:Request,db:Session=Depends(get_db)):
     from .workspace import save_workspace
@@ -1325,7 +1367,7 @@ def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db))
     # Analysis of numbers supplied by the creator does not require OAuth. The
     # normal AI consent and allowance checks still apply inside ai_action.
     supplied_figures = bool(re.search(r'\d', body.question) and re.search(
-        r'\b(?:views?|saves?|comments?|clicks?|sales?|likes?|orders?|conversions?)\b', body.question, re.I))
+        r'\b(?:views?|saves?|comments?|clicks?|sales?|likes?|orders?|bookings?|enquir(?:y|ies)|conversions?)\b', body.question, re.I))
     if (connected or supplied_figures) and os.environ.get("OPENAI_API_KEY"):
         try:
             with allowances.ai_action(db,user.id):

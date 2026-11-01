@@ -192,7 +192,7 @@ struct NativeProductTabs: View {
             .sheet(isPresented: $nextMove) { NativeNextMoveView().environmentObject(store) }
             .sheet(isPresented: $strategy) { NativeNextMoveView(planning: true).environmentObject(store) }
             .sheet(isPresented: $store.showReview) { NativePublishView(mode: store.reviewMode, connect: { await session.connect($0) }).environmentObject(store).interactiveDismissDisabled(store.busy) }
-            .sheet(isPresented: $store.needsConsent) { NativeAIConsentView().environmentObject(store) }
+            .sheet(isPresented: $store.needsConsent, onDismiss: { store.resumeConsentedSend = nil }) { NativeAIConsentView().environmentObject(store) }
             .sheet(isPresented: $store.showIntro) { NativeGuideView(introduction: true).environmentObject(store) }
             .alert("Zova", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button("OK") { store.error = nil } } message: { Text(store.error ?? "") }
             .onChange(of: store.signedOut) { _, value in if value { Task { await session.reauthenticate() } } }

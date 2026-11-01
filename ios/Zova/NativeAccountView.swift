@@ -136,14 +136,15 @@ struct NativeAIConsentView: View {
             NativeSheetHeader(title: "AI sharing")
             Image(systemName: "sparkles").font(.largeTitle).foregroundStyle(ZovaDesign.purple)
             Text("Let Zova help shape your ideas").font(.title2.bold())
-            Text("When you request AI help, Zova sends relevant ideas, captions, strategy, voice and available performance to OpenAI. Attachments can include resized images or sampled video frames. Audio isn’t analysed.")
-            Text("You can change this in Account. Your social passwords and access tokens are not sent to AI.").font(.callout).foregroundStyle(.secondary)
+            Text("Zova uses OpenAI to help with your request.")
+            DisclosureGroup("What is shared?") { Text("When you request AI help, Zova sends relevant ideas, captions, strategy, voice and available performance to OpenAI. Attachments can include resized images or sampled video frames. Audio isn’t analysed.")
+            Text("You can change this in Account. Your social passwords and access tokens are not sent to AI.").font(.callout).foregroundStyle(.secondary) }
             Button("Allow AI sharing") { choose(true) }.buttonStyle(ZovaPrimary())
             Button(store.account["ai"]["allowed"].bool ? "Turn off AI sharing" : "Not now") { if store.account["ai"]["allowed"].bool { choose(false) } else { dismiss() } }.frame(minHeight: 44)
             Spacer()
         }.padding(22).preferredColorScheme(.light).disabled(store.busy)
     }
-    private func choose(_ allowed: Bool) { Task { await store.perform { _ = try await store.request("/api/privacy/ai", method: "POST", body: .object(["allowed": .bool(allowed), "version": store.account["ai"]["version"]])); try await store.reloadAccount(); dismiss() } } }
+    private func choose(_ allowed: Bool) { Task { await store.perform { _ = try await store.request("/api/privacy/ai", method: "POST", body: .object(["allowed": .bool(allowed), "version": store.account["ai"]["version"]])); try await store.reloadAccount(); let resume = store.resumeConsentedSend; store.resumeConsentedSend = nil; dismiss(); if allowed { try await resume?() } } } }
 }
 
 struct NativeDeletionView: View {

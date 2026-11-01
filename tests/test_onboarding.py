@@ -95,7 +95,7 @@ def test_studio_has_premium_application_shell():
     assert 'zova-symbol' in page.text
     assert 'composer-platforms' in page.text and 'id="xFormat"' in page.text
     assert 'studio-watermark-gradient' in page.text and 'recent-posts' in page.text
-    assert 'id="connectionPrompt"' in page.text
+    assert 'id="draftFormatPrompt"' in page.text
 
 
 

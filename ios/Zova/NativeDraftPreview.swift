@@ -46,6 +46,7 @@ struct NativeDraftPreview: View {
             VStack(alignment: .leading, spacing: 20) {
                 NativeSheetHeader(title: compare ? "Compare versions" : "Preview")
                 Text("Final review confirms the exact account, content and settings.").font(.caption).foregroundStyle(.secondary)
+                if store.draft.variants.object.isEmpty { Text(store.draft.composer.isEmpty ? store.draft.brief : store.draft.composer).textSelection(.enabled) }
                 ForEach(platforms, id: \.self) { platform in
                     ZovaCard {
                         HStack { NativePlatformMark(platform: platform); Text(SocialPlatform(rawValue: platform)?.title ?? platform).font(.headline) }

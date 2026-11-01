@@ -9,9 +9,9 @@ function renderKpis(summary){const metrics=[
   ["Views / impressions",summary.impressions,"Available views and impressions"],
   ["Engagements",summary.engagements,"Likes, comments and shares"],
   ["Comments",summary.comments,"Available comments on sampled posts"],
-  ["Followers",summary.followers,"Across connected accounts"],
+  ["Current followers",summary.followers,"Across connected accounts"],
   ["Posts",summary.posts,"Posts represented in this view"]
-];const available=metrics.filter(([,value])=>value!=null);document.getElementById("analyticsKpis").innerHTML=available.length?available.map(([label,value,note],index)=>`<article class="analytics-kpi ${index===0?"primary":""}"><span>${label}</span><strong>${value==null?"—":typeof value==="number"?analyticsNumber(value):value}</strong><small>${note}</small></article>`).join(""):'<p class="analytics-empty-summary">Combined totals are incomplete. Available account results are below.</p>';}
+];const available=metrics.filter(([,value])=>value!=null);document.getElementById("analyticsKpis").innerHTML=available.length?'<p class="support-note">Lifetime results for posts published in this period. Bookings and sales are not measured.</p>'+available.map(([label,value,note],index)=>`<article class="analytics-kpi ${index===0?"primary":""}"><span>${label}</span><strong>${value==null?"—":typeof value==="number"?analyticsNumber(value):value}</strong><small>${note}</small></article>`).join(""):'<p class="analytics-empty-summary">Combined totals are incomplete. Available account results are below.</p>';}
 
 function renderPlatforms(platforms){
   const connected=Object.entries(platforms).filter(([,value])=>value.connected);

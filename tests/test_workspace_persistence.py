@@ -94,3 +94,21 @@ def test_history_video_has_lightweight_marker_not_remote_media_url():
         db.add(video);db.flush();video_id=video.id
         db.get(Draft,draft['id']).workspace_json=json.dumps({'media_asset_ids':[video.id]});db.commit()
     assert client.get('/api/drafts').json()[0]['thumbnail']=={'id':video_id,'filename':'video.mp4','kind':'video'}
+
+
+def test_reported_result_requires_owned_published_post_and_detects_conflicts():
+    from nova.db import Draft
+    owner, *_ = account()
+    other, *_ = account()
+    post = owner.post('/api/drafts', json={}).json()['id']
+    url = f'/api/drafts/{post}/reported-outcome'
+    note = {'previous':'','note':'3 enquiries from Friday bouquets'}
+    assert owner.put(url,json=note).status_code == 404
+    with SessionLocal() as db:
+        row=db.get(Draft,post); row.status='published'; db.commit()
+    assert other.get(url).status_code == 404
+    assert other.put(url,json=note).status_code == 404
+    assert owner.put(url,json=note).json() == {'note':note['note']}
+    assert owner.put(url,json=note).status_code == 200
+    assert owner.put(url,json={'previous':'','note':'different'}).status_code == 409
+    assert owner.get(url).json() == {'note':note['note']}
