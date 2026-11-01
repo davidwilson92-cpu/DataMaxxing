@@ -124,7 +124,7 @@ struct NativeStudioView: View {
             .sheet(isPresented: $history) { NativeHistoryView().environmentObject(store) }
             .sheet(isPresented: $options) { NativePostOptionsView().environmentObject(store) }
             .sheet(isPresented: Binding(get: { previewMode != nil }, set: { if !$0 { previewMode = nil } })) {
-                NativeDraftPreview(compare: previewMode == "compare").environmentObject(store)
+                NativeDraftPreview(compare: previewMode == "compare").id(store.authority).environmentObject(store)
             }
             .sheet(isPresented: Binding(get: { recoveryExport != nil }, set: { if !$0 { clearRecoveryExport() } }), onDismiss: clearRecoveryExport) {
                 if let recoveryExport { NativeShare(items: [recoveryExport]) }

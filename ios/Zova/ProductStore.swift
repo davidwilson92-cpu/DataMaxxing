@@ -28,7 +28,7 @@ final class ProductStore: ObservableObject {
     private var polling: Task<Void, Never>?
     private var changeSerial = 0
     private var savedSerial = 0
-    private var authority = 0
+    private(set) var authority = 0
     private var pendingReview = false
     private var draftOffset = 0
     private var saveWaiters: [CheckedContinuation<Void, Never>] = []
@@ -229,10 +229,16 @@ final class ProductStore: ObservableObject {
             if body["link_url"].isNull { body["link_url"] = .string("") }
             if fresh { body["source_draft_id"] = .integer(id); body["source_revision"] = .integer(draft.revision) }
             else { body["draft_id"] = .integer(id) }
+            body["include_saved_draft"] = .bool(true)
             let generated = try await request("/api/ai/generate", method: "POST", body: body)
             let generatedID = generated["draft_id"].int
             guard generatedID > 0 else { throw ZovaFailure.invalidResponse }
-            draft = ProductDraft(try await request("/api/drafts/\(generatedID)"))
+            let snapshot = generated["draft"]
+            if snapshot["id"].int == generatedID && snapshot["revision"].int == generated["revision"].int {
+                draft = ProductDraft(snapshot)
+            } else {
+                draft = ProductDraft(try await request("/api/drafts/\(generatedID)"))
+            }
             draft.active = platforms.first ?? draft.active
             draft.selected = action == "add_platforms" ? SocialPlatform.allCases.map(\.rawValue).filter { (previousSelection + platforms).contains($0) } : platforms
         } else if action == "rewrite" {
@@ -305,18 +311,36 @@ final class ProductStore: ObservableObject {
         guard epoch == authority, !Task.isCancelled else { NativeMediaFiles.remove(url); throw CancellationError() }
         return url
     }
-    func refreshResults(attempt: Int = 0) async throws {
-        guard let id = draft.id else { return }
-        let reply = try await request("/api/publications/\(id)")
-        guard draft.id == id else { return }
+    private var resultRead = 0
+    private var activeResultReads = 0
+    func showConfirmedResultsOnReturn() async {
+        guard selectedTab == 0, let id = draft.id, polling != nil, activeResultReads == 0 else { return }
+        let serial = resultRead, previous = results
+        guard let reply = try? await request("/api/publications/\(id)?stored_only=true"),
+              serial == resultRead, results == previous, draft.id == id, !Task.isCancelled else { return }
         results = reply
         if !reply["draft_status"].string.isEmpty { draft.status = reply["draft_status"].string }
-        polling?.cancel()
-        let pending = reply["results"].object.values.contains { value in
+        if !needsPublicationCheck(reply) { polling?.cancel(); polling = nil }
+    }
+    private func needsPublicationCheck(_ reply: JSONValue) -> Bool {
+        reply["results"].object.values.contains { value in
             (["pending", "publishing", "queued"].contains(value["status"].string) && !value["delivered_to_inbox"].bool) ||
             (value["status"].string == "published" && value["privacy_level"].string == "PUBLIC_TO_EVERYONE" && value["url"].string.isEmpty)
         }
-        if pending && attempt < 40 {
+    }
+    func refreshResults(attempt: Int = 0) async throws {
+        guard let id = draft.id else { return }
+        resultRead += 1
+        let serial = resultRead
+        activeResultReads += 1
+        defer { activeResultReads -= 1 }
+        let reply = try await request("/api/publications/\(id)")
+        guard draft.id == id, serial == resultRead else { return }
+        results = reply
+        if !reply["draft_status"].string.isEmpty { draft.status = reply["draft_status"].string }
+        polling?.cancel()
+        polling = nil
+        if needsPublicationCheck(reply) && attempt < 40 {
             polling = Task { [weak self] in
                 do { try await Task.sleep(for: .seconds(15)); guard let self, self.draft.id == id else { return }; try await self.refreshResults(attempt: attempt + 1) }
                 catch { if !(error is CancellationError) { self?.handle(error) } }

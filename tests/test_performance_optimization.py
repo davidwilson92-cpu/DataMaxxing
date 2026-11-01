@@ -16,6 +16,16 @@ from nova.db import (Activity, AIConsent, Brand, ContentSeries, DiscoveryJob, Dr
 from nova.security import encrypt
 
 
+def test_strategy_can_include_the_same_revision_of_saved_ideas():
+    client, *_ = account()
+    strategy = client.get('/api/strategy').json()
+    combined = client.get('/api/strategy?include_actions=true').json()
+    saved = combined.pop('actions')
+    assert combined == strategy
+    assert saved == client.get('/api/strategy/actions').json()
+    assert saved['revision'] == strategy['revision']
+
+
 @pytest.fixture(autouse=True)
 def isolate_research_queue():
     read_cache.clear()
@@ -255,6 +265,12 @@ def test_public_asset_versions_compress_and_private_responses_do_not_cache():
     assert client.get('/api/drafts').headers['cache-control']=='no-store'
     assert client.get('/studio').headers['cache-control']=='no-store'
     assert asset_url('strategy-loader.js') in client.get('/studio').text
+    from nova.assets import BASE_STYLES, BUNDLE, DIRECTORY
+    bundle = client.get(asset_url(BUNDLE))
+    assert bundle.content == b'\n'.join((DIRECTORY / name).read_bytes() for name in BASE_STYLES)
+    assert 'immutable' in bundle.headers['cache-control']
+    assert client.get(asset_url(BUNDLE), headers={'If-None-Match': bundle.headers['etag']}).status_code == 304
+    assert asset_url(BUNDLE) in client.get('/login').text
 
 
 def test_thumbnails_are_bounded_private_and_follow_current_source():

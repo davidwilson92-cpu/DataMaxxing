@@ -33,7 +33,7 @@ final class NativeProductFixtures: URLProtocol {
     }
     static var strategy: JSONValue { .object(["goal": .string("Generate pottery class enquiries"), "description": .string("I run a pottery studio in Leeds for curious beginners. I want more weekend bookings."), "content_direction": .string("Studio moments, simple tips, new classes. Two videos a week. Keep it friendly."), "audience": .string("Local beginners"), "themes": .string("Beginner pottery tips, clay process, common questions"), "rhythm": .string("Two posts each week"), "platforms": .strings(["instagram"])]) }
     static func actions() -> JSONValue {
-        .object(["revision": .integer(1), "history": .array([]), "items": .array(["Share one tip for centring clay", "Explain what beginners need for class", "Invite questions about starting pottery"].enumerated().map { index, title in
+        .object(["revision": .integer(strategyRevision), "history": .array([]), "items": .array(["Share one tip for centring clay", "Explain what beginners need for class", "Invite questions about starting pottery"].enumerated().map { index, title in
             .object(["id": .integer(batch * 3 + index + 1), "title": .string(title), "reason": .string("Help local beginners feel confident enough to try a pottery class."), "kind": .string("draft"), "platform": .string(primaryPlatform), "format": .string("post"), "brief": .string(title), "basis": .string("Strategy · Voice"), "strategy_context": strategy, "source": .null])
         })])
     }
@@ -77,7 +77,11 @@ final class NativeProductFixtures: URLProtocol {
             return (303, .null, ["Location": "/data-deletion/status/" + String(repeating: "a", count: 64)])
         }
         if path == "/api/native/schedule-summary" { return ok(.object(["drafts": .integer(saved.count), "scheduled": .integer(1), "overdue": .integer(0), "unconfirmed": .integer(0)])) }
-        if path == "/api/strategy" { return ok(.object(["revision": .integer(strategyRevision), "confirmed": storedStrategy, "defaults": strategy, "proposal": storedProposal])) }
+        if path == "/api/strategy" {
+            var value: JSONValue = .object(["revision": .integer(strategyRevision), "confirmed": storedStrategy, "defaults": strategy, "proposal": storedProposal])
+            if request.url?.query == "include_actions=true" { value["actions"] = actions() }
+            return ok(value)
+        }
         if path == "/api/strategy/actions" { return ok(actions()) }
         if path == "/api/strategy/recommend" { batch += 1; return ok(actions()) }
         if path == "/api/strategy/propose" {
@@ -112,6 +116,7 @@ final class NativeProductFixtures: URLProtocol {
             guard var value = saved[id] else { return (404, .object(["detail": .string("Draft not found")]), [:]) }
             value["variants"] = .object(Dictionary(uniqueKeysWithValues: input["platforms"].strings.map { ($0, JSONValue.object(["posts": .strings(["New to pottery? Start with a small piece of clay and give yourself time to learn. What would you like to try making?"])])) }))
             value["brief"] = input["brief"]; value["revision"] = .integer(value["revision"].int + 1); value["workspace"]["pending_message"] = .string(""); saved[id] = value
+            if input["include_saved_draft"].bool { return ok(.object(["draft_id": .integer(id), "revision": value["revision"], "draft": value])) }
             return ok(.object(["draft_id": .integer(id), "revision": value["revision"], "variants": value["variants"]]))
         }
         if path == "/api/schedules" {

@@ -104,12 +104,25 @@ function showPublicationResults(result,automatic=false){
 let publicationTimer=null,publicationPollKey='',publicationPollCount=0,publicationRefreshBusy=false;
 function schedulePublicationRefresh(result){
  clearTimeout(publicationTimer);
+ publicationTimer=null;
  const key=currentDraftId+':'+workspaceEpoch;
  if(key!==publicationPollKey){publicationPollKey=key;publicationPollCount=0;}
  const pending=Object.entries(result.results||{}).some(([p,r])=>['pending','publishing','queued'].includes(r.status)&&!r.delivered_to_inbox||p==='tiktok'&&r.status==='published'&&!r.url&&r.privacy_level==='PUBLIC_TO_EVERYONE');
  if(!pending||publicationPollCount>=40)return;
  publicationTimer=setTimeout(()=>{if(key!==currentDraftId+':'+workspaceEpoch)return;publicationPollCount++;refreshPublicationResults(true);},15000);
 }
+window.addEventListener('visibilitychange',async()=>{
+ if(document.hidden||publicationTimer===null||publicationRefreshBusy)return;
+ const id=currentDraftId,epoch=workspaceEpoch,signature=lastPublicationSignature;
+ if(publicationPollKey!==id+':'+epoch)return;
+ try{
+  const result=await api('/api/publications/'+id+'?stored_only=true');
+  if(id!==currentDraftId||epoch!==workspaceEpoch||publicationRefreshBusy||signature!==lastPublicationSignature)return;
+  if(publicationSignature(result)!==signature){
+   currentDraftStatus=result.draft_status;showPublicationResults(result,true);rememberSavedPost();
+  }
+ }catch(_){/* The scheduled check and manual refresh remain available. */}
+},true);
 async function refreshPublicationResults(automatic=false){const id=currentDraftId,epoch=workspaceEpoch;if(!id||publicationRefreshBusy)return;publicationRefreshBusy=true;try{const result=await api(`/api/publications/${id}`);if(id!==currentDraftId||epoch!==workspaceEpoch)return;currentDraftStatus=result.draft_status;if(!automatic||lastPublicationSignature!==publicationSignature(result)){showPublicationResults(result,automatic);rememberSavedPost();}else schedulePublicationRefresh(result);const note=document.getElementById('publicationCheckNote');if(note)note.textContent=publicationPollCount>=40?'Automatic checks paused. Refresh results for the latest status.':'Last checked '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(error){if(id===currentDraftId&&epoch===workspaceEpoch){if(!automatic)addAssistantMessage(error.message);else{const note=document.getElementById('publicationCheckNote');if(note)note.textContent='Could not check the latest status. Use Refresh results to try again.';}}}finally{publicationRefreshBusy=false;}}
 
 async function confirmChatPublish(button){

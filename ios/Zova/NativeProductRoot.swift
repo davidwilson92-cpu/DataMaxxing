@@ -196,10 +196,14 @@ struct NativeProductTabs: View {
             .sheet(isPresented: $store.showIntro) { NativeGuideView(introduction: true).environmentObject(store) }
             .alert("Zova", isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button("OK") { store.error = nil } } message: { Text(store.error ?? "") }
             .onChange(of: store.signedOut) { _, value in if value { Task { await session.reauthenticate() } } }
+            .onChange(of: store.selectedTab) { _, index in
+                if index == 0 && scenePhase == .active { Task { await store.showConfirmedResultsOnReturn() } }
+            }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboard = true }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboard = false }
             .task(id: scenePhase) {
                 guard scenePhase == .active else { return }
+                await store.showConfirmedResultsOnReturn()
                 while !Task.isCancelled {
                     await store.refreshConnections()
                     do { try await Task.sleep(for: .seconds(60)) } catch { return }

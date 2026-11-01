@@ -145,6 +145,8 @@ struct NativeAssetPreview: View {
     @EnvironmentObject var store: ProductStore
     let asset: JSONValue
     var compact = false
+    var comparison: ComparisonVideoDownloads?
+    @State private var sharedVideo: PreviewVideoFile?
     @State private var image: UIImage?
     @State private var player: AVPlayer?
     @State private var localURL: URL?
@@ -160,12 +162,19 @@ struct NativeAssetPreview: View {
         }.task(id: asset["id"].int) { await load() }
             .onChange(of: store.selectedTab) { _, _ in player?.pause() }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in player?.pause() }
-            .onDisappear { player?.pause(); NativeMediaFiles.remove(localURL); localURL = nil; player = nil; image = nil }
+            .onDisappear { player?.pause(); player = nil; sharedVideo = nil; NativeMediaFiles.remove(localURL); localURL = nil; image = nil }
     }
     private func load() async {
         guard asset["id"].int > 0, !asset["unavailable"].bool else { failed = true; return }
         if compact && asset["kind"].string == "video" { return }
         do {
+            if let comparison, asset["kind"].string == "video" {
+                let file = try await comparison.file(for: asset["id"].int) { try await store.assetFile(asset) }
+                try Task.checkCancellation()
+                sharedVideo = file
+                player = AVPlayer(url: file.url)
+                return
+            }
             let url = try await store.assetFile(asset, thumbnail: compact)
             guard !Task.isCancelled else { NativeMediaFiles.remove(url); return }
             if asset["kind"].string == "video" {

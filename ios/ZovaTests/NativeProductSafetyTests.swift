@@ -4,6 +4,28 @@ import UIKit
 
 @MainActor
 final class NativeProductSafetyTests: XCTestCase {
+    func testComparisonSharesOneProtectedVideoUntilItsLastPlayerCloses() async throws {
+        let pool = ComparisonVideoDownloads()
+        var calls = 0
+        let download: @MainActor () async throws -> URL = {
+            calls += 1
+            await Task.yield()
+            return try NativeMediaFiles.create(extension: "mp4")
+        }
+        let url: URL
+        do {
+            async let first = pool.file(for: 25, download: download)
+            async let second = pool.file(for: 25, download: download)
+            let (a, b) = try await (first, second)
+            XCTAssertTrue(a === b)
+            XCTAssertEqual(calls, 1)
+            pool.clear()
+            url = a.url
+            XCTAssertTrue(FileManager.default.fileExists(atPath: b.url.path))
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+    }
+
     override func tearDown() { try? KeychainVault.clear(); NativeDraftRecovery.remove(owner: "1:0"); NativeMediaFiles.clear() }
     private func api() throws -> NativeAPI {
         NativeProductFixtures.reset(); NativeDraftRecovery.remove(owner: "1:0")
