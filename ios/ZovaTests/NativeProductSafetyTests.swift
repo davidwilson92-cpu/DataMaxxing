@@ -60,6 +60,28 @@ final class NativeProductSafetyTests: XCTestCase {
         do { _ = try await api.product("https://untrusted.example/steal"); XCTFail("External request accepted") }
         catch ZovaFailure.unsafeURL { }
     }
+    func testScheduleFetchesIndependentListsConcurrently() async throws {
+        let service = try api(), store = ProductStore(api: service)
+        try await store.start()
+        ProductTestTransport.respond = { request in
+            let (status, value, headers) = NativeProductFixtures.response(request)
+            let delayed = ["/api/drafts", "/api/schedules", "/api/native/schedule-summary"].contains(request.url?.path ?? "")
+            return (status, try! value.encoded(), headers, delayed ? 0.3 : 0)
+        }
+        let sequentialStart = Date()
+        _ = try await store.request("/api/drafts")
+        _ = try await store.request("/api/schedules")
+        _ = try await store.request("/api/native/schedule-summary")
+        let sequential = Date().timeIntervalSince(sequentialStart)
+        let parallelStart = Date()
+        let result = try await store.loadSchedule(from: Date(), to: Date().addingTimeInterval(86400 * 30), includeDrafts: true)
+        let parallel = Date().timeIntervalSince(parallelStart)
+        print("ZOVA_PERFORMANCE schedule sequential_ms=\(sequential * 1000) parallel_ms=\(parallel * 1000)")
+        XCTAssertLessThan(parallel, sequential * 0.8)
+        XCTAssertEqual(result.summary["scheduled"].int, 1)
+        XCTAssertFalse(result.rows.isEmpty)
+        XCTAssertFalse(store.drafts.isEmpty)
+    }
     func testServerFailureDoesNotReplayPublish() async throws {
         let api = try api(); let once = expectation(description: "one publication attempt"); once.assertForOverFulfill = true
         ProductTestTransport.respond = { request in

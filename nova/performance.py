@@ -7,7 +7,8 @@ from .db import PerformanceSnapshot, SocialConnection, utcnow
 
 
 def connection_stamp(connections):
-    return sorted(f'{c.platform}:{c.id}:{c.account_id}' for c in connections)
+    from .social_reads import signature
+    return sorted(f'{c.platform}:{c.id}:{signature(c)}' for c in connections)
 
 
 def fresh(checked_at):
@@ -19,9 +20,9 @@ def fresh(checked_at):
         return False
 
 
-def record(db, uid, view):
+def record(db, uid, view, connections=None):
     payload = {
-        'connections':connection_stamp(db.scalars(select(SocialConnection).where(
+        'connections':connections if connections is not None else connection_stamp(db.scalars(select(SocialConnection).where(
             SocialConnection.user_id==uid,SocialConnection.active.is_(True))).all()),
         'last_attempt_at':utcnow().isoformat(), 'period':view['period'], 'note':view['note'], 'fetched_at':view['fetched_at'],
         'platforms':view['platforms'], 'unavailable':view['unavailable'],

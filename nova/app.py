@@ -23,7 +23,8 @@ from oauthlib.oauth1 import Client as OAuth1Client
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import Response, HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
+from .assets import PublicAssets, url as asset_url
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import func, or_, select, update
@@ -54,6 +55,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 HERE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
+templates.env.globals['asset_url'] = asset_url
 
 
 def base_url() -> str:
@@ -174,12 +176,18 @@ async def lifespan(app: FastAPI):
     mode = validate_runtime()
     bootstrap_legacy_account()
     task = asyncio.create_task(scheduler_loop()) if mode == 'embedded' else None
+    from .discovery_jobs import loop as discovery_loop
+    discovery_task = asyncio.create_task(discovery_loop()) if mode != 'disabled' else None
     try:
         yield
     finally:
         if task is not None:
             task.cancel()
             try: await task
+            except asyncio.CancelledError: pass
+        if discovery_task is not None:
+            discovery_task.cancel()
+            try: await discovery_task
             except asyncio.CancelledError: pass
 
 
@@ -199,7 +207,7 @@ from .strategy import router as strategy_router, strategy_context
 from .series import router as series_router
 app.include_router(strategy_router)
 app.include_router(series_router)
-app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
+app.mount("/static", GZipMiddleware(PublicAssets(directory=str(HERE / "static")), compresslevel=4), name="static")
 
 
 @app.exception_handler(HTTPException)
@@ -1183,7 +1191,7 @@ def api_create_draft(request:Request,db:Session=Depends(get_db)):
     return {"id":row.id,"revision":row.revision}
 
 @app.get("/api/drafts")
-def api_drafts(request:Request,offset:int=Query(0,ge=0,le=100000),status:str=Query("all",pattern="^(all|draft|scheduled|published|needs_review|awaiting_results)$"),db:Session=Depends(get_db)):
+def api_drafts(request:Request,offset:int=Query(0,ge=0,le=100000),status:str=Query("all",pattern="^(all|draft|scheduled|published|needs_review|awaiting_results)$"),limit:int=Query(100,ge=1,le=100),db:Session=Depends(get_db)):
     user=current_user(request)
     query=request.query_params.get("q","").strip()[:200]
     statement=select(Draft).where(Draft.user_id==user.id)
@@ -1192,16 +1200,22 @@ def api_drafts(request:Request,offset:int=Query(0,ge=0,le=100000),status:str=Que
     elif status=='draft':statement=statement.where(Draft.status.in_(('draft','cancelled')))
     elif status!='all':statement=statement.where(Draft.status==status)
     if query:statement=statement.where(or_(Draft.title.icontains(query,autoescape=True),Draft.brief.icontains(query,autoescape=True),Draft.variants_json.icontains(query,autoescape=True),Draft.workspace_json.icontains(query,autoescape=True)))
-    rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).offset(offset).limit(100)).all()
+    rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).offset(offset).limit(limit)).all()
     from .workspace import draft_media_previews, draft_kind
     previews=draft_media_previews(db,rows,user.id)
+    links = {}
+    if rows:
+        activities = db.execute(select(Activity.draft_id, Activity.platform, Activity.url).where(
+            Activity.user_id == user.id, Activity.draft_id.in_([row.id for row in rows]),
+            Activity.url.is_not(None)).order_by(Activity.id.desc()))
+        for activity in activities:
+            links.setdefault(activity.draft_id, []).append({'platform': activity.platform, 'url': activity.url})
     output=[]
     for r in rows:
-        acts=db.scalars(select(Activity).where(Activity.user_id==user.id,Activity.draft_id==r.id,Activity.url.is_not(None)).order_by(Activity.id.desc())).all()
         title=draft_title(r)
         try:platforms=json.loads(r.platforms_json or "[]")
         except (TypeError,ValueError):platforms=[]
-        output.append({"id":r.id,"kind":draft_kind(r),"revision":r.revision,"thumbnail":previews.get(r.id),"title":title[:100],"brief":r.brief,"platforms":platforms,"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
+        output.append({"id":r.id,"kind":draft_kind(r),"revision":r.revision,"thumbnail":previews.get(r.id),"title":title[:100],"brief":r.brief,"platforms":platforms,"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":links.get(r.id,[])})
     return output
 
 @app.get("/api/drafts/{draft_id}")
@@ -1257,19 +1271,37 @@ def api_activity(request:Request,db:Session=Depends(get_db)):
 
 @app.get("/api/analytics")
 def api_analytics(request:Request,db:Session=Depends(get_db)):
-    user=current_user(request); view=_analytics_dashboard(analytics_for_user(db,user.id),recent_posts_for_user(db,user.id,limit=30)); return {**view["platforms"],"_summary":view["summary"],"_note":view["note"]}
+    user=current_user(request); view,_=_performance_view(db,user.id); return {**view["platforms"],"_summary":view["summary"],"_note":view["note"]}
 
 from .analytics_view import dashboard as _analytics_dashboard
 
+def _performance_view(db, uid, days=7, refresh=False):
+    from .performance import connection_stamp
+    from .social import json_meta
+    def connections():
+        return db.scalars(select(SocialConnection).where(
+            SocialConnection.user_id == uid, SocialConnection.active.is_(True)
+        ).execution_options(populate_existing=True)).all()
+    def identity(rows):
+        return sorted((row.platform, row.id, row.account_id, row.scope,
+                       json_meta(row).get('connection_health') == 'reconnect') for row in rows)
+    before = identity(connections())
+    accounts = analytics_for_user(db, uid, True, refresh)
+    feed = recent_posts_for_user(db, uid, limit=30, refresh=refresh)
+    after = connections()
+    if before != identity(after):
+        raise HTTPException(409, 'Your social connections changed. Refresh results to use the current accounts.')
+    return _analytics_dashboard(accounts, feed, window_days=days), connection_stamp(after)
+
 @app.get("/api/analytics/dashboard")
-def api_analytics_dashboard(request:Request,days:int=Query(7),db:Session=Depends(get_db)):
+def api_analytics_dashboard(request:Request,days:int=Query(7),refresh:bool=Query(True),db:Session=Depends(get_db)):
     from .performance import record
     user=current_user(request)
     if days not in (7,30):raise HTTPException(400,'Choose a 7 or 30 day post window')
-    view=_analytics_dashboard(analytics_for_user(db,user.id),recent_posts_for_user(db,user.id,limit=30),window_days=days)
+    view,connections=_performance_view(db,user.id,days,refresh)
     from sqlalchemy.exc import SQLAlchemyError
     try:
-        record(db,user.id,view)
+        record(db,user.id,view,connections=connections)
         view['recommendation_history_saved']=True
     except SQLAlchemyError:
         db.rollback()
@@ -1282,9 +1314,7 @@ def api_analytics_dashboard(request:Request,days:int=Query(7),db:Session=Depends
 def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db)):
     from .analytics_view import insight_fallback
     user=current_user(request)
-    data=analytics_for_user(db,user.id)
-    feed=recent_posts_for_user(db,user.id,limit=30)
-    dashboard=_analytics_dashboard(data,feed,window_days=body.days)
+    dashboard,_=_performance_view(db,user.id,body.days)
     summary=dashboard.get('summary') or {}
     connected=any(value.get('connected') for value in dashboard['platforms'].values())
     answer=insight_fallback(dashboard,body.question,body.days)

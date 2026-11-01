@@ -57,7 +57,10 @@ def get_bytes(storage_key: str) -> bytes:
     bucket = os.environ.get("S3_BUCKET")
     if client and bucket and storage_key.startswith("nova/"):
         response = client.get_object(Bucket=bucket, Key=storage_key)
-        return response["Body"].read()
+        try:
+            return response["Body"].read()
+        finally:
+            response["Body"].close()
     return local_path(storage_key).read_bytes()
 
 

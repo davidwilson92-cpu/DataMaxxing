@@ -33,7 +33,7 @@ function renderPosts(posts) {
   document.getElementById('topPosts').innerHTML=posts.length?posts.map(post=>{
     const url=analyticsSafeUrl(post.url), image=analyticsSafeUrl(post.image_url), tag=url?'a':'article';
     return `<${tag} class="analytics-post" ${url?`href="${analyticsEsc(url)}" target="_blank" rel="noopener"`:''}>
-    ${image?`<img src="${analyticsEsc(image)}" alt="">`:`<span class="analytics-post-art ${post.platform}">${analyticsIcon(post.platform)}</span>`}
+    ${image?`<img src="${analyticsEsc(image)}" alt="" loading="lazy" decoding="async">`:`<span class="analytics-post-art ${post.platform}">${analyticsIcon(post.platform)}</span>`}
     <div><span class="post-channel">${analyticsPlatform(post.platform)}</span><p>${analyticsEsc((post.text||'Media post').slice(0,170))}</p><dl>
     ${[['Likes','likes'],['Comments','comments'],['Shares','shares'],['Views','views']].map(([label,key])=>`<div><dt>${label}</dt><dd>${analyticsNumber(post[key])}</dd></div>`).join('')}
     </dl></div></${tag}>`;
@@ -42,7 +42,7 @@ function renderPosts(posts) {
 
 let analyticsRequest=0, analyticsAnswerRequest=0;
 function showResultPanels(visible){document.querySelectorAll('.analytics-split,.content-panel,.analytics-ask').forEach(el=>el.hidden=!visible);}
-async function loadAnalytics(){
+async function loadAnalytics(refresh=false){
   const request=++analyticsRequest;
   ++analyticsAnswerRequest;
   document.getElementById('analyticsAnswer').hidden=true;
@@ -53,7 +53,7 @@ async function loadAnalytics(){
   showResultPanels(false);
   try{
     const days=document.getElementById('analyticsWindow').value;
-    const data=await analyticsApi('/api/analytics/dashboard?days='+encodeURIComponent(days));
+    const data=await analyticsApi('/api/analytics/dashboard?days='+encodeURIComponent(days)+'&refresh='+(refresh===true));
     if(request!==analyticsRequest)return;
     const connected=Object.values(data.platforms||{}).some(p=>p.connected);
     if(!connected){
@@ -87,6 +87,6 @@ async function askAnalytics(question){
 
 document.getElementById("analyticsQuestion").addEventListener("submit",event=>{event.preventDefault();const field=document.getElementById("analyticsQuestionText"),question=field.value.trim();if(question)askAnalytics(question);});
 document.querySelectorAll(".analytics-prompts button").forEach(button=>button.addEventListener("click",()=>{document.getElementById("analyticsQuestionText").value=button.textContent;askAnalytics(button.textContent);}));
-document.getElementById("analyticsRefresh").addEventListener("click",loadAnalytics);
+document.getElementById("analyticsRefresh").addEventListener("click",()=>loadAnalytics(true));
 document.getElementById("analyticsWindow").addEventListener("change",loadAnalytics);
 loadAnalytics();

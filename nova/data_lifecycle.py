@@ -24,7 +24,7 @@ ERASE_FIELDS={
     models.ScheduledPost:['content_json','error','post_url','platform_post_id','media_asset_ids_json'],
     models.SocialConnection:['account_id','username','display_name','encrypted_access_token','encrypted_refresh_token','encrypted_audio_user_token','metadata_json','scope'],
 }
-ERASE_ROWS=[models.AIConsent,models.SeriesApproval,models.SeriesOccurrence,models.ContentSeries,models.StrategyAction,
+ERASE_ROWS=[models.DiscoveryJob,models.AIConsent,models.SeriesApproval,models.SeriesOccurrence,models.ContentSeries,models.StrategyAction,
     models.Strategy,models.PerformanceSnapshot,models.AuthIdentity,models.RecoveryToken,models.EmailVerification,
     models.OAuthState,models.PendingConnection,models.ProductEvent]
 
@@ -34,6 +34,7 @@ def empty_field(name):
 
 EXPORT = {
     models.PerformanceSnapshot: ['brand_id','payload_json','fetched_at'],
+    models.DiscoveryJob: ['brand_id','themes','status','result_json','completed_at'],
     models.SeriesApproval: ['brand_id','series_id','revision','payload_json','expires_at'],
     models.Strategy: ['brand_id','confirmed_json','proposal_json','revision'],
     models.StrategyAction: ['brand_id','payload_json','status','feedback','draft_id'],

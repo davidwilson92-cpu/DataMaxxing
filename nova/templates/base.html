@@ -4,28 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {% if metrics_enabled %}<meta name="zova-product-metrics" content="enabled">{% endif %}
-{% if brand %}<meta name="zova-workspace" content="{{ brand.id }}"><script src="/static/brand-context.js?v=2"></script>{% endif %}
-{% if user %}<script src="/static/ai-privacy.js?v=20261019-choice"></script>{% endif %}
-{% if user %}<script defer src="/static/connection-health.js?v=20261030"></script>{% endif %}
-<link rel="stylesheet" href="/static/brand-context.css?v=1">
+{% if brand %}<meta name="zova-workspace" content="{{ brand.id }}"><script src="{{ asset_url('brand-context.js') }}"></script>{% endif %}
+{% if user %}<script src="{{ asset_url('ai-privacy.js') }}"></script>{% endif %}
+{% if user %}<script defer src="{{ asset_url('connection-health.js') }}"></script>{% endif %}
+<link rel="stylesheet" href="{{ asset_url('brand-context.css') }}">
 <meta name="facebook-domain-verification" content="gc093o7nv5q19ykf4y2sxm82ujegg9">
 <title>{% block title %}Zova{% endblock %}</title>
-<link rel="icon" href="/static/zova-mark.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/static/nova.css?v=6.3">
-<link rel="stylesheet" href="/static/refinement.css?v=1">
-<link rel="stylesheet" href="/static/connections.css?v=20261025-compact">
-<link rel="stylesheet" href="/static/workspace-ui.css?v=20260922-media-stories">
-<script defer src="/static/workspace-ui.js?v=20260922-media-stories"></script>
-<link rel="stylesheet" href="/static/commercial-polish.css?v=20261019-commercial-final">
-<link rel="stylesheet" href="/static/social-brand.css?v=20261012-design"><script src="/static/social-brand.js?v=20261012-focus"></script>
+<link rel="icon" href="{{ asset_url('zova-mark.svg') }}" type="image/svg+xml">
+<link rel="stylesheet" href="{{ asset_url('nova.css') }}">
+<link rel="stylesheet" href="{{ asset_url('refinement.css') }}">
+<link rel="stylesheet" href="{{ asset_url('connections.css') }}">
+<link rel="stylesheet" href="{{ asset_url('workspace-ui.css') }}">
+<script defer src="{{ asset_url('workspace-ui.js') }}"></script>
+<link rel="stylesheet" href="{{ asset_url('commercial-polish.css') }}">
+<style>:root{--zova-instagram-mark:url("{{ asset_url('instagram-official.png') }}")}</style>
+<link rel="stylesheet" href="{{ asset_url('social-brand.css') }}">
+<script src="{{ asset_url('social-brand.js') }}" data-icons='{{ {"x":asset_url("x-brand.svg"),"facebook":asset_url("facebook-brand.svg"),"tiktok":asset_url("tiktok-brand.svg")} | tojson }}'></script>
 {% block head %}{% endblock %}
-{% if native_shell %}<link rel="stylesheet" href="/static/ios-shell.css?v=20261019"><script defer src="/static/ios-shell.js?v=20261019"></script>{% endif %}
+{% if native_shell %}<link rel="stylesheet" href="{{ asset_url('ios-shell.css') }}"><script defer src="{{ asset_url('ios-shell.js') }}"></script>{% endif %}
 {% if request.url.path in ['/studio','/drafts','/analytics'] %}
-<link rel="stylesheet" href="/static/studio-layout.css?v=20261025-viewport">
+<link rel="stylesheet" href="{{ asset_url('studio-layout.css') }}">
 {% else %}
-<link rel="stylesheet" href="/static/zova-night.css?v=20261019-rows">
+<link rel="stylesheet" href="{{ asset_url('zova-night.css') }}">
 {% endif %}
-{% if user %}<link rel="stylesheet" href="/static/ai-privacy.css?v=20261019-contrast">{% endif %}
+{% if user %}<link rel="stylesheet" href="{{ asset_url('ai-privacy.css') }}">{% endif %}
 </head>
 <body class="{% block body_class %}{% endblock %}{% if native_shell %} ios-shell{% endif %}{% if user %} zova-product{% endif %}">
 {% if user %}{% include "ai_privacy.html" %}{% endif %}

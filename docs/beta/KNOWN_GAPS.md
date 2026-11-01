@@ -1,3 +1,13 @@
+# Performance candidate — 31 October 2026
+
+The isolated codex/performance-20261031 candidate adds batched draft/series reads,
+scoped short-lived provider caching, parallel reads, private compact thumbnails,
+lazy planning code, explicit public asset versions, two measured indexes and durable
+optional topic research. Validation and measurement evidence is maintained in
+../performance/PERFORMANCE_AUDIT_20261031.md. Production deployment and a replacement
+iPhone binary are separate release steps. All 79 broader findings retain their
+recorded status. Render hosting and disabled customer charges remain required.
+
 # Distribution connector candidate - 31 October 2026
 
 New opt-in read-only export and first-touch web signup attribution are under validation. No production deployment or live data connection is claimed. All 79 broader findings remain open or retain their recorded status. Customer charges remain disabled. See DISTRIBUTION_CONNECTION_20261031.md.

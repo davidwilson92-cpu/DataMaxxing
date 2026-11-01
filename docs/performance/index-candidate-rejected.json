@@ -1,0 +1,55 @@
+{
+  "rows_per_table": 50000,
+  "owners": 50,
+  "brands_per_owner": 4,
+  "samples": 100,
+  "before": {
+    "draft_page": {
+      "median_ms": 7.057,
+      "p95_ms": 8.846,
+      "plan": [
+        "SEARCH nova_drafts USING INDEX ix_nova_drafts_user_id (user_id=?)",
+        "USE TEMP B-TREE FOR ORDER BY"
+      ]
+    },
+    "schedule_range": {
+      "median_ms": 8.212,
+      "p95_ms": 11.37,
+      "plan": [
+        "SEARCH nova_scheduled_posts USING INDEX ix_nova_scheduled_posts_scheduled_at (scheduled_at>? AND scheduled_at<?)"
+      ]
+    },
+    "activity_links": {
+      "median_ms": 0.198,
+      "p95_ms": 0.277,
+      "plan": [
+        "SEARCH nova_activity USING INDEX ix_nova_activity_draft_id (draft_id=?)",
+        "USE TEMP B-TREE FOR ORDER BY"
+      ]
+    }
+  },
+  "after": {
+    "draft_page": {
+      "median_ms": 0.773,
+      "p95_ms": 0.887,
+      "plan": [
+        "SEARCH nova_drafts USING INDEX ix_drafts_owner_brand_updated_id (user_id=? AND brand_id=?)"
+      ]
+    },
+    "schedule_range": {
+      "median_ms": 0.46,
+      "p95_ms": 0.72,
+      "plan": [
+        "SEARCH nova_scheduled_posts USING COVERING INDEX ix_schedules_owner_brand_due_id (user_id=? AND brand_id=? AND scheduled_at>? AND scheduled_at<?)"
+      ]
+    },
+    "activity_links": {
+      "median_ms": 0.319,
+      "p95_ms": 0.519,
+      "plan": [
+        "SEARCH nova_activity USING INDEX ix_activity_owner_brand_draft_id (user_id=? AND brand_id=? AND draft_id=?)",
+        "USE TEMP B-TREE FOR ORDER BY"
+      ]
+    }
+  }
+}
