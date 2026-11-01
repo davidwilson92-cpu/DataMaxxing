@@ -99,7 +99,7 @@ function showPublicationResults(result,automatic=false){
   document.querySelectorAll('[data-publication-results]').forEach(node=>node.remove());
   const entries=Object.entries(result.results||{});
   const remaining=Object.keys(variants).filter(p=>!Object.hasOwn(result.results||{},p));
-  reviewHost().insertAdjacentHTML('beforeend',`<section data-publication-results aria-live="polite" class="chat-confirmation"><h3>Publication results</h3>${entries.map(([p,r])=>`<p><b>${window.zovaPlatformLabel(p)}${r.format==='story'?' Story':''}: ${esc(r.status==='pending'&&r.delivered_to_inbox?'Delivered to TikTok inbox':publicationStatus(r.status))}</b> ${r.requires_tiktok_completion?'Complete this video in TikTok; it is not published yet.':r.status==='pending'?'The platform is processing your post. Zova checks automatically; you can leave this page.':''}${p==='tiktok'&&r.status==='published'&&!r.url?`<br>${r.privacy_level==='PUBLIC_TO_EVERYONE'?'Published. TikTok has not returned a public link yet.':'Published with restricted visibility. TikTok does not provide a public link for this post.'}`:''}${r.error?`<br>${esc(r.error)}`:''}${r.support_reference?`<br><small>Support reference: ${esc(r.support_reference)}</small>`:''}${r.url&&/^https?:\/\//.test(r.url)?` <a target="_blank" rel="noopener" href="${esc(r.url)}">${p==='tiktok'?'View on TikTok':'View post'}</a>`:''}${r.status==='failed'?` <button onclick="requestPublishConfirmation('publish',null,['${p}'])">Review and retry ${window.zovaPlatformLabel(p)}</button>`:''}</p>`).join('')}${remaining.length?`<p>${remaining.map(platformName).join(', ')} were not submitted. Keep working on them in a separate idea.</p><button onclick="continueUnsubmitted(this,${esc(JSON.stringify(remaining))})">Continue unsubmitted versions</button>`:''}<p id="publicationCheckNote" class="support-note"></p><button onclick="refreshPublicationResults()">Refresh results</button><a href="/drafts">Open Schedule</a></section>`);if(!automatic)openReview();
+  reviewHost().insertAdjacentHTML('beforeend',`<section data-publication-results aria-live="polite" class="chat-confirmation"><h3>Publication results</h3>${entries.map(([p,r])=>`<p><b>${window.zovaPlatformLabel(p)}${r.format==='story'?' Story':''}: ${esc(r.status==='pending'&&r.delivered_to_inbox?'Delivered to TikTok inbox':publicationStatus(r.status))}</b> ${r.requires_tiktok_completion?'Complete this video in TikTok; it is not published yet.':r.status==='pending'?'The platform is processing your post. Zova checks automatically; you can leave this page.':''}${p==='tiktok'&&r.status==='published'&&!r.url?`<br>${r.privacy_level==='PUBLIC_TO_EVERYONE'?'Published. TikTok has not returned a public link yet.':'Published with restricted visibility. TikTok does not provide a public link for this post.'}`:''}${r.error?`<br>${esc(r.error)}`:''}${r.support_reference?`<br><small>Support reference: ${esc(r.support_reference)}</small>`:''}${r.url&&/^https?:\/\//.test(r.url)?` <a target="_blank" rel="noopener" href="${esc(r.url)}">${p==='tiktok'?'View on TikTok':'View post'}</a>`:''}${r.status==='failed'?` <button onclick="requestPublishConfirmation('publish',null,['${p}'])">Review and retry ${window.zovaPlatformLabel(p)}</button>`:''}</p>`).join('')}${remaining.length?`<p>${remaining.map(platformName).join(', ')} were not submitted. Keep working on them in a separate idea.</p><button onclick="continueUnsubmitted(this,${esc(JSON.stringify(remaining))})">Continue unsubmitted versions</button>`:''} ${result.draft_status==='published'?'<details ontoggle="openOutcomeNote(this)"><summary>Your reported result</summary><label>Private note · for example, 3 booking enquiries<textarea maxlength="500" disabled></textarea></label><button type="button" disabled onclick="saveOutcomeNote(this)">Save result</button><p role="status"></p></details>':''}<p id="publicationCheckNote" class="support-note"></p><button onclick="refreshPublicationResults()">Refresh results</button><a href="/drafts">Open Schedule</a></section>`);if(!automatic)openReview();
 }
 let publicationTimer=null,publicationPollKey='',publicationPollCount=0,publicationRefreshBusy=false;
 function schedulePublicationRefresh(result){
@@ -161,4 +161,24 @@ async function continueUnsubmitted(button,platforms){
     studioBusy(false);location.href=window.zovaWorkspaceUrl(`/studio?draft=${row.id}`);
   }catch(error){addAssistantMessage('Could not copy the unsubmitted versions. They are still retained here. '+error.message);button.disabled=false;}
   finally{studioBusy(false);}
+}
+
+async function openOutcomeNote(section){
+ if(!section.open||section.dataset.loaded)return;
+ const id=currentDraftId, epoch=workspaceEpoch, field=section.querySelector('textarea');
+ try{
+  const data=await api('/api/drafts/'+id+'/reported-outcome');
+  if(!section.isConnected||workspaceEpoch!==epoch||currentDraftId!==id)return;
+  section.dataset.loaded='1';section.dataset.previous=data.note;field.value=data.note;
+  field.disabled=false;section.querySelector('button').disabled=false;
+ }catch(error){section.querySelector('[role=status]').textContent=error.message;}
+}
+async function saveOutcomeNote(button){
+ const section=button.closest('details'),field=section.querySelector('textarea');
+ button.disabled=true;field.disabled=true;
+ try{
+  const data=await api('/api/drafts/'+currentDraftId+'/reported-outcome',{method:'PUT',headers,body:JSON.stringify({previous:section.dataset.previous,note:field.value})});
+  field.value=data.note;section.dataset.previous=data.note;section.querySelector('[role=status]').textContent='Result saved.';
+ }catch(error){section.querySelector('[role=status]').textContent=error.message;if(error.status===409)delete section.dataset.loaded;}
+ finally{field.disabled=false;button.disabled=false;}
 }

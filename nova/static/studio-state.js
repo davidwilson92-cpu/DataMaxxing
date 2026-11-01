@@ -13,6 +13,11 @@ const editableDraft = () => ['draft','failed','partial','cancelled'].includes(cu
 
 function setAutosaveStatus(text){
   saveLabel=text;
+  const savedLink=document.getElementById('savedPostLocation');
+  if(savedLink){
+    savedLink.hidden=text!=='Saved'||!currentDraftId;
+    if(!savedLink.hidden)savedLink.href=window.zovaWorkspaceUrl('/drafts?view=saved&post='+currentDraftId);
+  }
   document.getElementById("saveRecovery").hidden=!/failed|conflict|retry/i.test(text);
   document.querySelectorAll('[data-save-status],#autosaveStatus').forEach(node=>node.textContent=text);
 }
@@ -103,10 +108,24 @@ async function retryMessage(){
 async function sendMessage(retryText=null){
   const input=document.getElementById('brief'),text=(retryText??input.value).trim();
   if(!text||sendingMessage||studioLoading||mediaUploading||!editableDraft())return;
+  const chooser=document.getElementById('draftFormatPrompt');
+  if(!retryText && !selectedPlatforms().length && chooser?.showModal){
+    if(chooser.open)return;
+    const draftEpoch=workspaceEpoch;
+    chooser.returnValue='';
+    const choice=await new Promise(resolve=>{
+      chooser.addEventListener('close',()=>resolve(chooser.returnValue),{once:true});
+      chooser.showModal();
+    });
+    if(!choice||workspaceEpoch!==draftEpoch||input.value.trim()!==text||sendingMessage)return;
+    if(choice!=='question')selectStudioPlatforms([choice]);
+  }
   studioBusy(true);invalidateReview();
   const epoch=workspaceEpoch;let responseApplied=false;
   try{
     await saveDraftNow();
+    if(epoch!==workspaceEpoch)return;
+    if(window.zovaEnsureAIConsent && !await window.zovaEnsureAIConsent())return;
     if(epoch!==workspaceEpoch)return;
     const recentMessages=conversation.slice(-12).map(({role,content})=>({role,content}));
     stickToLatest=true;

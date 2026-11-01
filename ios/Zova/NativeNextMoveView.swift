@@ -28,6 +28,8 @@ struct NativeNextMoveView: View {
                 if planning { strategyForm }
                 else if !current.isNull { proposal }
                 else {
+                    let brief = store.draft.composer.isEmpty ? store.draft.brief : store.draft.composer
+                    if topic.isEmpty && !brief.isEmpty { Button("Use this draft") { topic = String(brief.prefix(2000)) } }
                     NativeField(title: "What are you posting about?", text: $topic, prompt: "A new launch, a studio moment, something useful…")
                     Button("Find my next post ✦") { run { try await generate() } }.buttonStyle(ZovaPrimary()).disabled(store.busy || topic.trimmingCharacters(in: .whitespacesAndNewlines).count < 3)
                 }

@@ -94,3 +94,37 @@ def test_history_video_has_lightweight_marker_not_remote_media_url():
         db.add(video);db.flush();video_id=video.id
         db.get(Draft,draft['id']).workspace_json=json.dumps({'media_asset_ids':[video.id]});db.commit()
     assert client.get('/api/drafts').json()[0]['thumbnail']=={'id':video_id,'filename':'video.mp4','kind':'video'}
+
+
+def test_reported_result_requires_owned_published_post_and_detects_conflicts():
+    from nova.db import Draft
+    owner, *_ = account()
+    other, *_ = account()
+    post = owner.post('/api/drafts', json={}).json()['id']
+    url = f'/api/drafts/{post}/reported-outcome'
+    note = {'previous':'','note':'3 enquiries from Friday bouquets'}
+    assert owner.put(url,json=note).status_code == 404
+    with SessionLocal() as db:
+        row=db.get(Draft,post); row.status='published'; db.commit()
+    assert other.get(url).status_code == 404
+    assert other.put(url,json=note).status_code == 404
+    assert owner.put(url,json=note).json() == {'note':note['note']}
+    assert owner.put(url,json=note).status_code == 200
+    assert owner.put(url,json={'previous':'','note':'different'}).status_code == 409
+    assert owner.get(url).json() == {'note':note['note']}
+
+
+def test_saved_link_targets_id_after_rename_and_rejects_another_owner():
+    client, *_ = account()
+    other, *_ = account()
+    rows = [client.post('/api/drafts', json={}).json() for _ in range(2)]
+    for row in rows:
+        client.patch(f"/api/drafts/{row['id']}", json={'revision':row['revision'], 'brief':'Friday bouquets'})
+    url = f"/drafts?view=saved&post={rows[0]['id']}"
+    assert f'/studio?draft={rows[0]["id"]}' in client.get(url).text
+    assert f'/studio?draft={rows[1]["id"]}' not in client.get(url).text
+    current=client.get(f"/api/drafts/{rows[0]['id']}").json()
+    renamed=client.post(f"/drafts/{rows[0]['id']}/title", data={'title':'Friday collection','revision':current['revision']})
+    assert renamed.is_success
+    assert 'Friday collection' in client.get(url).text
+    assert 'Friday collection' not in other.get(url).text

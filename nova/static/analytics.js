@@ -9,14 +9,14 @@ function renderKpis(summary){const metrics=[
   ["Views / impressions",summary.impressions,"Available views and impressions"],
   ["Engagements",summary.engagements,"Likes, comments and shares"],
   ["Comments",summary.comments,"Available comments on sampled posts"],
-  ["Followers",summary.followers,"Across connected accounts"],
+  ["Current followers",summary.followers,"Across connected accounts"],
   ["Posts",summary.posts,"Posts represented in this view"]
-];const available=metrics.filter(([,value])=>value!=null);document.getElementById("analyticsKpis").innerHTML=available.length?available.map(([label,value,note],index)=>`<article class="analytics-kpi ${index===0?"primary":""}"><span>${label}</span><strong>${value==null?"—":typeof value==="number"?analyticsNumber(value):value}</strong><small>${note}</small></article>`).join(""):'<p class="analytics-empty-summary">Combined totals are incomplete. Available account results are below.</p>';}
+];const available=metrics.filter(([,value])=>value!=null);document.getElementById("analyticsKpis").innerHTML=available.length?'<p class="support-note">Lifetime results for posts published in this period. Bookings and sales are not measured.</p>'+available.map(([label,value,note],index)=>`<article class="analytics-kpi ${index===0?"primary":""}"><span>${label}</span><strong>${value==null?"—":typeof value==="number"?analyticsNumber(value):value}</strong><small>${note}</small></article>`).join(""):'<p class="analytics-empty-summary">Combined totals are incomplete. Available account results are below.</p>';}
 
 function renderPlatforms(platforms){
   const connected=Object.entries(platforms).filter(([,value])=>value.connected);
   document.getElementById('platformPerformance').innerHTML=connected.length?connected.map(([name,value])=>{
-    const metrics=[['Views / impressions',value.impressions],['Engagements',value.engagements],['Followers',value.followers]].filter(([,count])=>count!=null);
+    const metrics=[['Views / impressions',value.impressions],['Engagements',value.engagements],['Current followers',value.followers]].filter(([,count])=>count!=null);
     return `<article class="platform-performance-row"><div class="analytics-platform-mark ${name}">${analyticsIcon(name)}</div><div class="platform-performance-main"><div><strong>${analyticsPlatform(name)}</strong><span>${analyticsEsc(value.account||'Connected')}</span></div>
     ${metrics.length?`<dl>${metrics.map(([label,count])=>`<div><dt>${label}</dt><dd>${analyticsNumber(count)}</dd></div>`).join('')}</dl>`:'<p class="metric-note">Results are unavailable for this account.</p>'}
     ${value.error&&metrics.length?'<small class="metric-note">Some metrics are unavailable.</small>':''}</div></article>`;
