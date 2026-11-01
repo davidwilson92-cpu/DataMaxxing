@@ -202,8 +202,8 @@ def edit_scheduled_draft(draft_id:int,body:EditSchedule,request:Request):
 
 
 @router.get('/api/publications/{draft_id}')
-def publication_results(draft_id:int,request:Request):
+def publication_results(draft_id:int,request:Request,stored_only:bool=False):
     uid=current_user(request).id
     with SessionLocal() as db:
         bind_request(db,request)
-        return results_for(db,uid,draft_id,refresh=True)
+        return results_for(db,uid,draft_id,refresh=True,stored_only=stored_only)

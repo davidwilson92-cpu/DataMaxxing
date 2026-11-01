@@ -91,7 +91,7 @@ The final browser traces report no JavaScript page errors. Studio's history resp
 
 ## Native follow-up from the final run
 
-Run 41255662892 passed 44 unit tests but encountered five UI snapshot/event-loop stalls when opening Schedule. The previous native run had passed. The current screen still used sequential reads because the earlier optimised helper was unused. The implementation now connects parallel reads to the live screen and replaces the small nested lazy calendar with bounded eager rows. Post timestamps are decoded once per render, and date labels share one formatter. The appearance and controls are retained. An additional regression deliberately reaches a six-week month and verifies returning to Studio. Fresh native validation is required before handover.
+Run 41255662892 passed 44 unit tests but encountered five UI snapshot/event-loop stalls when opening Schedule. The previous native run had passed. The current screen still used sequential reads because the earlier optimised helper was unused. The implementation now connects parallel reads to the live screen and replaces the small nested lazy calendar with bounded eager rows. Post timestamps are decoded once per render, and date labels share one formatter. The appearance and controls are retained. An additional regression deliberately reaches a six-week month and verifies returning to Studio. Native run 41258239044 subsequently passed all 44 unit tests, all 20 interface tests and iPhone Release compilation. The actual screen loader measured 927.87 ms sequentially versus 306.21 ms concurrently. Default, landscape and largest-text calendar screenshots were inspected. All five previously failing cases passed, along with the new six-week-month regression.
 
 ## Other audit findings
 
@@ -116,9 +116,9 @@ Account export includes the research state. Account deletion cancels research, c
 
 ## Validation evidence
 
-Application validation at 054588b passed 773 SQLite tests and 774 PostgreSQL tests, along with browser journeys, JavaScript checks, dependency audits, image build, constrained-host password checks, backup recovery and the exact beta guard. Two SQLite tests and one PostgreSQL test were skipped according to the existing environment-specific suite.
+Final application validation at 9e7aad1 passed 774 SQLite tests and 775 PostgreSQL tests, along with browser journeys, JavaScript checks, dependency audits, image build, constrained-host password checks, backup recovery and the exact beta guard. Two SQLite tests and one PostgreSQL test were skipped according to the existing environment-specific suite.
 
-The initial complete run found an isolated template fixture missing the new asset helper. The fixture was corrected to use the production helper and both database suites passed on rerun. The final public-icon cache and thumbnail memory refinements passed focused checks and the full 054588b application workflow, including the PostgreSQL timing experiment. Native validation 41253265325 passed 44 unit tests, 19 interface tests and iPhone Release compilation. The final follow-up checks and PostgreSQL timing experiment are attached to PR 37. Final run details are recorded in VALIDATION_RESULTS.md.
+The initial complete run found an isolated template fixture missing the new asset helper. The fixture was corrected to use the production helper and both database suites passed on rerun. The final public-icon cache and thumbnail memory refinements passed focused checks and the full 054588b application workflow, including the PostgreSQL timing experiment. Final native validation 41258239044 passed 44 unit tests, 20 interface tests and iPhone Release compilation. All PR 37 checks are green at runtime 9e7aad1. The PostgreSQL timing experiment also passed. Final run details are recorded in VALIDATION_RESULTS.md.
 
 ## Remaining risks and next improvements
 
@@ -128,7 +128,8 @@ The initial complete run found an isolated template fixture missing the new asse
 4. The cache is process-local. More replicas reduce its hit rate and increase provider reads. Measure hit rate and provider quotas before considering a shared cache or additional infrastructure.
 5. Optional research requires a running compatible worker. Pending jobs survive restarts, but sustained worker failure requires operational attention. Its latest state is retained per brand until replacement or account erasure.
 6. Cold login, caption generation and full mobile page rendering still need device profiling. Preserve password security and AI grounding. Avoid speculative model downgrades, broad CSS rewrites or optimistic publishing.
-7. PostgreSQL index plans and performance are measured in the isolated workflow. Production cardinality, cache residency and disk behaviour can differ. Observe actual slow queries and pool waits after rollout.
+7. Native full-video playback still downloads the original to protected local storage before playback. Measure representative clip sizes and completion times on mobile networks before adding authenticated range playback. Compact video list rows already use a lightweight marker.
+8. PostgreSQL index plans and performance are measured in the isolated workflow. Production cardinality, cache residency and disk behaviour can differ. Observe actual slow queries and pool waits after rollout.
 
 ## Deployment and rollback
 

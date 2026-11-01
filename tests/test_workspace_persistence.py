@@ -2,6 +2,21 @@ from test_account_integrity import account
 from nova.db import SessionLocal, MediaAsset
 
 
+def test_generation_can_return_the_same_owned_revision_as_reopening(monkeypatch):
+    from nova import ai
+    client, *_ = account()
+    other, *_ = account()
+    monkeypatch.setattr(ai, 'generate_variants', lambda **kw: {'instagram': {'posts': ['Saved caption']}})
+    result = client.post('/api/ai/generate', json={'brief':'A new class', 'platforms':['instagram'],
+                         'include_saved_draft':True})
+    assert result.status_code == 200, result.text
+    saved = result.json()
+    path = f"/api/drafts/{saved['draft_id']}"
+    assert saved['draft'] == client.get(path).json()
+    assert saved['revision'] == saved['draft']['revision']
+    assert other.get(path).status_code == 404
+
+
 def test_workspace_restores_context_and_rejects_stale_saves():
     client,uid,_,_=account()
     row=client.post('/api/drafts',json={}).json()

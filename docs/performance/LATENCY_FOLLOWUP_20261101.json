@@ -1,0 +1,327 @@
+{
+  "baseline": "9e7aad1",
+  "date": "2026-11-01",
+  "conditions": "Isolated app, seeded 1000 drafts and four simulated providers, mobile 390x844, fourfold CPU slowdown, 70 ms RTT and 4 Mbit/s downstream. Five alternating browser journeys per version. Real model, provider and physical iPhone tail latency not measured. Calendar paint measured by an in-page DOM observer and animation frame over 20 warm navigations per version. The browser journey and direct-paint timers cover different intervals.",
+  "browser_journeys_ms": {
+    "before": {
+      "login_page": [
+        1571.52,
+        1587.96,
+        1585.99,
+        1452.46,
+        1649.12
+      ],
+      "login_to_composer": [
+        3491.22,
+        3454.02,
+        3209.46,
+        3276.23,
+        3247.64
+      ],
+      "studio_history_ready": [
+        3767.42,
+        3652.23,
+        3414.91,
+        3471.7,
+        3449.66
+      ],
+      "studio_repeat_0": [
+        1099.82,
+        953.04,
+        930.26,
+        968.24,
+        918.29
+      ],
+      "studio_repeat_1": [
+        1095.05,
+        948.1,
+        933.19,
+        1020.03,
+        1046.89
+      ],
+      "studio_repeat_2": [
+        991.44,
+        1062.25,
+        906.02,
+        895.49,
+        950.55
+      ],
+      "next_move_open": [
+        2138.97,
+        1855.6,
+        1741.55,
+        1929.8,
+        1831.88
+      ],
+      "next_move_fresh": [
+        817.98,
+        742.98,
+        771.22,
+        777.84,
+        818.68
+      ],
+      "next_move_cached": [
+        405.72,
+        512.21,
+        458.89,
+        551.03,
+        525.58
+      ],
+      "performance_ready": [
+        1663.17,
+        1362.74,
+        1507.87,
+        1531.14,
+        1255.6
+      ],
+      "performance_window_change": [
+        279.05,
+        270.19,
+        171.27,
+        194.87,
+        263.4
+      ],
+      "schedule_ready": [
+        1325.36,
+        1260.62,
+        935.21,
+        966.06,
+        1207.21
+      ]
+    },
+    "after": {
+      "login_page": [
+        1481.15,
+        1873,
+        1432.61,
+        1460.87,
+        1532.43
+      ],
+      "login_to_composer": [
+        3157.47,
+        4992.4,
+        2807.65,
+        3525.52,
+        3324.98
+      ],
+      "studio_history_ready": [
+        3394.93,
+        5295.98,
+        2962.77,
+        3743.28,
+        3555.58
+      ],
+      "studio_repeat_0": [
+        1049.08,
+        1393.7,
+        810.63,
+        983.03,
+        947.48
+      ],
+      "studio_repeat_1": [
+        1092.15,
+        1359.01,
+        920.34,
+        850.09,
+        937.67
+      ],
+      "studio_repeat_2": [
+        1002.28,
+        1457.45,
+        970.64,
+        998.94,
+        785.37
+      ],
+      "next_move_open": [
+        1856.01,
+        2148.89,
+        1807.19,
+        1811.77,
+        1606.61
+      ],
+      "next_move_fresh": [
+        795.68,
+        1002.65,
+        802.97,
+        780.82,
+        831.89
+      ],
+      "next_move_cached": [
+        366.5,
+        350.19,
+        337.98,
+        364.99,
+        378.52
+      ],
+      "performance_ready": [
+        1414.23,
+        1733.28,
+        1406.13,
+        1415.68,
+        1701.53
+      ],
+      "performance_window_change": [
+        341.48,
+        276.41,
+        201.82,
+        196.02,
+        182.24
+      ],
+      "schedule_ready": [
+        1932.08,
+        1906.22,
+        1221.49,
+        1133.67,
+        1114.41
+      ]
+    }
+  },
+  "calendar_paint_ms": {
+    "before": {
+      "cold": 1837,
+      "warm": [
+        668,
+        897,
+        1052,
+        1159,
+        911,
+        856,
+        886,
+        988,
+        976,
+        890,
+        862,
+        873,
+        880,
+        922,
+        655,
+        862,
+        742,
+        1163,
+        1072,
+        1040
+      ]
+    },
+    "after": {
+      "cold": 1493,
+      "warm": [
+        690,
+        757,
+        841,
+        786,
+        872,
+        788,
+        748,
+        764,
+        775,
+        809,
+        669,
+        578,
+        718,
+        934,
+        881,
+        742,
+        706,
+        767,
+        816,
+        812
+      ]
+    }
+  },
+  "visual_match": {
+    "login": true,
+    "studio": true,
+    "idea": true
+  },
+  "caption_round_trip": {
+    "controlled_rtt_ms": 70,
+    "fixed_model_ms": 300,
+    "samples": {
+      "legacy": [
+        {
+          "ms": 603.3,
+          "bytes": 569
+        },
+        {
+          "ms": 550.6,
+          "bytes": 569
+        },
+        {
+          "ms": 555.5,
+          "bytes": 569
+        },
+        {
+          "ms": 576.0,
+          "bytes": 569
+        },
+        {
+          "ms": 577.4,
+          "bytes": 569
+        },
+        {
+          "ms": 569.4,
+          "bytes": 569
+        },
+        {
+          "ms": 565.8,
+          "bytes": 569
+        },
+        {
+          "ms": 571.8,
+          "bytes": 569
+        },
+        {
+          "ms": 574.6,
+          "bytes": 569
+        },
+        {
+          "ms": 584.3,
+          "bytes": 569
+        }
+      ],
+      "combined": [
+        {
+          "ms": 483.4,
+          "bytes": 497
+        },
+        {
+          "ms": 479.0,
+          "bytes": 497
+        },
+        {
+          "ms": 483.9,
+          "bytes": 497
+        },
+        {
+          "ms": 492.2,
+          "bytes": 497
+        },
+        {
+          "ms": 481.6,
+          "bytes": 497
+        },
+        {
+          "ms": 501.1,
+          "bytes": 497
+        },
+        {
+          "ms": 489.5,
+          "bytes": 497
+        },
+        {
+          "ms": 472.6,
+          "bytes": 497
+        },
+        {
+          "ms": 494.6,
+          "bytes": 497
+        },
+        {
+          "ms": 489.0,
+          "bytes": 497
+        }
+      ]
+    }
+  },
+  "clock_notes": "Direct calendar-paint comparisons used the final restored punctuation. Five-pair full journeys include the preceding punctuation version. No speedup claimed for cold sign-in."
+}

@@ -131,12 +131,15 @@ def recommendation_memory(row):
 
 
 @router.get('')
-def read_strategy(request: Request, db=Depends(get_db)):
+def read_strategy(request: Request, db=Depends(get_db), include_actions: bool = False):
     uid = current_user(request).id
     row = strategy_row(db, uid)
     prefs = get_preferences(db, uid)
-    return {'revision':row.revision,'confirmed':json.loads(row.confirmed_json),'proposal':json.loads(row.proposal_json),
+    data = {'revision':row.revision,'confirmed':json.loads(row.confirmed_json),'proposal':json.loads(row.proposal_json),
             'defaults':{'voice':prefs.writing_tone,'audience':prefs.audience,'themes':prefs.topics,'avoid':prefs.things_to_avoid}}
+    if include_actions:
+        data['actions'] = saved_actions(db, uid, data['revision'])
+    return data
 
 
 @router.post('/propose', dependencies=[Depends(require_active_access)])
@@ -179,10 +182,13 @@ def confirm(body: Confirm, request: Request, db=Depends(get_db)):
 
 @router.get('/actions')
 def actions(request: Request, db=Depends(get_db)):
-    from .performance import context, fresh
     uid = current_user(request).id
-    strategy = strategy_row(db, uid)
-    rows = db.scalars(select(StrategyAction).where(StrategyAction.user_id==uid,StrategyAction.strategy_revision==strategy.revision,StrategyAction.status.in_(['open','snoozed'])).order_by(StrategyAction.id.desc()).limit(30)).all()
+    return saved_actions(db, uid, strategy_row(db, uid).revision)
+
+
+def saved_actions(db, uid, revision):
+    from .performance import context, fresh
+    rows = db.scalars(select(StrategyAction).where(StrategyAction.user_id==uid,StrategyAction.strategy_revision==revision,StrategyAction.status.in_(['open','snoozed'])).order_by(StrategyAction.id.desc()).limit(30)).all()
     now = utcnow().replace(tzinfo=None)
     items = []
     for row in rows:
@@ -201,7 +207,7 @@ def actions(request: Request, db=Depends(get_db)):
     performance_note=used_performance.get('note') or context(db,uid)['note']
     if used_performance.get('available') and not fresh(used_performance.get('checked_at')):
         performance_note='The performance evidence used for these suggestions is stale. Check Performance, then refresh next moves.'
-    return {'revision':strategy.revision, 'items':items, 'history':history, 'source_note':note or 'Refresh next moves to check current topics against your saved strategy.', 'performance_note':performance_note}
+    return {'revision':revision, 'items':items, 'history':history, 'source_note':note or 'Refresh next moves to check current topics against your saved strategy.', 'performance_note':performance_note}
 
 
 

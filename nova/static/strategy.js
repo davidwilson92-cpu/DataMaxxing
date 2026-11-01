@@ -85,7 +85,7 @@ async function openNextMove(planning=false){
  setPlanningView(planning);clearNextMoveDisplay();strategyStatus('Loading…');
  const panel=document.getElementById('strategyPanel');if(!panel.open)panel.showModal();
  await strategyTask(null,async epoch=>{
-  const data=await api('/api/strategy');if(epoch!==strategyViewEpoch)return;
+  const data=await api(planning?'/api/strategy':'/api/strategy?include_actions=true');if(epoch!==strategyViewEpoch)return;
   const reloadPlan=!strategyLoaded||data.revision!==strategyRevision;
   if(data.revision!==strategyRevision){moveItems=[];moveIndex=0;moveOffset=0;quickMoveRequest=null;}
   strategyRevision=data.revision;hasConfirmedStrategy=Boolean(data.confirmed.goal);
@@ -98,7 +98,7 @@ async function openNextMove(planning=false){
   if(!reloadPlan&&JSON.stringify(strategyInputs())!==strategyInputSnapshot)strategyInputChanged();
   strategyLoaded=true;setPlanningView(planning);
   if(planning){strategyStatus('');return;}
-  const items=await loadNextMoves(epoch);if(epoch!==strategyViewEpoch||!items)return;
+  const items=data.actions?applyNextMoves(data.actions,epoch):await loadNextMoves(epoch);if(epoch!==strategyViewEpoch||!items)return;
   if(hasConfirmedStrategy&&(!items.length||items.every(a=>a.stale&&!a.draft_id))){
    strategyStatus('Finding your next post…');
    await requestMoves(epoch);

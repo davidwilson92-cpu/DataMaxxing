@@ -1,67 +1,58 @@
-# Performance validation results
+# Final performance validation
 
-## Reviewed implementation
+Validated runtime 9e7aad18dbc3af20e6a5f7ce97ef3dfc78ecdc5c.
+All checks on PR 37 passed for this runtime on 1 November 2026.
 
-Final runtime candidate 97183759ab797754ec955aa2cc746974dfc09ed5.
+## Application
 
-Measured runtime content digest
-`3f9b02377b7c861df37e8ac8e1d5f4dc1acae9c2392630883af852681e527c36`, recorded in after-renewal-validation.json.
+774 SQLite tests passed with two skips. 775 PostgreSQL tests passed with one skip.
+Browser journeys, JavaScript checks, dependency audits, hosting-image build,
+constrained-host password checks, backup recovery, PostgreSQL timing measurements
+and the pinned beta guard passed.
 
-The digest covers the actual nova and ios files. It matches the final measured
-working tree. Subsequent evidence-document commits do not change runtime, tests,
-workflow definitions or the pinned release scope.
+[Application run 41258233905](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/41258233905)
 
-## Application and PostgreSQL
-
-The complete application workflow passed at the primary implementation 054588b on
-1 November 2026. SQLite passed 773 tests with two environment-specific skips.
-PostgreSQL passed 774 tests with one skip. Browser journeys, JavaScript checks,
-backup/restore verification, image build, constrained-host password work,
-dependency audits and the exact beta guard also passed.
-
-[Application validation 41254789905](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/41254789905)
-
-The workflow created a separate loopback zova_test_performance database and
-benchmarked 50,000 rows per measured table. Both selected indexes were used by
-PostgreSQL. Draft-page median query time improved from 0.380 to 0.153 ms and calendar
-range time from 1.521 to 0.160 ms. The existing Activity draft lookup remained
-approximately 0.11 ms. See index-postgres.json for EXPLAIN ANALYZE, buffers, p95
-samples and row counts.
-
-The final timestamp-normalisation safeguard adds one regression case. Twenty-one
-focused renewal, cache and analytics tests passed locally. The ten-sample repeat
-retains the measured gains and confirms eight provider calls for four concurrent
-refreshes. Final complete workflow results are available in the current PR checks.
+[Pull-request application run 41258238988](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/41258238988)
 
 ## Native iPhone
 
-Native validation passed 44 unit tests, 19 UI tests and iPhone Release compilation.
-The controlled Schedule test measured 933.49 ms sequentially and 322.83 ms in
-parallel with three 300 ms transport waits.
+44 unit tests, 20 interface tests and iPhone Release compilation passed.
+The screen's actual summary/saved-post/month-delivery loader measured 927.87 ms
+sequentially and 306.21 ms concurrently with three controlled 300 ms transport waits.
+The six-week calendar, landscape, largest text, schedule management and return-to-
+Studio checks passed. Their screenshots were inspected.
 
-[Native validation 41253265325](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/41253265325)
+[Native run 41258239044](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/41258239044)
 
-That run used 0359bc6. A Git comparison confirmed no differences in ios or
-.github/workflows/ios-beta.yml between it and the final runtime 9718375.
-Native tests exercise isolated simulator fixtures. Physical-iPhone performance,
-real providers and an updated TestFlight binary remain deployment acceptance work.
+An earlier run at b284ef9 passed unit tests but stalled in five Schedule-related
+interface checks. Review also found that the first concurrency change targeted an
+unused helper. The final implementation connects the screen to the shared parallel
+loader, uses bounded eager calendar rows and decodes each post timestamp once per
+render. The five failing cases and the added six-week-month case pass in the final run.
 
-## Benchmark and visual evidence
+## Measurement provenance
 
-Endpoint, browser, concurrency and source-digest evidence is in baseline.json,
-after.json, baseline-browser.json and after-browser.json. The latter browser
-reports zero JavaScript page errors. Both Schedule screenshots were inspected.
+The primary baseline and optimisation comparison are retained in baseline.json,
+after.json and the adjacent browser evidence. The final token-renewal safeguard
+was measured in after-renewal-validation.json at 9718375. Its combined runtime digest
+is 3f9b02377b7c861df37e8ac8e1d5f4dc1acae9c2392630883af852681e527c36.
+A Git comparison confirms no web/backend or benchmark-script differences between
+9718375 and final runtime 9e7aad1. The native follow-up is measured and tested
+separately by the final native run above.
 
-The ten-sample endpoint timings and single mobile-browser journeys are controlled
-comparisons. AI/provider timing inputs are simulated. Public production probes are
-recorded separately. The audit lists remaining cold-start, provider-tail,
-transaction and device-measurement risks.
+The PostgreSQL 18 timing experiment at 054588b used 50,000 rows per measured table
+and 100 samples. It measured draft query medians of 0.380 to 0.153 ms and calendar
+query medians of 1.521 to 0.160 ms. Both selected indexes appear in EXPLAIN ANALYZE.
+The final application workflow repeats this experiment. No index-definition changes
+were made after the initial PostgreSQL result in index-postgres.json.
 
-## Release state
+## Remaining release work
 
-The implementation and evidence are prepared in PR 37. Production deployment,
-additive database preparation and a new iPhone distribution remain pending.
-Render hosting and the disabled customer-charging requirement continue to apply.
-The retained 79-entry commercial register is complete and keeps its prior statuses.
+The measured provider and creative-model delays are controlled inputs. Real
+production-provider/model latency and physical-iPhone performance need a canary
+and device pass after rollout. Production deployment, additive database preparation
+and a new iPhone distribution remain pending. Render hosting and disabled customer
+charging remain the release requirements. The 79-entry commercial register retains
+its prior statuses.
 
-[Current review and checks](https://github.com/davidwilson92-cpu/DataMaxxing/pull/37)
+[Implementation and current checks](https://github.com/davidwilson92-cpu/DataMaxxing/pull/37)

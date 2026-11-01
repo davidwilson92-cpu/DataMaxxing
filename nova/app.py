@@ -919,6 +919,7 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
 
 # ---------- API models ----------
 class GenerateRequest(BaseModel):
+    include_saved_draft: bool = False
     media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     brief:str=Field(min_length=1,max_length=12000); instruction:str=Field(default="",max_length=5000); platforms:list[str]; thread_length:int=1; link_url:str=""; draft_id:int|None=None
     source_draft_id:int|None=Field(default=None,gt=0)
@@ -1121,6 +1122,9 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
             row=Draft(user_id=user.id,brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(platforms),variants_json=json.dumps(variants,ensure_ascii=False),workspace_json=json.dumps(target_workspace,ensure_ascii=False),thread_length=body.thread_length)
             db.add(row);db.commit();db.refresh(row)
         readiness.event(user.id,'generated',row.id)
+        if body.include_saved_draft:
+            snapshot = api_draft(row.id, request, db)
+            return {'draft_id':row.id,'saved':True,'revision':snapshot['revision'],'draft':snapshot}
         return {'draft_id':row.id,'variants':variants,'saved':True,'revision':row.revision}
 
 

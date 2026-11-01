@@ -136,7 +136,7 @@ struct NativeNextMoveView: View {
         return values.prefix(words).joined(separator: " ") + (values.count > words ? "…" : "")
     }
     private func load() async throws {
-        let data = try await store.request("/api/strategy")
+        let data = try await store.request(planning ? "/api/strategy" : "/api/strategy?include_actions=true")
         revision = data["revision"].int; saved = !data["confirmed"]["goal"].string.isEmpty
         hasConfirmed = saved
         strategy = data["proposal"]["strategy"].isNull ? (saved ? data["confirmed"] : data["defaults"]) : data["proposal"]["strategy"]
@@ -145,7 +145,16 @@ struct NativeNextMoveView: View {
         proposalInput = description + "\n" + direction
         if !data["proposal"]["strategy"].isNull { saved = false }
         assumptions = data["proposal"]["assumptions"].strings
-        let actions = try await store.request("/api/strategy/actions")
+        guard !planning else { return }
+        let actions: JSONValue
+        if data["actions"].isNull {
+            actions = try await store.request("/api/strategy/actions")
+        } else {
+            actions = data["actions"]
+        }
+        guard actions["revision"].isNull || actions["revision"].int == revision else {
+            throw ZovaFailure.server("Your strategy changed. Reopen Next move to see the latest ideas.")
+        }
         moves = actions["history"].array + actions["items"].array
         index = actions["history"].array.count
         if !planning && moves.isEmpty && saved { try await generate() }
