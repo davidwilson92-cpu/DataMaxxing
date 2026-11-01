@@ -328,6 +328,38 @@ final class ZovaUITests: XCTestCase {
         capture(app, "Native deletion — receipt available after sign-out")
         XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
     }
+    func testSixWeekCalendarAndReturnToStudioRemainResponsive() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--native-fixture"]
+        app.launch()
+        XCTAssertTrue(app.buttons["tab-Schedule"].waitForExistence(timeout: 12))
+        app.buttons["tab-Schedule"].tap()
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/London")!
+        var target = Date(), monthsAhead = 0
+        while monthsAhead < 12 {
+            let start = calendar.dateInterval(of: .month, for: target)!.start
+            let padding = (calendar.component(.weekday, from: start) - 2 + 7) % 7
+            if padding + calendar.range(of: .day, in: .month, for: target)!.count > 35 { break }
+            monthsAhead += 1
+            target = calendar.date(byAdding: .month, value: 1, to: target)!
+        }
+        XCTAssertLessThan(monthsAhead, 12)
+        for _ in 0..<monthsAhead {
+            let month = app.staticTexts["schedule-month"]
+            XCTAssertTrue(month.waitForExistence(timeout: 8))
+            let previous = month.label
+            app.buttons["Next month"].tap()
+            let changed = expectation(for: NSPredicate(format: "label != %@", previous), evaluatedWith: month)
+            wait(for: [changed], timeout: 8)
+        }
+        XCTAssertTrue(app.buttons["calendar-day-1"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["calendar-day-28"].exists)
+        capture(app, "Native Schedule — bounded month grid")
+        app.buttons["Today"].tap()
+        app.buttons["tab-Studio"].tap()
+        XCTAssertTrue(app.textFields["post-composer"].waitForExistence(timeout: 8))
+    }
     func testScheduleCanBeReviewedRescheduledAndCancelledExplicitly() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         XCTAssertTrue(app.buttons["tab-Schedule"].waitForExistence(timeout: 12)); app.buttons["tab-Schedule"].tap()

@@ -50,7 +50,7 @@ struct NativeScheduleView: View {
             NativeAdaptiveRow(spacing: 4) {
                 HStack(spacing: 4) {
                     Button { moveMonth(-1) } label: { Image(systemName: "arrow.left").frame(width: 44, height: 44).contentShape(Rectangle()) }.accessibilityLabel("Previous month")
-                    Text(monthTitle).font(.subheadline.bold()).fixedSize(horizontal: false, vertical: true)
+                    Text(monthTitle).font(.subheadline.bold()).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("schedule-month")
                     Button { moveMonth(1) } label: { Image(systemName: "arrow.right").frame(width: 44, height: 44).contentShape(Rectangle()) }.accessibilityLabel("Next month")
                 }
                 HStack(spacing: 4) {
@@ -124,28 +124,47 @@ struct NativeScheduleView: View {
         return (padding + calendar.range(of: .day, in: .month, for: month)!.count + 6) / 7
     }
     private var calendarGrid: some View {
+        let calendar = self.calendar
         let start = calendar.dateInterval(of: .month, for: month)!.start
         let count = calendar.range(of: .day, in: .month, for: month)!.count
         let padding = (calendar.component(.weekday, from: start) - 2 + 7) % 7
         let cells = ((padding + count + 6) / 7) * 7
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
-            ForEach(Array(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].enumerated()), id: \.offset) { _, title in
-                Text(title).font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity).frame(height: weekdayHeight).background(ZovaDesign.pale).border(ZovaDesign.line.opacity(0.5), width: 0.5)
+        let postCounts = monthRows.reduce(into: [Date: Int]()) { counts, row in
+            if let date = ProductLinks.date(row["scheduled_at"].string) {
+                counts[calendar.startOfDay(for: date), default: 0] += 1
             }
-            ForEach(0..<cells, id: \.self) { position in
-                if position < padding || position >= padding + count {
-                    Color.clear.frame(height: dayHeight).border(ZovaDesign.line.opacity(0.5), width: 0.5)
-                } else {
-                    let date = calendar.date(byAdding: .day, value: position - padding, to: start)!
-                    let posts = monthRows.filter { ProductLinks.date($0["scheduled_at"].string).map { calendar.isDate($0, inSameDayAs: date) } == true }.count
-                    let chosen = selectedDay.map { calendar.isDate($0, inSameDayAs: date) } ?? false
-                    let today = calendar.isDateInToday(date)
-                    Button { selectedDay = chosen ? nil : date } label: {
-                        VStack(spacing: 2) {
-                            Text(String(position - padding + 1)).font(.callout).frame(width: dayBadge, height: dayBadge).foregroundStyle(today ? .white : ZovaDesign.ink).background(today ? ZovaDesign.ink : .clear, in: Circle())
-                            if posts > 0 { Text(String(posts)).font(.caption2.weight(.semibold)).foregroundStyle(ZovaDesign.purple) }
-                        }.frame(maxWidth: .infinity).frame(height: dayHeight).background(chosen ? ZovaDesign.pale : .clear).border(ZovaDesign.line.opacity(0.5), width: 0.5).contentShape(Rectangle())
-                    }.buttonStyle(.plain).accessibilityLabel(ProductLinks.displayDate(date, timezone: store.timezone, time: false) + ", \(posts) posts").accessibilityAddTraits(chosen ? .isSelected : []).accessibilityIdentifier("calendar-day-\(position - padding + 1)")
+        }
+        let labels = DateFormatter()
+        labels.dateStyle = .medium
+        labels.timeStyle = .none
+        labels.timeZone = calendar.timeZone
+        // At most six weeks. Eager rows avoid lazy layout/accessibility work in
+        // the orthogonal scroll view. Each post date is decoded only once.
+        return VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                ForEach(Array(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].enumerated()), id: \.offset) { _, title in
+                    Text(title).font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity).frame(height: weekdayHeight).background(ZovaDesign.pale).border(ZovaDesign.line.opacity(0.5), width: 0.5)
+                }
+            }
+            ForEach(0..<(cells / 7), id: \.self) { week in
+                HStack(spacing: 0) {
+                    ForEach(0..<7, id: \.self) { weekday in
+                        let position = week * 7 + weekday
+                        if position < padding || position >= padding + count {
+                            Color.clear.frame(maxWidth: .infinity).frame(height: dayHeight).border(ZovaDesign.line.opacity(0.5), width: 0.5)
+                        } else {
+                            let date = calendar.date(byAdding: .day, value: position - padding, to: start)!
+                            let posts = postCounts[date, default: 0]
+                            let chosen = selectedDay.map { calendar.isDate($0, inSameDayAs: date) } ?? false
+                            let today = calendar.isDateInToday(date)
+                            Button { selectedDay = chosen ? nil : date } label: {
+                                VStack(spacing: 2) {
+                                    Text(String(position - padding + 1)).font(.callout).frame(width: dayBadge, height: dayBadge).foregroundStyle(today ? .white : ZovaDesign.ink).background(today ? ZovaDesign.ink : .clear, in: Circle())
+                                    if posts > 0 { Text(String(posts)).font(.caption2.weight(.semibold)).foregroundStyle(ZovaDesign.purple) }
+                                }.frame(maxWidth: .infinity).frame(height: dayHeight).background(chosen ? ZovaDesign.pale : .clear).border(ZovaDesign.line.opacity(0.5), width: 0.5).contentShape(Rectangle())
+                            }.buttonStyle(.plain).accessibilityLabel(labels.string(from: date) + ", \(posts) posts").accessibilityAddTraits(chosen ? .isSelected : []).accessibilityIdentifier("calendar-day-\(position - padding + 1)")
+                        }
+                    }
                 }
             }
         }.clipShape(RoundedRectangle(cornerRadius: 10)).overlay(RoundedRectangle(cornerRadius: 10).stroke(ZovaDesign.line, lineWidth: 0.5))
@@ -159,9 +178,10 @@ struct NativeScheduleView: View {
     private func reload() { Task { await load() } }
     private func load() async { await store.perform { try await refreshData() } }
     private func refreshData() async throws {
-        summary = try await store.request("/api/native/schedule-summary")
-        if !calendarMode { try await store.loadDrafts(search: search, status: filter) }
-        try await loadMonth()
+        let interval = calendar.dateInterval(of: .month, for: month)!
+        let data = try await store.loadSchedule(from: interval.start, to: interval.end, search: search, status: filter, includeDrafts: !calendarMode)
+        summary = data.summary
+        monthRows = data.rows
     }
     private func loadMonth() async throws {
         let interval = calendar.dateInterval(of: .month, for: month)!, format = ISO8601DateFormatter()

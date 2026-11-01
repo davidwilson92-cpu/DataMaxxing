@@ -161,15 +161,16 @@ final class ProductStore: ObservableObject {
         catch ZovaFailure.signInRequired { signedOut = true }
         catch { } // Offline checks retain the previous status; never claim a revocation.
     }
-    func loadSchedule(search: String = "") async throws {
+    func loadSchedule(from start: Date, to end: Date, search: String = "", status: String = "all", includeDrafts: Bool = false) async throws -> (summary: JSONValue, rows: [JSONValue]) {
         let epoch = authority
-        async let savedPosts: Void = loadDrafts(search: search)
-        async let upcoming = request("/api/schedules")
-        async let recurring = request("/api/series")
-        let (_, nextSchedules, nextSeries) = try await (savedPosts, upcoming, recurring)
+        let formatter = ISO8601DateFormatter()
+        let path = "/api/schedules?from=" + ProductLinks.query(formatter.string(from: start)) + "&to=" + ProductLinks.query(formatter.string(from: end))
+        async let summary = request("/api/native/schedule-summary")
+        async let upcoming = request(path)
+        if includeDrafts { try await loadDrafts(search: search, status: status) }
+        let (overview, nextSchedules) = try await (summary, upcoming)
         guard epoch == authority, !Task.isCancelled else { throw CancellationError() }
-        schedules = nextSchedules.array
-        series = nextSeries.array
+        return (overview, nextSchedules.array)
     }
     func loadDrafts(search: String = "", more: Bool = false, status: String = "all") async throws {
         let offset = more ? draftOffset : 0
