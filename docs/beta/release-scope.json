@@ -1,6 +1,6 @@
 {
   "authorised_on": "2026-10-10",
-  "candidate_review": "2026-11-01 latency follow-up to validated 9e7aad1. Review the combined revision-bound Next Move read, opt-in owned caption snapshot, comparison-sheet video lifetime, stored-only publication status, equivalent public CSS cascade and first-visit intro assets. Retain private no-store responses, legacy client routes, verified publishing and all 79 gaps.",
+  "candidate_review": "2026-11-01 latency follow-up to validated 9e7aad1. Review the combined revision-bound Next Move read, opt-in owned caption snapshot, comparison-sheet video lifetime, stored-only publication status, equivalent public CSS cascade and first-visit intro assets. Retain private no-store responses, legacy client routes, verified publishing and all 79 gaps. Follow-up pairs found slower web calendar readiness; reuse locale date formatters and format saved-post timestamps when their panel is shown.",
   "commercial_ready": false,
   "external_beta_authorised_on": "2026-10-20",
   "files": {
@@ -133,7 +133,7 @@
     "nova/static/connection-health.js": "4ab091c1c1ab9af0553304a0bf06c50490e77b2f83e56fdea392155756e58c7c",
     "nova/static/connection-review.css": "55f9ae4d843f6d80bbdae8a93b3fc6f430c65a647f311654bb6a5186725d5038",
     "nova/static/connections.css": "6f1c41b8e103f0b7103394ca7c0f10775aebc344f843ca982851ff81283e5c05",
-    "nova/static/drafts.js": "ba46e9831a6eb9eef2f85cd1a38b17a2983475faf9990b7361979feb531f5055",
+    "nova/static/drafts.js": "814fc5b8e9021e2104de2561755c36510df12faf3d8406a930b7d2f5db8dcf33",
     "nova/static/facebook-brand.svg": "b06d18d844ed621b89faffb1a33440cc0ec4f1ffea9f36191f50db19a47c59a6",
     "nova/static/instagram-music.css": "2f91c697921cdc63c55c976c025f93e25bc6dc88e57ae9bd098bff839017a244",
     "nova/static/instagram-music.js": "3f81a97369bd33639c29186155007dfa08371f94b081086c0665b622856d20e8",
