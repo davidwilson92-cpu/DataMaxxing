@@ -1,7 +1,6 @@
 """Rendered customer pages must link to real routes/assets with valid methods."""
 from html.parser import HTMLParser
 from urllib.parse import urlsplit, urljoin, unquote
-from pathlib import Path
 
 import pytest
 from starlette.routing import Match
@@ -50,7 +49,10 @@ def test_rendered_customer_links_forms_and_assets_resolve():
     for path, method in targets:
         if path.startswith('/static/'):
             file = (HERE / 'static' / unquote(path[len('/static/'):])).resolve()
-            assert file.is_relative_to((HERE / 'static').resolve()) and file.is_file(), path
+            assert file.is_relative_to((HERE / 'static').resolve()), path
+            response = client.get(path, follow_redirects=False)
+            assert response.status_code == 200 and response.content, path
+            assert 'text/html' not in response.headers['content-type'], path
         else:
             scope = {'type': 'http', 'path': path, 'root_path': '', 'method': method}
             assert any(route.matches(scope)[0] == Match.FULL for route in app.routes), (method, path)
