@@ -13,7 +13,7 @@ workflows:
           python3 scripts/check_beta_release.py
           python3 - <<'PY'
           import json, subprocess
-          number = '18'
+          number = '19'
           group = 'Zova Social Internal Beta'
           app = '6824416979'
           result = subprocess.check_output(['app-store-connect','builds','list','--json','--app-id',app,'--platform','IOS','--pre-release-version','1.0.0','--build-version-number',number,'--not-expired','--processing-state','VALID'], text=True)
@@ -25,9 +25,18 @@ workflows:
               raise SystemExit('Unexpected build returned')
           print('Verified processed Zova build', number, flush=True)
           subprocess.run(['app-store-connect','beta-groups','add-build',build['id'],'--beta-group',group], check=True)
+          subprocess.run(['app-store-connect','builds','add-beta-test-info',build['id'],'--whats-new','Draft your first caption before connecting a social account. Test cancelling platform selection, finding your saved post and adding a private result to a published post.'],check=True)
+          subprocess.run(['app-store-connect','beta-groups','add-build',build['id'],'--beta-group','Zova Social External Beta'],check=True)
           details = json.loads(subprocess.check_output(['app-store-connect','builds','beta-details',build['id'],'--json'],text=True))
           if isinstance(details,list): details, = details
           state = details['attributes']['internalBuildState']
           print('Internal testing state:',state,flush=True)
           if state != 'IN_BETA_TESTING': raise SystemExit('Internal testing state needs review')
           PY
+          external = details['attributes']['externalBuildState']
+          print('External testing state:',external,flush=True)
+          if external == 'READY_FOR_BETA_SUBMISSION':
+              subprocess.run(['app-store-connect','builds','submit-to-testflight',build['id']],check=True)
+          details = json.loads(subprocess.check_output(['app-store-connect','builds','beta-details',build['id'],'--json'],text=True))
+          if isinstance(details,list): details, = details
+          print('Final external status:',details['attributes']['externalBuildState'], 'auto notification:',details['attributes'].get('autoNotifyEnabled'),flush=True)
