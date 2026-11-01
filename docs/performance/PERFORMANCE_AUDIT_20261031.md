@@ -35,6 +35,8 @@ Impact reflects the affected journey and frequency. Effort is relative to this a
 | 9 | Real password verification accounts for much of the roughly 1.44 s sign-in API baseline. | Retain password work factors and session security. Existing native secure-session reuse avoids password work during normal navigation. Further gains require profiling transport and bootstrap on devices. High cold-start cost, intentionally retained. | High for a safe further change |
 | 10 | Studio eagerly loaded 28,199 bytes of planning JavaScript. Asset versions were manual and public cache policy was implicit. | Load planning code on first use and apply content-derived versions to styles, scripts and platform marks. Repeat navigations transfer no public assets in the measured browser trace. Moderate cold-start opportunity, smaller measured gain than backend batching. | Low–medium |
 
+The isolated PostgreSQL 18 experiment confirmed both selected indexes with 50,000 rows per table and 100 samples. Draft-page median latency improved from 0.380 to 0.153 ms, and calendar-range latency from 1.521 to 0.160 ms. EXPLAIN ANALYZE shows the owner/brand draft index scan and calendar index-only scan. These are warm, small-result query measurements. They do not establish full production-request latency.
+
 The trial Activity composite index showed no benefit over its existing draft lookup index and was removed from the candidate. Its rejected measurement is retained in index-candidate-rejected.json.
 
 ## API before and after
@@ -108,9 +110,9 @@ Account export includes the research state. Account deletion cancels research, c
 
 ## Validation evidence
 
-Application validation at 0359bc6 passed 773 SQLite tests and 774 PostgreSQL tests, along with browser journeys, JavaScript checks, dependency audits, image build, constrained-host password checks, backup recovery and the exact beta guard. Two SQLite tests and one PostgreSQL test were skipped according to the existing environment-specific suite.
+Application validation at 054588b passed 773 SQLite tests and 774 PostgreSQL tests, along with browser journeys, JavaScript checks, dependency audits, image build, constrained-host password checks, backup recovery and the exact beta guard. Two SQLite tests and one PostgreSQL test were skipped according to the existing environment-specific suite.
 
-The initial complete run found an isolated template fixture missing the new asset helper. The fixture was corrected to use the production helper and both database suites passed on rerun. Follow-up public-icon cache and thumbnail memory refinements passed focused checks. Native validation 41253265325 passed 44 unit tests, 19 interface tests and iPhone Release compilation. The final follow-up checks and PostgreSQL timing experiment are attached to PR 37. Final run details are recorded in VALIDATION_RESULTS.md.
+The initial complete run found an isolated template fixture missing the new asset helper. The fixture was corrected to use the production helper and both database suites passed on rerun. The final public-icon cache and thumbnail memory refinements passed focused checks and the full 054588b application workflow, including the PostgreSQL timing experiment. Native validation 41253265325 passed 44 unit tests, 19 interface tests and iPhone Release compilation. The final follow-up checks and PostgreSQL timing experiment are attached to PR 37. Final run details are recorded in VALIDATION_RESULTS.md.
 
 ## Remaining risks and next improvements
 
