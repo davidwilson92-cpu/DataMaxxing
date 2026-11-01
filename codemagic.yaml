@@ -13,7 +13,7 @@ workflows:
           python3 scripts/check_beta_release.py
           python3 - <<'PY'
           import json, subprocess
-          number = '17'
+          number = '18'
           group = 'Zova Social Internal Beta'
           app = '6824416979'
           result = subprocess.check_output(['app-store-connect','builds','list','--json','--app-id',app,'--platform','IOS','--pre-release-version','1.0.0','--build-version-number',number,'--not-expired','--processing-state','VALID'], text=True)
