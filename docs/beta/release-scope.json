@@ -1,6 +1,6 @@
 {
   "authorised_on": "2026-10-10",
-  "candidate_review": "2026-11-01 performance follow-up. Correct actual native Schedule fetch path, bounded calendar rendering and per-render date computation after five UI stalls. Preserve owner/brand boundaries and all 79 findings. Full SQLite/PostgreSQL/native validation required.",
+  "candidate_review": "Manual internal pilot assignment only. The dedicated branch uses the existing signing integration to assign one exact processed build to Zova Social Internal Beta. No app submission, external group, publishing or runtime change.",
   "commercial_ready": false,
   "external_beta_authorised_on": "2026-10-20",
   "files": {
@@ -12,7 +12,7 @@
     "AGENTS.md": "8d238a8ffd7a11b1b00b8ff3e196a171d5316d646ec0653c2fa83d3d196817ae",
     "Dockerfile": "7b0b7c205cdb3ba441f835057bc8019bb0dbb949330c12f14d276317446680ea",
     "app.py": "da8ca0fb649af377ecfa1cec44ee559897beb8afcd1180d2c79f3aca9d198d51",
-    "codemagic.yaml": "8403821d2cb066dffea354ac9cae60b3406519412ebaf952074c3d423aa01127",
+    "codemagic.yaml": "68a55b3c9d4966624178a5f1a8b08ede0047df4808e9859a66e5a4ad7bbbeb49",
     "custom-gpt-instructions.txt": "33a0f64e891d3ce33772a55ff5d84c3eab069290bca07840900497b246d64776",
     "docs/beta/KNOWN_GAPS.md": "201d1f451366cfac0656b2717a026a6e744af24cb470c68272010876dd378bc7",
     "docs/beta/deferred-register.json": "ec8224d7176ac22f6d6f1fcae5ad8cbd08b65220d8fea5e5de6c526d5e47e605",

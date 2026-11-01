@@ -1,46 +1,33 @@
 workflows:
-  # Retain the workflow ID and build counter used for builds 1–9.
-  zova-ios-internal-beta:
-    name: Zova Social — native iPhone beta candidate
-    max_build_duration: 40
+  zova-internal-pilot:
+    name: Zova internal TestFlight pilot assignment
+    max_build_duration: 10
     instance_type: mac_mini_m2
     integrations:
       app_store_connect: zova-testflight
-    environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.zovasocial.app
-      vars:
-        APP_STORE_APPLE_ID: "6824416979"
-        ZOVA_SERVER_URL: "https://zova-social.com"
-      xcode: "26.6"
     scripts:
-      - name: Verify isolated beta scope
+      - name: Assign the reviewed build to the existing internal group
         script: |
           set -eu
-          test "$CM_BRANCH" = "codex/ios-beta-native-20261027"
+          test "$CM_BRANCH" = "codex/testflight-pilot-20261101"
           python3 scripts/check_beta_release.py
-      - name: Generate reviewed iPhone project
-        script: |
-          set -eu
-          brew install xcodegen
-          cd ios
-          xcodegen generate
-      - name: Configure existing signing identities
-        script: xcode-project use-profiles --project ios/Zova.xcodeproj --custom-export-options='{"testFlightInternalTestingOnly":false}'
-      - name: Archive the iPhone beta
-        script: |
-          set -eu
-          ZOVA_BUILD_NUMBER=$((BUILD_NUMBER + 1))
-          test "$ZOVA_BUILD_NUMBER" -ge 12
-          xcode-project build-ipa --project ios/Zova.xcodeproj --scheme Zova --archive-xcargs "CURRENT_PROJECT_VERSION=$ZOVA_BUILD_NUMBER ZOVA_SERVER_URL=$ZOVA_SERVER_URL"
-      - name: Verify exported iPhone metadata before upload
-        script: python3 scripts/check_ios_archive.py build/ios/ipa/Zova.ipa
-    artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-    publishing:
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: false
-        submit_to_app_store: false
+          python3 - <<'PY'
+          import json, subprocess
+          number = '17'
+          group = 'Zova Social Internal Beta'
+          app = '6824416979'
+          result = subprocess.check_output(['app-store-connect','builds','list','--json','--app-id',app,'--platform','IOS','--pre-release-version','1.0.0','--build-version-number',number,'--not-expired','--processing-state','VALID'], text=True)
+          rows = json.loads(result)
+          if not isinstance(rows, list) or len(rows)!=1:
+              raise SystemExit('Expected one processed, unexpired Zova 1.0.0 build ' + number)
+          build = rows[0]
+          if build['attributes']['version'] != number or build['attributes']['processingState'] != 'VALID':
+              raise SystemExit('Unexpected build returned')
+          print('Verified processed Zova build', number, flush=True)
+          subprocess.run(['app-store-connect','beta-groups','add-build',build['id'],'--beta-group',group], check=True)
+          details = json.loads(subprocess.check_output(['app-store-connect','builds','beta-details',build['id'],'--json'],text=True))
+          if isinstance(details,list): details, = details
+          state = details['attributes']['internalBuildState']
+          print('Internal testing state:',state,flush=True)
+          if state != 'IN_BETA_TESTING': raise SystemExit('Internal testing state needs review')
+          PY
