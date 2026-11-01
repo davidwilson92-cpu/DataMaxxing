@@ -1,6 +1,7 @@
 """Parallel provider reads with immutable inputs and current grant validation."""
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from contextvars import copy_context
+from datetime import timezone
 import hashlib
 import time
 from types import SimpleNamespace
@@ -19,8 +20,11 @@ _fields = ('id', 'account_id', 'username', 'display_name', 'scope', 'expires_at'
 def signature(conn):
     from .social import json_meta
     meta = json_meta(conn)
-    values = (conn.id, conn.account_id, conn.scope, str(conn.expires_at),
-              bool(conn.expires_at and conn.expires_at.replace(tzinfo=None) <= utcnow().replace(tzinfo=None)),
+    expires = conn.expires_at
+    if expires is not None and expires.tzinfo is not None:
+        expires = expires.astimezone(timezone.utc).replace(tzinfo=None)
+    values = (conn.id, conn.account_id, conn.scope, str(expires),
+              bool(expires and expires <= utcnow().replace(tzinfo=None)),
               conn.encrypted_access_token, meta.get('auth_provider'), meta.get('connection_health') == 'reconnect')
     return hashlib.sha256(repr(values).encode()).hexdigest()
 

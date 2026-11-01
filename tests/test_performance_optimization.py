@@ -151,6 +151,33 @@ def test_disconnect_during_read_discards_returned_and_cached_data(monkeypatch):
     assert 'must not be returned' not in response.text
 
 
+def test_renewed_token_keeps_results_across_database_timestamp_representations(monkeypatch):
+    from nova.social_reads import signature
+    client, uid, *_ = account(); cid = connected(uid)
+    original = social.access_token
+    def renewed(conn, db):
+        if db is not None and conn.expires_at is None:
+            conn.encrypted_access_token = encrypt('renewed-synthetic-token')
+            conn.expires_at = utcnow() + timedelta(days=30)
+            db.commit()
+        return original(conn, db)
+    monkeypatch.setattr(social, 'access_token', renewed)
+    def get(url, **kwargs):
+        data = {'data':[{'id':'p','caption':'Retained after renewal','timestamp':utcnow().isoformat()}]} if url.endswith('/media') else {'followers_count':31}
+        return httpx.Response(200, json=data)
+    monkeypatch.setattr(social.httpx, 'get', get)
+    response = client.get('/api/analytics/dashboard?refresh=false')
+    assert response.status_code == 200
+    assert response.json()['platforms']['instagram']['followers'] == 31
+    assert response.json()['top_posts'][0]['text'] == 'Retained after renewal'
+    with SessionLocal() as db:
+        conn = db.get(SocialConnection, cid)
+        conn.expires_at = utcnow() + timedelta(days=30)
+        aware = signature(conn)
+        conn.expires_at = conn.expires_at.replace(tzinfo=None)
+        assert signature(conn) == aware
+
+
 def queue_research(monkeypatch):
     client, uid, *_ = account()
     monkeypatch.setenv('OPENAI_API_KEY','synthetic-only')
