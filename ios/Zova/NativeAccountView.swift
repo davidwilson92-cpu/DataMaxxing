@@ -137,7 +137,7 @@ struct NativeAIConsentView: View {
             Image(systemName: "sparkles").font(.largeTitle).foregroundStyle(ZovaDesign.purple)
             Text("Let Zova help shape your ideas").font(.title2.bold())
             Text("Zova uses OpenAI to help with your request.")
-            DisclosureGroup("What is shared?") { Text("When you request AI help, Zova sends relevant ideas, captions, strategy, voice and available performance to OpenAI. Attachments can include resized images or sampled video frames. Audio isn’t analysed.")
+            DisclosureGroup("What is shared?") { Text("When you request AI help, Zova sends relevant ideas, captions, strategy, voice and available performance to OpenAI. Attachments can include resized images or sampled video frames. Audio isn’t analysed. Next Move can use your public content themes in web searches.")
             Text("You can change this in Account. Your social passwords and access tokens are not sent to AI.").font(.callout).foregroundStyle(.secondary) }
             Button("Allow AI sharing") { choose(true) }.buttonStyle(ZovaPrimary())
             Button(store.account["ai"]["allowed"].bool ? "Turn off AI sharing" : "Not now") { if store.account["ai"]["allowed"].bool { choose(false) } else { dismiss() } }.frame(minHeight: 44)

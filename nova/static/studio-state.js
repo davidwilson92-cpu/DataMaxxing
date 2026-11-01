@@ -94,7 +94,7 @@ function renderMessageRetry(){
   document.getElementById('messageRetry')?.remove();
   if(!retryTurn||sendingMessage||!editableDraft())return;
   const changed=retryContextChanged();
-  document.getElementById('chatFeed').insertAdjacentHTML('beforeend',`<div id="messageRetry" class="message-retry"><p>${changed?'Your media or source link changed. Send a new message to use the current selection.':'Your message is kept above. You can retry, or write a clearer request such as “Draft an Instagram caption for Friday appointments”.'}</p><button class="button ghost" type="button" onclick="retryMessage()" ${changed?'disabled':''}>Retry message</button></div>`);
+  document.getElementById('chatFeed').insertAdjacentHTML('beforeend',`<div id="messageRetry" class="message-retry"><p>${changed?'Your media or source link changed. Send a new message to use the current selection.':'Your message is kept above.'}</p><button class="button ghost" type="button" onclick="retryMessage()" ${changed?'disabled':''}>Retry message</button></div>`);
 }
 function retryContextChanged(){
   if(!retryTurn)return false;
@@ -124,6 +124,8 @@ async function sendMessage(retryText=null){
   const epoch=workspaceEpoch;let responseApplied=false;
   try{
     await saveDraftNow();
+    if(epoch!==workspaceEpoch)return;
+    if(window.zovaEnsureAIConsent && !await window.zovaEnsureAIConsent())return;
     if(epoch!==workspaceEpoch)return;
     const recentMessages=conversation.slice(-12).map(({role,content})=>({role,content}));
     stickToLatest=true;

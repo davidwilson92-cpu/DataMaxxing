@@ -16,7 +16,7 @@ function renderKpis(summary){const metrics=[
 function renderPlatforms(platforms){
   const connected=Object.entries(platforms).filter(([,value])=>value.connected);
   document.getElementById('platformPerformance').innerHTML=connected.length?connected.map(([name,value])=>{
-    const metrics=[['Views / impressions',value.impressions],['Engagements',value.engagements],['Followers',value.followers]].filter(([,count])=>count!=null);
+    const metrics=[['Views / impressions',value.impressions],['Engagements',value.engagements],['Current followers',value.followers]].filter(([,count])=>count!=null);
     return `<article class="platform-performance-row"><div class="analytics-platform-mark ${name}">${analyticsIcon(name)}</div><div class="platform-performance-main"><div><strong>${analyticsPlatform(name)}</strong><span>${analyticsEsc(value.account||'Connected')}</span></div>
     ${metrics.length?`<dl>${metrics.map(([label,count])=>`<div><dt>${label}</dt><dd>${analyticsNumber(count)}</dd></div>`).join('')}</dl>`:'<p class="metric-note">Results are unavailable for this account.</p>'}
     ${value.error&&metrics.length?'<small class="metric-note">Some metrics are unavailable.</small>':''}</div></article>`;

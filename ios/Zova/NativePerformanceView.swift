@@ -32,7 +32,7 @@ struct NativePerformanceView: View {
                             if value["connected"].bool {
                                 ZovaCard {
                                     HStack { NativePlatformMark(platform: key); Text(value["account"].string).font(.subheadline.bold()) }
-                                    NativeAdaptiveRow { ForEach([("Views", "impressions"), ("Engagements", "engagements"), ("Followers", "followers")], id: \.1) { title, metric in VStack(alignment: .leading) { Text(title).font(.caption2); Text(number(value[metric])).font(.headline) }.frame(maxWidth: .infinity, alignment: .leading) } }
+                                    NativeAdaptiveRow { ForEach([("Views", "impressions"), ("Engagements", "engagements"), ("Current followers", "followers")], id: \.1) { title, metric in VStack(alignment: .leading) { Text(title).font(.caption2); Text(number(value[metric])).font(.headline) }.frame(maxWidth: .infinity, alignment: .leading) } }
                                     if !value["error"].isNull { Text("Some results are unavailable.").font(.caption).foregroundStyle(.secondary) }
                                 }
                             }

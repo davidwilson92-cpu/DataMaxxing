@@ -90,7 +90,6 @@ struct NativeStudioView: View {
                         if !store.draft.variants.object.isEmpty { caption }
                         if !store.mediaNotice.isEmpty { Text(store.mediaNotice).font(.caption).foregroundStyle(.secondary) }
                         if !store.draft.workspace["pending_message"].string.isEmpty && !store.busy {
-                            Text("Try a specific request, such as “Draft a caption for Friday appointments”.").font(.caption)
                             Button("Retry this idea") { run { try await store.send(retry: true) } }.buttonStyle(.bordered)
                         }
                         if !store.results.isNull {
@@ -300,7 +299,18 @@ struct NativeStudioView: View {
                     Button("Post options") { focused = false; captionEditing = false; options = true }.font(.subheadline).frame(minHeight: 44).disabled(store.busy)
                     Spacer()
                     Button { focused = false; if store.draft.selected.isEmpty { chooseDraftPlatform = true } else { run { try await store.send() } } } label: { Image(systemName: "arrow.up").font(.system(size: 22, weight: .bold)).foregroundStyle(.white).frame(width: 48, height: 48).background(ZovaDesign.purple.opacity(store.draft.composer.isEmpty ? 0.4 : 1), in: Circle()) }.accessibilityLabel("Send idea")
-                        .confirmationDialog("Where is this draft for?", isPresented: $chooseDraftPlatform, titleVisibility: .visible) { ForEach(SocialPlatform.allCases) { platform in Button(platform.title) { store.draft.selected = [platform.rawValue]; store.draft.workspace["platform_selection_explicit"] = .bool(true); store.changed(); run { try await store.send() } } } }
+                        .confirmationDialog("Where is this draft for?", isPresented: $chooseDraftPlatform, titleVisibility: .visible) {
+                            ForEach(SocialPlatform.allCases) { platform in
+                                Button(platform.title) {
+                                    store.draft.selected = [platform.rawValue]
+                                    store.draft.workspace["platform_selection_explicit"] = .bool(true)
+                                    store.changed()
+                                    run { try await store.send() }
+                                }
+                            }
+                            Button("Ask without a platform") { run { try await store.send(questionOnly: true) } }
+                            Button("Cancel", role: .cancel) {}
+                        }
                         .accessibilityShowsLargeContentViewer { Label("Send idea", systemImage: "arrow.up") }
                         .disabled(store.busy || store.draft.composer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }

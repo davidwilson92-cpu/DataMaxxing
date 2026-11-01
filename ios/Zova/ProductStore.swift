@@ -134,6 +134,7 @@ final class ProductStore: ObservableObject {
         try await save()
         let next = ProductDraft(try await request("/api/drafts/\(id)"))
         polling?.cancel(); results = .null
+        resumeConsentedSend = nil
         draft = next; changeSerial = 0; savedSerial = 0; saveStatus = "Saved"; selectedTab = 0
         NativeResumeState.saveDraft(id, user: account["profile"]["id"].int, brand: brand)
         mediaNotice = ""
@@ -141,6 +142,7 @@ final class ProductStore: ObservableObject {
     }
     func newPost() async throws {
         try await save(); polling?.cancel(); results = .null
+        resumeConsentedSend = nil
         let selected = draft.selected
         draft = ProductDraft(); draft.selected = selected; mediaNotice = ""
         NativeResumeState.saveDraft(nil, user: account["profile"]["id"].int, brand: brand)
@@ -190,20 +192,20 @@ final class ProductStore: ObservableObject {
         posts[index] = text; draft.variants[platform]["posts"] = .strings(posts); changed()
     }
     var resumeConsentedSend: (() async throws -> Void)?
-    func send(retry: Bool = false) async throws {
+    func send(retry: Bool = false, questionOnly: Bool = false) async throws {
         guard draft.editable else { throw ZovaFailure.server("Start a new post to create another idea.") }
         let text = (retry ? draft.workspace["pending_message"].string : draft.composer).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        guard !draft.selected.isEmpty else { throw ZovaFailure.server("Choose a platform first.") }
+        guard questionOnly || retry || !draft.selected.isEmpty else { throw ZovaFailure.server("Choose a platform first.") }
         if retry && (draft.workspace["pending_media_asset_ids"] != draft.mediaIDs || draft.workspace["pending_link_url"].string != draft.workspace["link_url"].string) {
             throw ZovaFailure.server("Your attachment or source link changed. Send a new message to use the current selection.")
         }
         guard account["ai"]["allowed"].bool || !account["ai"]["required"].bool else {
             let epoch = authority, id = draft.id, original = draft, serial = changeSerial
             resumeConsentedSend = { [weak self] in
-                guard let self, self.authority == epoch, self.draft.id == id, self.changeSerial == serial,
+                guard let self, self.authority == epoch, (id == nil || self.draft.id == id), self.changeSerial == serial,
                       self.draft.composer == original.composer else { return }
-                try await self.send(retry: retry)
+                try await self.send(retry: retry, questionOnly: questionOnly)
             }
             needsConsent = true; return
         }
@@ -357,6 +359,7 @@ final class ProductStore: ObservableObject {
         }
     }
     func clear(preserveRecovery: Bool = false) {
+        resumeConsentedSend = nil
         authority += 1; autosave?.cancel(); polling?.cancel()
         if preserveRecovery { if dirty { persistRecovery() } }
         else { NativeDraftRecovery.removeUser(account["profile"]["id"].int) }

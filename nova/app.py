@@ -981,7 +981,7 @@ def conversation_plan(body:ConversationRequest,request:Request,db:Session=Depend
             result=plan_message(body.message,context).model_dump()
             result['media_inspection']=inspected
             return result
-        except Exception:raise HTTPException(502,'I could not interpret that request. Your draft is unchanged; please try again.')
+        except Exception:raise HTTPException(502,'I could not interpret that request. Your idea is saved. Try “Draft a caption for Friday appointments”.')
     finally:
         ai_user.reset(ai_context)
 
