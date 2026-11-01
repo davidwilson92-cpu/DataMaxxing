@@ -2,10 +2,10 @@
 
 ## Reviewed implementation
 
-Runtime candidate 054588b5f4d59ff9ea3d3888f1598e9666f7f5a5.
+Final runtime candidate 97183759ab797754ec955aa2cc746974dfc09ed5.
 
 Measured runtime content digest
-`30145425a168d2a3388d36e58e0fe2ce0ea0cef41a4301d142f68539d99436a4`.
+`3f9b02377b7c861df37e8ac8e1d5f4dc1acae9c2392630883af852681e527c36`, recorded in after-renewal-validation.json.
 
 The digest covers the actual nova and ios files. It matches the final measured
 working tree. Subsequent evidence-document commits do not change runtime, tests,
@@ -13,7 +13,7 @@ workflow definitions or the pinned release scope.
 
 ## Application and PostgreSQL
 
-The complete application workflow passed at the reviewed implementation on
+The complete application workflow passed at the primary implementation 054588b on
 1 November 2026. SQLite passed 773 tests with two environment-specific skips.
 PostgreSQL passed 774 tests with one skip. Browser journeys, JavaScript checks,
 backup/restore verification, image build, constrained-host password work,
@@ -28,6 +28,11 @@ range time from 1.521 to 0.160 ms. The existing Activity draft lookup remained
 approximately 0.11 ms. See index-postgres.json for EXPLAIN ANALYZE, buffers, p95
 samples and row counts.
 
+The final timestamp-normalisation safeguard adds one regression case. Twenty-one
+focused renewal, cache and analytics tests passed locally. The ten-sample repeat
+retains the measured gains and confirms eight provider calls for four concurrent
+refreshes. Final complete workflow results are available in the current PR checks.
+
 ## Native iPhone
 
 Native validation passed 44 unit tests, 19 UI tests and iPhone Release compilation.
@@ -37,7 +42,7 @@ parallel with three 300 ms transport waits.
 [Native validation 41253265325](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/41253265325)
 
 That run used 0359bc6. A Git comparison confirmed no differences in ios or
-.github/workflows/ios-beta.yml between it and the reviewed runtime 054588b.
+.github/workflows/ios-beta.yml between it and the final runtime 9718375.
 Native tests exercise isolated simulator fixtures. Physical-iPhone performance,
 real providers and an updated TestFlight binary remain deployment acceptance work.
 

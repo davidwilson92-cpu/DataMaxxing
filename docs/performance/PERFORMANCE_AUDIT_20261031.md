@@ -4,7 +4,7 @@
 
 The implementation is prepared in the isolated performance branch and PR 37. It substantially reduces repeated provider work, draft and series queries, optional research waits and image-preview bandwidth. Production rollout and an updated iPhone binary remain separate release steps. Render remains the host and customer charging remains disabled.
 
-The most recent controlled comparison reduced the saved-post endpoint from 513 ms to 58 ms, the recurring-series endpoint from 525 ms to 48 ms, and repeated Performance reads from 3,165 ms to 118 ms. First uncached Performance reads took 331 ms. Fresh Next Move batches took 527 ms versus 1,532 ms with identical simulated creative-model latency.
+The primary controlled comparison reduced the saved-post endpoint from 513 ms to 58 ms, the recurring-series endpoint from 525 ms to 48 ms, and repeated Performance reads from 3,165 ms to 118 ms. First uncached Performance reads took 331 ms. Fresh Next Move batches took 527 ms versus 1,532 ms with identical simulated creative-model latency.
 
 Cold password sign-in and caption generation showed little change. Browser cold-start and Schedule timings remain around their previous range. This work supports faster ordinary reads and progressive expensive work, with further device and production measurements needed before making an app-wide instantaneous-response claim.
 
@@ -65,6 +65,8 @@ Studio HTML became 22 ms slower in the sampled median, while its query count sta
 Four simultaneous draft requests completed in 444 ms before and 101 ms after. Four simultaneous forced Performance refreshes completed in 3,278 ms before and 578 ms after, with all responses successful. Provider calls fell from 120 to eight for that refresh workload.
 
 The compact-preview after measurement includes first generation followed by in-memory reuse. Its first sample and all response sizes are preserved in the JSON. At the browser test's 4 Mbit/s throughput, its byte reduction removes about six seconds of transfer for this particular image. That is a bandwidth calculation, rather than a separately observed phone download time.
+
+A final correctness review normalised timezone-aware and database-naive expiry timestamps, preventing a just-renewed social token from incorrectly hiding its fresh observations. The new renewal regression and related analytics checks passed 21 focused tests. A further ten-sample run at 9718375 retained the gains, with saved posts at 63 ms, recurring series at 43 ms, repeated Performance reads at 106 ms and fresh Next Move at 571 ms. Its source digest, all samples and eight-call concurrent refresh result are in after-renewal-validation.json. The earlier primary comparison above is retained intact.
 
 ## Browser journeys
 
@@ -134,7 +136,7 @@ The implementation is prepared for review in [PR 37](https://github.com/davidwil
 
 ## Reproduction and evidence
 
-- baseline.json and after.json contain endpoint samples, SQL/provider counts, source digests and concurrent-request results.
+- baseline.json and after.json contain the primary endpoint samples, SQL/provider counts, source digests and concurrent-request results. after-renewal-validation.json verifies the final token-renewal safeguard against the same workload.
 - baseline-browser.json and after-browser.json contain browser timings, resource transfers, paint observations and long tasks. The adjacent PNGs show the rendered Schedule.
 - production-public-baseline.json contains the real public probes and cache headers.
 - index-benchmark.json contains the SQLite experiment. index-postgres.json is exported by the final isolated PostgreSQL workflow.
