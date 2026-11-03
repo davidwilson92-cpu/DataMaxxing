@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 import PhotosUI
 
 struct NativeCampaignView: View {
+    var initialCampaignID: Int? = nil
     @EnvironmentObject var store: ProductStore
     @Environment(\.dismiss) private var dismiss
     @State private var campaigns: [JSONValue] = []
@@ -47,10 +48,14 @@ struct NativeCampaignView: View {
             .sheet(isPresented: $consent) { NativeAIConsentView().environmentObject(store) }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Studio") { dismiss() }.disabled(working) }
+                ToolbarItem(placement: .cancellationAction) { Button(initialCampaignID == nil ? "Studio" : "Performance") { dismiss() }.disabled(working) }
             }
             .interactiveDismissDisabled(working)
-            .task { await perform { campaigns = try await store.request("/api/campaigns").array; ready = true } }
+            .task { await perform {
+                campaigns = try await store.request("/api/campaigns").array
+                if let id = initialCampaignID { try await reopen(id) }
+                ready = true
+            } }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.image, .movie], allowsMultipleSelection: true) { result in
                 if case .success(let files) = result { Task { await perform { try await upload(files) } } }
             }
@@ -133,7 +138,7 @@ struct NativeCampaignView: View {
                     }
                     if index < current["draft_ids"].array.count && post["status"].string != "removed" {
                         Button("Open draft") {
-                            Task { await perform { if store.dirty { try await store.save() }; try await store.openDraft(current["draft_ids"].array[index].int); dismiss() } }
+                            Task { await perform { if store.dirty { try await store.save() }; try await store.openDraft(current["draft_ids"].array[index].int); store.selectedTab = 0; dismiss() } }
                         }
                     }
                 }

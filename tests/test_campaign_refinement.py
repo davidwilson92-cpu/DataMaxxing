@@ -84,3 +84,16 @@ def test_scheduled_time_edit_retains_delivery_and_rejects_stale_or_started_job(p
         assert db.get(Draft,did).status=='scheduled'
         job=db.get(ScheduledPost,post['schedule']['id']);job.status='publishing';db.commit()
     assert client.post('/api/schedules/drafts/'+str(did)+'/edit',json={'revision':post['draft_revision']}).status_code==409
+
+
+def test_tiktok_receipt_is_never_a_measured_post_id(plan):
+    client,uid,base,_=plan
+    did=client.post(base+'/accept',json={'revision':2}).json()['draft_ids'][0]
+    with SessionLocal() as db:
+        log=Activity(user_id=uid,draft_id=did,platform='tiktok',platform_post_id='receipt',status='published')
+        db.add(log);db.commit()
+        view=dict(window_start=(utcnow()-timedelta(days=7)).isoformat(),
+                  sample_posts=[dict(platform='tiktok',id='receipt',views=999),dict(platform='tiktok',id='732',views=2)])
+        assert campaign_results(db,uid,view)[0]['views'] is None
+        log.url='https://www.tiktok.com/@test/video/732';db.commit()
+        assert campaign_results(db,uid,view)[0]['views']==2

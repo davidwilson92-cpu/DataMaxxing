@@ -145,5 +145,9 @@
   };
   element('campaign-revise').onclick = () => run(() => generate(element('campaign-feedback').value));
   element('campaign-accept').onclick = () => run(async () => {await request('/api/campaigns/'+current.id+'/accept',{revision:current.revision});show(await request('/api/campaigns/'+current.id));});
-  run(async () => (await request('/api/campaigns')).forEach(remember));
+  run(async () => {
+    (await request('/api/campaigns')).forEach(remember);
+    const id=Number(new URL(location.href).searchParams.get('campaign'));
+    if(records.has(id)) show(await request('/api/campaigns/'+id));
+  });
 })();

@@ -73,6 +73,8 @@ function renderCampaignResults(rows) {
       for (const p of row.posts){const item=document.createElement('p');item.textContent=analyticsPlatform(p.platform)+' · '+p.text+' — '+analyticsNumber(p.likes)+' likes · '+analyticsNumber(p.comments)+' comments';list.append(item);}
       card.append(list);
     }
+    const open=document.createElement('a');open.textContent='Open campaign';
+    open.href=window.zovaWorkspaceUrl('/campaigns?campaign='+row.id);card.append(open);
     panel.append(card);
   }
 }

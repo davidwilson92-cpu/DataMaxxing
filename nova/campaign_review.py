@@ -1,12 +1,14 @@
 """Project a campaign from its current drafts and attribute only confirmed provider posts."""
 import json
+import re
+from collections import defaultdict
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 
 from .analytics_view import valid_metric
-from .db import Activity, Campaign, ContentSeries, Draft, ScheduledPost, SeriesOccurrence
+from .db import Activity, Campaign, ContentSeries, Draft, Publication, ScheduledPost, SeriesOccurrence
 
 
 def dates(value, zone):
@@ -54,21 +56,37 @@ def current_plan(db, row):
 
 def campaign_results(db, uid, view):
     rows = db.scalars(select(Campaign).where(Campaign.user_id==uid).order_by(Campaign.id.desc()))
-    campaigns = [json.loads(r.payload_json) for r in rows]
-    ids = {i for c in campaigns for i in c['draft_ids']}
+    campaigns = [(r.id,json.loads(r.payload_json)) for r in rows]
+    ids = {i for _,c in campaigns for i in c['draft_ids']}
     start = datetime.fromisoformat(view['window_start'])
-    events = db.execute(select(Activity.draft_id, Activity.platform, Activity.platform_post_id).where(
+    events = db.execute(select(Activity.draft_id, Activity.platform, Activity.platform_post_id, Activity.url,
+            Publication.result_json).outerjoin(Publication,
+            (Publication.draft_id==Activity.draft_id) & (Publication.platform==Activity.platform) &
+            (Publication.user_id==Activity.user_id) & (Publication.brand_id==Activity.brand_id)).where(
         Activity.user_id==uid, Activity.draft_id.in_(ids), Activity.status=='published', Activity.created_at>=start,
         Activity.created_at<=datetime.now(timezone.utc))).all() if ids else []
     measured = {(p['platform'],str(p['id'])):p for p in view['sample_posts'] if p.get('id')}
+    by_draft = defaultdict(set)
+    for did,platform,receipt,url,raw in events:
+        remote_ids = [receipt] if receipt else []
+        if platform == 'tiktok':
+            # A TikTok delivery receipt is distinct from the public video or photo ID.
+            match = re.fullmatch(r'https://www\.tiktok\.com/@[\w.]+/(?:video|photo)/(\d+)', url or '', re.ASCII)
+            remote_ids = [match.group(1)] if match else []
+        elif platform == 'x' and raw:
+            evidence = json.loads(raw)
+            if evidence.get('post_id') == receipt and isinstance(evidence.get('post_ids'),list):
+                remote_ids = [str(i) for i in evidence['post_ids'] if i] or remote_ids
+        by_draft[did].update((platform,str(i)) for i in remote_ids)
+        if not remote_ids:
+            by_draft[did].add((platform,None))
     reports = []
-    for c in campaigns:
-        members = set(c['draft_ids'])
-        keys = {(p,str(pid)) for did,p,pid in events if did in members and pid}
-        missing = {(did,p) for did,p,pid in events if did in members and not pid}
+    for cid,c in campaigns:
+        keys = {(p,pid) for did in c['draft_ids'] for p,pid in by_draft[did] if pid}
+        missing = {(did,p) for did in c['draft_ids'] for p,pid in by_draft[did] if not pid}
         matched = [measured[k] for k in keys if k in measured]
         published = len(keys)+len(missing)
-        report = dict(name=c['brief']['idea'], published=published, measured=len(matched),
+        report = dict(id=cid, name=c['brief']['idea'], published=published, measured=len(matched),
                       posts=[{key:p.get(key) for key in ('platform','text','views','likes','comments','shares')}
                              for p in sorted(matched,key=lambda p:p.get('created_at',''),reverse=True)])
         for metric in ('views','likes','comments','shares'):

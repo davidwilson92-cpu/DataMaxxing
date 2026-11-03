@@ -3,6 +3,8 @@ import SwiftUI
 struct NativePerformanceView: View {
     @EnvironmentObject var store: ProductStore
     @Environment(\.dynamicTypeSize) private var textSize
+    private struct Selection: Identifiable { let id: Int }
+    @State private var selection: Selection?
     @State private var campaigns = false
     @State private var days = 7
     @State private var dashboard: JSONValue = .null
@@ -30,6 +32,7 @@ struct NativePerformanceView: View {
                                     LabeledContent(key.capitalized, value: number(row[key]))
                                 }
                             }
+                            Button("Open campaign") { selection = Selection(id: row["id"].int) }
                             if !row["posts"].array.isEmpty {
                                 DisclosureGroup("Post results") {
                                     ForEach(Array(row["posts"].array.enumerated()), id: \.offset) { _, post in
@@ -84,6 +87,7 @@ struct NativePerformanceView: View {
                 }
             }.padding(18)
         }.refreshable { await update(refresh: true) }.task(id: store.selectedTab) { if store.selectedTab == 2 { await update() } }
+            .sheet(item: $selection) { NativeCampaignView(initialCampaignID: $0.id).environmentObject(store) }
             .scrollDismissesKeyboard(.interactively)
     }
     private func number(_ value: JSONValue) -> String { value.isNull ? "—" : value.int.formatted() }
