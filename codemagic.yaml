@@ -32,7 +32,6 @@ workflows:
           state = details['attributes']['internalBuildState']
           print('Internal testing state:',state,flush=True)
           if state != 'IN_BETA_TESTING': raise SystemExit('Internal testing state needs review')
-          PY
           external = details['attributes']['externalBuildState']
           print('External testing state:',external,flush=True)
           if external == 'READY_FOR_BETA_SUBMISSION':
@@ -40,3 +39,4 @@ workflows:
           details = json.loads(subprocess.check_output(['app-store-connect','builds','beta-details',build['id'],'--json'],text=True))
           if isinstance(details,list): details, = details
           print('Final external status:',details['attributes']['externalBuildState'], 'auto notification:',details['attributes'].get('autoNotifyEnabled'),flush=True)
+          PY
