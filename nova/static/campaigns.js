@@ -36,7 +36,7 @@
     save.onclick=()=>run(async()=>show(await request('/api/campaigns/'+row.id+'/posts/'+index,{
       revision:row.revision, draft_revision:post.draft_revision,series_revision:post.series_revision,
       caption:caption.value,platform:platform.value,asset_id:Number(media.value)||null,local_time:time.value
-    })));
+    })), 'Post updated.');
     const markEditing=()=>{
       for(const item of document.querySelectorAll('#campaign-review button,#campaign-review summary,#campaign-list')) {
         if(item===save || panel.contains(item)) continue;
@@ -62,19 +62,19 @@
     if (!row) return;
     remember(row);
     list.value = String(row.id);
-    element('campaign-title').textContent = row.brief.idea;
+    element('campaign-media').hidden = !row.assets.length;
     element('campaign-media').textContent = row.assets.map(a => a.name).join(' · ');
     const cards = element('campaign-posts');
     cards.replaceChildren();
     row.posts.forEach((post,i) => {
       const card = document.createElement('article'), title = document.createElement('strong'), text = document.createElement('p');
-      title.textContent = ({x:'X',facebook:'Facebook',instagram:'Instagram',tiktok:'TikTok'}[post.platform] || post.platform) + ' · ' + new Date(row.dates[i].utc).toLocaleString(undefined,{timeZone:row.brief.timezone,timeZoneName:'short'});
+      title.textContent = ({x:'X',facebook:'Facebook',instagram:'Instagram',tiktok:'TikTok'}[post.platform] || post.platform) + ' · ' + new Date(row.dates[i].utc).toLocaleString(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:row.brief.timezone,timeZoneName:'short'});
       text.textContent = post.caption;
       card.append(title,text);
       const asset = row.assets.find(a => a.id === post.asset_id);
       if (asset) card.append(document.createTextNode(asset.name + ' '));
       if (!row.draft_ids.length || post.editable) editCard(card,row,i);
-      if (post.status) {const state=document.createElement('small');state.textContent=post.status.replaceAll('_',' ');card.append(state);}
+      if (post.status) {const state=document.createElement('small');state.className='campaign-post-state';state.textContent=post.status.replaceAll('_',' ');title.append(state);}
       if(post.schedule){
         const panel=document.createElement('details'),open=document.createElement('summary');
         open.textContent='Change time';panel.append(open);
@@ -96,7 +96,7 @@
       if (row.draft_ids[i] && post.status!=='removed') {
         const link = document.createElement('a');
         link.href = '/studio?draft='+row.draft_ids[i]+'&workspace='+document.querySelector('meta[name=zova-workspace]').content;
-        link.textContent = 'Open draft'; card.append(link);
+        link.textContent = 'Open in Studio'; card.append(link);
       }
       cards.append(card);
     });
@@ -105,13 +105,13 @@
     element('campaign-accept').hidden = !row.posts.length;
     element('campaign-revise').textContent = row.posts.length ? 'Update plan' : 'Generate plan';
   }
-  async function run(action) {
+  async function run(action, successMessage='') {
     if (busy) return;
     busy = true;
     const controls = document.querySelectorAll('main input,main select,main button,main textarea');
     controls.forEach(control => control.disabled = true);
     status.textContent = 'Working…';
-    try { await action(); status.textContent = current?.draft_ids.length ? 'Drafts saved. Review each post before publishing.' : ''; }
+    try { await action(); status.textContent = successMessage; }
     catch (error) { status.textContent = error.message; }
     finally {
       controls.forEach(control => control.disabled = false); busy = false;
@@ -144,7 +144,7 @@
     });
   };
   element('campaign-revise').onclick = () => run(() => generate(element('campaign-feedback').value));
-  element('campaign-accept').onclick = () => run(async () => {await request('/api/campaigns/'+current.id+'/accept',{revision:current.revision});show(await request('/api/campaigns/'+current.id));});
+  element('campaign-accept').onclick = () => run(async () => {await request('/api/campaigns/'+current.id+'/accept',{revision:current.revision});show(await request('/api/campaigns/'+current.id));}, 'Drafts added to Schedule.');
   run(async () => {
     (await request('/api/campaigns')).forEach(remember);
     const id=Number(new URL(location.href).searchParams.get('campaign'));

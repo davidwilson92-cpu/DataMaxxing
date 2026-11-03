@@ -32,7 +32,7 @@ struct NativeCampaignView: View {
                         Link("Request Premium access", destination: URL(string: "mailto:support@zova-social.com?subject=Premium%20campaign%20access")!)
                     }
                 } else if ready {
-                    Menu(current.isNull ? "New campaign" : "Saved campaigns") {
+                    Menu(current.isNull ? "New campaign" : String(current["brief"]["idea"].string.prefix(80))) {
                         Button("New campaign") { current = .null; feedback = "" }
                         ForEach(campaigns, id: \.["id"].int) { item in
                             Button(item["brief"]["idea"].string) { Task { await perform { try await reopen(item["id"].int) } } }
@@ -101,7 +101,7 @@ struct NativeCampaignView: View {
             .disabled(idea.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || platforms.isEmpty || count < platforms.count)
     }
     @ViewBuilder private var review: some View {
-        Section(current["brief"]["idea"].string) {
+        Section {
             ForEach(Array(current["posts"].array.enumerated()), id: \.offset) { index, post in
                 VStack(alignment: .leading, spacing: 6) {
                     Text(SocialPlatform(rawValue: post["platform"].string)?.title ?? post["platform"].string).font(.headline)
@@ -137,7 +137,7 @@ struct NativeCampaignView: View {
                         } } }
                     }
                     if index < current["draft_ids"].array.count && post["status"].string != "removed" {
-                        Button("Open draft") {
+                        Button("Open in Studio") {
                             Task { await perform { if store.dirty { try await store.save() }; try await store.openDraft(current["draft_ids"].array[index].int); store.selectedTab = 0; dismiss() } }
                         }
                     }

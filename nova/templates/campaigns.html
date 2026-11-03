@@ -2,6 +2,14 @@
 {% block title %}Campaigns · Zova Studio{% endblock %}
 {% block head %}<style>
 .campaign{width:min(100% - 2rem,44rem);margin:2rem auto}.campaign form,.campaign section,.campaign label{display:grid;gap:.5rem}.campaign form,.campaign section{gap:1rem;margin:1.5rem 0}.campaign fieldset{display:flex;flex-wrap:wrap;gap:.8rem;border:0;padding:0}.campaign fieldset label{display:flex;align-items:center}.campaign input[type=checkbox]{width:auto}.campaign article{padding:1rem;border-inline-start:.2rem solid #9c71ff;background:#20182d}.campaign article{margin-block:.7rem;border-radius:.6rem}.campaign article p{white-space:pre-wrap}.campaign article summary{cursor:pointer;padding:.5rem 0}.campaign article label{margin-block:.6rem}.campaign article textarea{min-height:6rem}.campaign button{width:fit-content}.campaign [hidden]{display:none}
+.campaign h1{margin-block:.65rem 1rem}.campaign article{display:grid;gap:.65rem;margin:0;padding:1rem 1.1rem}
+.campaign article>strong{display:flex;align-items:baseline;gap:.6rem;justify-content:space-between;font-size:.92rem}
+.campaign-post-state{font-size:.75rem;text-transform:capitalize;color:#d5c3ef;font-weight:500}
+#campaign-posts{display:grid;gap:.7rem}.campaign article p{margin:0}
+.campaign article>details>summary,.campaign article>a,.campaign>a{display:inline-flex;align-items:center;min-height:44px}
+.campaign article>details>summary:before{content:'+';margin-right:.4rem}.campaign article>details[open]>summary:before{content:'−'}
+.campaign article>a{justify-self:start;color:#d8c2ff}.campaign article>details:not([open])+a{margin-top:-.6rem}
+.campaign [hidden]{display:none}
 </style>{% if premium %}<script defer src="{{ asset_url('campaigns.js') }}"></script>{% endif %}{% endblock %}
 {% block body %}<main class="campaign"><a href="/studio?workspace={{ brand.id }}">‹ Studio</a><h1>Campaigns</h1>
 {% if not premium %}<p>Plan a series of posts with Premium.</p><a class="button" href="/subscribe">Explore Premium</a>
@@ -13,7 +21,7 @@
 <label>First post<input type="datetime-local" name="start" required></label><label>Frequency<select name="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option></select></label>
 <label>Total posts<input name="count" type="number" min="1" max="10" value="4" required></label>
 <button class="button">Build campaign</button></form>
-<section id="campaign-review" hidden><h2 id="campaign-title"></h2><p id="campaign-media"></p><div id="campaign-posts"></div>
+<section id="campaign-review" hidden><h2 class="visually-hidden">Campaign plan</h2><p id="campaign-media"></p><div id="campaign-posts"></div>
 <div id="campaign-actions"><label>What would you change?<textarea id="campaign-feedback" maxlength="2000" placeholder="Lead with the demo. Make the last post a softer invitation."></textarea></label><button id="campaign-revise">Update plan</button> <button class="button" id="campaign-accept">Save posts to Schedule</button></div></section>
 <p id="campaign-status" role="status"></p>
 {% endif %}</main>{% endblock %}
