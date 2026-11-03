@@ -4,6 +4,36 @@
   const status = element('campaign-status');
   const records = new Map(), uploaded = new Map();
   let current = null, busy = false;
+  const selectedFiles = new Set();
+  const picker = form.elements.files, drop = element('campaign-drop');
+  function renderFiles() {
+    const rows = element('campaign-files');
+    rows.replaceChildren();
+    for (const file of selectedFiles) {
+      const row = document.createElement('li'), name = document.createElement('span'), remove = document.createElement('button');
+      name.textContent = file.name;
+      remove.type = 'button'; remove.textContent = 'Remove';
+      remove.setAttribute('aria-label','Remove '+file.name);
+      remove.onclick = () => { selectedFiles.delete(file); uploaded.delete(file); renderFiles(); status.textContent=''; picker.focus(); };
+      row.append(name,remove); rows.append(row);
+    }
+    element('campaign-file-count').textContent = selectedFiles.size ? selectedFiles.size+' of 10 files selected' : 'Choose or drop up to 10 files';
+  }
+  function addFiles(files) {
+    if (busy || !files.length) return;
+    if (selectedFiles.size + files.length > 10) {
+      status.textContent='Choose up to 10 files in total. Your previous selection is kept.';
+      return;
+    }
+    for (const file of files) selectedFiles.add(file);
+    renderFiles(); status.textContent='';
+  }
+  picker.onchange = () => { addFiles(Array.from(picker.files)); picker.value=''; };
+  drop.ondragover = event => { event.preventDefault(); if (!busy) drop.classList.add('drag-over'); };
+  drop.ondragleave = () => drop.classList.remove('drag-over');
+  drop.ondrop = event => {
+    event.preventDefault(); drop.classList.remove('drag-over'); addFiles(Array.from(event.dataTransfer.files));
+  };
   async function request(path, body) {
     const options = body instanceof FormData ? {method:'POST',body}
       : body ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)} : {};
@@ -125,21 +155,23 @@
   list.onchange = () => run(async () => show(list.value ? await request('/api/campaigns/'+Number(list.value)) : null));
   form.onsubmit = event => {
     event.preventDefault();
-    const data = new FormData(form), files = Array.from(form.elements.files.files), platforms = data.getAll('platform');
+    const data = new FormData(form), files = Array.from(selectedFiles), platforms = data.getAll('platform');
     run(async () => {
       if (!platforms.length || Number(data.get('count')) < platforms.length) throw new Error('Choose at least one post per selected platform.');
       if (files.length > 10) throw new Error('Choose up to ten files.');
       const media = [];
-      for (const file of files) {
+      for (const [index,file] of files.entries()) {
         if (!uploaded.has(file)) {
+          status.textContent='Uploading '+(index+1)+' of '+files.length+' · '+file.name;
           const upload = new FormData(); upload.append('files',file);
-          uploaded.set(file,(await request('/api/media',upload)).assets[0].id);
+          try { uploaded.set(file,(await request('/api/media',upload)).assets[0].id); }
+          catch (error) { throw new Error(file.name+' — '+error.message); }
         }
         media.push(uploaded.get(file));
       }
       show(await request('/api/campaigns',{idea:data.get('idea'),platforms,media,start:data.get('start'),
         timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,count:Number(data.get('count')),frequency:data.get('frequency')}));
-      form.reset(); uploaded.clear();
+      form.reset(); uploaded.clear(); selectedFiles.clear(); renderFiles();
       await generate('');
     });
   };
