@@ -187,7 +187,6 @@ struct NativeStudioView: View {
                     }
                 } label: { HStack(spacing: 5) { Text(store.account["brand"]["name"].string); Image(systemName: "chevron.down").font(.caption2) }.font(.caption).foregroundStyle(.secondary).frame(minWidth: 44, minHeight: 44).contentShape(Rectangle()) }.disabled(store.busy).accessibilityIdentifier("brand-selector")
                 Spacer()
-                StudioModePicker(campaign: Binding(get: { false }, set: { if $0 { focused = false; campaign = true } })).disabled(store.busy)
                 Button { history = true } label: { Image(systemName: "clock.arrow.circlepath").frame(width: 44, height: 44).contentShape(Rectangle()) }.accessibilityLabel("Your posts").disabled(store.busy)
             }
         }.padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 4)
@@ -200,6 +199,8 @@ struct NativeStudioView: View {
             Button { captionEditing = false; run { try await store.newPost(); focused = true } } label: {
                 Label("New post", systemImage: "plus").font(.caption.weight(.medium)).fixedSize(horizontal: false, vertical: true).frame(minHeight: 44).contentShape(Rectangle())
             }.disabled(store.busy).accessibilityIdentifier("new-post")
+            Button("Campaign") { focused = false; campaign = true }
+                .font(.caption.weight(.semibold)).frame(minHeight: 44).disabled(store.busy)
             Button { focused = false; captionEditing = false; nextMove = true } label: {
                 Label("Next move", systemImage: "sparkles").font(.subheadline.bold()).fixedSize(horizontal: false, vertical: true).padding(.horizontal, 13).padding(.vertical, 8).frame(minHeight: 44).foregroundStyle(.white).background(ZovaDesign.hero, in: Capsule())
             }.accessibilityIdentifier("next-move").disabled(store.busy)

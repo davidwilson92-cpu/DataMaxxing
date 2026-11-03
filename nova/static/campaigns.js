@@ -16,6 +16,32 @@
     if (!records.has(row.id)) list.add(new Option(row.brief.idea.slice(0,70),row.id));
     records.set(row.id,row);
   }
+  function editCard(card,row,index) {
+    const post=row.posts[index], panel=document.createElement('details'), summary=document.createElement('summary');
+    summary.textContent='Edit post'; panel.append(summary);
+    function field(label,control) {
+      const wrap=document.createElement('label'); wrap.append(label,control); panel.append(wrap); return control;
+    }
+    const caption=field('Caption',document.createElement('textarea')); caption.value=post.caption;
+    const platform=field('Platform',document.createElement('select'));
+    for (const [value,name] of Object.entries({instagram:'Instagram',facebook:'Facebook',x:'X',tiktok:'TikTok'})) platform.add(new Option(name,value));
+    platform.value=post.platform;
+    const media=field('Media',document.createElement('select')); media.add(new Option('No attachment',''));
+    for (const a of row.assets) media.add(new Option(a.name,String(a.id)));
+    if (post.asset_id && !row.assets.some(a=>a.id===post.asset_id)) media.add(new Option('Current attachment',String(post.asset_id)));
+    media.value=post.asset_id || '';
+    const time=field('Planned time · '+row.brief.timezone,document.createElement('input'));
+    time.type='datetime-local'; time.value=row.dates[index].local.slice(0,16);
+    const save=document.createElement('button'); save.textContent='Save changes'; panel.append(save);
+    save.onclick=()=>run(async()=>show(await request('/api/campaigns/'+row.id+'/posts/'+index,{
+      revision:row.revision, draft_revision:post.draft_revision,series_revision:post.series_revision,
+      caption:caption.value,platform:platform.value,asset_id:Number(media.value)||null,local_time:time.value
+    })));
+    panel.ontoggle=()=>{
+      if(panel.open && card.isConnected) for (const other of card.parentElement.querySelectorAll('details[open]')) if(other!==panel) other.open=false;
+    };
+    card.append(panel);
+  }
   function show(row) {
     current = row;
     form.hidden = !!row;
@@ -34,7 +60,16 @@
       card.append(title,text);
       const asset = row.assets.find(a => a.id === post.asset_id);
       if (asset) card.append(document.createTextNode(asset.name + ' '));
-      if (row.draft_ids[i]) {
+      if (!row.draft_ids.length || post.editable) editCard(card,row,i);
+      if (post.status) {const state=document.createElement('small');state.textContent=post.status.replaceAll('_',' ');card.append(state);}
+      if (post.status==='scheduled') {
+        const edit=document.createElement('button'); edit.textContent='Unschedule to edit';
+        edit.onclick=()=>run(async()=>{
+          await request('/api/schedules/drafts/'+row.draft_ids[i]+'/edit',{revision:post.draft_revision});
+          show(await request('/api/campaigns/'+row.id));
+        }); card.append(edit);
+      }
+      if (row.draft_ids[i] && post.status!=='removed') {
         const link = document.createElement('a');
         link.href = '/studio?draft='+row.draft_ids[i]+'&workspace='+document.querySelector('meta[name=zova-workspace]').content;
         link.textContent = 'Open draft'; card.append(link);
@@ -57,7 +92,7 @@
     finally { controls.forEach(control => control.disabled = false); busy = false; }
   }
   const generate = async feedback => show(await request('/api/ai/campaigns/'+current.id+'/plan',{revision:current.revision,feedback}));
-  list.onchange = () => {status.textContent='';show(records.get(Number(list.value)));};
+  list.onchange = () => run(async () => show(list.value ? await request('/api/campaigns/'+Number(list.value)) : null));
   form.onsubmit = event => {
     event.preventDefault();
     const data = new FormData(form), files = Array.from(form.elements.files.files), platforms = data.getAll('platform');
@@ -79,6 +114,6 @@
     });
   };
   element('campaign-revise').onclick = () => run(() => generate(element('campaign-feedback').value));
-  element('campaign-accept').onclick = () => run(async () => show(await request('/api/campaigns/'+current.id+'/accept',{revision:current.revision})));
+  element('campaign-accept').onclick = () => run(async () => {await request('/api/campaigns/'+current.id+'/accept',{revision:current.revision});show(await request('/api/campaigns/'+current.id));});
   run(async () => (await request('/api/campaigns')).forEach(remember));
 })();

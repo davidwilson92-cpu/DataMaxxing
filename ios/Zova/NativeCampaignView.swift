@@ -2,19 +2,6 @@ import SwiftUI
 import UniformTypeIdentifiers
 import PhotosUI
 
-struct StudioModePicker: View {
-    @Binding var campaign: Bool
-
-    var body: some View {
-        Picker("Studio mode", selection: $campaign) {
-            Text("Posts").tag(false)
-            Text("Campaign").tag(true)
-        }
-        .pickerStyle(.segmented)
-        .frame(maxWidth: 220, minHeight: 44)
-    }
-}
-
 struct NativeCampaignView: View {
     @EnvironmentObject var store: ProductStore
     @Environment(\.dismiss) private var dismiss
@@ -47,7 +34,7 @@ struct NativeCampaignView: View {
                     Menu(current.isNull ? "New campaign" : "Saved campaigns") {
                         Button("New campaign") { current = .null; feedback = "" }
                         ForEach(campaigns, id: \.["id"].int) { item in
-                            Button(item["brief"]["idea"].string) { select(item) }
+                            Button(item["brief"]["idea"].string) { Task { await perform { try await reopen(item["id"].int) } } }
                         }
                     }
                     if current.isNull { brief } else { review }
@@ -60,9 +47,7 @@ struct NativeCampaignView: View {
             .sheet(isPresented: $consent) { NativeAIConsentView().environmentObject(store) }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    StudioModePicker(campaign: Binding(get: { true }, set: { if !$0 { dismiss() } })).disabled(working)
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("Studio") { dismiss() }.disabled(working) }
             }
             .interactiveDismissDisabled(working)
             .task { await perform { campaigns = try await store.request("/api/campaigns").array; ready = true } }
@@ -116,13 +101,27 @@ struct NativeCampaignView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(SocialPlatform(rawValue: post["platform"].string)?.title ?? post["platform"].string).font(.headline)
                     if index < current["dates"].array.count {
-                        Text(current["dates"].array[index]["local"].string).font(.caption)
+                        Text(ProductLinks.displayDate(ProductLinks.date(current["dates"].array[index]["utc"].string) ?? start, timezone: current["brief"]["timezone"].string)).font(.caption)
                     }
                     Text(post["caption"].string)
                     if let asset = current["assets"].array.first(where: { $0["id"] == post["asset_id"] }) {
                         Text(asset["name"].string).font(.caption)
                     }
-                    if index < current["draft_ids"].array.count {
+                    if current["draft_ids"].array.isEmpty || post["editable"].bool {
+                        CampaignPostEditor(row: current, index: index) { body in
+                            await perform {
+                                select(try await store.request("/api/campaigns/\(current["id"].int)/posts/\(index)", method: "POST", body: body))
+                            }
+                        }.id("\(current["id"].int)-\(current["revision"].int)-\(post["draft_revision"].int)-\(index)")
+                    }
+                    if !post["status"].string.isEmpty { Text(post["status"].string.capitalized).font(.caption) }
+                    if post["status"].string == "scheduled" {
+                        Button("Unschedule to edit") { Task { await perform {
+                            _ = try await store.request("/api/schedules/drafts/\(current["draft_ids"].array[index].int)/edit", method: "POST", body: .object(["revision":post["draft_revision"]]))
+                            try await reopen(current["id"].int)
+                        } } }
+                    }
+                    if index < current["draft_ids"].array.count && post["status"].string != "removed" {
                         Button("Open draft") {
                             Task { await perform { if store.dirty { try await store.save() }; try await store.openDraft(current["draft_ids"].array[index].int); dismiss() } }
                         }
@@ -139,11 +138,15 @@ struct NativeCampaignView: View {
                 Button("Save posts to Schedule") {
                     Task { await perform {
                         select(try await store.request("/api/campaigns/\(current["id"].int)/accept", method: "POST", body: .object(["revision": current["revision"]])))
+                        try await reopen(current["id"].int)
                         message = "Drafts saved. Review each post before publishing."
                     } }
                 }
             }
         }
+    }
+    private func reopen(_ id: Int) async throws {
+        select(try await store.request("/api/campaigns/\(id)"))
     }
     private func select(_ row: JSONValue) {
         current = row; feedback = row["feedback"].string

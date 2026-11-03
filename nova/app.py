@@ -1363,6 +1363,10 @@ def api_analytics_dashboard(request:Request,days:int=Query(7),refresh:bool=Query
         log.warning('Performance evidence could not be saved for recommendations')
         view['note']+=' These results could not be saved for Next move; refresh to try again.'
         view['recommendation_history_saved']=False
+    from .campaigns import has_campaign_access
+    from .campaign_review import campaign_results
+    if has_campaign_access(db,user.id):
+        view['campaigns'] = campaign_results(db,user.id,view)
     return view
 
 @app.post("/api/insights")
