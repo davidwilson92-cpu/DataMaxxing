@@ -207,7 +207,7 @@
     "nova/templates/social_icon.html": "25f4f971457856c2f1072b8ee3fc80fc5ae5b551ba1e109fce3a4df7ef598398",
     "nova/templates/strategy_panel.html": "363312130c175fd55a6eefd2d48137856bfd8c546b5bbe4788aa1c44d4186416",
     "nova/templates/studio.html": "666235a3399556ac9b6537a9a0c7f5d14cf150ca51adb25ad2956dade66d99bb",
-    "nova/templates/studio_history.html": "f6c41abd678fdcbf52c7c85218a040a1b47032aa24dafb858faad51fdb01d1d4",
+    "nova/templates/studio_history.html": "d3432605959920d07575474f8f42c2665896ea4b765c53badcaa70fadafc08b6",
     "nova/templates/studio_intro.html": "a7753c22dda2aa21347f59fb0a7025779100c720352f3af42e0b332651356e5f",
     "nova/templates/studio_nav_rail.html": "00c8603b1404d40d22b157484fadb877b13e5faf15c99777389fdc2a40e9f88a",
     "nova/templates/subscribe.html": "96362846ff7ed6f770be0ff383df39b36d60bbfcf2823fc561ae3666eabebaad",
