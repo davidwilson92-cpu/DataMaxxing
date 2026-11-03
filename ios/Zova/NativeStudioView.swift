@@ -187,7 +187,7 @@ struct NativeStudioView: View {
                     }
                 } label: { HStack(spacing: 5) { Text(store.account["brand"]["name"].string); Image(systemName: "chevron.down").font(.caption2) }.font(.caption).foregroundStyle(.secondary).frame(minWidth: 44, minHeight: 44).contentShape(Rectangle()) }.disabled(store.busy).accessibilityIdentifier("brand-selector")
                 Spacer()
-                Button("Campaign") { focused = false; campaign = true }.disabled(store.busy)
+                StudioModePicker(campaign: Binding(get: { false }, set: { if $0 { focused = false; campaign = true } })).disabled(store.busy)
                 Button { history = true } label: { Image(systemName: "clock.arrow.circlepath").frame(width: 44, height: 44).contentShape(Rectangle()) }.accessibilityLabel("Your posts").disabled(store.busy)
             }
         }.padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 4)

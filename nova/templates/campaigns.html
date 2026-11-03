@@ -3,7 +3,7 @@
 {% block head %}<style>
 .campaign{width:min(100% - 2rem,44rem);margin:2rem auto}.campaign form,.campaign section,.campaign label{display:grid;gap:.5rem}.campaign form,.campaign section{gap:1rem;margin:1.5rem 0}.campaign fieldset{display:flex;flex-wrap:wrap;gap:.8rem;border:0;padding:0}.campaign fieldset label{display:flex;align-items:center}.campaign input[type=checkbox]{width:auto}.campaign article{padding:1rem;border-inline-start:.2rem solid #9c71ff;background:#20182d}.campaign button{width:fit-content}.campaign [hidden]{display:none}
 </style>{% if premium %}<script defer src="{{ asset_url('campaigns.js') }}"></script>{% endif %}{% endblock %}
-{% block body %}<main class="campaign"><nav aria-label="Studio mode"><a href="/studio?workspace={{ brand.id }}">Single post</a> · <strong>Campaign</strong></nav><h1>Campaigns</h1>
+{% block body %}<main class="campaign">{% include "studio_mode.html" %}<h1>Campaigns</h1>
 {% if not premium %}<p>Plan a series of posts with Premium.</p><a class="button" href="/subscribe">Explore Premium</a>
 {% else %}
 <label>Saved campaigns<select id="campaign-list"><option value="">New campaign</option></select></label>

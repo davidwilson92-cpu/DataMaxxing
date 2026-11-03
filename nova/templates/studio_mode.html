@@ -1,0 +1,9 @@
+<nav class="studio-mode" aria-label="Studio mode">
+  {% for label, path in [('Posts','/studio'),('Campaign','/campaigns')] %}
+    {% if request.url.path == path %}
+      <span aria-current="page">{{ label }}</span>
+    {% else %}
+      <a href="{{ path }}?workspace={{ brand.id }}">{{ label }}</a>
+    {% endif %}
+  {% endfor %}
+</nav>

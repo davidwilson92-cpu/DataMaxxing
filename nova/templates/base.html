@@ -17,6 +17,7 @@
 <style>:root{--zova-instagram-mark:url("{{ asset_url('instagram-official.png') }}")}</style>
 <link rel="stylesheet" href="{{ asset_url('social-brand.css') }}">
 <script src="{{ asset_url('social-brand.js') }}" data-icons='{{ {"x":asset_url("x-brand.svg"),"facebook":asset_url("facebook-brand.svg"),"tiktok":asset_url("tiktok-brand.svg")} | tojson }}'></script>
+{% if request.url.path in ['/studio','/campaigns'] %}<link rel="stylesheet" href="{{ asset_url('studio-mode.css') }}">{% endif %}
 {% block head %}{% endblock %}
 {% if native_shell %}<link rel="stylesheet" href="{{ asset_url('ios-shell.css') }}"><script defer src="{{ asset_url('ios-shell.js') }}"></script>{% endif %}
 {% if request.url.path in ['/studio','/drafts','/analytics'] %}

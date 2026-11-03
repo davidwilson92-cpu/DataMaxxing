@@ -1,0 +1,25 @@
+.studio-mode {
+  display: inline-flex;
+  align-self: center;
+  flex: none;
+  width: fit-content;
+  padding: 3px;
+  margin: 4px auto;
+  border: 1px solid #746985;
+  border-radius: 14px;
+  background: #181321;
+}
+.studio-mode > :is(a, span) {
+  display: grid;
+  place-items: center;
+  min-width: 6rem;
+  min-height: 44px;
+  border-radius: 10px;
+  font: 600 .95rem/1.2 system-ui, sans-serif;
+  color: #fff;
+  text-decoration: none;
+}
+.studio-mode > [aria-current] { background: #6a35c2; }
+.studio-mode > a:hover { background: #352844; }
+.studio-mode > a:focus-visible { outline: 2px solid white; outline-offset: -3px; }
+.campaign > .studio-mode { display: flex; }

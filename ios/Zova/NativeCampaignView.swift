@@ -2,6 +2,19 @@ import SwiftUI
 import UniformTypeIdentifiers
 import PhotosUI
 
+struct StudioModePicker: View {
+    @Binding var campaign: Bool
+
+    var body: some View {
+        Picker("Studio mode", selection: $campaign) {
+            Text("Posts").tag(false)
+            Text("Campaign").tag(true)
+        }
+        .pickerStyle(.segmented)
+        .frame(maxWidth: 220, minHeight: 44)
+    }
+}
+
 struct NativeCampaignView: View {
     @EnvironmentObject var store: ProductStore
     @Environment(\.dismiss) private var dismiss
@@ -45,7 +58,12 @@ struct NativeCampaignView: View {
             .disabled(working)
             .navigationTitle("Campaigns")
             .sheet(isPresented: $consent) { NativeAIConsentView().environmentObject(store) }
-            .toolbar { Button("Close") { dismiss() }.disabled(working) }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    StudioModePicker(campaign: Binding(get: { true }, set: { if !$0 { dismiss() } })).disabled(working)
+                }
+            }
             .interactiveDismissDisabled(working)
             .task { await perform { campaigns = try await store.request("/api/campaigns").array; ready = true } }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.image, .movie], allowsMultipleSelection: true) { result in
