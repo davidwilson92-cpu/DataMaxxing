@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import PhotosUI
 
 struct NativeCampaignView: View {
     @EnvironmentObject var store: ProductStore
@@ -14,6 +15,7 @@ struct NativeCampaignView: View {
     @State private var count = 4
     @State private var media: [JSONValue] = []
     @State private var importing = false
+    @State private var photos: [PhotosPickerItem] = []
     @State private var working = false
     @State private var ready = false
     @State private var consent = false
@@ -55,7 +57,25 @@ struct NativeCampaignView: View {
         Section("What are you promoting?") { TextEditor(text: $idea).frame(minHeight: 72) }
         Section("Photos and videos") {
             ForEach(media, id: \.["id"].int) { asset in Text(asset["filename"].string) }
-            Button("Add files") { importing = true }
+            if media.count < 10 {
+                PhotosPicker(selection: $photos, maxSelectionCount: 10 - media.count, matching: .any(of: [.images, .videos])) {
+                    Label("Photos and videos", systemImage: "photo.on.rectangle")
+                }
+                .onChange(of: photos) { _, items in
+                    guard !items.isEmpty else { return }
+                    Task { await perform {
+                        defer { photos = [] }
+                        for item in items {
+                            guard let picked = try await item.loadTransferable(type: PickedMedia.self) else {
+                                throw ZovaFailure.server("This file could not be opened.")
+                            }
+                            defer { NativeMediaFiles.remove(picked.url) }
+                            try await upload([picked.url])
+                        }
+                    } }
+                }
+                Button("Browse files") { importing = true }
+            }
         }
         Section("Platforms") {
             ForEach(SocialPlatform.allCases) { p in

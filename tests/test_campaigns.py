@@ -46,6 +46,35 @@ def test_premium_gate_and_explicit_approval(monkeypatch):
         assert not db.scalar(select(ScheduledPost).where(ScheduledPost.user_id==uid))
 
 
+def test_bulk_media_survives_review_and_failed_revision(monkeypatch):
+    from io import BytesIO
+    from PIL import Image
+    from nova import media_inspection
+    client, *_ = account()
+    other, *_ = account()
+    monkeypatch.setattr(allowances, 'tier', lambda db, uid: 'premium')
+    image = BytesIO()
+    Image.new('RGB', (2, 2)).save(image, format='PNG')
+    ids = []
+    for name in ['launch.png', 'demo.png']:
+        upload = client.post('/api/media', files={'files':(name,image.getvalue(),'image/png')})
+        ids.append(upload.json()['assets'][0]['id'])
+    assert other.post('/api/campaigns',json=dict(brief(),media=ids)).status_code == 404
+    row = client.post('/api/campaigns',json=dict(brief(),media=ids)).json()
+    plan = f"/api/ai/campaigns/{row['id']}/plan"
+    monkeypatch.setattr(media_inspection,'inspect_assets',lambda db,uid,ids: [])
+    monkeypatch.setattr(ai,'editorial_response',lambda *args,**kw: json.dumps({'posts':[
+        {'caption': 'See the launch.', 'asset_id':ids[0]}, {'caption':'Watch the demo.', 'asset_id':ids[1]}]}))
+    approved = client.post(plan,json={'revision':1}).json()
+    monkeypatch.setattr(ai,'editorial_response',lambda *args,**kw:'{"posts":[]}')
+    assert client.post(plan,json={'revision':2,'feedback':'Try again.'}).status_code == 502
+    assert client.get('/api/campaigns').json()[0] == approved
+    accepted = client.post(f"/api/campaigns/{row['id']}/accept", json={'revision':2}).json()
+    with SessionLocal() as db:
+        for draft_id, aid in zip(accepted['draft_ids'], ids):
+            assert json.loads(db.get(Draft,draft_id).workspace_json)['media_asset_ids'] == [aid]
+
+
 def test_missing_media_and_invalid_platform_count(monkeypatch):
     client, *_ = account()
     monkeypatch.setattr(allowances,'tier',lambda db,uid:'premium')

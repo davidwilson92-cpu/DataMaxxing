@@ -341,10 +341,10 @@
     "tests/test_verification_readiness.py": "c5a74d8c08a3e5643f6cfb491401473f6da3f8e1c160e1754b5480e5378b43c4",
     "tests/test_welcome_verification.py": "d6cf1f9fca9991bea0b369d5978df20d58a22a082c5111728f34148513d8cc96",
     "tests/test_workspace_persistence.py": "789a79642d066e1dec135b52cfe6334a626d681f75ae81683a44ed3191bb589c",
-    "tests/test_campaigns.py": "87fc34575d6936ad70c2372e43ae6e7245f1e4fe6c062c1d8b6827c2590b9149",
+    "tests/test_campaigns.py": "c12e1ef4dfb311440e68d020d4ae76f0c1f766a5efedd340f307a8b17ccabd7a",
     "nova/templates/campaigns.html": "f7b501f9d4e773ac3826c2a9e5dea191cff974d5ccc8c43efbd1a64db9cf3813",
-    "nova/campaigns.py": "64aaddad0cd01b39f2c3fa255b5b1a7dad434fbe9147a119e1bf1f838073f3dc",
-    "ios/Zova/NativeCampaignView.swift": "251bf6f75ede84cbb749473f49e190ed120f05bd4e2c8b2f2762f5c0a9ba9fd4",
+    "nova/campaigns.py": "c656a0ff186c861ff0f28335be0b233c4315dcbe14be070428a3e88d6d83837e",
+    "ios/Zova/NativeCampaignView.swift": "2a3396e54724d8dbd395158d15a993393bc8611740f51057ffe09a8da8f65c50",
     "nova/static/campaigns.js": "a297bfcb3b618cffd29165b410ab5c056b7b8a96ecb0bd492263df641055b147"
   },
   "release_class": "limited-beta",

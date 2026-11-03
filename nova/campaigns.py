@@ -99,6 +99,7 @@ def propose(cid: int, body: RevisionNote, uid=Depends(premium), db=Depends(get_d
                   feedback=body.feedback, strategy=strategy_context(db, uid), performance=performance.context(db, uid),
                   voice={k: getattr(prefs, k, '') for k in ('audience','writing_tone','things_to_avoid','example_posts','learned_json')})
     with allowances.ai_action(db, uid):
+        inputs['filenames'] = data['assets']
         inputs['media'] = media_inspection.inspect_assets(db, uid, [a.id for a in assets])
         try:
             output = ai._parse_json(ai.editorial_response(
