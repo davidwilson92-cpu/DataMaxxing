@@ -442,6 +442,19 @@ class StrategyAction(BrandScoped, Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
 
+class CampaignPreview(Base):
+    __tablename__ = 'zova_campaign_previews'
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), primary_key=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class Campaign(BrandScoped, Base):
+    __tablename__ = 'zova_campaigns'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    payload_json: Mapped[str] = mapped_column(Text)
+
+
 class ContentSeries(BrandScoped, Base):
     __tablename__ = 'zova_content_series'
     __table_args__ = (UniqueConstraint('user_id', 'brand_id', 'request_key'),)

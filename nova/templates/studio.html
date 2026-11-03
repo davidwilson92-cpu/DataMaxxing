@@ -11,6 +11,7 @@
 <div class="studio-brand-context"><button class="quiet-button" type="button" onclick="document.getElementById('brandDialog').showModal()" aria-label="Switch brand workspace">{{ brand.name if brand.name != "My brand" else (user.display_name or "Your studio") }} <span aria-hidden="true">⌄</span></button></div>
 <div class="studio-header-actions"><button id="newChatBtn" aria-label="Start a new post" title="Start a new post" class="quiet-button" onclick="newConversation()"><span class="new-post-plus" aria-hidden="true">+</span><span class="new-post-label">New post</span></button><button class="quiet-button next-move-launch" type="button" onclick="openNextMove()" aria-haspopup="dialog" aria-controls="strategyPanel">{% include "next_move_icon.html" %}<span>Next move</span></button></div>
 </header>
+{% include "studio_mode.html" %}
 {% if subscription_blocked %}<div class="alert error">Your subscription is not active. <a href="/subscribe">View your plan</a></div>{% endif %}
 <main class="conversation-layout"><div class="studio-watermark" aria-hidden="true">{% with logo_id="studio-watermark-gradient" %}{% include "logo_mark.html" %}{% endwith %}</div><section class="conversation-stage" aria-label="Chat with Zova">
 <div id="chatFeed" class="chat-feed" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions text">
