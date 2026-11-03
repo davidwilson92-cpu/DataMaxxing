@@ -3,6 +3,9 @@ import SwiftUI
 struct NativePerformanceView: View {
     @EnvironmentObject var store: ProductStore
     @Environment(\.dynamicTypeSize) private var textSize
+    private struct Selection: Identifiable { let id: Int }
+    @State private var selection: Selection?
+    @State private var campaigns = false
     @State private var days = 7
     @State private var dashboard: JSONValue = .null
     @State private var question = ""
@@ -12,9 +15,35 @@ struct NativePerformanceView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 NativeAdaptiveRow { Text("Performance").font(.title2.bold()); Spacer(); Button { load(refresh: true) } label: { Image(systemName: "arrow.clockwise").frame(width: 44, height: 44) }.accessibilityLabel("Refresh performance") }
+                if !dashboard["campaigns"].isNull {
+                    Picker("Performance view", selection: $campaigns) { Text("Posts").tag(false); Text("Campaigns").tag(true) }.pickerStyle(.segmented)
+                }
                 Picker("Posts published in", selection: $days) { Text("Last 7 days").tag(7); Text("Last 30 days").tag(30) }.pickerStyle(.segmented).onChange(of: days) { _, _ in load() }.disabled(store.busy)
                 if store.busy { ProgressView("Reading your accounts…") }
-                if !dashboard.isNull {
+                if campaigns && !dashboard["campaigns"].isNull {
+                    Text("Lifetime counters for campaign posts published in this period.").font(.caption)
+                    if dashboard["campaigns"].array.isEmpty { Text("No campaigns yet.") }
+                    ForEach(Array(dashboard["campaigns"].array.enumerated()), id: \.offset) { _, row in
+                        ZovaCard {
+                            Text(row["name"].string).font(.headline)
+                            Text("\(row["measured"].int) of \(row["published"].int) published posts measured").font(.caption)
+                            if row["published"].int > 0 {
+                                ForEach(["views","likes","comments","shares"], id: \.self) { key in
+                                    LabeledContent(key.capitalized, value: number(row[key]))
+                                }
+                            }
+                            Button("Open campaign") { selection = Selection(id: row["id"].int) }
+                            if !row["posts"].array.isEmpty {
+                                DisclosureGroup("Post results") {
+                                    ForEach(Array(row["posts"].array.enumerated()), id: \.offset) { _, post in
+                                        Text(post["platform"].string.capitalized + " · " + post["text"].string)
+                                        Text(number(post["likes"]) + " likes · " + number(post["comments"]) + " comments").font(.caption)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if !dashboard.isNull {
                     let platforms = dashboard["platforms"].object
                     if !platforms.values.contains(where: { $0["connected"].bool }) {
                         ZovaCard { Text("See what connects with your audience").font(.title3.bold()); Text("Connect an account for live results, or paste your figures below."); Button("Connect an account") { store.accountSection = "Social accounts"; store.selectedTab = 3 }.buttonStyle(ZovaPrimary()) }
@@ -58,6 +87,7 @@ struct NativePerformanceView: View {
                 }
             }.padding(18)
         }.refreshable { await update(refresh: true) }.task(id: store.selectedTab) { if store.selectedTab == 2 { await update() } }
+            .sheet(item: $selection) { NativeCampaignView(initialCampaignID: $0.id).environmentObject(store) }
             .scrollDismissesKeyboard(.interactively)
     }
     private func number(_ value: JSONValue) -> String { value.isNull ? "—" : value.int.formatted() }

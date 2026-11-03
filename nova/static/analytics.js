@@ -40,10 +40,50 @@ function renderPosts(posts) {
   }).join(''):'<div class="analytics-empty">No dated posts are available for this period. Try 30 days or create your next post in Studio.</div>';
 }
 
+function renderCampaignResults(rows) {
+  const selector=document.getElementById('performanceScope'), panel=document.getElementById('campaignResults');
+  if(!selector || !panel) return;
+  document.getElementById('performanceScopeLabel').hidden=!Array.isArray(rows);
+  if(!Array.isArray(rows)) {
+    selector.checked=false;panel.hidden=true;document.getElementById('postResults').hidden=false;return;
+  }
+  const scope=document.getElementById('performanceScopeLabel');
+  scope.onchange=()=>{
+    const campaigns=selector.checked;
+    panel.hidden=!campaigns;
+    document.getElementById('postResults').hidden=campaigns;
+  };
+  if(!selector.checked) scope.querySelector('input[value="posts"]').checked=true;
+  scope.onchange();
+  panel.replaceChildren();
+  const note=document.createElement('p');
+  note.textContent=rows?.length?'Lifetime counters for campaign posts published in this period.':'No campaigns yet.';
+  panel.append(note);
+  for (const row of rows || []) {
+    const card=document.createElement('article');card.className='analytics-panel';
+    const title=document.createElement('h2');title.textContent=row.name;
+    const coverage=document.createElement('p');coverage.textContent=row.measured+' of '+row.published+' published posts measured';
+    card.append(title,coverage);
+    if(row.published) {
+      const metrics=document.createElement('p');
+      metrics.textContent=['views','likes','comments','shares'].map(k=>analyticsNumber(row[k])+' '+k).join(' · ');card.append(metrics);
+    }
+    if(row.posts.length){
+      const list=document.createElement('details'), heading=document.createElement('summary');heading.textContent='Post results';list.append(heading);
+      for (const p of row.posts){const item=document.createElement('p');item.textContent=analyticsPlatform(p.platform)+' · '+p.text+' — '+analyticsNumber(p.likes)+' likes · '+analyticsNumber(p.comments)+' comments';list.append(item);}
+      card.append(list);
+    }
+    const open=document.createElement('a');open.textContent='Open campaign';
+    open.href=window.zovaWorkspaceUrl('/campaigns?campaign='+row.id);card.append(open);
+    panel.append(card);
+  }
+}
 let analyticsRequest=0, analyticsAnswerRequest=0;
 function showResultPanels(visible){document.querySelectorAll('.analytics-split,.content-panel,.analytics-ask').forEach(el=>el.hidden=!visible);}
 async function loadAnalytics(refresh=false){
   const request=++analyticsRequest;
+  const campaignPanel=document.getElementById('campaignResults');
+  if(campaignPanel && !campaignPanel.hidden) campaignPanel.textContent='Updating results…';
   ++analyticsAnswerRequest;
   document.getElementById('analyticsAnswer').hidden=true;
   document.getElementById('analyticsRefresh').disabled=true;
@@ -55,6 +95,7 @@ async function loadAnalytics(refresh=false){
     const days=document.getElementById('analyticsWindow').value;
     const data=await analyticsApi('/api/analytics/dashboard?days='+encodeURIComponent(days)+'&refresh='+(refresh===true));
     if(request!==analyticsRequest)return;
+    renderCampaignResults(data.campaigns);
     const connected=Object.values(data.platforms||{}).some(p=>p.connected);
     if(!connected){
       document.getElementById('analyticsNote').textContent='';
@@ -68,6 +109,7 @@ async function loadAnalytics(refresh=false){
     renderKpis(data.summary||{});renderPlatforms(data.platforms||{});renderRecommendations(data.recommendations||[]);renderPosts(data.top_posts||[]);
   }catch(error){
     if(request!==analyticsRequest)return;
+    renderCampaignResults(null);
     document.getElementById('analyticsNote').textContent='Results could not be updated.';
     document.getElementById('analyticsKpis').innerHTML=`<div class="analytics-error">${analyticsEsc(error.message)} Use Refresh to try again.</div>`;
     showResultPanels(false);

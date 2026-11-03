@@ -7,6 +7,7 @@ import UIKit
 final class NativeProductFixtures: URLProtocol {
     static let lock = NSLock()
     static var saved: [Int: JSONValue] = [:]
+    static var campaign: JSONValue = .null
     static var batch = 0
     static var storedStrategy: JSONValue = .null
     static var storedProposal: JSONValue = .null
@@ -19,6 +20,10 @@ final class NativeProductFixtures: URLProtocol {
         lock.lock(); defer { lock.unlock() }
         primaryPlatform = tiktok ? "tiktok" : "instagram"
         if ProcessInfo.processInfo.arguments.contains("--fixture-thread") { primaryPlatform = "x" }
+        campaign = .object(["id":.integer(6),"revision":.integer(1),"feedback":.string(""),"assets":.array([]),"draft_ids":.array([]),
+            "brief":.object(["idea":.string("Pottery launch"),"timezone":.string("Europe/London")]),
+            "dates":.array([.object(["utc":.string("2027-03-01T12:00:00Z"),"local":.string("2027-03-01T12:00:00+00:00")])]),
+            "posts":.array([.object(["platform":.string("instagram"),"caption":.string("Try the wheel.")])])])
         saved = [24: draft(24)]; batch = 0
         if primaryPlatform == "x" { saved[24]?["variants"]["x"]["posts"] = .strings((1...5).map { "Synthetic thread part \($0)" }) }
         var second = draft(23); second["brief"] = .string("Autumn class dates"); second["variants"][primaryPlatform]["posts"] = .strings(["Autumn classes are open for booking."]); saved[23] = second
@@ -135,8 +140,15 @@ final class NativeProductFixtures: URLProtocol {
             return ok(.object(["draft_id": .integer(24)]))
         }
         if path == "/api/series" { return ok(.array([])) }
+        if path == "/api/campaigns" { return ok(.array([campaign])) }
+        if path == "/api/campaigns/6" { return ok(campaign) }
+        if path == "/api/campaigns/6/posts/0" {
+            campaign["revision"] = .integer(campaign["revision"].int+1)
+            campaign["posts"] = .array([.object(["platform":input["platform"],"caption":input["caption"],"asset_id":input["asset_id"]])])
+            return ok(campaign)
+        }
         if path == "/api/analytics/dashboard" {
-            return ok(.object(["summary": .object(["impressions": .integer(1240), "engagements": .integer(84), "comments": .integer(16), "followers": .integer(380), "posts": .integer(6)]), "platforms": .object(["instagram": .object(["connected": .bool(true), "account": .string("Pottery Studio"), "impressions": .integer(1240), "engagements": .integer(84), "followers": .integer(380)])]), "top_posts": .array([]), "recommendations": .array([.object(["title": .string("Show the process"), "detail": .string("Try another simple pottery demonstration.")])]), "note": .string("Synthetic simulator evidence. No real provider data.")]))
+            return ok(.object(["campaigns": .array([.object(["id":.integer(6),"name":.string("Pottery launch"),"published":.integer(2),"measured":.integer(1),"posts":.array([])])]), "summary": .object(["impressions": .integer(1240), "engagements": .integer(84), "comments": .integer(16), "followers": .integer(380), "posts": .integer(6)]), "platforms": .object(["instagram": .object(["connected": .bool(true), "account": .string("Pottery Studio"), "impressions": .integer(1240), "engagements": .integer(84), "followers": .integer(380)])]), "top_posts": .array([]), "recommendations": .array([.object(["title": .string("Show the process"), "detail": .string("Try another simple pottery demonstration.")])]), "note": .string("Synthetic simulator evidence. No real provider data.")]))
         }
         if path.hasPrefix("/api/publications/") { return ok(.object(["draft_status": .string("draft"), "results": .object([:])])) }
         if path == "/api/publish-context" {

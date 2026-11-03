@@ -9,6 +9,9 @@ from sqlalchemy import select, update
 
 from . import ai, ai_consent, allowances, billing, media_inspection, performance
 from .db import CampaignPreview, utcnow, Campaign, ContentSeries, Draft, MediaAsset, SeriesOccurrence, get_db, get_preferences
+from .campaign_review import current_plan, dates as campaign_dates
+from .db import Publication, PublishReview
+from .publishing_workflow import schedule_time
 from .security import current_user
 from .series import SeriesSpec, times
 from .strategy import owned, strategy_context
@@ -104,6 +107,8 @@ def propose(cid: int, body: RevisionNote, uid=Depends(premium), db=Depends(get_d
     assets = [owned(db, MediaAsset, uid, aid) for aid in brief.media]
     prefs = get_preferences(db, uid)
     slots = [brief.platforms[i % len(brief.platforms)] for i in range(brief.count)]
+    if data['posts']:
+        slots = [post['platform'] for post in data['posts']]
     inputs = dict(brief=brief.idea, slots=slots, dates=data['dates'], previous=data['posts'],
                   feedback=body.feedback, strategy=strategy_context(db, uid), performance=performance.context(db, uid),
                   voice={k: getattr(prefs, k, '') for k in ('audience','writing_tone','things_to_avoid','example_posts','learned_json')})
@@ -138,6 +143,70 @@ def propose(cid: int, body: RevisionNote, uid=Depends(premium), db=Depends(get_d
         raise HTTPException(403, 'AI sharing is off.')
     data.update(posts=posts, feedback=body.feedback)
     return replace(db, row, body.revision, data)
+
+
+class SlotEdit(Revision):
+    caption: str = Field(min_length=1, max_length=2200)
+    platform: Platform
+    asset_id: PositiveInt | None = None
+    local_time: str = Field(max_length=32)
+    draft_revision: int | None = None
+    series_revision: int | None = None
+
+
+@router.get('/api/campaigns/{cid}')
+def detail(cid: int, uid=Depends(premium), db=Depends(get_db)):
+    return current_plan(db, owned(db, Campaign, uid, cid))
+
+
+@router.post('/api/campaigns/{cid}/posts/{position}')
+def edit_slot(cid: int, position: int, body: SlotEdit, uid=Depends(premium), db=Depends(get_db)):
+    row = owned(db, Campaign, uid, cid)
+    view = current_plan(db, row)
+    if not 0 <= position < len(view['posts']):
+        raise HTTPException(404, 'Campaign post not found.')
+    if body.revision != row.revision:
+        raise HTTPException(409, 'Campaign changed. Reopen it before editing.')
+    caption = body.caption.strip()
+    if not caption or body.platform == 'x' and len(caption)>280:
+        raise HTTPException(400, 'Add a caption within the platform limit.')
+    previous = view['posts'][position]
+    if body.asset_id:
+        if body.asset_id not in view['brief']['media'] and body.asset_id != previous['asset_id']:
+            raise HTTPException(400, 'Choose a campaign attachment.')
+        owned(db, MediaAsset, uid, body.asset_id)
+    zone = view['brief']['timezone']
+    old_date = view['dates'][position]
+    date = old_date if body.local_time == old_date['local'][:16] else campaign_dates(schedule_time(body.local_time,zone), zone)
+    post = dict(platform=body.platform, caption=caption, asset_id=body.asset_id)
+    if view['draft_ids']:
+        did = view['draft_ids'][position]
+        if not previous['editable']:
+            raise HTTPException(409, 'Open this post in Schedule to review its current state.')
+        series = db.scalar(select(ContentSeries).where(ContentSeries.user_id==uid,ContentSeries.request_key==f'campaign-{cid}'))
+        claimed = db.execute(update(ContentSeries).where(ContentSeries.id==series.id, ContentSeries.revision==body.series_revision,
+                             ContentSeries.status=='active').values(revision=ContentSeries.revision+1))
+        if claimed.rowcount != 1:
+            raise HTTPException(409, 'Schedule changed. Reopen this campaign.')
+        draft = owned(db, Draft, uid, did)
+        workspace = json.loads(draft.workspace_json)
+        workspace.update(active_platform=body.platform, selected_platforms=[body.platform], platform_selection_explicit=True,
+                         media_asset_ids=[body.asset_id] if body.asset_id else [])
+        changed = db.execute(update(Draft).where(Draft.id==did, Draft.revision==body.draft_revision,
+                             Draft.status=='draft').values(revision=Draft.revision+1,
+                             workspace_json=json.dumps(workspace), platforms_json=json.dumps([body.platform]),
+                             variants_json=json.dumps({body.platform:{'posts':[caption]}})))
+        if changed.rowcount != 1 or db.scalar(select(Publication.id).where(Publication.draft_id==did,
+                                                       Publication.status.not_in(['failed','cancelled'])).limit(1)):
+            raise HTTPException(409, 'Post changed or delivery started. Reopen the campaign.')
+        db.execute(update(SeriesOccurrence).where(SeriesOccurrence.series_id==series.id,
+                   SeriesOccurrence.draft_id==did).values(due_at=datetime.fromisoformat(date['utc'])))
+        db.execute(update(PublishReview).where(PublishReview.draft_id==did,PublishReview.status=='review').values(status='invalidated'))
+    data = json.loads(row.payload_json)
+    data['posts'][position] = post
+    data['dates'][position] = date
+    replace(db, row, body.revision, data)
+    return current_plan(db, row)
 
 
 @router.post('/api/campaigns/{cid}/accept')
