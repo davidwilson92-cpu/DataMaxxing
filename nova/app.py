@@ -212,9 +212,9 @@ app.include_router(campaign_router)
 
 @app.get('/campaigns', response_class=HTMLResponse)
 def campaign_page(request:Request, db:Session=Depends(get_db)):
-    from .allowances import tier
+    from .campaigns import has_campaign_access
     user = current_user(request)
-    return templates.TemplateResponse(request, "campaigns.html", template_context(request,user,premium=tier(db,user.id)=='premium'))
+    return templates.TemplateResponse(request, "campaigns.html", template_context(request,user,premium=has_campaign_access(db,user.id)))
 
 app.mount("/static", GZipMiddleware(PublicAssets(directory=str(HERE / "static")), compresslevel=4), name="static")
 

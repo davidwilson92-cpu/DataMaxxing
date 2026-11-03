@@ -7,8 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, PositiveInt
 from sqlalchemy import select, update
 
-from . import ai, ai_consent, allowances, media_inspection, performance
-from .db import Campaign, ContentSeries, Draft, MediaAsset, SeriesOccurrence, get_db, get_preferences
+from . import ai, ai_consent, allowances, billing, media_inspection, performance
+from .db import CampaignPreview, utcnow, Campaign, ContentSeries, Draft, MediaAsset, SeriesOccurrence, get_db, get_preferences
 from .security import current_user
 from .series import SeriesSpec, times
 from .strategy import owned, strategy_context
@@ -35,9 +35,18 @@ class RevisionNote(Revision):
     feedback: str = Field(default='', max_length=2000)
 
 
+def has_campaign_access(db, uid):
+    if allowances.tier(db, uid) == 'premium':
+        return True
+    if billing.mode() != 'test' or billing.require_subscription():
+        return False
+    return db.scalar(select(CampaignPreview.user_id).where(
+        CampaignPreview.user_id == uid, CampaignPreview.expires_at > utcnow())) is not None
+
+
 def premium(request: Request, db=Depends(get_db)):
     uid = current_user(request).id
-    if allowances.tier(db, uid) != 'premium':
+    if not has_campaign_access(db, uid):
         raise HTTPException(402, 'Campaigns are included in Premium.')
     return uid
 
@@ -123,7 +132,7 @@ def propose(cid: int, body: RevisionNote, uid=Depends(premium), db=Depends(get_d
         except (ValueError, TypeError, KeyError, AttributeError, RuntimeError) as error:
             raise HTTPException(502, 'Could not build the plan. Your saved campaign is ready to retry.') from error
     db.expire_all()
-    if allowances.tier(db, uid) != 'premium':
+    if not has_campaign_access(db, uid):
         raise HTTPException(402, 'Campaigns are included in Premium.')
     if ai_consent.required() and not ai_consent.permitted(uid):
         raise HTTPException(403, 'AI sharing is off.')

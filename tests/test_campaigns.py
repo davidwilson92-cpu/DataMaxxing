@@ -80,3 +80,24 @@ def test_missing_media_and_invalid_platform_count(monkeypatch):
     monkeypatch.setattr(allowances,'tier',lambda db,uid:'premium')
     assert client.post('/api/campaigns',json=dict(brief(),media=[993938])).status_code == 404
     assert client.post('/api/campaigns',json=dict(brief(),count=1)).status_code == 400
+
+
+def test_preview_is_scoped_expires_and_cannot_grant_live_access(monkeypatch):
+    from nova.db import CampaignPreview
+    client, uid, *_ = account()
+    other, *_ = account()
+    monkeypatch.setenv('STRIPE_MODE', 'test')
+    with SessionLocal() as db:
+        db.add(CampaignPreview(user_id=uid, expires_at=utcnow()+timedelta(days=30)))
+        db.commit()
+        assert allowances.tier(db, uid) is None
+    assert client.get('/api/campaigns').status_code == 200
+    assert 'Build campaign' in client.get('/campaigns').text
+    assert other.get('/api/campaigns').status_code == 402
+    monkeypatch.setenv('STRIPE_MODE', 'live')
+    assert client.get('/api/campaigns').status_code == 402
+    monkeypatch.setenv('STRIPE_MODE', 'test')
+    with SessionLocal() as db:
+        db.get(CampaignPreview, uid).expires_at = utcnow()-timedelta(seconds=1)
+        db.commit()
+    assert client.get('/api/campaigns').status_code == 402
