@@ -20,7 +20,7 @@
     const post=row.posts[index], panel=document.createElement('details'), summary=document.createElement('summary');
     summary.textContent='Edit post'; panel.append(summary);
     function field(label,control) {
-      const wrap=document.createElement('label'); wrap.append(label,control); panel.append(wrap); return control;
+      const wrap=document.createElement('label'); control.setAttribute('aria-label',label); wrap.append(label,control); panel.append(wrap); return control;
     }
     const caption=field('Caption',document.createElement('textarea')); caption.value=post.caption;
     const platform=field('Platform',document.createElement('select'));
@@ -37,6 +37,19 @@
       revision:row.revision, draft_revision:post.draft_revision,series_revision:post.series_revision,
       caption:caption.value,platform:platform.value,asset_id:Number(media.value)||null,local_time:time.value
     })));
+    const markEditing=()=>{
+      for(const item of document.querySelectorAll('#campaign-review button,#campaign-review summary,#campaign-list')) {
+        if(item===save || panel.contains(item)) continue;
+        if(item.tagName==='SUMMARY') item.closest('details').inert=true;
+        else item.disabled=true;
+      }
+      panel.dataset.dirty='true';
+    };
+    panel.addEventListener('input',markEditing);
+    const cancel=document.createElement('button');cancel.textContent='Cancel';
+    cancel.onclick=()=>{list.disabled=false;show(row);element('campaign-revise').disabled=false;element('campaign-accept').disabled=false;};
+    panel.append(cancel);
+    summary.onclick=event=>{if(panel.dataset.dirty==='true')event.preventDefault();};
     panel.ontoggle=()=>{
       if(panel.open && card.isConnected) for (const other of card.parentElement.querySelectorAll('details[open]')) if(other!==panel) other.open=false;
     };
@@ -55,13 +68,24 @@
     cards.replaceChildren();
     row.posts.forEach((post,i) => {
       const card = document.createElement('article'), title = document.createElement('strong'), text = document.createElement('p');
-      title.textContent = post.platform + ' · ' + new Date(row.dates[i].utc).toLocaleString(undefined,{timeZone:row.brief.timezone,timeZoneName:'short'});
+      title.textContent = ({x:'X',facebook:'Facebook',instagram:'Instagram',tiktok:'TikTok'}[post.platform] || post.platform) + ' · ' + new Date(row.dates[i].utc).toLocaleString(undefined,{timeZone:row.brief.timezone,timeZoneName:'short'});
       text.textContent = post.caption;
       card.append(title,text);
       const asset = row.assets.find(a => a.id === post.asset_id);
       if (asset) card.append(document.createTextNode(asset.name + ' '));
       if (!row.draft_ids.length || post.editable) editCard(card,row,i);
       if (post.status) {const state=document.createElement('small');state.textContent=post.status.replaceAll('_',' ');card.append(state);}
+      if(post.schedule){
+        const panel=document.createElement('details'),open=document.createElement('summary');
+        open.textContent='Change time';panel.append(open);
+        const time=document.createElement('input');time.type='datetime-local';time.value=row.dates[i].local.slice(0,16);
+        time.setAttribute('aria-label','New time · '+row.brief.timezone);panel.append(time);
+        const save=document.createElement('button');save.textContent='Reschedule';panel.append(save);
+        save.onclick=()=>run(async()=>{
+          await request('/api/schedules/'+post.schedule.id+'/reschedule',{scheduled_local:time.value,timezone:row.brief.timezone,expected_updated_at:post.schedule.updated_at});
+          show(await request('/api/campaigns/'+row.id));
+        });card.append(panel);
+      }
       if (post.status==='scheduled') {
         const edit=document.createElement('button'); edit.textContent='Unschedule to edit';
         edit.onclick=()=>run(async()=>{
@@ -89,8 +113,14 @@
     status.textContent = 'Working…';
     try { await action(); status.textContent = current?.draft_ids.length ? 'Drafts saved. Review each post before publishing.' : ''; }
     catch (error) { status.textContent = error.message; }
-    finally { controls.forEach(control => control.disabled = false); busy = false; }
+    finally {
+      controls.forEach(control => control.disabled = false); busy = false;
+      document.querySelector('#campaign-review details[data-dirty="true"] textarea')?.dispatchEvent(new Event('input',{bubbles:true}));
+    }
   }
+  window.addEventListener('beforeunload',event=>{
+    if(document.querySelector('#campaign-review details[data-dirty="true"]')){event.preventDefault();event.returnValue='';}
+  });
   const generate = async feedback => show(await request('/api/ai/campaigns/'+current.id+'/plan',{revision:current.revision,feedback}));
   list.onchange = () => run(async () => show(list.value ? await request('/api/campaigns/'+Number(list.value)) : null));
   form.onsubmit = event => {

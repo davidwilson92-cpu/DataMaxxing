@@ -2,6 +2,24 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testEditCampaignAndReadItsPerformance() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        let entry = app.buttons["Campaign"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 12)); entry.tap()
+        let picker = app.buttons["New campaign"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 8)); picker.tap()
+        app.buttons["Pottery launch"].tap()
+        let edit = app.buttons["Edit post"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 8)); edit.tap()
+        let caption = app.textFields["Caption"].exists ? app.textFields["Caption"] : app.textViews["Caption"]
+        XCTAssertTrue(caption.waitForExistence(timeout: 5)); caption.tap(); caption.typeText(" Friday.")
+        let save = app.buttons["Save changes"]; reveal(save, in: app); save.tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Friday.")).firstMatch.waitForExistence(timeout: 8))
+        app.buttons["Studio"].tap(); app.buttons["tab-Performance"].tap()
+        let campaigns = app.buttons["Campaigns"]; XCTAssertTrue(campaigns.waitForExistence(timeout: 8)); campaigns.tap()
+        XCTAssertTrue(app.staticTexts["1 of 2 published posts measured"].waitForExistence(timeout: 8))
+    }
+
     func testUnapprovedFacebookConnectionIsExplainedWithoutOpeningLogin() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         XCTAssertTrue(app.buttons["tab-Account"].waitForExistence(timeout: 12)); app.buttons["tab-Account"].tap()

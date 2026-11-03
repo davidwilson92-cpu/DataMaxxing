@@ -108,13 +108,23 @@ struct NativeCampaignView: View {
                         Text(asset["name"].string).font(.caption)
                     }
                     if current["draft_ids"].array.isEmpty || post["editable"].bool {
-                        CampaignPostEditor(row: current, index: index) { body in
+                        CampaignPostEditor(row: current, index: index, errorMessage: message, working: working) { body in
                             await perform {
                                 select(try await store.request("/api/campaigns/\(current["id"].int)/posts/\(index)", method: "POST", body: body))
                             }
                         }.id("\(current["id"].int)-\(current["revision"].int)-\(post["draft_revision"].int)-\(index)")
                     }
                     if !post["status"].string.isEmpty { Text(post["status"].string.capitalized).font(.caption) }
+                    if !post["schedule"].isNull, index < current["dates"].array.count {
+                        CampaignTimeEditor(when: current["dates"].array[index]["utc"].string, zone: current["brief"]["timezone"].string) { local in
+                            await perform {
+                                _ = try await store.request("/api/schedules/\(post["schedule"]["id"].int)/reschedule", method: "POST",
+                                    body: .object(["scheduled_local":.string(local), "timezone":current["brief"]["timezone"],
+                                                   "expected_updated_at":post["schedule"]["updated_at"]]))
+                                try await reopen(current["id"].int)
+                            }
+                        }.id(post["schedule"]["updated_at"].string)
+                    }
                     if post["status"].string == "scheduled" {
                         Button("Unschedule to edit") { Task { await perform {
                             _ = try await store.request("/api/schedules/drafts/\(current["draft_ids"].array[index].int)/edit", method: "POST", body: .object(["revision":post["draft_revision"]]))

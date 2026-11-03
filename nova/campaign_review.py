@@ -22,8 +22,10 @@ def current_plan(db, row):
     drafts = {d.id: d for d in db.scalars(select(Draft).where(Draft.user_id == row.user_id, Draft.id.in_(ids)))}
     series = db.scalar(select(ContentSeries).where(ContentSeries.user_id == row.user_id, ContentSeries.request_key == f'campaign-{row.id}'))
     slots = {o.position:o for o in db.scalars(select(SeriesOccurrence).where(SeriesOccurrence.series_id == series.id))} if series else {}
-    jobs = {j.draft_id:j for j in db.scalars(select(ScheduledPost).where(ScheduledPost.user_id == row.user_id,
-                ScheduledPost.draft_id.in_(ids), ScheduledPost.status == 'scheduled').order_by(ScheduledPost.scheduled_at.desc()))}
+    jobs = {}
+    for job in db.scalars(select(ScheduledPost).where(ScheduledPost.user_id == row.user_id,
+            ScheduledPost.draft_id.in_(ids), ScheduledPost.status == 'scheduled').order_by(ScheduledPost.scheduled_at)):
+        jobs.setdefault(job.draft_id, []).append(job)
     for i, post in enumerate(data['posts']):
         draft = drafts.get(ids[i])
         slot = slots.get(i)
@@ -41,7 +43,11 @@ def current_plan(db, row):
                     editable=bool(simple and draft.status=='draft' and slot and slot.status=='planned' and series.status=='active'))
         if slot and series:
             post['series_revision'] = series.revision
-            when = jobs[draft.id].scheduled_at if draft.id in jobs else slot.due_at
+            scheduled = jobs.get(draft.id, [])
+            when = scheduled[0].scheduled_at if scheduled else slot.due_at
+            if len(scheduled) == 1 and draft.status == 'scheduled':
+                from .schedule_routes import stamp
+                post['schedule'] = dict(id=scheduled[0].id, updated_at=stamp(scheduled[0].updated_at))
             data['dates'][i] = dates(when, data['brief']['timezone'])
     return data
 

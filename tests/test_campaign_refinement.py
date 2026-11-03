@@ -62,3 +62,25 @@ def test_campaign_metrics_require_exact_platform_and_provider_id(plan):
         view['sample_posts'].append(dict(post,platform='instagram'))
         row=campaign_results(db,uid,view)[0]
         assert (row['likes'],row['views'],row['shares'])==(4,0,None)
+
+
+def test_scheduled_time_edit_retains_delivery_and_rejects_stale_or_started_job(plan):
+    from nova.db import ScheduledPost
+    client,uid,base,_=plan
+    did=client.post(base+'/accept',json={'revision':2}).json()['draft_ids'][0]
+    with SessionLocal() as db:
+        db.get(Draft,did).status='scheduled'
+        db.add(ScheduledPost(user_id=uid,draft_id=did,platform='instagram',content_json='{}',
+                             scheduled_at=utcnow()+timedelta(days=3)))
+        db.commit()
+    post=client.get(base).json()['posts'][0]
+    assert not post['editable'] and post['status']=='scheduled'
+    endpoint='/api/schedules/'+str(post['schedule']['id'])+'/reschedule'
+    payload=dict(timezone='America/New_York',scheduled_local=(utcnow()+timedelta(days=5)).strftime('%Y-%m-%dT09:30'),
+                 expected_updated_at=post['schedule']['updated_at'])
+    assert client.post(endpoint,json=payload).status_code==200
+    assert client.post(endpoint,json=payload).status_code==409
+    with SessionLocal() as db:
+        assert db.get(Draft,did).status=='scheduled'
+        job=db.get(ScheduledPost,post['schedule']['id']);job.status='publishing';db.commit()
+    assert client.post('/api/schedules/drafts/'+str(did)+'/edit',json={'revision':post['draft_revision']}).status_code==409

@@ -45,14 +45,16 @@ function renderCampaignResults(rows) {
   if(!selector || !panel) return;
   document.getElementById('performanceScopeLabel').hidden=!Array.isArray(rows);
   if(!Array.isArray(rows)) {
-    selector.value='posts';panel.hidden=true;document.getElementById('postResults').hidden=false;return;
+    selector.checked=false;panel.hidden=true;document.getElementById('postResults').hidden=false;return;
   }
-  selector.onchange=()=>{
-    const campaigns=selector.value==='campaigns';
+  const scope=document.getElementById('performanceScopeLabel');
+  scope.onchange=()=>{
+    const campaigns=selector.checked;
     panel.hidden=!campaigns;
     document.getElementById('postResults').hidden=campaigns;
   };
-  selector.onchange();
+  if(!selector.checked) scope.querySelector('input[value="posts"]').checked=true;
+  scope.onchange();
   panel.replaceChildren();
   const note=document.createElement('p');
   note.textContent=rows?.length?'Lifetime counters for campaign posts published in this period.':'No campaigns yet.';

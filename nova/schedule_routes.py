@@ -13,6 +13,7 @@ router=APIRouter()
 
 class Reschedule(BaseModel):
     scheduled_local:str
+    timezone:str|None=None
     expected_updated_at:str|None=None
 
 
@@ -163,7 +164,11 @@ def reschedule(schedule_id:int,body:Reschedule,request:Request):
         publication=reviewed_publication(db,row)
         if publication and publication.status!='scheduled':
             raise HTTPException(409,'This post has started or finished. Check its results before changing the time.')
-        value=schedule_time(body.scheduled_local,get_preferences(db,uid).timezone)
+        zone = body.timezone or get_preferences(db,uid).timezone
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+        try: ZoneInfo(zone)
+        except (ValueError, ZoneInfoNotFoundError): raise HTTPException(400,'Choose a valid timezone.')
+        value=schedule_time(body.scheduled_local,zone)
         claimed=db.execute(update(ScheduledPost).where(ScheduledPost.id==row.id,ScheduledPost.status=='scheduled',ScheduledPost.updated_at==row.updated_at).values(scheduled_at=value,updated_at=utcnow()).execution_options(synchronize_session=False))
         if claimed.rowcount!=1:db.rollback();raise HTTPException(409,'This job has started or finished. Its time cannot be changed.')
         db.commit();return {'status':'scheduled','scheduled_at':value.isoformat()}
