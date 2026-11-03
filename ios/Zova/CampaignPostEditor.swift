@@ -41,6 +41,11 @@ struct CampaignPostEditor: View {
                     }
                 }
                 DatePicker("Planned time", selection: $date).environment(\.timeZone, zone)
+                if !errorMessage.isEmpty { Text(errorMessage).font(.caption) }
+            }.disabled(working).navigationTitle("Edit post").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { expanded = false }.disabled(working) }
+                ToolbarItem(placement: .confirmationAction) {
                 Button("Save changes") {
                     let formatter = DateFormatter()
                     formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.timeZone = zone
@@ -50,10 +55,9 @@ struct CampaignPostEditor: View {
                         "series_revision":post["series_revision"], "platform":.string(platform), "caption":.string(caption),
                         "asset_id":asset == 0 ? .null : .integer(asset), "local_time":.string(formatter.string(from:date))])) }
                 }
-                if !errorMessage.isEmpty { Text(errorMessage).font(.caption) }
-            }.disabled(working).navigationTitle("Edit post").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { expanded = false }.disabled(working) } }
-            }.interactiveDismissDisabled(working)
+                }
+            }
+            }.disabled(working).interactiveDismissDisabled(working)
         }
     }
 }

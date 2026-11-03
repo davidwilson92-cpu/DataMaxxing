@@ -32,23 +32,31 @@ struct NativeCampaignView: View {
                         Link("Request Premium access", destination: URL(string: "mailto:support@zova-social.com?subject=Premium%20campaign%20access")!)
                     }
                 } else if ready {
-                    Menu(current.isNull ? "New campaign" : String(current["brief"]["idea"].string.prefix(80))) {
-                        Button("New campaign") { current = .null; feedback = "" }
-                        ForEach(campaigns, id: \.["id"].int) { item in
-                            Button(item["brief"]["idea"].string) { Task { await perform { try await reopen(item["id"].int) } } }
+                    if current.isNull {
+                        if !campaigns.isEmpty {
+                            Section("Saved campaigns") {
+                                ForEach(campaigns, id: \.["id"].int) { item in
+                                    Button(String(item["brief"]["idea"].string.prefix(80))) {
+                                        Task { await perform { try await reopen(item["id"].int) } }
+                                    }.accessibilityIdentifier("saved-campaign-\(item["id"].int)")
+                                }
+                            }
                         }
+                    } else {
+                        Button("All campaigns") { current = .null; feedback = ""; message = "" }
                     }
                     if current.isNull { brief } else { review }
                 }
                 if working { ProgressView() }
                 if !message.isEmpty { Text(message).foregroundStyle(.secondary) }
             }
+            .buttonStyle(.borderless)
             .disabled(working)
-            .navigationTitle("Campaigns")
+            .navigationTitle(current.isNull ? "Campaigns" : String(current["brief"]["idea"].string.prefix(65)))
             .sheet(isPresented: $consent) { NativeAIConsentView().environmentObject(store) }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button(initialCampaignID == nil ? "Studio" : "Performance") { dismiss() }.disabled(working) }
+                ToolbarItem(placement: .cancellationAction) { Button(initialCampaignID == nil ? "Studio" : "Performance") { dismiss() }.disabled(working).accessibilityIdentifier("close-campaign") }
             }
             .interactiveDismissDisabled(working)
             .task { await perform {
