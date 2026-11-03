@@ -207,13 +207,22 @@ from .strategy import router as strategy_router, strategy_context
 from .series import router as series_router
 app.include_router(strategy_router)
 app.include_router(series_router)
+from .campaigns import router as campaign_router
+app.include_router(campaign_router)
+
+@app.get('/campaigns', response_class=HTMLResponse)
+def campaign_page(request:Request, db:Session=Depends(get_db)):
+    from .allowances import tier
+    user = current_user(request)
+    return templates.TemplateResponse(request, "campaigns.html", template_context(request,user,premium=tier(db,user.id)=='premium'))
+
 app.mount("/static", GZipMiddleware(PublicAssets(directory=str(HERE / "static")), compresslevel=4), name="static")
 
 
 @app.exception_handler(HTTPException)
 async def authentication_error(request: Request, exc: HTTPException):
     # Only browser pages redirect. APIs and OAuth callbacks retain their errors.
-    private_pages = {"/studio", "/account", "/account/deletion", "/brands", "/analytics", "/drafts", "/subscribe",
+    private_pages = {"/studio", "/campaigns", "/account", "/account/deletion", "/brands", "/analytics", "/drafts", "/subscribe",
                      "/onboarding/socials", "/onboarding/writing-style", "/onboarding/complete"}
     connection_path = request.url.path
     oauth_starts = {value["start"]: f"/connect/{key}" for key, value in connection_options().items()}

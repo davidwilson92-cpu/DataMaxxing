@@ -25,6 +25,7 @@ struct NativeStudioView: View {
     @Binding var strategy: Bool
     @FocusState private var focused: Bool
     @State private var chooseDraftPlatform = false
+    @State private var campaign = false
     @State private var history = false
     @State private var options = false
     @State private var importer = false
@@ -122,7 +123,8 @@ struct NativeStudioView: View {
         }.foregroundStyle(ZovaDesign.ink)
             .photosPicker(isPresented: $photoLibrary, selection: $picker, maxSelectionCount: max(1, 10 - store.draft.media.count), selectionBehavior: .ordered, matching: .any(of: [.images, .videos]), preferredItemEncoding: .compatible)
             .confirmationDialog("Discard the unsaved copy on this iPhone? Your server draft stays unchanged.", isPresented: $discardRecovery, titleVisibility: .visible) { Button("Discard local copy", role: .destructive) { store.discardRecovery() } }
-            .sheet(isPresented: $history) { NativeHistoryView().environmentObject(store) }
+            .sheet(isPresented: $campaign) { NativeCampaignView().environmentObject(store) }
+        .sheet(isPresented: $history) { NativeHistoryView().environmentObject(store) }
             .sheet(isPresented: $options) { NativePostOptionsView().environmentObject(store) }
             .sheet(isPresented: Binding(get: { previewMode != nil }, set: { if !$0 { previewMode = nil } })) {
                 NativeDraftPreview(compare: previewMode == "compare").id(store.authority).environmentObject(store)
@@ -185,6 +187,7 @@ struct NativeStudioView: View {
                     }
                 } label: { HStack(spacing: 5) { Text(store.account["brand"]["name"].string); Image(systemName: "chevron.down").font(.caption2) }.font(.caption).foregroundStyle(.secondary).frame(minWidth: 44, minHeight: 44).contentShape(Rectangle()) }.disabled(store.busy).accessibilityIdentifier("brand-selector")
                 Spacer()
+                Button("Campaign") { focused = false; campaign = true }.disabled(store.busy)
                 Button { history = true } label: { Image(systemName: "clock.arrow.circlepath").frame(width: 44, height: 44).contentShape(Rectangle()) }.accessibilityLabel("Your posts").disabled(store.busy)
             }
         }.padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 4)
