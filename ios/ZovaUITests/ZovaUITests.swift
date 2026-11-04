@@ -2,6 +2,17 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testUnfinishedCampaignRestoresAfterReturningToStudio() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        let entry = app.buttons["Campaign"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 12)); entry.tap()
+        let brief = app.textViews["Campaign brief"]
+        XCTAssertTrue(brief.waitForExistence(timeout: 8)); brief.tap(); brief.typeText("Saturday alterations")
+        app.buttons["close-campaign"].tap(); entry.tap()
+        XCTAssertTrue(brief.waitForExistence(timeout: 8))
+        XCTAssertEqual(brief.value as? String, "Saturday alterations")
+    }
+
     func testEditCampaignAndReadItsPerformance() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         let entry = app.buttons["Campaign"]

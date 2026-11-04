@@ -448,6 +448,14 @@ class CampaignPreview(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class CampaignBriefDraft(BrandScoped, Base):
+    __tablename__ = 'zova_campaign_brief_drafts'
+    __table_args__ = (UniqueConstraint('user_id','brand_id'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    payload_json: Mapped[str] = mapped_column(Text)
+
+
 class Campaign(BrandScoped, Base):
     __tablename__ = 'zova_campaigns'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

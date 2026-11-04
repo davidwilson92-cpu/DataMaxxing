@@ -171,7 +171,10 @@ def reschedule(schedule_id:int,body:Reschedule,request:Request):
         value=schedule_time(body.scheduled_local,zone)
         claimed=db.execute(update(ScheduledPost).where(ScheduledPost.id==row.id,ScheduledPost.status=='scheduled',ScheduledPost.updated_at==row.updated_at).values(scheduled_at=value,updated_at=utcnow()).execution_options(synchronize_session=False))
         if claimed.rowcount!=1:db.rollback();raise HTTPException(409,'This job has started or finished. Its time cannot be changed.')
-        db.commit();return {'status':'scheduled','scheduled_at':value.isoformat()}
+        from .campaign_review import caption_date_warning, dates
+        caption = '\n'.join(record_object(row.content_json).get('posts',[]))
+        warning = caption_date_warning(caption,dates(row.scheduled_at,zone)['local'],dates(value,zone)['local'])
+        db.commit();return {'status':'scheduled','scheduled_at':value.isoformat(),'timing_warning':warning}
 
 
 @router.post('/api/schedules/drafts/{draft_id}/edit')

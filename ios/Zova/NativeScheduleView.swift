@@ -33,6 +33,7 @@ struct NativeScheduleEdit: View {
     let row: JSONValue
     let changed: () async throws -> Void
     @State private var date = Date()
+    @State private var timingWarning = ""
     @State private var confirmCancel = false
     @State private var confirmEdit = false
     var body: some View {
@@ -43,7 +44,8 @@ struct NativeScheduleEdit: View {
             if row["status"].string == "scheduled" {
                 DatePicker("Posting time", selection: $date, in: Date()...).environment(\.timeZone, TimeZone(identifier: store.timezone) ?? .current)
                 Text(store.timezone).font(.caption)
-                Button("Save new time") { run { _ = try await store.request("/api/schedules/\(row["id"].int)/reschedule", method: "POST", body: .object(["scheduled_local": .string(ISO8601DateFormatter().string(from: date)), "expected_updated_at": row["updated_at"]])); try await changed(); dismiss() } }.buttonStyle(ZovaPrimary())
+                Button("Save new time") { run { let result = try await store.request("/api/schedules/\(row["id"].int)/reschedule", method: "POST", body: .object(["scheduled_local": .string(ISO8601DateFormatter().string(from: date)), "expected_updated_at": row["updated_at"]])); try await changed(); timingWarning = result["timing_warning"].string; if timingWarning.isEmpty { dismiss() } } }.buttonStyle(ZovaPrimary())
+                if !timingWarning.isEmpty { Text(timingWarning).font(.callout) }
                 Button("Edit caption / media") { confirmEdit = true }
                 Button("Cancel scheduled post", role: .destructive) { confirmCancel = true }
             } else { Button("Open post and results") { run { try await store.openDraft(row["draft_id"].int); dismiss() } }.buttonStyle(ZovaPrimary()) }
@@ -104,8 +106,8 @@ struct NativeSeriesView: View {
                     Toggle("This and future occurrences", isOn: $future)
                     Text("Changed posts need a fresh review before scheduling.").font(.caption)
                     Button("Save new time") { run {
-                        _ = try await store.request("/api/series/occurrences/\(occurrence["id"].int)/time", method: "POST", body: .object(["revision": .integer(occurrenceRevision), "local_time": .string(ISO8601DateFormatter().string(from: movedDate)), "scope": .string(future ? "future" : "one")]))
-                        occurrence = .null; try await reload()
+                        let moved = try await store.request("/api/series/occurrences/\(occurrence["id"].int)/time", method: "POST", body: .object(["revision": .integer(occurrenceRevision), "local_time": .string(ISO8601DateFormatter().string(from: movedDate)), "scope": .string(future ? "future" : "one")]))
+                        occurrence = .null; try await reload(); resultNote = moved["note"].string
                     } }.buttonStyle(ZovaPrimary())
                     Spacer()
                 }.padding(22).presentationDetents([.medium])

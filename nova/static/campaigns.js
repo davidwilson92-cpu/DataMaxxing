@@ -3,7 +3,62 @@
   const form = element('campaign-form'), list = element('campaign-list');
   const status = element('campaign-status');
   const records = new Map(), uploaded = new Map();
-  let current = null, busy = false;
+  let current = null, busy = false, briefReady = false, revision = 0, saved = '', writing = null;
+  let zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const saveNote = element('brief-save');
+  function nameOf(row){return row.name || row.brief.idea.slice(0,80);}
+  const timingField=form.elements.timing,startField=form.elements.start;
+  function startValue(){return startField.type==='date' && startField.value ? startField.value+'T23:00' : startField.value;}
+  function setTimeMode(value){
+    const prior=startField.value;
+    timingField.value=value;
+    startField.type=value==='suggest'?'date':'datetime-local';
+    startField.value=prior ? (value==='suggest'?prior.slice(0,10):prior.length===10?prior+'T12:00':prior) : '';
+  }
+  timingField.onchange=()=>{setTimeMode(timingField.value);changed();};
+  setTimeMode('suggest');
+  function snapshot() {
+    return JSON.stringify({recommend_times:form.elements.timing.value==="suggest",idea:form.elements.idea.value,platforms:[...form.querySelectorAll('[name=platform]:checked')].map(el=>el.value),
+      start:startValue(), timezone:zone, frequency:form.elements.frequency.value,
+      count:form.elements.count.valueAsNumber || null, media:[...selectedFiles].map(file=>uploaded.get(file)).filter(Boolean)});
+  }
+  async function flush() {
+    clearTimeout(timer);
+    if (!briefReady) throw new Error('Reopen Campaign to load your saved brief.');
+    if (!writing && saved!==snapshot()) {
+      writing=(async()=>{
+        while(saved!==snapshot()) {
+          const next=snapshot(); saveNote.textContent='Saving brief…';
+          const result=await request('/api/campaign-brief',{...JSON.parse(next),revision});
+          revision=result.revision; saved=next;
+        }
+        saveNote.textContent='Brief saved';
+      })().catch(error=>{saveNote.textContent='Brief not saved. '+error.message;throw error;}).finally(()=>{writing=null;});
+    }
+    if(writing) await writing;
+  }
+  let timer;
+  const changed=()=>{clearTimeout(timer);if(briefReady) timer=setTimeout(()=>flush().catch(()=>{}),250);};
+  async function restore() {
+    const result=await request('/api/campaign-brief');
+    revision=result.revision;const draft=result.brief;
+    if(draft){
+      setTimeMode(draft.recommend_times?'suggest':'manual');
+      startField.value=draft.recommend_times?draft.start.slice(0,10):draft.start;
+      for(const key of ['idea','frequency','count']) form.elements[key].value=draft[key]??'';
+      form.querySelectorAll('[name=platform]').forEach(el=>el.checked=draft.platforms.includes(el.value));
+      zone=draft.timezone;
+      for(const a of draft.assets){const file={name:a.filename};selectedFiles.add(file);uploaded.set(file,a.id);}
+      renderFiles();saveNote.textContent='Brief restored';
+    }
+    saved=snapshot();briefReady=true;
+  }
+  form.addEventListener('input',event=>{if(event.target.type!=='file') changed();});
+  document.addEventListener('click',event=>{
+    const link=event.target.closest('a[href]');
+    if(!link || current || !briefReady || (saved===snapshot()&&!writing) || event.ctrlKey || event.metaKey) return;
+    event.preventDefault();flush().then(()=>location.assign(link.href)).catch(()=>{});
+  });
   const selectedFiles = new Set();
   const picker = form.elements.files, drop = element('campaign-drop');
   function renderFiles() {
@@ -14,7 +69,7 @@
       name.textContent = file.name;
       remove.type = 'button'; remove.textContent = 'Remove';
       remove.setAttribute('aria-label','Remove '+file.name);
-      remove.onclick = () => { selectedFiles.delete(file); uploaded.delete(file); renderFiles(); status.textContent=''; picker.focus(); };
+      remove.onclick = () => { selectedFiles.delete(file); uploaded.delete(file); renderFiles(); changed(); status.textContent=''; picker.focus(); };
       row.append(name,remove); rows.append(row);
     }
     element('campaign-file-count').textContent = selectedFiles.size ? selectedFiles.size+' of 10 files selected' : 'Choose or drop up to 10 files';
@@ -27,6 +82,7 @@
     }
     for (const file of files) selectedFiles.add(file);
     renderFiles(); status.textContent='';
+    run(async()=>{await uploadPending();await flush();});
   }
   picker.onchange = () => { addFiles(Array.from(picker.files)); picker.value=''; };
   drop.ondragover = event => { event.preventDefault(); if (!busy) drop.classList.add('drag-over'); };
@@ -43,7 +99,8 @@
     return result;
   }
   function remember(row) {
-    if (!records.has(row.id)) list.add(new Option(row.brief.idea.slice(0,70),row.id));
+    if (!records.has(row.id)) list.add(new Option(nameOf(row),row.id));
+    else Array.from(list.options).find(option=>Number(option.value)===row.id).text=nameOf(row);
     records.set(row.id,row);
   }
   function editCard(card,row,index) {
@@ -62,13 +119,16 @@
     media.value=post.asset_id || '';
     const time=field('Planned time · '+row.brief.timezone,document.createElement('input'));
     time.type='datetime-local'; time.value=row.dates[index].local.slice(0,16);
+    const suggest=document.createElement('button');suggest.textContent='Suggest time';panel.append(suggest);
+    const reason=document.createElement('small');panel.append(reason);
+    suggest.onclick=()=>run(async()=>{const suggestions=await request('/api/campaigns/'+row.id+'/timing');time.value=suggestions[index].local.slice(0,16);reason.textContent=suggestions[index].reason;time.dispatchEvent(new Event('input',{bubbles:true}));});
     const save=document.createElement('button'); save.textContent='Save changes'; panel.append(save);
     save.onclick=()=>run(async()=>show(await request('/api/campaigns/'+row.id+'/posts/'+index,{
       revision:row.revision, draft_revision:post.draft_revision,series_revision:post.series_revision,
       caption:caption.value,platform:platform.value,asset_id:Number(media.value)||null,local_time:time.value
     })), 'Post updated.');
     const markEditing=()=>{
-      for(const item of document.querySelectorAll('#campaign-review button,#campaign-review summary,#campaign-list')) {
+      for(const item of document.querySelectorAll('#campaign-review button,#campaign-review summary,#campaign-view,#campaign-sort,#campaign-list')) {
         if(item===save || panel.contains(item)) continue;
         if(item.tagName==='SUMMARY') item.closest('details').inert=true;
         else item.disabled=true;
@@ -85,26 +145,81 @@
     };
     card.append(panel);
   }
+  let selectedDay='', activeMonth='', calendarID=0;
+  function drawCalendar(slots){
+    const host=element('campaign-calendar');host.replaceChildren();
+    if(calendarID!==current.id||!selectedDay){selectedDay=slots.map(s=>s.day).sort()[0]||current.brief.start.slice(0,10);activeMonth=selectedDay.slice(0,7);calendarID=current.id;}
+    const [y,m]=activeMonth.split('-').map(Number), first=new Date(Date.UTC(y,m-1,1));
+    const nav=document.createElement('div');nav.className='campaign-calendar-nav';
+    const monthName=first.toLocaleString(undefined,{month:'long',year:'numeric',timeZone:'UTC'});
+    for(const [label,delta] of [['Previous month',-1],[monthName,0],['Next month',1]]){
+      const el=document.createElement(delta?'button':'strong');el.textContent=delta<0?'‹':delta>0?'›':label;
+      if(delta){el.setAttribute('aria-label',label);el.onclick=()=>{activeMonth=new Date(Date.UTC(y,m-1+delta,1)).toISOString().slice(0,7);selectedDay=slots.map(s=>s.day).sort().find(d=>d.startsWith(activeMonth))||activeMonth+'-01';show(current);};}
+      nav.append(el);
+    }
+    const grid=document.createElement('div');grid.className='campaign-calendar-grid';
+    for(const day of ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']){const cell=document.createElement('b');cell.textContent=day;grid.append(cell);}
+    for(let i=0;i<(first.getUTCDay()+6)%7;i++)grid.append(document.createElement('span'));
+    for(let d=1;d<=new Date(Date.UTC(y,m,0)).getUTCDate();d++){
+      const day=activeMonth+'-'+String(d).padStart(2,'0'),n=slots.filter(s=>s.day===day).length;
+      const cell=document.createElement(n?'button':'span');cell.textContent=d;
+      if(n){const label=n===1?'1 post':n+' posts';const badge=document.createElement('small');badge.textContent=label;cell.append(badge);
+        cell.setAttribute('aria-label',day+', '+label);cell.setAttribute('aria-pressed',String(selectedDay===day));cell.onclick=()=>{selectedDay=day;show(current);};}
+      grid.append(cell);
+    }
+    host.append(nav,grid);if(!slots.some(s=>s.day.startsWith(activeMonth))) host.append('No posts this month.');
+  }
+  element('campaign-view').onchange=element('campaign-sort').onchange=()=>show(current);
+  const nameForm=element('campaign-name-form');
+  element('rename-campaign').onclick=()=>{nameForm.hidden=false;nameForm.elements.name.value=nameOf(current);nameForm.elements.name.focus();};
+  nameForm.onsubmit=event=>{event.preventDefault();run(async()=>show(await request('/api/campaigns/'+current.id+'/name',{revision:current.revision,name:nameForm.elements.name.value})));};
   function show(row) {
     current = row;
     form.hidden = !!row;
     element('campaign-review').hidden = !row;
+    element('campaign-heading').textContent=row?nameOf(row):'Campaigns';
+    element('campaign-name-form').hidden=true;
     if (!row) return;
     remember(row);
     list.value = String(row.id);
-    element('campaign-media').hidden = !row.assets.length;
+    element('campaign-media').hidden = true;
     element('campaign-media').textContent = row.assets.map(a => a.name).join(' · ');
     const cards = element('campaign-posts');
     cards.replaceChildren();
-    row.posts.forEach((post,i) => {
+    const slots = row.posts.map((post,i)=>{
+      const asset=row.assets.find(a=>a.id===post.asset_id);
+      const kind=post.media_kind || asset?.kind || (!post.asset_id?'text':/\.(mov|mp4|webm)$/i.test(asset?.name||'')?'video':'image');
+      return {post,i,kind,day:row.dates[i].local.slice(0,10)};
+    });
+    const group=element('campaign-sort').value;
+    slots.sort((a,b)=>(group==='platform'?a.post.platform.localeCompare(b.post.platform):group==='media'?a.kind.localeCompare(b.kind):0) ||
+      Date.parse(row.dates[a.i].utc)-Date.parse(row.dates[b.i].utc) || a.i-b.i);
+    const calendar=element('campaign-view').value==='calendar';element('campaign-calendar').hidden=!calendar;
+    if(calendar) drawCalendar(slots);
+    slots.filter(s=>!calendar || s.day===selectedDay).forEach(({post,i,kind}) => {
       const card = document.createElement('article'), title = document.createElement('strong'), text = document.createElement('p');
-      title.textContent = ({x:'X',facebook:'Facebook',instagram:'Instagram',tiktok:'TikTok'}[post.platform] || post.platform) + ' · ' + new Date(row.dates[i].utc).toLocaleString(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:row.brief.timezone,timeZoneName:'short'});
-      text.textContent = post.caption;
-      card.append(title,text);
+      title.className='platform-strip';title.dataset.platform=post.platform;
+      const mark=document.createElement('span');mark.className='platform-mark';mark.setAttribute('aria-hidden','true');
+      mark.innerHTML=window.zovaPlatformLabel(post.platform);
+      const word=document.createElement('b');word.textContent=({x:'X',facebook:'Facebook',instagram:'Instagram',tiktok:'TikTok'})[post.platform];
+      const date=document.createElement('time');date.dateTime=row.dates[i].utc;
+      date.textContent=new Date(date.dateTime).toLocaleString(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:row.brief.timezone,timeZoneName:'short'});
+      title.append(mark,word,date);card.append(title);
+      for(const id of post.media_ids || (post.asset_id?[post.asset_id]:[])){
+        const asset=row.assets.find(a=>a.id===id);
+        const video=(asset?.kind || kind)==='video';
+        const preview=document.createElement(video?'video':'img');preview.className='post-media';
+        if(video){preview.controls=true;preview.playsInline=true;preview.preload='none';preview.poster=window.zovaWorkspaceUrl('/media/thumbnail/'+id);}
+        else {preview.loading='lazy';preview.alt=asset?.name||'Post image';}
+        preview.src=window.zovaWorkspaceUrl((video?'/media/preview/':'/media/thumbnail/')+id);card.append(preview);
+      }
+      text.textContent=post.caption;card.append(text);
+      if(row.dates[i].reason){const why=document.createElement('small');why.className='timing-reason';why.textContent=row.dates[i].reason;card.append(why);}
+      if(post.timing_warning){const note=document.createElement('p');note.setAttribute('role','status');note.textContent=post.timing_warning;card.append(note);}
       const asset = row.assets.find(a => a.id === post.asset_id);
       if (asset) card.append(document.createTextNode(asset.name + ' '));
       if (!row.draft_ids.length || post.editable) editCard(card,row,i);
-      if (post.status) {const state=document.createElement('small');state.className='campaign-post-state';state.textContent=post.status.replaceAll('_',' ');title.append(state);}
+      if (post.status) {const state=document.createElement('small');state.className='campaign-post-state';state.textContent=post.status.replaceAll('_',' ');card.append(state);}
       if(post.schedule){
         const panel=document.createElement('details'),open=document.createElement('summary');
         open.textContent='Change time';panel.append(open);
@@ -149,10 +264,21 @@
     }
   }
   window.addEventListener('beforeunload',event=>{
-    if(document.querySelector('#campaign-review details[data-dirty="true"]')){event.preventDefault();event.returnValue='';}
+    if((briefReady && !current && (writing || saved!==snapshot() || [...selectedFiles].some(f=>!uploaded.has(f)))) || document.querySelector('#campaign-review details[data-dirty="true"]')){event.preventDefault();event.returnValue='';}
   });
   const generate = async feedback => show(await request('/api/ai/campaigns/'+current.id+'/plan',{revision:current.revision,feedback}));
   list.onchange = () => run(async () => show(list.value ? await request('/api/campaigns/'+Number(list.value)) : null));
+  async function uploadPending() {
+    const files=Array.from(selectedFiles);
+    for(const [index,file] of files.entries()) {
+      if(uploaded.has(file)) continue;
+      status.textContent='Uploading '+(index+1)+' of '+files.length+' · '+file.name;
+      const upload=new FormData();upload.append('files',file);
+      try {uploaded.set(file,(await request('/api/media',upload)).assets[0].id);}
+      catch(error){throw new Error(file.name+' — '+error.message);}
+      await flush();
+    }
+  }
   form.onsubmit = event => {
     event.preventDefault();
     const data = new FormData(form), files = Array.from(selectedFiles), platforms = data.getAll('platform');
@@ -160,25 +286,19 @@
       if (!platforms.length || Number(data.get('count')) < platforms.length) throw new Error('Choose at least one post per selected platform.');
       if (files.length > 10) throw new Error('Choose up to ten files.');
       const media = [];
-      for (const [index,file] of files.entries()) {
-        if (!uploaded.has(file)) {
-          status.textContent='Uploading '+(index+1)+' of '+files.length+' · '+file.name;
-          const upload = new FormData(); upload.append('files',file);
-          try { uploaded.set(file,(await request('/api/media',upload)).assets[0].id); }
-          catch (error) { throw new Error(file.name+' — '+error.message); }
-        }
-        media.push(uploaded.get(file));
-      }
-      show(await request('/api/campaigns',{idea:data.get('idea'),platforms,media,start:data.get('start'),
-        timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,count:Number(data.get('count')),frequency:data.get('frequency')}));
-      form.reset(); uploaded.clear(); selectedFiles.clear(); renderFiles();
+      await uploadPending();
+      await flush();
+      for(const file of files) media.push(uploaded.get(file));
+      show(await request('/api/campaigns',{idea:data.get('idea'),platforms,media,start:startValue(),recommend_times:timingField.value==='suggest',
+        timezone:zone,brief_revision:revision,count:Number(data.get('count')),frequency:data.get('frequency')}));
+      form.reset();setTimeMode('suggest'); uploaded.clear(); selectedFiles.clear(); renderFiles();revision++;zone=Intl.DateTimeFormat().resolvedOptions().timeZone;saved=snapshot();saveNote.textContent='';
       await generate('');
     });
   };
   element('campaign-revise').onclick = () => run(() => generate(element('campaign-feedback').value));
   element('campaign-accept').onclick = () => run(async () => {await request('/api/campaigns/'+current.id+'/accept',{revision:current.revision});show(await request('/api/campaigns/'+current.id));}, 'Drafts added to Schedule.');
   run(async () => {
-    (await request('/api/campaigns')).forEach(remember);
+    (await request('/api/campaigns')).forEach(remember);await restore();
     const id=Number(new URL(location.href).searchParams.get('campaign'));
     if(records.has(id)) show(await request('/api/campaigns/'+id));
   });
