@@ -13,7 +13,7 @@ workflows:
           python3 scripts/check_beta_release.py
           python3 - <<'PY'
           import json, subprocess
-          number = '19'
+          number = '21'
           group = 'Zova Social Internal Beta'
           app = '6824416979'
           result = subprocess.check_output(['app-store-connect','builds','list','--json','--app-id',app,'--platform','IOS','--pre-release-version','1.0.0','--build-version-number',number,'--not-expired','--processing-state','VALID'], text=True)
@@ -25,7 +25,7 @@ workflows:
               raise SystemExit('Unexpected build returned')
           print('Verified processed Zova build', number, flush=True)
           subprocess.run(['app-store-connect','beta-groups','add-build',build['id'],'--beta-group',group], check=True)
-          subprocess.run(['app-store-connect','builds','add-beta-test-info',build['id'],'--whats-new','Draft your first caption before connecting a social account. Test cancelling platform selection, finding your saved post and adding a private result to a published post.'],check=True)
+          subprocess.run(['app-store-connect','builds','add-beta-test-info',build['id'],'--whats-new','Start a campaign brief, leave Studio and reopen Campaign to restore it. Move a post containing tonight to another day and check the caption warning. Review the angles of follow-up posts.'],check=True)
           subprocess.run(['app-store-connect','beta-groups','add-build',build['id'],'--beta-group','Zova Social External Beta'],check=True)
           details = json.loads(subprocess.check_output(['app-store-connect','builds','beta-details',build['id'],'--json'],text=True))
           if isinstance(details,list): details, = details
