@@ -22,7 +22,7 @@
 {% if native_shell %}<link rel="stylesheet" href="{{ asset_url('ios-shell.css') }}"><script defer src="{{ asset_url('ios-shell.js') }}"></script>{% endif %}
 {% if request.url.path in ['/studio','/drafts','/analytics'] %}
 <link rel="stylesheet" href="{{ asset_url('studio-layout.css') }}">
-{% else %}
+{% elif request.url.path != '/campaigns' %}
 <link rel="stylesheet" href="{{ asset_url('zova-night.css') }}">
 {% endif %}
 {% if user %}<link rel="stylesheet" href="{{ asset_url('ai-privacy.css') }}">{% endif %}
