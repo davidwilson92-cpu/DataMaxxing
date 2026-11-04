@@ -192,7 +192,7 @@
     "nova/templates/base.html": "f8b05d912dc0f65bbeacad77a8b15bc40d9e6156faea9ae4fe456507f41f885c",
     "nova/templates/brand_switch.html": "965868c7544e11f3b19ac6fabcbb652a3465c4723b20d8a2c515f103c1bbd3c4",
     "nova/templates/brands.html": "de02eda8faa5f7bb82726da18d6e434f3220eda806241cea9e4db75ff73aea5a",
-    "nova/templates/campaigns.html": "ca61e1418a182bdc674dc0b75b8df0faffe3b8b53ba3f0deaaeb28b264e364a6",
+    "nova/templates/campaigns.html": "c85e80951ecd3529077d512ea24fdb45acc0ea27ef64b1942be4604bfd7d0199",
     "nova/templates/connect.html": "8c774a4be3c17d0dfb21e8f359a3b8bc4f6d46d80b9e08f18a140ed6d96cc9c3",
     "nova/templates/connection_list.html": "073cec52fab6c66a478e713672eae331d4815a539ebc9a0293b02df9c42713f7",
     "nova/templates/connection_notice.html": "9e2fc61136d734148cac038440b02fc1ba2f34e9ab252037a229a396bd65a912",
