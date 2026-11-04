@@ -28,7 +28,9 @@ async function visibleAction(page, selector, height) {
     await page.locator('#password').fill('Synthetic-preview-2026!');
     await page.locator('button[type=submit]').click();
     await page.waitForURL('**/studio');
-    await page.waitForLoadState('networkidle');
+    // Account health may refresh in the background; readiness is the composer,
+    // not the absence of all network traffic.
+    await page.locator('#brief').waitFor({state:'visible'});
     assert.equal(await page.locator('.composer-platforms input:checked').count(), 4);
 
     for (const height of [844, 500, 350]) {

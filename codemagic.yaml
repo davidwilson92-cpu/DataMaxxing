@@ -1,7 +1,7 @@
 workflows:
   # Retain the workflow ID and build counter used for builds 1–9.
   zova-ios-internal-beta:
-    name: Zova Social — reviewed external TestFlight beta
+    name: Zova Social — native iPhone beta candidate
     max_build_duration: 40
     instance_type: mac_mini_m2
     integrations:
@@ -18,7 +18,7 @@ workflows:
       - name: Verify isolated beta scope
         script: |
           set -eu
-          test "$CM_BRANCH" = "codex/ios-beta-20261019"
+          test "$CM_BRANCH" = "codex/ios-beta-native-20261027"
           python3 scripts/check_beta_release.py
       - name: Generate reviewed iPhone project
         script: |
@@ -32,7 +32,7 @@ workflows:
         script: |
           set -eu
           ZOVA_BUILD_NUMBER=$((BUILD_NUMBER + 1))
-          test "$ZOVA_BUILD_NUMBER" -ge 10
+          test "$ZOVA_BUILD_NUMBER" -ge 12
           xcode-project build-ipa --project ios/Zova.xcodeproj --scheme Zova --archive-xcargs "CURRENT_PROJECT_VERSION=$ZOVA_BUILD_NUMBER ZOVA_SERVER_URL=$ZOVA_SERVER_URL"
       - name: Verify exported iPhone metadata before upload
         script: python3 scripts/check_ios_archive.py build/ios/ipa/Zova.ipa

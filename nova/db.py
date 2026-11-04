@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 from fastapi import Request
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, select
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///./nova.db')
@@ -234,6 +234,7 @@ class OAuthState(Base):
 
 class Draft(BrandScoped, Base):
     __tablename__ = 'nova_drafts'
+    __table_args__ = (Index('ix_drafts_owner_brand_updated_id', 'user_id', 'brand_id', 'updated_at', 'id'),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
     brief: Mapped[str] = mapped_column(Text, default='')
@@ -290,6 +291,7 @@ class MediaAsset(BrandScoped, Base):
 
 class ScheduledPost(BrandScoped, Base):
     __tablename__ = 'nova_scheduled_posts'
+    __table_args__ = (Index('ix_schedules_owner_brand_due_id', 'user_id', 'brand_id', 'scheduled_at', 'id'),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), index=True)
     draft_id: Mapped[int | None] = mapped_column(ForeignKey('nova_drafts.id'), nullable=True, index=True)
@@ -440,6 +442,27 @@ class StrategyAction(BrandScoped, Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
 
+class CampaignPreview(Base):
+    __tablename__ = 'zova_campaign_previews'
+    user_id: Mapped[int] = mapped_column(ForeignKey('nova_users.id'), primary_key=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class CampaignBriefDraft(BrandScoped, Base):
+    __tablename__ = 'zova_campaign_brief_drafts'
+    __table_args__ = (UniqueConstraint('user_id','brand_id'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    payload_json: Mapped[str] = mapped_column(Text)
+
+
+class Campaign(BrandScoped, Base):
+    __tablename__ = 'zova_campaigns'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    payload_json: Mapped[str] = mapped_column(Text)
+
+
 class ContentSeries(BrandScoped, Base):
     __tablename__ = 'zova_content_series'
     __table_args__ = (UniqueConstraint('user_id', 'brand_id', 'request_key'),)
@@ -528,6 +551,22 @@ class WorkerHeartbeat(Base):
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(20))
+
+
+class DiscoveryJob(BrandScoped, Base):
+    __tablename__ = 'zova_discovery_jobs'
+    __table_args__ = (UniqueConstraint('user_id', 'brand_id'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    request_hash: Mapped[str] = mapped_column(String(64))
+    strategy_revision: Mapped[int] = mapped_column(Integer)
+    themes: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default='pending', index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    next_attempt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    lease: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    result_json: Mapped[str] = mapped_column(Text, default='{}')
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 from .runtime import prepare_schema

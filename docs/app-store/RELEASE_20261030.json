@@ -1,0 +1,247 @@
+{
+  "prepared_at": "2026-10-30",
+  "submission_status": "not_submitted",
+  "app_id": "6824416979",
+  "bundle_id": "com.zovasocial.app",
+  "version": "1.0.0",
+  "source_candidate": "2036f23630d9f75ec51996ece1372ccc3bf94a82",
+  "signed_build": {
+    "version": "1.0.0",
+    "build": 15,
+    "source": "2036f23630d9f75ec51996ece1372ccc3bf94a82",
+    "codemagic": "6ae4d546efa74786046f3330",
+    "apple_delivery": "6cdd9a7e-ca1b-4138-88dd-f3ed35520067",
+    "uploaded_at": "2026-10-30T17:38:20Z",
+    "status": "upload_accepted_not_submitted",
+    "apple_processing": "Not inspected; App Store Connect sign-in expired",
+    "evidence": "docs/app-store/evidence/build15-uploaded-not-submitted.png"
+  },
+  "metadata": {
+    "name": "Zova Social",
+    "subtitle": "Your AI social media manager",
+    "promotional_text": "Because content is the fun part. Turn your ideas into captions and a content plan with Zova, your AI social media manager.",
+    "description": "Because content is the fun part.\n\nTurn your ideas into captions and a content plan with Zova, your AI social media manager.\n\nCREATE IN YOUR VOICE\nStart with an idea, photo or video. Shape an editable caption in Studio, refine it with AI and keep the final say over your words.\n\nFIND YOUR NEXT MOVE\nGet a practical post proposal informed by your saved strategy, voice and available performance data. Explore another idea or update your strategy whenever your priorities change.\n\nPLAN YOUR CONTENT\nKeep drafts and upcoming posts together in Schedule. Use the calendar to see what is coming, edit your work and choose when it should go live.\n\nLEARN FROM AVAILABLE RESULTS\nReview the account and post metrics your connected platforms make available. Zova distinguishes missing data from measured results so you can decide what to try next.\n\nSTAY IN CONTROL\nConnect eligible social accounts, review the destination, caption, media and settings, then confirm publication. AI processing is optional and can be changed in Account. Instagram connections require a Creator or Business account. Platform permissions, formats and available metrics vary.\n\nA Zova account and internet connection are required. Current access is free: no payment card or subscription is required.\n\nSupport: support@zova-social.com",
+    "keywords": "social,media,caption,content,planner,schedule,creator,AI,marketing,Instagram,TikTok",
+    "support_url": "https://zova-social.com/help",
+    "privacy_url": "https://zova-social.com/privacy-policy",
+    "marketing_url": "https://zova-social.com/",
+    "copyright": "2026 Zova Social Limited",
+    "primary_category_proposal": "Productivity",
+    "secondary_category_proposal": "Business",
+    "price": "Free",
+    "release_mode_proposal": "Inspect the existing Apple setting after sign-in; user requested public App Store submission. No release-mode setting has been changed."
+  },
+  "reviewer_notes_draft": "Zova Social 1.0.0 is a native SwiftUI iPhone app with Studio, Schedule, Performance and Account. The web and iPhone apps share the same Zova account and saved data. Account sign-in and social authorization temporarily use a secure system browser session and return to the app. The main interface is native, not a website wrapper.\n\nUse the dedicated account supplied in Sign-In Information. Opening the app does not publish. You can create and edit a caption, save a draft, inspect Next move and edit strategy/voice without connecting a social account. Choose Allow AI processing if you wish to test AI features; Account lets you withdraw it. Images and sampled video frames may be shared with OpenAI after consent; video audio is not analysed. Review all AI output.\n\nPublishing requires an eligible connected account and explicit final confirmation. Instagram requires a Creator or Business account. TikTok Direct Post is enabled for the approved production app; a private six-second test reached TikTok PUBLISH_COMPLETE on 30 October 2026. Private TikTok posts may have no public link. X depends on provider permissions and limits. Facebook Page permissions are still pending separate Meta review; do not interpret an app administrator's working Page as access for ordinary customers. This remains a release decision/blocker until resolved or clearly unavailable in the shipping interface.\n\nPerformance displays only available data; unavailable or stale data is labelled rather than fabricated. Customer charges, subscription enforcement and live Stripe checkout are disabled. There are no active in-app purchases or external purchase prompts in the iPhone app.\n\nAccount > Delete account starts deletion within the app after password confirmation. Access is closed and unsent posts are cancelled immediately; active data erasure is handled under the published deletion policy. Deleting Zova does not remove already-published social posts.",
+  "review_access": {
+    "username": "zova.social+apple-review@gmail.com",
+    "password": "Owner enters only in Apple protected field; not stored here",
+    "fresh_login_verified_for_this_submission": false
+  },
+  "privacy_review": {
+    "tracking": false,
+    "manifest": "ios/Zova/PrivacyInfo.xcprivacy",
+    "linked_functionality": [
+      "Name",
+      "Email address",
+      "User ID",
+      "Photos or videos",
+      "Other user content",
+      "Other diagnostic data"
+    ],
+    "linked_functionality_and_analytics": [
+      "Product interaction",
+      "Other usage data"
+    ],
+    "linked_personalization": [
+      "Other user content"
+    ],
+    "unlinked_functionality": [
+      "Performance data"
+    ],
+    "evidence": [
+      "nova/db.py::AICall/ProductEvent",
+      "nova/readiness.py",
+      "nova/observability.py",
+      "nova/templates/privacy.html"
+    ],
+    "notes": "Map actual App Store Connect questions before saving. Support email content, account-linked provider security records, server IP/device information and any enabled metrics must be assessed against Apple categories. The manifest correction describes existing processing; it does not enable new collection."
+  },
+  "gates": [
+    {
+      "item": "App Store Connect sign-in",
+      "status": "waiting_owner",
+      "detail": "Expired on Distribution page; sign-in request pending."
+    },
+    {
+      "item": "Exact-candidate application/PostgreSQL and native checks",
+      "status": "passed"
+    },
+    {
+      "item": "Signed 1.0.0 build upload/Apple processing",
+      "status": "uploaded_processing_unverified",
+      "detail": "Apple upload receipt confirms 1.0.0(15), exact2036f23; App Store processing and review not yet inspected."
+    },
+    {
+      "item": "Actual 6.9-inch screenshots",
+      "status": "prepared_and_reviewed",
+      "detail": "Four unmodified RGB 1320x2868 native fixture screenshots reviewed and copied for Apple upload."
+    },
+    {
+      "item": "Metadata, age rating, content rights and App Privacy",
+      "status": "draft",
+      "detail": "Must inspect actual Apple form; no declarations made."
+    },
+    {
+      "item": "Reviewer login and password",
+      "status": "pending_fresh_check"
+    },
+    {
+      "item": "Facebook ordinary-customer Page access",
+      "status": "blocked_provider",
+      "detail": "pages_show_list/pages_read_engagement/pages_manage_posts Not submitted in Meta; needs approval or explicit first-release unavailability decision."
+    },
+    {
+      "item": "New native device acceptance",
+      "status": "pending_new_binary",
+      "detail": "Photo/video/iCloud picker; fresh Instagram return; voice edit/save/reopen."
+    },
+    {
+      "item": "Public legal identity and support arrangements",
+      "status": "waiting_owner",
+      "detail": "Publishable business/service postal address and personal Gmail versus Workspace not confirmed."
+    },
+    {
+      "item": "EU distribution/trader requirements",
+      "status": "not_inspected",
+      "detail": "Do not disclose the owner personal phone as public trader contact. Public territories and Apple trader form require inspection."
+    }
+  ],
+  "preserved_constraints": {
+    "hosting": "Render",
+    "customer_charges": false,
+    "live_stripe_checkout": false,
+    "subscription_enforcement": false,
+    "personal_phone_public": false,
+    "commercial_certification_claimed": false
+  },
+  "launch_test_correction": {
+    "failed_run": 41088133358,
+    "cause_evidence": "XCTest launch waited approximately 52 seconds before checking the time-limited cover. DEBUG test host now starts the same cover after XCTest attaches; production timing and assertions unchanged.",
+    "commit": "8857fca"
+  },
+  "known_limits": [
+    "79-section register retained, not all resolved",
+    "Independent security assessment and full isolated application recovery remain separate assurance work",
+    "No Facebook or TikTok insights capability claimed beyond provider approval"
+  ],
+  "public_urls_checked_at": "2026-10-30",
+  "public_url_checks": {
+    "/": 200,
+    "/help": 200,
+    "/guide": 200,
+    "/privacy-policy": 200,
+    "/terms-of-service": 200,
+    "/data-deletion": 200,
+    "/.well-known/apple-app-site-association": 200,
+    "/health": 200
+  },
+  "application_validation": {
+    "pull_request_run": 41097452742,
+    "push_run": 41097440382,
+    "status": "success",
+    "source": "2036f23630d9f75ec51996ece1372ccc3bf94a82",
+    "sqlite": {
+      "passed": 754,
+      "skipped": 2
+    },
+    "postgresql": {
+      "passed": 755,
+      "skipped": 1
+    },
+    "additional_checks": [
+      "Interactive planning/strategy/schedule/composer checks passed",
+      "Mobile browser checks passed",
+      "Synthetic PostgreSQL recovery passed",
+      "Application and hosting-image dependency audits: no known vulnerabilities"
+    ]
+  },
+  "native_validation": {
+    "run": 41097440633,
+    "source": "2036f23630d9f75ec51996ece1372ccc3bf94a82",
+    "status": "success",
+    "passed_unit": 42,
+    "passed_ui": 18,
+    "release_compile": "success",
+    "prior_focus_failure": 41094404355,
+    "fix": "Full composer tap area requests keyboard focus. Unchanged largest-accessibility test now passes; screenshot inspected."
+  },
+  "previous_uploads": [
+    {
+      "version": "1.0.0",
+      "build": 14,
+      "source": "93dc39dd6a241af4f823cf14bd2288a45bab6d05",
+      "codemagic": "6ae4cf0cefa74786046f30ff",
+      "apple_delivery": "ae51b2aa-ac29-4d4a-8c19-f2f68d416ff4",
+      "uploaded_at": "2026-10-30T17:12:21Z",
+      "status": "upload_accepted_not_submitted",
+      "distribution": "Do not submit: superseded by accessibility focus correction pending validation."
+    }
+  ],
+  "current_validation": {
+    "application_pr": 41097452742,
+    "application_push": 41097440382,
+    "native_push": 41097440633,
+    "native_pr": 41097452674,
+    "status": "application_and_native_passed"
+  },
+  "screenshots": [
+    {
+      "file": "docs/app-store/screenshots-iphone-6.9/01-studio.png",
+      "original": "C2C588B5-278A-4443-8FD5-65776CF61577.png",
+      "sha256": "4f13e9c3d0554c8a95d626684649ea0f6d7606bf884fb0e0bef90f9690c7f91d",
+      "size": [
+        1320,
+        2868
+      ],
+      "mode": "RGB",
+      "visually_reviewed": true,
+      "source": "Unmodified native UI-test screenshot using synthetic pottery-studio fixture data; not a real customer result"
+    },
+    {
+      "file": "docs/app-store/screenshots-iphone-6.9/02-next-move.png",
+      "original": "668127D1-A259-412E-A50E-D13475BBAB01.png",
+      "sha256": "d5a1b5116440b121e274e64a70b0d950f5e83f53c45241868a7753cd519cbf8f",
+      "size": [
+        1320,
+        2868
+      ],
+      "mode": "RGB",
+      "visually_reviewed": true,
+      "source": "Unmodified native UI-test screenshot using synthetic pottery-studio fixture data; not a real customer result"
+    },
+    {
+      "file": "docs/app-store/screenshots-iphone-6.9/03-schedule.png",
+      "original": "96E6673C-7D46-4108-8C14-6455F3E7B41F.png",
+      "sha256": "d34d24b313a67a1bc00c182b8e1c43a6ad71daae0c8dcd30c3e7fef6df447f3f",
+      "size": [
+        1320,
+        2868
+      ],
+      "mode": "RGB",
+      "visually_reviewed": true,
+      "source": "Unmodified native UI-test screenshot using synthetic pottery-studio fixture data; not a real customer result"
+    },
+    {
+      "file": "docs/app-store/screenshots-iphone-6.9/04-performance.png",
+      "original": "62D471A5-C289-4930-BB02-E2C2ACC330FF.png",
+      "sha256": "58f9be1d69a7a898be9c9fae9276ea12ab3fae606489cd6be7b6f9aab859a128",
+      "size": [
+        1320,
+        2868
+      ],
+      "mode": "RGB",
+      "visually_reviewed": true,
+      "source": "Unmodified native UI-test screenshot using synthetic pottery-studio fixture data; not a real customer result"
+    }
+  ]
+}

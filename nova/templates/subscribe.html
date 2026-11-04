@@ -1,5 +1,5 @@
 {% extends "base.html" %}{% block title %}Billing | Zova{% endblock %}
-{% block body_class %}billing-page{% endblock %}{% block head %}<link rel="stylesheet" href="/static/billing.css?v=1">{% endblock %}
+{% block body_class %}billing-page{% endblock %}{% block head %}<link rel="stylesheet" href="{{ asset_url('billing.css') }}">{% endblock %}
 {% block body %}<main class="auth-wrap"><section class="auth-card wide"><div class="eyebrow">ZOVA MEMBERSHIP</div><h1>Your plan & billing</h1>
 {% if billing_info.mode == 'test' %}<div class="alert">Stripe test mode. No real payments. Test subscriptions do not change your live account.</div>{% endif %}
 {% if not subscription_required %}<p class="support-note">Testing access is open. Subscription enforcement remains disabled.</p>{% endif %}

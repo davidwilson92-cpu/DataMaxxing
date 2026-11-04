@@ -1,0 +1,6 @@
+.create-split { display:inline-flex; align-items:center; gap:3px; }
+.create-split .create-campaign {
+  display:inline-flex; align-items:center; min-height:44px; padding-inline:.55rem;
+  color:#6331a9; font-weight:600; text-decoration:none; border-radius:8px;
+}
+.create-split .create-campaign:is(:hover,:focus-visible) { background:#f1eafa; }

@@ -7,7 +7,7 @@ window.zovaInstagramMusic=(()=>{
  function update(){
   const button=document.getElementById('instagramMusicButton');if(!button)return;
   button.hidden=!selectedPlatforms().includes('instagram');
-  button.textContent=choice?'Music · '+choice.title:'Add music';
+  button.textContent=choice?'Music · '+choice.title:'Music options';
   const selected=document.getElementById('instagramMusicSelected');
   selected.hidden=!choice;
   document.getElementById('instagramMusicName').textContent=choice?choice.title+(choice.artist?' · '+choice.artist:''):'';

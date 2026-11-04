@@ -30,6 +30,11 @@ The current app has writers that can finish after authentication. Revoking one u
 
 1. Schedule a quiet maintenance window and record the deployment/environment/storage location in the case. No account data is exported as an untracked “backup”. Follow the existing controlled backup policy, including retention and deletion replay after restore.
 2. On **all** web/worker services set `ZOVA_MAINTENANCE_MODE=account-erasure` and `ZOVA_SCHEDULER_MODE=disabled`, then restart/redeploy so old processes actually stop. Leave normal production defaults unchanged outside this window. Runtime rejects maintenance with an enabled scheduler.
+   On Render, **Save only followed by Restart service did not apply the saved
+   environment changes in the 27 October exercise**. Deploy the exact currently
+   approved commit to apply them; do not accidentally deploy a newer branch head.
+   Verify the running service's authenticated maintenance proof before draining or
+   erasing. Apply the same exact-commit deployment when restoring original settings.
 3. Verify old instances, workers, jobs and shells that could write are stopped. An environment-variable edit without restart is insufficient. Wait at least five minutes after the replacement maintenance service starts and verify the running hostname returns authenticated `/internal/maintenance` with the expected mode and disabled scheduler. Public health and deletion receipts remain readable; customer routes, callbacks and webhooks return retryable 503. No new customer work is accepted.
 4. Review provider reconciliation again. The command additionally refuses a publishing-worker heartbeat recorded after maintenance began. This is a supplemental check, not proof that arbitrary external writers have stopped. The operator must confirm every old service is drained.
 5. Use the maintenance host's same deployed code/database/disk to execute **one** reviewed case. Do not copy a production database URL into a different local checkout or run against an unrelated upload directory.
@@ -64,3 +69,20 @@ The command rechecks all blockers, revokes access, marks processing, deletes loc
 ## Release boundary
 
 This procedure makes the limited-beta manual process executable and testable. It is not a claim of automatic erasure, universal provider grant revocation, immediate backup erasure or commercial/legal certification. Production execution has not been performed merely by adding the code or this runbook.
+
+## Verified production exercise — 27 October 2026
+
+Owner explicitly approved maintenance and the existing account 21 request.
+Case `BETA-ERASURE-20261027-21` completed at 21:39:45 UTC after the five-minute
+drain and a blocker-free plan. Active-store verification, the public completion
+receipt and an unchanged synthetic control account passed. The case had no media,
+drafts, social connections or billing. Normal service resumed at 21:42:28 UTC;
+maintenance was false, the embedded worker resumed, and customer charges stayed off.
+
+The restricted disk journal `/app/uploads/.zova-operations/account-deletions.jsonl`
+contains the opaque receipt and completion record (directory 0700, file 0600).
+An ACL-restricted restore-exclusion index also exists outside the repository and
+database in the project parent's `.private-zova-operations` directory. Reapply
+this erasure before allowing traffic after any older database restore. Existing
+backups retain their normal expiry; the operation does not claim backup deletion.
+See `NATIVE_QA_FIXES_20261027.md` for deployment and verification evidence.

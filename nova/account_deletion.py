@@ -11,7 +11,7 @@ from fastapi import HTTPException
 from sqlalchemy import select, update
 
 from . import allowances
-from .db import (ContentSeries, DeletionRequest, MobileSession, OAuthState,
+from .db import (ContentSeries, DeletionRequest, DiscoveryJob, MobileSession, OAuthState,
                  PendingConnection, Publication, PublishReview, RecoveryToken,
                  ScheduledPost, SeriesOccurrence, SocialConnection, User, utcnow)
 from .security import hash_api_key, session_secret, verify_password
@@ -57,6 +57,8 @@ def initiate(db, uid, password):
     db.execute(update(PublishReview).where(PublishReview.user_id==uid,PublishReview.status=='review').values(status='cancelled'))
     db.execute(update(ContentSeries).where(ContentSeries.user_id==uid,ContentSeries.status=='active').values(status='paused'))
     db.execute(update(SeriesOccurrence).where(SeriesOccurrence.user_id==uid,SeriesOccurrence.status=='planned').values(status='cancelled'))
+    db.execute(update(DiscoveryJob).where(DiscoveryJob.user_id==uid).values(
+        status='cancelled', lease=None, lease_expires_at=None, result_json='{}', completed_at=None))
     db.execute(update(SocialConnection).where(SocialConnection.user_id==uid).values(active=False))
     db.execute(update(MobileSession).where(MobileSession.user_id==uid).values(revoked=True))
     db.execute(update(RecoveryToken).where(RecoveryToken.user_id==uid).values(used=True))
@@ -69,4 +71,6 @@ def initiate(db, uid, password):
                    'unsent schedules are cancelled. Data, retained records and any provider operation already in progress still '
                    'require verified erasure processing. Published posts and provider-side grants are not removed by this request.')
     db.commit()
+    from . import read_cache
+    read_cache.clear()
     return code

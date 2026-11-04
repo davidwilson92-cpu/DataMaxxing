@@ -265,6 +265,8 @@ def apply_event(db,event):
             row=_locked(db,row.user_id)
             if db.get(BillingEvent,event['id']):db.rollback();return
             _sync(db,row)  # Retrieve current Stripe state under the account lock, not event order.
+            from .distribution import record_paid
+            record_paid(db,row.user_id,event)
     db.add(BillingEvent(event_id=event['id'],mode=mode(),event_type=str(etype)[:100]))
     try:db.commit()
     except IntegrityError:db.rollback()  # Another delivery committed the same event atomically.

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Schedule | Zova{% endblock %}
 {% block body_class %}app-body schedule-page{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/schedule.css?v=20261025">{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset_url('schedule.css') }}">{% endblock %}
 {% block site_header %}{% endblock %}{% block site_footer %}{% endblock %}
 {% block body %}
 <div class="app-shell">{% set active_page = 'drafts' %}{% include "app_nav.html" %}
@@ -27,5 +27,5 @@
       <nav class="schedule-pagination" aria-label="Saved post pages">{% if page>1 %}<a href="/drafts?view=saved&page={{ page-1 }}&status={{ selected_status }}&q={{ request.query_params.get('q','')|urlencode }}">← Newer</a>{% endif %}{% if has_more %}<a href="/drafts?view=saved&page={{ page+1 }}&status={{ selected_status }}&q={{ request.query_params.get('q','')|urlencode }}">Older →</a>{% endif %}</nav>
     </section>
   </main>
-</div></div><script src="/static/drafts.js?v=20261025-schedule"></script>
+</div></div><script src="{{ asset_url('drafts.js') }}"></script>
 {% endblock %}

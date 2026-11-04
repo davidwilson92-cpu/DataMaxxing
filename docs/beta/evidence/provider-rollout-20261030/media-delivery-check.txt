@@ -1,0 +1,103 @@
+Browser tab: 2, Title: "x-chatgpt-poster ・ Web Service ・ Render Dashboard", URL: "https://dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/shell".
+0 AXWebArea x-chatgpt-poster ・ Web Service ・ Render Dashboard, URL: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/shell
+	1 container
+		2 container root
+			3 container
+				4 link Description: Render, Value: dashboard.render.com/
+				5 pop up button (collapsed) M My Workspace, ID: menu-_r_3_, Secondary Actions: Expand
+					6 text M
+					7 text My Workspace
+				8 container Breadcrumbs
+					9 content list
+						10 link Description: Projects, Value: dashboard.render.com/
+						11 container
+							12 link Description: x-chatgpt-poster, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg
+							13 pop up button (collapsed) Description: Switch Service, ID: menu-_r_p_, Secondary Actions: Expand
+						14 container
+							99 text Shell
+							16 pop up button (collapsed) Description: Switch page, ID: menu-_r_r_, Secondary Actions: Expand
+				17 button Search CTRL + K
+					18 text Search
+					19 text CTRL
+					20 text +
+					21 text K
+				22 pop up button (collapsed) New, ID: menu-_r_5_, Secondary Actions: Expand
+				23 pop up button (collapsed) Upgrade, ID: menu-_r_n_, Secondary Actions: Expand
+				24 pop up button (collapsed) Help, ID: menu-_r_7_, Secondary Actions: Expand
+					25 image Help
+				26 pop up button (collapsed) Description: Account menu, ID: menu-_r_9_, Secondary Actions: Expand
+			27 container
+				28 splitter Description: Resize sidebar, Value: 294
+				29 link Description: Dashboard, Value: dashboard.render.com/
+				30 text x-chatgpt-poster
+				31 content list
+					32 link Description: Deploys, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/deploys
+					33 link Description: Settings, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/settings
+				34 container
+					35 text MONITOR
+					36 content list MONITOR
+						37 link Description: Events, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/events
+						38 link Description: Logs, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/logs
+						39 link Description: Metrics, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/metrics
+				40 container
+					41 text MANAGE
+					42 content list MANAGE
+						43 link Description: Compute, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/compute
+						44 link Description: Environment, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/env
+						45 link Description: Shell, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/shell
+						46 link Description: Previews, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/previews
+						47 link Description: Disk, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/disks
+						48 link Description: One-Off Jobs, Value: dashboard.render.com/web/srv-d9rqg6navr4c739thoeg/jobs
+				49 container Promotions
+					50 container Introducing Workflows
+						51 container
+							52 heading Introducing Workflows, Value: 3
+								53 text Introducing Workflows
+							54 text An orchestration and execution engine for long-running, distributed tasks.
+							55 button Learn more
+								56 text Learn more
+								57 image
+							58 button Dismiss promo
+				59 container
+					60 content list Description: Footer navigation, ID: footer-nav-items
+						61 link Description: Changelog, Value: render.com/changelog
+					62 link Description: Status, Value: status.render.com/
+					63 button Collapse
+			98 container
+				100 heading Web Shell, Value: 2
+					101 text Web Shell
+				102 container
+					103 text Run commands inside your service without setting up SSH. To make SSH available,
+					104 link Description: add an SSH public key., Value: dashboard.render.com/u/settings?add-ssh-key=1#ssh-public-keys
+				105 container
+					106 text Select an instance
+					107 pop up button (disabled, collapsed) Select an instance Instance gksgx, Secondary Actions: Expand
+				108 button Maximize
+					109 image
+					110 text Maximize
+				111 container
+					112 content list
+						116 text root@srv-d9rqg6navr4c739thoeg-855b5c4795-gksgx:/app# python - <<'ZOVA_MEDIA_VERIFY'
+						117 text import json,os,httpx; from urllib.parse import urlsplit; from sqlalchemy import select; from nova.db import Sessio
+						118 text nLocal,MediaAsset; from nova.tiktok_policy import direct_media_url
+						119 text d=SessionLocal(); assets=d.scalars(select(MediaAsset).order_by(MediaAsset.id.desc()).limit(5)).all(); out=[]
+						120 text for a in assets:
+						121 text  try:
+						122 text   u=direct_media_url(a)
+						123 text   with httpx.stream('GET',u,headers={'Range':'bytes=0-1023'},timeout=20.0) as r: out.append({'prefix_valid':True,'
+						124 text media_http':r.status_code,'mime':r.headers.get('content-type',''),'signed':bool(urlsplit(u).query)})
+						125 text  except Exception as e: out.append({'error_type':type(e).__name__})
+						126 text print(json.dumps({'commit':os.getenv('RENDER_GIT_COMMIT'),'prefix':os.getenv('TIKTOK_VERIFIED_MEDIA_PREFIX'),'crea
+						127 text tive_model':os.getenv('OPENAI_CONTENT_MODEL'),'inbox':os.getenv('TIKTOK_SEND_TO_INBOX'),'media_checks':out})); d.c
+						128 text lose()
+						129 text ZOVA_MEDIA_VERIFY
+						130 text {"commit": "761153c443e26f56fcaa582c4fcce29ccf29739a", "prefix": "https://zova-social.com/", "creative_model": "gp
+						131 text t-6.1-terra", "inbox": "false", "media_checks": [{"prefix_valid": true, "media_http": 206, "mime": "image/jpeg", "
+						132 text signed": true}, {"prefix_valid": true, "media_http": 206, "mime": "video/mp4", "signed": true}, {"prefix_valid": t
+						133 text rue, "media_http": 206, "mime": "image/jpeg", "signed": true}, {"prefix_valid": true, "media_http": 206, "mime": "
+						134 text image/jpeg", "signed": true}, {"prefix_valid": true, "media_http": 206, "mime": "image/jpeg", "signed": true}]}
+						135 text root@srv-d9rqg6navr4c739thoeg-855b5c4795-gksgx:/app# 
+					136 text python - <<'ZOVA_MEDIA_VERIFY' import json,os,httpx; from urllib.parse import urlsplit; from sqlalchemy import select; from nova.db import SessionLocal,MediaAsset; from nova.tiktok_policy import direct_media_url d=SessionLocal(); assets=d.scalars(select(MediaAsset).order_by(MediaAsset.id.desc()).limit(5)).all(); out=[] for a in assets: try: u=direct_media_url(a) with httpx.stream('GET',u,headers={'Range':'bytes=0-1023'},timeout=20.0) as r: out.append({'prefix_valid':True,'media_http':r.status_code,'mime':r.headers.get('content-type',''),'signed':bool(urlsplit(u).query)}) except Exception as e: out.append({'error_type':type(e).__name__}) print(json.dumps({'commit':os.getenv('RENDER_GIT_COMMIT'),'prefix':os.getenv('TIKTOK_VERIFIED_MEDIA_PREFIX'),'creative_model':os.getenv('OPENAI_CONTENT_MODEL'),'inbox':os.getenv('TIKTOK_SEND_TO_INBOX'),'media_checks':out})); d.close() ZOVA_MEDIA_VERIFY Too much output to announce, navigate to rows manually to readpython - <<'ZOVA_MEDIA_VERIFY' import json,os,httpx; from urllib.parse import urlsplit; from sqlalchemy import select; from nova.db import SessionLocal,MediaAsset; from nova.tiktok_policy import direct_media_url d=SessionLocal(); assets=d.scalars(select(MediaAsset).order_by(MediaAsset.id.desc()).limit(5)).all(); out=[] for a in assets: try: u=direct_media_url(a) with httpx.stream('GET',u,headers={'Range':'bytes=0-1023'},timeout=20.0) as r: out.append({'prefix_valid':True,'media_http':r.status_code,'mime':r.headers.get('content-type',''),'signed':bool(urlsplit(u).query)}) except Exception as e: out.append({'error_type':type(e).__name__}) print(json.dumps({'commit':os.getenv('RENDER_GIT_COMMIT'),'prefix':os.getenv('TIKTOK_VERIFIED_MEDIA_PREFIX'),'creative_model':os.getenv('OPENAI_CONTENT_MODEL'),'inbox':os.getenv('TIKTOK_SEND_TO_INBOX'),'media_checks':out})); d.close() ZOVA_MEDIA_VERIFY
+				115 text field (settable) Terminal input
+
+The focused UI element is 115 text field (settable) Terminal input

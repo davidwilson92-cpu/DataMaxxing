@@ -4,13 +4,28 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 
 from .db import MediaAsset, get_db
 from .security import current_user
 from .storage import verify_available, _s3_client
 
 router = APIRouter()
+
+
+@router.get('/media/thumbnail/{asset_id}')
+def thumbnail_media(asset_id: int, request: Request, db=Depends(get_db)):
+    from .thumbnails import image_preview
+    user = current_user(request)
+    row = db.get(MediaAsset, asset_id)
+    if (not row or row.user_id != user.id or row.brand_id != db.info.get('brand_id', 0)
+            or not row.mime_type.startswith(('image/','video/'))):
+        raise HTTPException(404, 'Media not found')
+    try:
+        preview = image_preview(row)
+    except Exception:
+        raise HTTPException(404, 'Media preview unavailable') from None
+    return Response(preview, media_type='image/jpeg', headers={'Cache-Control': 'no-store'})
 
 
 @router.get('/media/download/{asset_id}')

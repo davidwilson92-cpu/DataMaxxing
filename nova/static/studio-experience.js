@@ -75,7 +75,7 @@ async function compareSaved(){
     threadHost('saveComparison').scrollIntoView({block:'start'});
   }catch(error){if(id===currentDraftId&&epoch===workspaceEpoch)threadHost('saveComparison').textContent=error.message;}
 }
-document.querySelectorAll('.platform-check input').forEach(node=>node.addEventListener('change',()=>{renderReadiness();if(node.checked&&!connectionData[node.value]?.length){connectionPlatform=node.value;document.getElementById('connectionTitle').textContent='Connect '+platformName(node.value);document.getElementById('connectionDescription').textContent='Select your '+platformName(node.value)+' account to publish there. You can also keep writing a draft without connecting yet.';document.getElementById('connectionPrompt').showModal();}}));
+document.querySelectorAll('.platform-check input').forEach(node=>node.addEventListener('change',renderReadiness));
 
 document.getElementById('instagramFormat').addEventListener('change',()=>{renderReadiness();refreshDraft();});
 let textHistory=[];
@@ -109,18 +109,12 @@ window.visualViewport?.addEventListener('resize',fitVisibleViewport);
 window.addEventListener('resize',fitVisibleViewport);
 fitVisibleViewport();
 
-let connectionPlatform=null;
-async function connectSelectedPlatform(button){
-  if(!connectionPlatform)return;
-  button.disabled=true;
-  try{await saveDraftNow();location.href=window.zovaWorkspaceUrl('/connect/'+encodeURIComponent(connectionPlatform));}
-  catch(error){document.getElementById('connectionDescription').textContent='Your work could not be saved. Close this prompt and retry saving before connecting.';button.disabled=false;}
-}
 let recentPosts=[];
 let historyRequest=0;
 function historyVisual(row){
  const thumbnail=row.thumbnail;
- if(thumbnail?.kind==='image'&&/^\/media\/preview\/\d+$/.test(thumbnail.url||''))return `<span class="history-visual" aria-hidden="true"><img src="${esc(window.zovaWorkspaceUrl(thumbnail.url))}" alt="" loading="lazy" onerror="this.hidden=true"></span>`;
+ const preview=thumbnail?.thumbnail_url||thumbnail?.url;
+ if(thumbnail?.kind==='image'&&/^\/media\/(preview|thumbnail)\/\d+$/.test(preview||''))return `<span class="history-visual" aria-hidden="true"><img src="${esc(window.zovaWorkspaceUrl(preview))}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true"></span>`;
  return `<span class="history-visual" aria-hidden="true"><svg viewBox="0 0 24 24">${thumbnail?.kind==='video'?'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3Z"/>':'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>'}</svg></span>`;
 }
 function renderRecentPosts(){
@@ -129,7 +123,7 @@ function renderRecentPosts(){
 }
 async function loadRecentPosts(){
   const request=++historyRequest;
-  try{const rows=await api('/api/drafts');if(request!==historyRequest)return;recentPosts=rows;renderRecentPosts();}
+  try{const rows=await api('/api/drafts?limit=20');if(request!==historyRequest)return;recentPosts=rows;renderRecentPosts();}
   catch{document.querySelectorAll('.recent-posts').forEach(nav=>{nav.innerHTML='<p>Could not load saved posts.</p><button class="quiet-button" onclick="loadRecentPosts()">Retry</button>';});}
 }
 function rememberSavedPost(){
@@ -137,7 +131,7 @@ function rememberSavedPost(){
   historyRequest++;
   const title=currentDraftTitle||lastBrief||conversation.find(m=>m.role==='user')?.content||document.getElementById('brief').value||'Untitled conversation';
   const image=uploadedMedia.find(m=>m.kind==='image'&&Number.isSafeInteger(m.id)&&m.id>0);
-  recentPosts=[{id:Number(currentDraftId),title:title.slice(0,100),status:currentDraftStatus,thumbnail:image?{kind:'image',url:'/media/preview/'+image.id}:uploadedMedia.some(m=>m.kind==='video')?{kind:'video'}:null},...recentPosts.filter(r=>r.id!==Number(currentDraftId))];renderRecentPosts();
+  recentPosts=[{id:Number(currentDraftId),title:title.slice(0,100),status:currentDraftStatus,thumbnail:image?{kind:'image',url:'/media/preview/'+image.id,thumbnail_url:'/media/thumbnail/'+image.id}:uploadedMedia.some(m=>m.kind==='video')?{kind:'video'}:null},...recentPosts.filter(r=>r.id!==Number(currentDraftId))];renderRecentPosts();
 }
 async function openSavedPost(event,id){
   if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
