@@ -10,6 +10,7 @@ struct NativeCampaignView: View {
     @State private var briefZone = TimeZone.current.identifier
     @State private var campaigns: [JSONValue] = []
     @State private var current = JSONValue.null
+    @State private var name = ""
     @State private var idea = ""
     @State private var suggested = true
     @State private var sortBy = "Date"
@@ -86,7 +87,7 @@ struct NativeCampaignView: View {
                 let partial = saved["brief"]
                 if !partial.isNull {
                     suggested = partial["recommend_times"].bool
-                    idea = partial["idea"].string; platforms = Set(partial["platforms"].strings)
+                    name = partial["name"].string; idea = partial["idea"].string; platforms = Set(partial["platforms"].strings)
                     briefZone = partial["timezone"].string; frequency = partial["frequency"].string
                     count = max(1,partial["count"].int); media = partial["assets"].array
                     if let date = dateFormatter.date(from: partial["start"].string) { start = date }
@@ -104,6 +105,7 @@ struct NativeCampaignView: View {
         }
     }
     @ViewBuilder private var brief: some View {
+        Section("Campaign name") { TextField("Summer launch",text:$name).accessibilityLabel("Campaign name") }
         Section("What are you promoting?") { TextEditor(text: $idea).frame(minHeight: 72).accessibilityLabel("Campaign brief") }
         Section("Photos and videos") {
             ForEach(media, id: \.["id"].int) { asset in Text(asset["filename"].string) }
@@ -142,7 +144,7 @@ struct NativeCampaignView: View {
         }
         if !writer.note.isEmpty { Text(writer.note).font(.caption).foregroundStyle(.secondary) }
         Button("Build campaign") { Task { await perform { try await build() } } }
-            .disabled(idea.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || platforms.isEmpty || count < platforms.count)
+            .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name.count > 80 || idea.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || platforms.isEmpty || count < platforms.count)
     }
     private var positions: [Int] {
         let posts=current["posts"].array, dates=current["dates"].array
@@ -160,7 +162,7 @@ struct NativeCampaignView: View {
             Picker("View",selection:$calendarView){Text("Previews").tag(false);Text("Calendar").tag(true)}.pickerStyle(.segmented)
             Picker("Sort by",selection:$sortBy){ForEach(["Date","Platform","Media type"],id:\.self){Text($0)}}
             if calendarView {
-                CampaignCalendar(days:current["dates"].array.map {String($0["local"].string.prefix(10))},selected:$selectedDay)
+                CampaignCalendar(days:current["dates"].array.map {String($0["local"].string.prefix(10))},platforms:current["posts"].array.map {$0["platform"].string},selected:$selectedDay)
                     .id(current["id"].int)
             }
         }
@@ -176,6 +178,7 @@ struct NativeCampaignView: View {
                         Label(post["timing_warning"].string, systemImage: "calendar.badge.exclamationmark").font(.callout)
                     }
                     if !slot["reason"].string.isEmpty {Text(slot["reason"].string).font(.caption).foregroundStyle(.secondary)}
+                    HStack(spacing:8) {
                     if current["draft_ids"].array.isEmpty || post["editable"].bool {
                         CampaignPostEditor(row: current, index: index, errorMessage: message, working: working) { body in
                             await perform {
@@ -183,7 +186,14 @@ struct NativeCampaignView: View {
                             }
                         }.id("\(current["id"].int)-\(current["revision"].int)-\(post["draft_revision"].int)-\(index)")
                     }
-                    if !post["status"].string.isEmpty { Text(post["status"].string.capitalized).font(.caption) }
+                    if !post["status"].string.isEmpty { Text(post["status"].string.capitalized).font(.caption).foregroundStyle(.secondary) }
+                        Spacer(minLength:0)
+                    if index < current["draft_ids"].array.count && post["status"].string != "removed" {
+                        Button("Open in Studio") {
+                            Task { await perform { if store.dirty { try await store.save() }; try await store.openDraft(current["draft_ids"].array[index].int); store.selectedTab = 0; dismiss() } }
+                        }
+                    }
+                    }.font(.subheadline).buttonStyle(.borderless)
                     if !post["schedule"].isNull, index < current["dates"].array.count {
                         CampaignTimeEditor(when: current["dates"].array[index]["utc"].string, zone: current["brief"]["timezone"].string) { local in
                             await perform {
@@ -199,11 +209,6 @@ struct NativeCampaignView: View {
                             _ = try await store.request("/api/schedules/drafts/\(current["draft_ids"].array[index].int)/edit", method: "POST", body: .object(["revision":post["draft_revision"]]))
                             try await reopen(current["id"].int)
                         } } }
-                    }
-                    if index < current["draft_ids"].array.count && post["status"].string != "removed" {
-                        Button("Open in Studio") {
-                            Task { await perform { if store.dirty { try await store.save() }; try await store.openDraft(current["draft_ids"].array[index].int); store.selectedTab = 0; dismiss() } }
-                        }
                     }
                 }
             }
@@ -252,7 +257,7 @@ struct NativeCampaignView: View {
     }
     private var briefPayload: JSONValue {
         let scheduled = dateFormatter.string(from:start)
-        return .object(["recommend_times":.bool(suggested),"idea": .string(idea), "platforms": .strings(platforms.sorted()), "media": .array(media.map { $0["id"] }),
+        return .object(["name":.string(name),"recommend_times":.bool(suggested),"idea": .string(idea), "platforms": .strings(platforms.sorted()), "media": .array(media.map { $0["id"] }),
                                       "start": .string(suggested ? String(scheduled.prefix(10))+"T23:00" : scheduled), "timezone": .string(briefZone),
                                       "frequency": .string(frequency), "count": .integer(count)])
     }
@@ -261,7 +266,7 @@ struct NativeCampaignView: View {
         try await writer.save(body,store:store)
         body["brief_revision"] = .integer(writer.revision)
         select(try await store.request("/api/campaigns", method: "POST", body: body))
-        idea = ""; media = []; platforms = []; suggested = true; count = 4; frequency = "daily"
+        name = ""; idea = ""; media = []; platforms = []; suggested = true; count = 4; frequency = "daily"
         briefZone = TimeZone.current.identifier; start = Date().addingTimeInterval(86400)
         writer.restore(briefPayload,revision:writer.revision+1,restored:false)
         try await generate()

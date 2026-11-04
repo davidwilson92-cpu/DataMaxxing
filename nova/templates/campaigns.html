@@ -22,7 +22,7 @@
 {% if not premium %}<p>Plan a series of posts with Premium.</p><a class="button" href="/subscribe">Explore Premium</a>
 {% else %}
 <label>Saved campaigns<select id="campaign-list" aria-label="Saved campaigns"><option value="">New campaign</option></select></label>
-<form id="campaign-form"><label>What are you promoting?<textarea name="idea" required maxlength="8000" placeholder="Launch Zova. Start with a demo, then show a creator’s workflow."></textarea></label>
+<form id="campaign-form"><label>Campaign name<input name="name" required maxlength="80" placeholder="Summer launch"></label><label>What are you promoting?<textarea name="idea" required maxlength="8000" placeholder="Launch Zova. Start with a demo, then show a creator’s workflow."></textarea></label>
 <div><label id="campaign-drop" class="media-picker">Add photos and videos<input type="file" name="files" multiple accept="image/*,video/*" aria-describedby="campaign-file-count"></label>
 <small id="campaign-file-count" aria-live="polite">Choose or drop up to 10 files</small><ul id="campaign-files" aria-label="Campaign media"></ul></div>
 <fieldset><legend>Platforms</legend>{% for key,label in [('instagram','Instagram'),('facebook','Facebook'),('x','X'),('tiktok','TikTok')] %}<label><input type="checkbox" name="platform" value="{{ key }}">{{ label }}</label>{% endfor %}</fieldset>

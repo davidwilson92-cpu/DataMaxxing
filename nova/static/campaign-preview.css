@@ -34,3 +34,12 @@
 .campaign .campaign-calendar-grid button[aria-pressed=true] {background:#592b85;color:white}
 .campaign .campaign-calendar-grid small {display:block;font-size:.66rem}
 .campaign-calendar-nav {align-items:center;justify-content:space-between}
+
+.campaign .post-actions {display:flex;align-items:center;flex-wrap:wrap;gap:.4rem .8rem;border-top:1px solid #e8e3ec;padding-top:.35rem}
+.campaign .post-actions summary,.campaign .post-actions>a {display:inline-flex;align-items:center;min-height:44px;font-weight:600;font-size:.9rem;color:#542e83}
+.campaign .post-actions>a {margin-left:auto;text-decoration:underline;text-underline-offset:.18em}
+.campaign .post-actions details {margin:0}
+.campaign .post-actions details[open] {width:100%}
+.campaign .post-actions .campaign-post-state {background:#f1eef4;border-radius:.3rem;padding:.15rem .4rem;font-size:.75rem}
+.campaign .campaign-calendar-grid .calendar-marks {display:flex;justify-content:center;flex-wrap:wrap;gap:2px}
+.calendar-marks img,.calendar-marks .instagram-glyph {display:inline-block;width:13px;height:13px;background-color:white;border-radius:3px}
