@@ -16,9 +16,24 @@ def dates(value, zone):
     return {'utc': utc.isoformat(), 'local': utc.astimezone(ZoneInfo(zone)).isoformat()}
 
 
+TIMING_WORDS = re.compile(r"\b(?:today|tonight|tomorrow|yesterday|this (?:morning|afternoon|evening|weekend|week)|next week|last night|(?:mon|tues|wednes|thurs|fri|satur|sun)day|\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*|\d{1,2}/\d{1,2}(?:/\d{2,4})?)\b",re.I)
+
+
+def caption_date_warning(caption, original, planned):
+    if original[:10] != planned[:10]:
+        match = TIMING_WORDS.search(caption)
+        if match:
+            return f'Posting day changed. Check “{match.group()}” in the caption.'
+    return ''
+
+
 def current_plan(db, row):
     data = dict(json.loads(row.payload_json), id=row.id, revision=row.revision)
     ids = data['draft_ids']
+    for i,post in enumerate(data['posts']):
+        original = post.get('caption_date',data['dates'][i]['local'])
+        warning = caption_date_warning(post['caption'],original,data['dates'][i]['local'])
+        if warning: post['timing_warning'] = warning
     if not ids:
         return data
     drafts = {d.id: d for d in db.scalars(select(Draft).where(Draft.user_id == row.user_id, Draft.id.in_(ids)))}
@@ -50,7 +65,11 @@ def current_plan(db, row):
             if len(scheduled) == 1 and draft.status == 'scheduled':
                 from .schedule_routes import stamp
                 post['schedule'] = dict(id=scheduled[0].id, updated_at=stamp(scheduled[0].updated_at))
+            original = post.get('caption_date',data['dates'][i]['local'])
             data['dates'][i] = dates(when, data['brief']['timezone'])
+            post.pop('timing_warning',None)
+            warning = caption_date_warning(post['caption'],original,data['dates'][i]['local'])
+            if warning: post['timing_warning'] = warning
     return data
 
 

@@ -206,13 +206,21 @@ def edit_time(occurrence_id:int,body:OccurrenceEdit,request:Request,db=Depends(g
     revoke_jobs(db,uid,[v.draft_id for v in items if v.draft_id])
     zone=ZoneInfo(spec['timezone'])
     delta=due.astimezone(zone).replace(tzinfo=None)-o.due_at.replace(tzinfo=timezone.utc).astimezone(zone).replace(tzinfo=None)
+    warnings = []
+    from .campaign_review import caption_date_warning, dates
     for item in items:
         if item.status=='cancelled':continue
         draft=db.get(Draft,item.draft_id) if item.draft_id else None
         if draft and draft.status in {'published','partial','pending','publishing','needs_review'}:db.rollback();raise HTTPException(409,'Submitted occurrences cannot be moved. Choose a later occurrence.')
         local=item.due_at.replace(tzinfo=timezone.utc).astimezone(zone).replace(tzinfo=None)+delta
-        item.due_at=schedule_time(local.isoformat(),spec['timezone'])
-    db.commit();return {'status':'updated','note':'Review changed occurrences before scheduling.'}
+        due = schedule_time(local.isoformat(),spec['timezone'])
+        if draft:
+            variants = json.loads(draft.variants_json)
+            caption = '\n'.join(text for v in variants.values() for text in v.get('posts',[]) if isinstance(text,str))
+            note = caption_date_warning(caption,dates(item.due_at,spec['timezone'])['local'],dates(due,spec['timezone'])['local'])
+            if note and note not in warnings: warnings.append(note)
+        item.due_at=due
+    db.commit();return {'status':'updated','note':' '.join(warnings) or 'Review changed occurrences before scheduling.'}
 
 
 def approval_guard(db, draft_id):

@@ -62,7 +62,7 @@ function renderCampaignResults(rows) {
   for (const row of rows || []) {
     const card=document.createElement('article');card.className='analytics-panel';
     const title=document.createElement('h2');title.textContent=row.name;
-    const coverage=document.createElement('p');coverage.textContent=row.measured+' of '+row.published+' published posts measured';
+    const coverage=document.createElement('p');coverage.textContent=row.published ? row.measured+' of '+row.published+' published posts measured' : 'No posts published in this period.';
     card.append(title,coverage);
     if(row.published) {
       const metrics=document.createElement('p');

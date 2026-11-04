@@ -27,7 +27,7 @@
 <fieldset><legend>Platforms</legend>{% for key,label in [('instagram','Instagram'),('facebook','Facebook'),('x','X'),('tiktok','TikTok')] %}<label><input type="checkbox" name="platform" value="{{ key }}">{{ label }}</label>{% endfor %}</fieldset>
 <label>First post<input type="datetime-local" name="start" required></label><label>Frequency<select name="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option></select></label>
 <label>Total posts<input name="count" type="number" min="1" max="10" value="4" required></label>
-<button class="button">Build campaign</button></form>
+<small id="brief-save" role="status"></small><button class="button">Build campaign</button></form>
 <section id="campaign-review" hidden><h2 class="visually-hidden">Campaign plan</h2><p id="campaign-media"></p><div id="campaign-posts"></div>
 <div id="campaign-actions"><label>What would you change?<textarea id="campaign-feedback" maxlength="2000" placeholder="Lead with the demo. Make the last post a softer invitation."></textarea></label><button id="campaign-revise">Update plan</button> <button class="button" id="campaign-accept">Save posts to Schedule</button></div></section>
 <p id="campaign-status" role="status"></p>

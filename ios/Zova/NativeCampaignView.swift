@@ -6,6 +6,8 @@ struct NativeCampaignView: View {
     var initialCampaignID: Int? = nil
     @EnvironmentObject var store: ProductStore
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var writer = CampaignBriefWriter()
+    @State private var briefZone = TimeZone.current.identifier
     @State private var campaigns: [JSONValue] = []
     @State private var current = JSONValue.null
     @State private var idea = ""
@@ -56,21 +58,38 @@ struct NativeCampaignView: View {
             .sheet(isPresented: $consent) { NativeAIConsentView().environmentObject(store) }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button(initialCampaignID == nil ? "Studio" : "Performance") { dismiss() }.disabled(working).accessibilityIdentifier("close-campaign") }
+                ToolbarItem(placement: .cancellationAction) { Button(initialCampaignID == nil ? "Studio" : "Performance") {
+                    Task { await perform {
+                        if ready && current.isNull { try await writer.save(briefPayload,store:store) }
+                        dismiss()
+                    } }
+                }.disabled(working).accessibilityIdentifier("close-campaign") }
             }
             .interactiveDismissDisabled(working)
             .task { await perform {
                 campaigns = try await store.request("/api/campaigns").array
+                let saved = try await store.request("/api/campaign-brief")
+                let partial = saved["brief"]
+                if !partial.isNull {
+                    idea = partial["idea"].string; platforms = Set(partial["platforms"].strings)
+                    briefZone = partial["timezone"].string; frequency = partial["frequency"].string
+                    count = max(1,partial["count"].int); media = partial["assets"].array
+                    if let date = dateFormatter.date(from: partial["start"].string) { start = date }
+                }
+                writer.restore(briefPayload, revision: saved["revision"].int, restored: !partial.isNull)
                 if let id = initialCampaignID { try await reopen(id) }
                 ready = true
             } }
+            .onChange(of: briefPayload) { _, next in
+                if ready && current.isNull { Task { try? await writer.save(next,store:store) } }
+            }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.image, .movie], allowsMultipleSelection: true) { result in
                 if case .success(let files) = result { Task { await perform { try await upload(files) } } }
             }
         }
     }
     @ViewBuilder private var brief: some View {
-        Section("What are you promoting?") { TextEditor(text: $idea).frame(minHeight: 72) }
+        Section("What are you promoting?") { TextEditor(text: $idea).frame(minHeight: 72).accessibilityLabel("Campaign brief") }
         Section("Photos and videos") {
             ForEach(media, id: \.["id"].int) { asset in Text(asset["filename"].string) }
             if media.count < 10 {
@@ -101,10 +120,11 @@ struct NativeCampaignView: View {
             }
         }
         Section {
-            DatePicker("First post", selection: $start, in: Date()...)
+            DatePicker("First post", selection: $start, in: Date()...).environment(\.timeZone, dateFormatter.timeZone)
             Picker("Frequency", selection: $frequency) { Text("Daily").tag("daily"); Text("Weekly").tag("weekly") }
             Stepper("\(count) posts", value: $count, in: 1...10)
         }
+        if !writer.note.isEmpty { Text(writer.note).font(.caption).foregroundStyle(.secondary) }
         Button("Build campaign") { Task { await perform { try await build() } } }
             .disabled(idea.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || platforms.isEmpty || count < platforms.count)
     }
@@ -117,6 +137,9 @@ struct NativeCampaignView: View {
                         Text(ProductLinks.displayDate(ProductLinks.date(current["dates"].array[index]["utc"].string) ?? start, timezone: current["brief"]["timezone"].string)).font(.caption)
                     }
                     Text(post["caption"].string)
+                    if !post["timing_warning"].string.isEmpty {
+                        Label(post["timing_warning"].string, systemImage: "calendar.badge.exclamationmark").font(.callout)
+                    }
                     if let asset = current["assets"].array.first(where: { $0["id"] == post["asset_id"] }) {
                         Text(asset["name"].string).font(.caption)
                     }
@@ -183,16 +206,28 @@ struct NativeCampaignView: View {
             let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
             let result = try await store.api.upload(file: url, name: url.lastPathComponent, mime: mime, brand: store.brand)
             media.append(contentsOf: result["assets"].array)
+            try await writer.save(briefPayload,store:store)
         }
     }
-    private func build() async throws {
+    private var dateFormatter: DateFormatter {
         let date = DateFormatter()
-        date.locale = Locale(identifier: "en_US_POSIX"); date.timeZone = .current; date.dateFormat = "yyyy-MM-dd'T'HH:mm"
-        let body: JSONValue = .object(["idea": .string(idea), "platforms": .strings(platforms.sorted()), "media": .array(media.map { $0["id"] }),
-                                      "start": .string(date.string(from: start)), "timezone": .string(TimeZone.current.identifier),
+        date.locale = Locale(identifier: "en_US_POSIX"); date.timeZone = TimeZone(identifier: briefZone) ?? .current; date.dateFormat = "yyyy-MM-dd'T'HH:mm"
+        return date
+    }
+    private var briefPayload: JSONValue {
+        .object(["idea": .string(idea), "platforms": .strings(platforms.sorted()), "media": .array(media.map { $0["id"] }),
+                                      "start": .string(dateFormatter.string(from: start)), "timezone": .string(briefZone),
                                       "frequency": .string(frequency), "count": .integer(count)])
+    }
+    private func build() async throws {
+        var body = briefPayload
+        try await writer.save(body,store:store)
+        body["brief_revision"] = .integer(writer.revision)
         select(try await store.request("/api/campaigns", method: "POST", body: body))
-        idea = ""; media = []; try await generate()
+        idea = ""; media = []; platforms = []; count = 4; frequency = "daily"
+        briefZone = TimeZone.current.identifier; start = Date().addingTimeInterval(86400)
+        writer.restore(briefPayload,revision:writer.revision+1,restored:false)
+        try await generate()
     }
     private func generate() async throws {
         select(try await store.request("/api/ai/campaigns/\(current["id"].int)/plan", method: "POST",

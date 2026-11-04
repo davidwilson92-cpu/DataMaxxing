@@ -3,7 +3,49 @@
   const form = element('campaign-form'), list = element('campaign-list');
   const status = element('campaign-status');
   const records = new Map(), uploaded = new Map();
-  let current = null, busy = false;
+  let current = null, busy = false, briefReady = false, revision = 0, saved = '', writing = null;
+  let zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const saveNote = element('brief-save');
+  function snapshot() {
+    return JSON.stringify({idea:form.elements.idea.value,platforms:[...form.querySelectorAll('[name=platform]:checked')].map(el=>el.value),
+      start:form.elements.start.value, timezone:zone, frequency:form.elements.frequency.value,
+      count:form.elements.count.valueAsNumber || null, media:[...selectedFiles].map(file=>uploaded.get(file)).filter(Boolean)});
+  }
+  async function flush() {
+    clearTimeout(timer);
+    if (!briefReady) throw new Error('Reopen Campaign to load your saved brief.');
+    if (!writing && saved!==snapshot()) {
+      writing=(async()=>{
+        while(saved!==snapshot()) {
+          const next=snapshot(); saveNote.textContent='Saving brief…';
+          const result=await request('/api/campaign-brief',{...JSON.parse(next),revision});
+          revision=result.revision; saved=next;
+        }
+        saveNote.textContent='Brief saved';
+      })().catch(error=>{saveNote.textContent='Brief not saved. '+error.message;throw error;}).finally(()=>{writing=null;});
+    }
+    if(writing) await writing;
+  }
+  let timer;
+  const changed=()=>{clearTimeout(timer);if(briefReady) timer=setTimeout(()=>flush().catch(()=>{}),250);};
+  async function restore() {
+    const result=await request('/api/campaign-brief');
+    revision=result.revision;const draft=result.brief;
+    if(draft){
+      for(const key of ['idea','start','frequency','count']) form.elements[key].value=draft[key]??'';
+      form.querySelectorAll('[name=platform]').forEach(el=>el.checked=draft.platforms.includes(el.value));
+      zone=draft.timezone;
+      for(const a of draft.assets){const file={name:a.filename};selectedFiles.add(file);uploaded.set(file,a.id);}
+      renderFiles();saveNote.textContent='Brief restored';
+    }
+    saved=snapshot();briefReady=true;
+  }
+  form.addEventListener('input',event=>{if(event.target.type!=='file') changed();});
+  document.addEventListener('click',event=>{
+    const link=event.target.closest('a[href]');
+    if(!link || current || !briefReady || (saved===snapshot()&&!writing) || event.ctrlKey || event.metaKey) return;
+    event.preventDefault();flush().then(()=>location.assign(link.href)).catch(()=>{});
+  });
   const selectedFiles = new Set();
   const picker = form.elements.files, drop = element('campaign-drop');
   function renderFiles() {
@@ -14,7 +56,7 @@
       name.textContent = file.name;
       remove.type = 'button'; remove.textContent = 'Remove';
       remove.setAttribute('aria-label','Remove '+file.name);
-      remove.onclick = () => { selectedFiles.delete(file); uploaded.delete(file); renderFiles(); status.textContent=''; picker.focus(); };
+      remove.onclick = () => { selectedFiles.delete(file); uploaded.delete(file); renderFiles(); changed(); status.textContent=''; picker.focus(); };
       row.append(name,remove); rows.append(row);
     }
     element('campaign-file-count').textContent = selectedFiles.size ? selectedFiles.size+' of 10 files selected' : 'Choose or drop up to 10 files';
@@ -27,6 +69,7 @@
     }
     for (const file of files) selectedFiles.add(file);
     renderFiles(); status.textContent='';
+    run(async()=>{await uploadPending();await flush();});
   }
   picker.onchange = () => { addFiles(Array.from(picker.files)); picker.value=''; };
   drop.ondragover = event => { event.preventDefault(); if (!busy) drop.classList.add('drag-over'); };
@@ -101,6 +144,7 @@
       title.textContent = ({x:'X',facebook:'Facebook',instagram:'Instagram',tiktok:'TikTok'}[post.platform] || post.platform) + ' · ' + new Date(row.dates[i].utc).toLocaleString(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:row.brief.timezone,timeZoneName:'short'});
       text.textContent = post.caption;
       card.append(title,text);
+      if(post.timing_warning){const note=document.createElement('p');note.setAttribute('role','status');note.textContent=post.timing_warning;card.append(note);}
       const asset = row.assets.find(a => a.id === post.asset_id);
       if (asset) card.append(document.createTextNode(asset.name + ' '));
       if (!row.draft_ids.length || post.editable) editCard(card,row,i);
@@ -149,10 +193,21 @@
     }
   }
   window.addEventListener('beforeunload',event=>{
-    if(document.querySelector('#campaign-review details[data-dirty="true"]')){event.preventDefault();event.returnValue='';}
+    if((briefReady && !current && (writing || saved!==snapshot() || [...selectedFiles].some(f=>!uploaded.has(f)))) || document.querySelector('#campaign-review details[data-dirty="true"]')){event.preventDefault();event.returnValue='';}
   });
   const generate = async feedback => show(await request('/api/ai/campaigns/'+current.id+'/plan',{revision:current.revision,feedback}));
   list.onchange = () => run(async () => show(list.value ? await request('/api/campaigns/'+Number(list.value)) : null));
+  async function uploadPending() {
+    const files=Array.from(selectedFiles);
+    for(const [index,file] of files.entries()) {
+      if(uploaded.has(file)) continue;
+      status.textContent='Uploading '+(index+1)+' of '+files.length+' · '+file.name;
+      const upload=new FormData();upload.append('files',file);
+      try {uploaded.set(file,(await request('/api/media',upload)).assets[0].id);}
+      catch(error){throw new Error(file.name+' — '+error.message);}
+      await flush();
+    }
+  }
   form.onsubmit = event => {
     event.preventDefault();
     const data = new FormData(form), files = Array.from(selectedFiles), platforms = data.getAll('platform');
@@ -160,25 +215,19 @@
       if (!platforms.length || Number(data.get('count')) < platforms.length) throw new Error('Choose at least one post per selected platform.');
       if (files.length > 10) throw new Error('Choose up to ten files.');
       const media = [];
-      for (const [index,file] of files.entries()) {
-        if (!uploaded.has(file)) {
-          status.textContent='Uploading '+(index+1)+' of '+files.length+' · '+file.name;
-          const upload = new FormData(); upload.append('files',file);
-          try { uploaded.set(file,(await request('/api/media',upload)).assets[0].id); }
-          catch (error) { throw new Error(file.name+' — '+error.message); }
-        }
-        media.push(uploaded.get(file));
-      }
+      await uploadPending();
+      await flush();
+      for(const file of files) media.push(uploaded.get(file));
       show(await request('/api/campaigns',{idea:data.get('idea'),platforms,media,start:data.get('start'),
-        timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,count:Number(data.get('count')),frequency:data.get('frequency')}));
-      form.reset(); uploaded.clear(); selectedFiles.clear(); renderFiles();
+        timezone:zone,brief_revision:revision,count:Number(data.get('count')),frequency:data.get('frequency')}));
+      form.reset(); uploaded.clear(); selectedFiles.clear(); renderFiles();revision++;zone=Intl.DateTimeFormat().resolvedOptions().timeZone;saved=snapshot();saveNote.textContent='';
       await generate('');
     });
   };
   element('campaign-revise').onclick = () => run(() => generate(element('campaign-feedback').value));
   element('campaign-accept').onclick = () => run(async () => {await request('/api/campaigns/'+current.id+'/accept',{revision:current.revision});show(await request('/api/campaigns/'+current.id));}, 'Drafts added to Schedule.');
   run(async () => {
-    (await request('/api/campaigns')).forEach(remember);
+    (await request('/api/campaigns')).forEach(remember);await restore();
     const id=Number(new URL(location.href).searchParams.get('campaign'));
     if(records.has(id)) show(await request('/api/campaigns/'+id));
   });

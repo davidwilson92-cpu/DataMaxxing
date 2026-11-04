@@ -7,6 +7,8 @@ import UIKit
 final class NativeProductFixtures: URLProtocol {
     static let lock = NSLock()
     static var saved: [Int: JSONValue] = [:]
+    static var partialCampaign: JSONValue = .null
+    static var partialRevision = 0
     static var campaign: JSONValue = .null
     static var batch = 0
     static var storedStrategy: JSONValue = .null
@@ -20,6 +22,7 @@ final class NativeProductFixtures: URLProtocol {
         lock.lock(); defer { lock.unlock() }
         primaryPlatform = tiktok ? "tiktok" : "instagram"
         if ProcessInfo.processInfo.arguments.contains("--fixture-thread") { primaryPlatform = "x" }
+        partialCampaign = .null; partialRevision = 0
         campaign = .object(["id":.integer(6),"revision":.integer(1),"feedback":.string(""),"assets":.array([]),"draft_ids":.array([]),
             "brief":.object(["idea":.string("Pottery launch"),"timezone":.string("Europe/London")]),
             "dates":.array([.object(["utc":.string("2027-03-01T12:00:00Z"),"local":.string("2027-03-01T12:00:00+00:00")])]),
@@ -140,6 +143,13 @@ final class NativeProductFixtures: URLProtocol {
             return ok(.object(["draft_id": .integer(24)]))
         }
         if path == "/api/series" { return ok(.array([])) }
+        if path == "/api/campaign-brief" {
+            if request.httpMethod == "POST" {
+                guard partialRevision == input["revision"].int else { return (409,.object(["detail":.string("Brief changed")]),[:]) }
+                partialCampaign = input; partialRevision += 1
+            }
+            return ok(.object(["revision":.integer(partialRevision), "brief":partialCampaign]))
+        }
         if path == "/api/campaigns" { return ok(.array([campaign])) }
         if path == "/api/campaigns/6" { return ok(campaign) }
         if path == "/api/campaigns/6/posts/0" {
