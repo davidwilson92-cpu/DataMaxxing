@@ -14,7 +14,8 @@ _decode_slot = BoundedSemaphore(1)
 
 
 def image_preview(asset):
-    if not 0 < asset.size_bytes <= 15 * 1024 * 1024:
+    video = asset.mime_type.startswith('video/')
+    if not 0 < asset.size_bytes <= (100 if video else 15) * 1024 * 1024:
         raise ValueError('Unsupported image size')
     remote = asset.storage_key.startswith('nova/') and os.environ.get('S3_BUCKET')
     if remote:
@@ -32,6 +33,23 @@ def image_preview(asset):
 
     def render():
         with _decode_slot:
+            if video:
+                import av
+                from tempfile import TemporaryFile
+                from contextlib import nullcontext
+                with (TemporaryFile() if remote else nullcontext(storage.local_path(asset.storage_key))) as source:
+                    if remote:
+                        storage._s3_client().download_fileobj(os.environ['S3_BUCKET'],asset.storage_key,source)
+                        if source.tell()!=size: raise ValueError('Video changed during read')
+                        source.seek(0)
+                    with av.open(source if remote else str(source)) as container:
+                        stream=container.streams.video[0]
+                        if not 0<stream.width*stream.height<=40_000_000: raise ValueError('Unsupported video dimensions')
+                        stream.thread_count=1
+                        image=next(container.decode(video=0)).to_image()
+                        image.thumbnail((640,640))
+                        output=io.BytesIO();image.save(output,format='JPEG',quality=82)
+                        return base64.b64encode(output.getvalue()).decode('ascii')
             data = storage.get_bytes(asset.storage_key)
             if len(data) != size:
                 raise ValueError('Image changed during read')

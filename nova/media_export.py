@@ -19,7 +19,7 @@ def thumbnail_media(asset_id: int, request: Request, db=Depends(get_db)):
     user = current_user(request)
     row = db.get(MediaAsset, asset_id)
     if (not row or row.user_id != user.id or row.brand_id != db.info.get('brand_id', 0)
-            or not row.mime_type.startswith('image/')):
+            or not row.mime_type.startswith(('image/','video/'))):
         raise HTTPException(404, 'Media not found')
     try:
         preview = image_preview(row)

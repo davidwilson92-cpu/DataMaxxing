@@ -1,0 +1,36 @@
+.campaign-page {background:#fff;color:#191622;color-scheme:light;min-height:100vh}
+.campaign-page .site-header,.campaign-page .footer {background:white;color:#211b29;border-color:#e7e3eb}
+.campaign-page :is(.site-header,.footer) a,.campaign-page .campaign a {color:#582f90}
+.campaign-page .campaign {width:min(100% - 2rem,52rem);margin:1.5rem auto 4rem}
+.campaign-page .campaign :is(input,textarea,select) {background:#fff;color:#201c26;border:1px solid #a79caf;border-radius:9px}
+.campaign-page .campaign h1 {color:#17131b;font-size:clamp(1.6rem,5vw,2.4rem);overflow-wrap:anywhere}
+.campaign-page .campaign button:not(.button) {color:#50346b;background:#f5f2f8;border:1px solid #e3dce9;border-radius:8px;min-height:44px;padding:.5rem .75rem}
+.campaign-page .campaign label,.campaign-page .campaign legend {color:#41384a}
+.campaign-toolbar,.campaign-calendar-nav {display:flex;align-items:end;gap:.65rem;flex-wrap:wrap}
+.campaign-toolbar label {width:auto;font-size:.85rem}
+.campaign #campaign-posts {grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));align-items:start;gap:1rem}
+.campaign #campaign-posts article {display:flex;flex-direction:column;gap:.65rem;min-width:0;padding:0 1rem 1rem;border:1px solid #ded9e4;border-radius:14px;background:#fff;color:#211a29;box-shadow:0 3px 14px #20122f0b;overflow:hidden}
+.campaign .platform-strip {display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;margin:0 -1rem;padding:.75rem 1rem;color:white;background:#242226}
+.platform-strip[data-platform=instagram] {background:linear-gradient(105deg,#80249d,#a62e67,#92421c)}
+.platform-strip[data-platform=facebook] {background:#1258b8}
+.platform-strip[data-platform=tiktok] {background:#181719;border-top:3px solid #25f4ee;border-bottom:2px solid #fe2c55}
+.platform-strip[data-platform=x] {background:#080808}
+.platform-strip time {margin-left:auto;font:600 .8rem/1.4 system-ui}
+.platform-strip .platform-mark {background:#fff;display:inline-grid;place-items:center;width:27px;height:27px;border-radius:6px}
+.platform-strip .platform-mark img,.platform-strip .instagram-glyph {width:19px;height:19px}
+.platform-strip b {font-family:Arial,Helvetica,sans-serif}
+.platform-strip[data-platform=instagram] b {font-family:"Instagram Sans",Arial,sans-serif}
+.platform-strip[data-platform=x] b {font-family:Chirp,Arial,sans-serif}
+.platform-strip[data-platform=tiktok] b {font-family:"TikTok Sans",Arial,sans-serif;font-weight:900;letter-spacing:-.045em}
+.platform-strip[data-platform=facebook] b {font-family:"Facebook Sans",Helvetica,Arial,sans-serif;font-weight:700;letter-spacing:-.035em}
+.campaign .post-media {display:block;max-width:100%;max-height:22rem;width:100%;object-fit:contain;background:#f6f4f8}
+.campaign .campaign-post-state {color:#62586a}
+.campaign #campaign-posts article>p {color:#292230;overflow-wrap:anywhere}
+.campaign #campaign-posts article>a {color:#653798}
+.campaign .timing-reason {color:#65596e;font-size:.82rem}
+.campaign-calendar-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;margin-block:.7rem}
+.campaign-calendar-grid>* {text-align:center;line-height:1.3;font-size:.8rem;padding:.5rem 0}
+.campaign .campaign-calendar-grid button {width:100%;padding:.4rem 0}
+.campaign .campaign-calendar-grid button[aria-pressed=true] {background:#592b85;color:white}
+.campaign .campaign-calendar-grid small {display:block;font-size:.66rem}
+.campaign-calendar-nav {align-items:center;justify-content:space-between}

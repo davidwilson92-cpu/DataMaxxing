@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct CampaignPostEditor: View {
+    @EnvironmentObject var store: ProductStore
+    @State private var timingNote = ""
     let row: JSONValue
     let index: Int
     let errorMessage: String
@@ -41,6 +43,14 @@ struct CampaignPostEditor: View {
                     }
                 }
                 DatePicker("Planned time", selection: $date).environment(\.timeZone, zone)
+                Button("Suggest time") {Task {
+                    do {
+                        let choices=try await store.request("/api/campaigns/\(row["id"].int)/timing").array
+                        guard choices.indices.contains(index),let suggested=ProductLinks.date(choices[index]["utc"].string) else { return }
+                        date=suggested;timingNote=choices[index]["reason"].string
+                    } catch {timingNote=error.localizedDescription}
+                }}
+                if !timingNote.isEmpty {Text(timingNote).font(.caption)}
                 if !errorMessage.isEmpty { Text(errorMessage).font(.caption) }
             }.disabled(working).navigationTitle("Edit post").navigationBarTitleDisplayMode(.inline)
             .toolbar {

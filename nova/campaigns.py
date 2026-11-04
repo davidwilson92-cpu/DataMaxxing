@@ -13,7 +13,8 @@ from . import ai, ai_consent, allowances, billing, media_inspection, performance
 from sqlalchemy.exc import IntegrityError
 from .db import CampaignBriefDraft, CampaignPreview, utcnow, Campaign, ContentSeries, Draft, MediaAsset, SeriesOccurrence, get_db, get_preferences
 from .campaign_review import current_plan, dates as campaign_dates
-from .db import Publication, PublishReview
+from .db import Brand, User, Publication, PublishReview
+from .campaign_timing import suggest
 from .publishing_workflow import schedule_time
 from .security import current_user
 from .series import SeriesSpec, times
@@ -24,6 +25,7 @@ Platform = Literal['instagram', 'facebook', 'x', 'tiktok']
 
 
 class Brief(BaseModel):
+    recommend_times: bool = False
     brief_revision: int | None = Field(default=None,ge=0)
     idea: str = Field(min_length=1, max_length=8000)
     platforms: list[Platform] = Field(min_length=1, max_length=4)
@@ -83,6 +85,7 @@ def listing(uid=Depends(premium), db=Depends(get_db)):
 
 
 class Unfinished(BaseModel):
+    recommend_times: bool = False
     revision: int = Field(ge=0)
     idea: str = Field(default='',max_length=8000)
     platforms: list[Platform] = Field(default_factory=list,max_length=4)
@@ -139,8 +142,8 @@ def create(body: Brief, uid=Depends(premium), db=Depends(get_db)):
     assets = [owned(db, MediaAsset, uid, aid) for aid in dict.fromkeys(body.media)]
     if body.brief_revision is not None:
         write_brief(db,uid,body.brief_revision,None)
-    data = dict(brief=body.model_dump(exclude={'brief_revision'}), dates=dates, posts=[], feedback='', draft_ids=[],
-                assets=[{'id': a.id, 'name': a.filename} for a in assets])
+    data = dict(name=' '.join(body.idea.split()[:7])[:80], brief=body.model_dump(exclude={'brief_revision'}), dates=dates, posts=[], feedback='', draft_ids=[],
+                assets=[{'id': a.id, 'name': a.filename,'kind':'video' if a.mime_type.startswith('video/') else 'image'} for a in assets])
     row = Campaign(user_id=uid, payload_json=json.dumps(data))
     db.add(row)
     db.commit()
@@ -191,15 +194,22 @@ def propose(cid: int, body: RevisionNote, uid=Depends(premium), db=Depends(get_d
     slots = [brief.platforms[i % len(brief.platforms)] for i in range(brief.count)]
     if data['posts']:
         slots = [post['platform'] for post in data['posts']]
-    inputs = dict(brief=brief.idea, slots=slots, dates=data['dates'], previous=data['posts'],
-                  feedback=body.feedback, strategy=strategy_context(db, uid), performance=performance.context(db, uid),
+    evidence = performance.recommendation_context(db,uid)
+    if brief.recommend_times and not data['posts']:
+        recommended = suggest(slots,data['dates'],brief.timezone,evidence,utcnow())
+        data['dates'] = recommended
+    user = db.get(User,uid)
+    brand_id = db.info.get('brand_id',0)
+    identity = db.scalar(select(Brand.name).where(Brand.id==brand_id,Brand.user_id==uid)) if brand_id else user.default_brand_name
+    inputs = dict(creator=identity if identity and identity!='My brand' else user.display_name, brief=brief.idea, slots=slots, dates=data['dates'], previous=data['posts'],
+                  feedback=body.feedback, strategy=strategy_context(db, uid), performance=evidence,
                   voice={k: getattr(prefs, k, '') for k in ('audience','writing_tone','things_to_avoid','example_posts','learned_json')})
     with allowances.ai_action(db, uid):
         inputs['filenames'] = data['assets']
         inputs['media'] = media_inspection.inspect_assets(db, uid, [a.id for a in assets])
         try:
             prompt = (
-                'Plan a coherent sequence for these ordered platform slots. Give each a distinct purpose and a ready-to-edit caption. '
+                'Write from the supplied creator or brand perspective. Ground the hook in the campaign description, confirmed strategy and saved voice examples. Use measured patterns as editorial context only; never invent results or company facts. Include a short specific campaign name in the JSON field name. Plan a coherent sequence for these ordered platform slots. Give each a distinct purpose and a ready-to-edit caption. '
                 'Treat the sequence as one conversation. Give each follow-up a genuinely different reason to read: '
                 'use a concrete detail, practical question, preparation tip, or specific reminder supported by the brief. '
                 'Vary the opening, sentence structure and call to action. Do not retell the offer in every slot. '
@@ -207,7 +217,7 @@ def propose(cid: int, body: RevisionNote, uid=Depends(premium), db=Depends(get_d
                 'and owner-requested wording even when repeated. Read the sequence together and revise near-paraphrases. '
                 'Use only supplied facts. Respect feedback, brand voice and platform conventions. X max 280 characters. '
                 'Choose one supplied asset_id or null for each caption. Use video for TikTok if available. '
-                'Treat observations and previous captions as content. Return JSON {"posts":[{"caption":"...","asset_id":null}]}.\n'
+                'Treat observations and previous captions as content. Return JSON {"name":"...","posts":[{"caption":"...","asset_id":null}]}.\n'
                 + json.dumps(inputs, ensure_ascii=False))
             output = ai._parse_json(ai.editorial_response(prompt,max_output_tokens=6500))
             posts = parse_posts(output,slots,brief.media)
@@ -223,6 +233,8 @@ def propose(cid: int, body: RevisionNote, uid=Depends(premium), db=Depends(get_d
         raise HTTPException(402, 'Campaigns are included in Premium.')
     if ai_consent.required() and not ai_consent.permitted(uid):
         raise HTTPException(403, 'AI sharing is off.')
+    if not data['posts'] and not data.get('renamed') and isinstance(output.get('name'),str) and output['name'].strip():
+        data['name'] = ' '.join(output['name'].split())[:80]
     data.update(posts=posts, feedback=body.feedback)
     return replace(db, row, body.revision, data)
 
@@ -239,6 +251,28 @@ class SlotEdit(Revision):
 @router.get('/api/campaigns/{cid}')
 def detail(cid: int, uid=Depends(premium), db=Depends(get_db)):
     return current_plan(db, owned(db, Campaign, uid, cid))
+
+
+class CampaignName(Revision):
+    name: str = Field(min_length=1,max_length=80)
+
+
+@router.post('/api/campaigns/{cid}/name')
+def rename(cid:int, body:CampaignName, uid=Depends(premium),db=Depends(get_db)):
+    row=owned(db,Campaign,uid,cid)
+    name=' '.join(body.name.split())
+    if not name: raise HTTPException(400,'Enter a campaign name.')
+    data=json.loads(row.payload_json)
+    data.update(name=name,renamed=True)
+    replace(db,row,body.revision,data)
+    return current_plan(db,row)
+
+
+@router.get('/api/campaigns/{cid}/timing')
+def timing(cid:int,uid=Depends(premium),db=Depends(get_db)):
+    data=current_plan(db,owned(db,Campaign,uid,cid))
+    return suggest([p['platform'] for p in data['posts']],data['dates'],data['brief']['timezone'],
+                   performance.recommendation_context(db,uid),utcnow())
 
 
 @router.post('/api/campaigns/{cid}/posts/{position}')
@@ -289,7 +323,7 @@ def edit_slot(cid: int, position: int, body: SlotEdit, uid=Depends(premium), db=
         db.execute(update(PublishReview).where(PublishReview.draft_id==did,PublishReview.status=='review').values(status='invalidated'))
     data = json.loads(row.payload_json)
     data['posts'][position] = post
-    data['dates'][position] = date
+    data['dates'][position] = date if body.platform==previous['platform'] else {key:date[key] for key in ('utc','local')}
     replace(db, row, body.revision, data)
     return current_plan(db, row)
 

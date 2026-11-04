@@ -11,6 +11,12 @@ struct NativeCampaignView: View {
     @State private var campaigns: [JSONValue] = []
     @State private var current = JSONValue.null
     @State private var idea = ""
+    @State private var suggested = true
+    @State private var sortBy = "Date"
+    @State private var calendarView = false
+    @State private var selectedDay = ""
+    @State private var renaming = false
+    @State private var newName = ""
     @State private var feedback = ""
     @State private var platforms: Set<String> = []
     @State private var start = Date().addingTimeInterval(86400)
@@ -38,7 +44,7 @@ struct NativeCampaignView: View {
                         if !campaigns.isEmpty {
                             Section("Saved campaigns") {
                                 ForEach(campaigns, id: \.["id"].int) { item in
-                                    Button(String(item["brief"]["idea"].string.prefix(80))) {
+                                    Button(campaignName(item)) {
                                         Task { await perform { try await reopen(item["id"].int) } }
                                     }.accessibilityIdentifier("saved-campaign-\(item["id"].int)")
                                 }
@@ -52,9 +58,17 @@ struct NativeCampaignView: View {
                 if working { ProgressView() }
                 if !message.isEmpty { Text(message).foregroundStyle(.secondary) }
             }
+            .scrollContentBackground(.hidden).background(Color.white).preferredColorScheme(.light)
             .buttonStyle(.borderless)
             .disabled(working)
-            .navigationTitle(current.isNull ? "Campaigns" : String(current["brief"]["idea"].string.prefix(65)))
+            .navigationTitle(current.isNull ? "Campaigns" : campaignName(current))
+            .alert("Campaign name", isPresented:$renaming) {
+                TextField("Name",text:$newName)
+                Button("Cancel",role:.cancel) {}
+                Button("Save") {Task {await perform {
+                    select(try await store.request("/api/campaigns/\(current["id"].int)/name",method:"POST",body:.object(["revision":current["revision"],"name":.string(newName)])))
+                }}}
+            }
             .sheet(isPresented: $consent) { NativeAIConsentView().environmentObject(store) }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -71,6 +85,7 @@ struct NativeCampaignView: View {
                 let saved = try await store.request("/api/campaign-brief")
                 let partial = saved["brief"]
                 if !partial.isNull {
+                    suggested = partial["recommend_times"].bool
                     idea = partial["idea"].string; platforms = Set(partial["platforms"].strings)
                     briefZone = partial["timezone"].string; frequency = partial["frequency"].string
                     count = max(1,partial["count"].int); media = partial["assets"].array
@@ -120,7 +135,8 @@ struct NativeCampaignView: View {
             }
         }
         Section {
-            DatePicker("First post", selection: $start, in: Date()...).environment(\.timeZone, dateFormatter.timeZone)
+            Picker("Timing", selection:$suggested) { Text("Zova’s suggested times").tag(true);Text("Choose my time").tag(false) }
+            DatePicker("First post", selection: $start, in: Date()..., displayedComponents:suggested ? [.date] : [.date,.hourAndMinute]).environment(\.timeZone, dateFormatter.timeZone)
             Picker("Frequency", selection: $frequency) { Text("Daily").tag("daily"); Text("Weekly").tag("weekly") }
             Stepper("\(count) posts", value: $count, in: 1...10)
         }
@@ -128,21 +144,38 @@ struct NativeCampaignView: View {
         Button("Build campaign") { Task { await perform { try await build() } } }
             .disabled(idea.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || platforms.isEmpty || count < platforms.count)
     }
+    private var positions: [Int] {
+        let posts=current["posts"].array, dates=current["dates"].array
+        func key(_ i:Int)->String {
+            if sortBy=="Platform"{return posts[i]["platform"].string}
+            if sortBy=="Media type"{return campaignAssets(current,posts[i]).first?["kind"].string ?? "text"}
+            return ""
+        }
+        return posts.indices.filter { !calendarView || dates[$0]["local"].string.hasPrefix(selectedDay) }
+            .sorted { (key($0), dates[$0]["local"].string,$0) < (key($1),dates[$1]["local"].string,$1) }
+    }
     @ViewBuilder private var review: some View {
         Section {
-            ForEach(Array(current["posts"].array.enumerated()), id: \.offset) { index, post in
+            Button("Rename campaign"){newName=campaignName(current);renaming=true}
+            Picker("View",selection:$calendarView){Text("Previews").tag(false);Text("Calendar").tag(true)}.pickerStyle(.segmented)
+            Picker("Sort by",selection:$sortBy){ForEach(["Date","Platform","Media type"],id:\.self){Text($0)}}
+            if calendarView {
+                CampaignCalendar(days:current["dates"].array.map {String($0["local"].string.prefix(10))},selected:$selectedDay)
+                    .id(current["id"].int)
+            }
+        }
+        Section {
+            ForEach(positions, id: \.self) { index in
+                let post=current["posts"].array[index]
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(SocialPlatform(rawValue: post["platform"].string)?.title ?? post["platform"].string).font(.headline)
-                    if index < current["dates"].array.count {
-                        Text(ProductLinks.displayDate(ProductLinks.date(current["dates"].array[index]["utc"].string) ?? start, timezone: current["brief"]["timezone"].string)).font(.caption)
-                    }
+                    let slot=current["dates"].array[index],zone=current["brief"]["timezone"].string
+                    CampaignStrip(platform:post["platform"].string,date:ProductLinks.displayDate(ProductLinks.date(slot["utc"].string) ?? start,timezone:zone)+" · "+zone)
+                    ForEach(campaignAssets(current,post),id:\.["id"].int){asset in CampaignMediaTile(asset:asset)}
                     Text(post["caption"].string)
                     if !post["timing_warning"].string.isEmpty {
                         Label(post["timing_warning"].string, systemImage: "calendar.badge.exclamationmark").font(.callout)
                     }
-                    if let asset = current["assets"].array.first(where: { $0["id"] == post["asset_id"] }) {
-                        Text(asset["name"].string).font(.caption)
-                    }
+                    if !slot["reason"].string.isEmpty {Text(slot["reason"].string).font(.caption).foregroundStyle(.secondary)}
                     if current["draft_ids"].array.isEmpty || post["editable"].bool {
                         CampaignPostEditor(row: current, index: index, errorMessage: message, working: working) { body in
                             await perform {
@@ -195,6 +228,9 @@ struct NativeCampaignView: View {
         select(try await store.request("/api/campaigns/\(id)"))
     }
     private func select(_ row: JSONValue) {
+        if current["id"] != row["id"] || selectedDay.isEmpty {
+            selectedDay=String((row["dates"].array.map { $0["local"].string }.min() ?? "").prefix(10))
+        }
         current = row; feedback = row["feedback"].string
         campaigns.removeAll { $0["id"] == row["id"] }; campaigns.insert(row, at: 0)
     }
@@ -215,8 +251,9 @@ struct NativeCampaignView: View {
         return date
     }
     private var briefPayload: JSONValue {
-        .object(["idea": .string(idea), "platforms": .strings(platforms.sorted()), "media": .array(media.map { $0["id"] }),
-                                      "start": .string(dateFormatter.string(from: start)), "timezone": .string(briefZone),
+        let scheduled = dateFormatter.string(from:start)
+        return .object(["recommend_times":.bool(suggested),"idea": .string(idea), "platforms": .strings(platforms.sorted()), "media": .array(media.map { $0["id"] }),
+                                      "start": .string(suggested ? String(scheduled.prefix(10))+"T23:00" : scheduled), "timezone": .string(briefZone),
                                       "frequency": .string(frequency), "count": .integer(count)])
     }
     private func build() async throws {
@@ -224,7 +261,7 @@ struct NativeCampaignView: View {
         try await writer.save(body,store:store)
         body["brief_revision"] = .integer(writer.revision)
         select(try await store.request("/api/campaigns", method: "POST", body: body))
-        idea = ""; media = []; platforms = []; count = 4; frequency = "daily"
+        idea = ""; media = []; platforms = []; suggested = true; count = 4; frequency = "daily"
         briefZone = TimeZone.current.identifier; start = Date().addingTimeInterval(86400)
         writer.restore(briefPayload,revision:writer.revision+1,restored:false)
         try await generate()
