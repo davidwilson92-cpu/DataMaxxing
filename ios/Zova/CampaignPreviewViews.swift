@@ -17,6 +17,7 @@ func campaignAssets(_ row: JSONValue, _ post: JSONValue) -> [JSONValue] {
 struct CampaignMediaTile: View {
     @EnvironmentObject var store: ProductStore
     let asset: JSONValue
+    var height:CGFloat = 180
     @State private var thumbnail: UIImage?
     @State private var viewing = false
     var body: some View {
@@ -27,7 +28,7 @@ struct CampaignMediaTile: View {
                 if asset["kind"].string == "video" {
                     Image(systemName:"play.circle.fill").font(.largeTitle).symbolRenderingMode(.palette).foregroundStyle(.white,.black)
                 } else if thumbnail == nil { Image(systemName:"photo") }
-            }.frame(maxWidth:.infinity).frame(height:180).clipShape(RoundedRectangle(cornerRadius:10))
+            }.frame(maxWidth:.infinity).frame(height:height).clipShape(RoundedRectangle(cornerRadius:10))
         }.accessibilityLabel("Preview " + asset["filename"].string)
         .task(id:asset["id"].int) {
             do {

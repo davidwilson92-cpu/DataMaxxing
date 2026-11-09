@@ -77,6 +77,7 @@ struct NativeCampaignView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button {
+                    if embedded {store.selectedTab = 0; return}
                     Task { await perform {
                         if ready && current.isNull { try await writer.save(briefPayload,store:store) }
                         if embedded { store.selectedTab = 0 } else { dismiss() }
@@ -112,7 +113,7 @@ struct NativeCampaignView: View {
         Section("What are you promoting?") { TextEditor(text: $idea).frame(minHeight: 120).padding(8).overlay(RoundedRectangle(cornerRadius:10).stroke(Color.gray.opacity(0.45))).accessibilityLabel("Campaign brief") }
         Section("Photos and videos") {
             ForEach(media, id: \.["id"].int) { asset in
-                HStack { CampaignMediaTile(asset:asset).frame(width:64,height:64).clipped(); Text(asset["filename"].string).font(.caption).lineLimit(2); Spacer(); Button {media.removeAll {$0["id"]==asset["id"]}} label:{Image(systemName:"xmark.circle")}.accessibilityLabel("Remove "+asset["filename"].string) }
+                HStack { CampaignMediaTile(asset:asset,height:64).frame(width:64,height:64).clipped(); Text(asset["filename"].string).font(.caption).lineLimit(2); Spacer(); Button {media.removeAll {$0["id"]==asset["id"]}} label:{Image(systemName:"xmark.circle")}.accessibilityLabel("Remove "+asset["filename"].string) }
             }
             if !failedFiles.isEmpty {Button("Retry files") {Task {await perform {await uploadFiles(failedFiles)}}}}
             if !failedPhotos.isEmpty {Button("Retry remaining files") {Task {await perform {await uploadPhotos(failedPhotos)}}}}
