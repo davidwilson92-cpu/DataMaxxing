@@ -9,6 +9,8 @@ body.zova-product{padding-bottom:78px}
 .campaign-page .campaign.app-workspace{padding-bottom:100px;scroll-padding-bottom:100px}
 .campaign-page .app-shell{height:auto;min-height:100dvh}
 .campaign-page .campaign.app-workspace *{scroll-margin-bottom:90px}
-body.conversation-body .conversation-workspace{height:calc(100dvh - 78px)}
+body.conversation-body .conversation-workspace{height:calc(100dvh - 78px)!important}
+body.conversation-body:has(#brief:focus) .mobile-workspace-tabs{display:none}
+body.conversation-body:has(#brief:focus) .conversation-workspace{height:100dvh!important}
 .campaign-page .app-nav{display:none}
 }
