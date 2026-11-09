@@ -8,7 +8,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(entry.waitForExistence(timeout: 12)); entry.tap()
         let brief = app.textViews["Campaign brief"]
         XCTAssertTrue(brief.waitForExistence(timeout: 8)); brief.tap(); brief.typeText("Saturday alterations")
-        app.buttons["close-campaign"].tap(); entry.tap()
+        app.buttons["tab-Studio"].tap(); entry.tap()
         XCTAssertTrue(brief.waitForExistence(timeout: 8))
         XCTAssertEqual(brief.value as? String, "Saturday alterations")
     }

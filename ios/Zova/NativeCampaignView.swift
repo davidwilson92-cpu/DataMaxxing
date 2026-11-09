@@ -4,6 +4,9 @@ import PhotosUI
 
 struct NativeCampaignView: View {
     var initialCampaignID: Int? = nil
+    var embedded = false
+    @State private var failedFiles: [URL] = []
+    @State private var failedPhotos: [PhotosPickerItem] = []
     @EnvironmentObject var store: ProductStore
     @Environment(\.dismiss) private var dismiss
     @StateObject private var writer = CampaignBriefWriter()
@@ -73,14 +76,14 @@ struct NativeCampaignView: View {
             .sheet(isPresented: $consent) { NativeAIConsentView().environmentObject(store) }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button(initialCampaignID == nil ? "Studio" : "Performance") {
+                ToolbarItem(placement: .cancellationAction) { Button {
                     Task { await perform {
                         if ready && current.isNull { try await writer.save(briefPayload,store:store) }
-                        dismiss()
+                        if embedded { store.selectedTab = 0 } else { dismiss() }
                     } }
-                }.disabled(working).accessibilityIdentifier("close-campaign") }
+                } label: { Image(systemName:"xmark").frame(minWidth:44,minHeight:44) }.accessibilityLabel("Close campaign").accessibilityIdentifier("close-campaign") }
             }
-            .interactiveDismissDisabled(working)
+            .interactiveDismissDisabled(working && !embedded)
             .task { await perform {
                 campaigns = try await store.request("/api/campaigns").array
                 let saved = try await store.request("/api/campaign-brief")
@@ -100,15 +103,19 @@ struct NativeCampaignView: View {
                 if ready && current.isNull { Task { try? await writer.save(next,store:store) } }
             }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.image, .movie], allowsMultipleSelection: true) { result in
-                if case .success(let files) = result { Task { await perform { try await upload(files) } } }
+                if case .success(let files) = result { Task { await perform { await uploadFiles(files) } } }
             }
         }
     }
     @ViewBuilder private var brief: some View {
-        Section("Campaign name") { TextField("Summer launch",text:$name).accessibilityLabel("Campaign name") }
-        Section("What are you promoting?") { TextEditor(text: $idea).frame(minHeight: 72).accessibilityLabel("Campaign brief") }
+        Section("Campaign name") { TextField("Summer launch",text:$name).textFieldStyle(.roundedBorder).accessibilityLabel("Campaign name") }
+        Section("What are you promoting?") { TextEditor(text: $idea).frame(minHeight: 120).padding(8).overlay(RoundedRectangle(cornerRadius:10).stroke(Color.gray.opacity(0.45))).accessibilityLabel("Campaign brief") }
         Section("Photos and videos") {
-            ForEach(media, id: \.["id"].int) { asset in Text(asset["filename"].string) }
+            ForEach(media, id: \.["id"].int) { asset in
+                HStack { CampaignMediaTile(asset:asset).frame(width:64,height:64).clipped(); Text(asset["filename"].string).font(.caption).lineLimit(2); Spacer(); Button {media.removeAll {$0["id"]==asset["id"]}} label:{Image(systemName:"xmark.circle")}.accessibilityLabel("Remove "+asset["filename"].string) }
+            }
+            if !failedFiles.isEmpty {Button("Retry files") {Task {await perform {await uploadFiles(failedFiles)}}}}
+            if !failedPhotos.isEmpty {Button("Retry remaining files") {Task {await perform {await uploadPhotos(failedPhotos)}}}}
             if media.count < 10 {
                 PhotosPicker(selection: $photos, maxSelectionCount: 10 - media.count, matching: .any(of: [.images, .videos])) {
                     Label("Photos and videos", systemImage: "photo.on.rectangle")
@@ -117,13 +124,7 @@ struct NativeCampaignView: View {
                     guard !items.isEmpty else { return }
                     Task { await perform {
                         defer { photos = [] }
-                        for item in items {
-                            guard let picked = try await item.loadTransferable(type: PickedMedia.self) else {
-                                throw ZovaFailure.server("This file could not be opened.")
-                            }
-                            defer { NativeMediaFiles.remove(picked.url) }
-                            try await upload([picked.url])
-                        }
+                        await uploadPhotos(items)
                     } }
                 }
                 Button("Browse files") { importing = true }
@@ -239,15 +240,40 @@ struct NativeCampaignView: View {
         current = row; feedback = row["feedback"].string
         campaigns.removeAll { $0["id"] == row["id"] }; campaigns.insert(row, at: 0)
     }
+    private func uploadFiles(_ files:[URL]) async {
+        let authority = store.authority
+        failedFiles = []
+        for file in files {
+            guard authority == store.authority else { return }
+            do {try await upload([file])}
+            catch {failedFiles.append(file);message = "Some files could not upload. Retry files."}
+        }
+    }
+    private func uploadPhotos(_ items:[PhotosPickerItem]) async {
+        let authority = store.authority
+        failedPhotos = []
+        for item in items {
+            guard authority == store.authority else { return }
+            do {
+                guard let picked = try await item.loadTransferable(type: PickedMedia.self) else { throw ZovaFailure.server("This file could not be opened.") }
+                defer { NativeMediaFiles.remove(picked.url) }
+                guard authority == store.authority else { return }
+                try await upload([picked.url])
+            } catch { failedPhotos.append(item); message = "Some files could not upload. Retry remaining files." }
+        }
+    }
     private func upload(_ files: [URL]) async throws {
+        let authority = store.authority, brand = store.brand
         guard media.count + files.count <= 10 else { throw ZovaFailure.server("Choose up to ten files.") }
         for url in files {
+            guard authority == store.authority else { throw CancellationError() }
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
-            let result = try await store.api.upload(file: url, name: url.lastPathComponent, mime: mime, brand: store.brand)
+            let result = try await store.api.upload(file: url, name: url.lastPathComponent, mime: mime, brand: brand)
+            guard authority == store.authority else {throw CancellationError()}
             media.append(contentsOf: result["assets"].array)
-            try await writer.save(briefPayload,store:store)
+            do {try await writer.save(briefPayload,store:store)} catch { message = "File uploaded. Brief save failed. "+error.localizedDescription }
         }
     }
     private var dateFormatter: DateFormatter {

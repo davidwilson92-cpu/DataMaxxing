@@ -25,7 +25,6 @@ struct NativeStudioView: View {
     @Binding var strategy: Bool
     @FocusState private var focused: Bool
     @State private var chooseDraftPlatform = false
-    @State private var campaign = false
     @State private var history = false
     @State private var options = false
     @State private var importer = false
@@ -123,7 +122,6 @@ struct NativeStudioView: View {
         }.foregroundStyle(ZovaDesign.ink)
             .photosPicker(isPresented: $photoLibrary, selection: $picker, maxSelectionCount: max(1, 10 - store.draft.media.count), selectionBehavior: .ordered, matching: .any(of: [.images, .videos]), preferredItemEncoding: .compatible)
             .confirmationDialog("Discard the unsaved copy on this iPhone? Your server draft stays unchanged.", isPresented: $discardRecovery, titleVisibility: .visible) { Button("Discard local copy", role: .destructive) { store.discardRecovery() } }
-            .sheet(isPresented: $campaign) { NativeCampaignView().environmentObject(store) }
         .sheet(isPresented: $history) { NativeHistoryView().environmentObject(store) }
             .sheet(isPresented: $options) { NativePostOptionsView().environmentObject(store) }
             .sheet(isPresented: Binding(get: { previewMode != nil }, set: { if !$0 { previewMode = nil } })) {
@@ -199,8 +197,6 @@ struct NativeStudioView: View {
             Button { captionEditing = false; run { try await store.newPost(); focused = true } } label: {
                 Label("New post", systemImage: "plus").font(.caption.weight(.medium)).fixedSize(horizontal: false, vertical: true).frame(minHeight: 44).contentShape(Rectangle())
             }.disabled(store.busy).accessibilityIdentifier("new-post")
-            Button("Campaign") { focused = false; campaign = true }
-                .font(.caption.weight(.semibold)).frame(minHeight: 44).disabled(store.busy)
             Button { focused = false; captionEditing = false; nextMove = true } label: {
                 Label("Next move", systemImage: "sparkles").font(.subheadline.bold()).fixedSize(horizontal: false, vertical: true).padding(.horizontal, 13).padding(.vertical, 8).frame(minHeight: 44).foregroundStyle(.white).background(ZovaDesign.hero, in: Capsule())
             }.accessibilityIdentifier("next-move").disabled(store.busy)

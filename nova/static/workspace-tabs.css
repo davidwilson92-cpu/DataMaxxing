@@ -1,0 +1,11 @@
+
+.mobile-workspace-tabs{display:none}
+@media(max-width:760px){
+.mobile-workspace-tabs{position:fixed;bottom:0;left:0;right:0;display:flex;z-index:35;background:#100c17;padding:6px 3px max(6px,env(safe-area-inset-bottom));border-top:1px solid #30273b}
+.mobile-workspace-tabs a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:48px;color:#dad5e1;text-decoration:none;font:11px system-ui}
+.mobile-workspace-tabs svg{width:22px;height:22px}
+.mobile-workspace-tabs a[aria-current=page]{color:#c39bff}
+body.zova-product{padding-bottom:78px}
+body.conversation-body .conversation-workspace{height:calc(100dvh - 78px)}
+.campaign-page .app-nav{display:none}
+}
