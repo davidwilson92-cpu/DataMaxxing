@@ -70,6 +70,8 @@
       remove.type = 'button'; remove.textContent = 'Remove';
       remove.setAttribute('aria-label','Remove '+file.name);
       remove.onclick = () => { selectedFiles.delete(file); uploaded.delete(file); renderFiles(); changed(); status.textContent=''; picker.focus(); };
+      const id=uploaded.get(file);
+      if(id){const preview=document.createElement('img');preview.loading='lazy';preview.alt='';preview.src=window.zovaWorkspaceUrl('/media/thumbnail/'+id);row.append(preview);}
       row.append(name,remove); rows.append(row);
     }
     element('retry-campaign-uploads').hidden=![...selectedFiles].some(file=>!uploaded.has(file));
