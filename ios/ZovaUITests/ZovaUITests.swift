@@ -31,6 +31,7 @@ final class ZovaUITests: XCTestCase {
         video.tap();app.buttons["All"].tap()
         XCTAssertTrue(app.buttons["library-asset-51"].waitForExistence(timeout:8))
         XCTAssertTrue(app.buttons["Use selected (1)"].exists)
+        XCTAssertEqual(photo.value as? String,"Selected")
         capture(app,"Saved media — selectable owned assets")
         app.buttons["Use selected (1)"].tap()
         XCTAssertTrue(app.buttons["Remove Pottery wheel.jpg"].waitForExistence(timeout:8))
@@ -42,6 +43,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Remove Pottery wheel.jpg"].exists)
         app.buttons["Remove Pottery wheel.jpg"].tap();library.tap()
         XCTAssertTrue(photo.waitForExistence(timeout:8));XCTAssertTrue(photo.isEnabled)
+        XCTAssertEqual(photo.value as? String,"Not selected")
         app.buttons["Cancel"].tap()
     }
     func testCampaignCompactToolbarKeepsPostVisibleAndNavigationAvailable() {

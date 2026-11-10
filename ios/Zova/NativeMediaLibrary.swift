@@ -67,6 +67,7 @@ struct NativeMediaLibrary: View {
             }.buttonStyle(.plain).disabled(existing.contains(asset["id"].int) || applying)
             .accessibilityIdentifier("library-asset-\(asset["id"].int)")
             .accessibilityLabel(asset["filename"].string + (existing.contains(asset["id"].int) ? ", already attached" : ""))
+            .accessibilityValue(existing.contains(asset["id"].int) || picks.contains(where: { $0["id"] == asset["id"] }) ? "Selected" : "Not selected")
             if !asset["uses"].array.isEmpty { DisclosureGroup("Used in \(asset["uses"].array.count) places") {
                 ForEach(Array(asset["uses"].array.enumerated()), id: \.offset) { _, use in Text(use["title"].string + " · " + use["state"].string.replacingOccurrences(of: "_", with: " ")).font(.caption).frame(maxWidth: .infinity, alignment: .leading) }
             }.font(.caption) }
@@ -111,7 +112,7 @@ struct NativeLearningEvidence: View {
                     ForEach(Array(value["examples"].array.enumerated()), id: \.offset) { _, post in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(post["text"].string.isEmpty ? "Post without a caption" : post["text"].string)
-                            Text(post["platform"].string + " · " + post["created_at"].string).foregroundStyle(.secondary)
+                            Text(post["platform"].string + " · " + (post["created_at"].string.isEmpty ? "Date unavailable" : post["created_at"].string) + " · " + (post["format"].string.isEmpty ? "Format unavailable" : post["format"].string)).foregroundStyle(.secondary)
                             Text(["likes","comments","shares","views"].map { key in key + ": " + (post["metrics"][key].isNull ? "Unavailable" : String(post["metrics"][key].int)) }.joined(separator: " · "))
                         }.padding(8).background(ZovaDesign.pale)
                     }
