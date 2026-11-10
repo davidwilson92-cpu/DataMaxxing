@@ -75,7 +75,7 @@ struct NativeNextMoveView: View {
                 HStack(spacing: 4) { Image(systemName: "sparkle"); Text("AI recommendation") }.font(.caption.bold()).foregroundStyle(ZovaDesign.purple)
                 Text(concise(current["reason"].string, words: 32)).font(.callout).lineSpacing(4)
                 NativeLearningEvidence(value: current["learning"])
-                if !current["basis"].string.isEmpty { Text(current["basis"].string).font(.caption).foregroundStyle(.secondary) }
+                if current["learning"].isNull && !current["basis"].string.isEmpty { Text(current["basis"].string).font(.caption).foregroundStyle(.secondary) }
                 if reviewSteps && current["kind"].string == "review" {
                     Text(current["brief"].string).font(.callout)
                     Button("Mark done") { run { try await feedback("complete"); reviewSteps = false } }

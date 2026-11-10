@@ -11,7 +11,7 @@ for _,uid,*_ in accounts:
         for index,name in enumerate(['Friday bouquet.jpg','Barber cancellation.jpg','Bakery collection.jpg']):
             path=storage.UPLOAD_DIR/f'{uid}-{index}.jpg'
             Image.new('RGB',(320,240),['#8849cc','#26212e','#d9ab61'][index]).save(path)
-            db.add(MediaAsset(user_id=uid,filename=name,mime_type='image/jpeg',storage_key=str(path),size_bytes=path.stat().st_size))
+            db.add(MediaAsset(user_id=uid,filename=name,mime_type='image/jpeg',storage_key=str(path),public_url='http://127.0.0.1:8798/media/raw/'+path.name,size_bytes=path.stat().st_size))
         db.commit()
 
 if __name__=='__main__':

@@ -32,6 +32,10 @@ struct NativeStudioView: View {
     @State private var picker: [PhotosPickerItem] = []
     @State private var photoLibrary = false
     @State private var savedMedia = false
+    @State private var failedFiles: [URL] = []
+    @State private var failedPhotos: [PhotosPickerItem] = []
+    @State private var uploadProgress = ""
+    @State private var uploadEpoch = -1
     @State private var recoveryExport: URL?
     @State private var compared: ProductDraft?
     @FocusState private var captionEditing: Bool
@@ -68,6 +72,12 @@ struct NativeStudioView: View {
                                 Button("Save a copy to Files") { exportRecovery() }
                                 Button("Discard local copy", role: .destructive) { discardRecovery = true }
                             }
+                        }
+                        if !uploadProgress.isEmpty { ProgressView(uploadProgress) }
+                        if uploadEpoch == store.authority && (!failedFiles.isEmpty || !failedPhotos.isEmpty) {
+                            Text("Successful files are kept. Check Saved media before retrying an interrupted upload.").font(.caption)
+                            Button("Saved media") { savedMedia = true }.frame(minHeight:44)
+                            Button("Retry remaining files") { run { await retryUploads() } }.frame(minHeight:44).disabled(store.busy)
                         }
                         if store.saveStatus.hasPrefix("Not saved") {
                             Button("Retry save") { run { try await store.save() } }
@@ -142,11 +152,7 @@ struct NativeStudioView: View {
                 case .success(let urls):
                     run {
                         try store.validateAttachments(urls.map { UTType(filenameExtension: $0.pathExtension)?.preferredMIMEType ?? "application/octet-stream" })
-                        for url in urls {
-                            guard url.startAccessingSecurityScopedResource() else { throw ZovaFailure.server("Choose that file again to allow access.") }
-                            defer { url.stopAccessingSecurityScopedResource() }
-                            try await store.upload(url, name: url.lastPathComponent, mime: UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
-                        }
+                        await uploadFiles(urls)
                     }
                 case .failure(let error): store.handle(error)
                 }
@@ -158,14 +164,53 @@ struct NativeStudioView: View {
                 run {
                     defer { picker = [] }
                     try store.validateAttachments(items.map { $0.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) ? "video/mp4" : "image/jpeg" })
-                    for item in items {
-                        guard let media = try await item.loadTransferable(type: PickedMedia.self) else { throw ZovaFailure.server("This photo or video could not be opened.") }
-                        defer { NativeMediaFiles.remove(media.url) }
-                        try await store.upload(media.url, name: media.url.lastPathComponent, mime: UTType(filenameExtension: media.url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
-                    }
+                    await uploadPhotos(items)
                 }
             }
             .onDisappear { clearRecoveryExport() }
+    }
+    @MainActor private func retryUploads() async {
+        guard uploadEpoch == store.authority else { return }
+        let files=failedFiles, photos=failedPhotos
+        if !files.isEmpty { await uploadFiles(files) }
+        if !photos.isEmpty { await uploadPhotos(photos) }
+    }
+    @MainActor private func uploadFiles(_ files: [URL]) async {
+        let epoch=store.authority;uploadEpoch=epoch;failedFiles=[]
+        defer {uploadProgress=""}
+        for (index,url) in files.enumerated() {
+            guard epoch == store.authority else {return}
+            uploadProgress="Uploading \(index+1) of \(files.count) · \(url.lastPathComponent)"
+            let before=store.draft.media.count
+            do {
+                guard url.startAccessingSecurityScopedResource() else {throw ZovaFailure.server("Choose that file again to allow access.")}
+                defer {url.stopAccessingSecurityScopedResource()}
+                try await store.upload(url,name:url.lastPathComponent,mime:UTType(filenameExtension:url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
+            } catch {
+                guard epoch == store.authority else {return}
+                if store.draft.media.count == before {failedFiles.append(url)}
+                store.handle(error)
+            }
+        }
+    }
+    @MainActor private func uploadPhotos(_ items: [PhotosPickerItem]) async {
+        let epoch=store.authority;uploadEpoch=epoch;failedPhotos=[]
+        defer {uploadProgress=""}
+        for (index,item) in items.enumerated() {
+            guard epoch == store.authority else {return}
+            uploadProgress="Uploading \(index+1) of \(items.count)"
+            let before=store.draft.media.count
+            do {
+                guard let media=try await item.loadTransferable(type:PickedMedia.self) else {throw ZovaFailure.server("This photo or video could not be opened.")}
+                defer {NativeMediaFiles.remove(media.url)}
+                guard epoch == store.authority else {return}
+                try await store.upload(media.url,name:media.url.lastPathComponent,mime:UTType(filenameExtension:media.url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
+            } catch {
+                guard epoch == store.authority else {return}
+                if store.draft.media.count == before {failedPhotos.append(item)}
+                store.handle(error)
+            }
+        }
     }
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
     private func exportRecovery() {
