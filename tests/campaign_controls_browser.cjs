@@ -5,7 +5,7 @@ const fs = require('node:fs');
   const browser = await chromium.launch();
   try {
     for (const [persona,width] of [390,1366].entries()) {
-      const page = await browser.newPage({viewport:{width,height:844}});
+      const page = await browser.newPage({viewport:{width,height:844},locale:'en-GB',timezoneId:'Europe/London'});
       page.setDefaultTimeout(10000);
       const errors=[];page.on('pageerror',e=>errors.push(e.message));
       await page.goto('http://127.0.0.1:8797/fixture/'+persona);
@@ -26,7 +26,7 @@ const fs = require('node:fs');
       await tool('Pause campaign');await submit();await page.getByText('Paused · drafts kept',{exact:true}).waitFor();
       await tool('Resume campaign');await submit();assert.equal(await page.locator('#campaign-state').innerText(),'');
       await tool('Move remaining dates');await control.locator('[name=new_start]').fill('2027-02-01T12:00');await submit();
-      assert.match(await cards.first().innerText(),/1 Feb/);
+      assert.match(await cards.first().locator('time').getAttribute('datetime'),/^2027-02-01T12:00/);
       await page.getByRole('button',{name:'Save posts to Schedule',exact:true}).click();await page.getByText('Open in Studio',{exact:true}).first().waitFor();
       await page.getByRole('button',{name:'Improve remaining posts',exact:true}).click();await control.waitFor({state:'visible'});
       await control.locator('[name=feedback]').fill('Make it welcoming and local.');await submit();

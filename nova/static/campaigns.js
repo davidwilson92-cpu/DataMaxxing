@@ -174,7 +174,7 @@
   }
   element('campaign-view').onchange=element('campaign-sort').onchange=()=>show(current);
   const nameForm=element('campaign-name-form');
-  element('rename-campaign').onclick=()=>{nameForm.hidden=false;nameForm.elements.name.value=nameOf(current);nameForm.elements.name.focus();};
+  element('rename-campaign').onclick=()=>{element('campaign-tools').open=false;nameForm.hidden=false;nameForm.elements.name.value=nameOf(current);nameForm.elements.name.focus();};
   nameForm.onsubmit=event=>{event.preventDefault();run(async()=>show(await request('/api/campaigns/'+current.id+'/name',{revision:current.revision,name:nameForm.elements.name.value})));};
   function show(row) {
     current = row;
@@ -249,6 +249,8 @@
     });
     element('campaign-feedback').value = row.feedback || '';
     element('campaign-actions').hidden = !!row.draft_ids.length;
+    element('campaign-feedback').closest('label').hidden=!!row.posts.length;
+    element('campaign-revise').hidden=!!row.posts.length;
     element('campaign-accept').hidden = !row.posts.length;
     element('campaign-revise').textContent = row.posts.length ? 'Update plan' : 'Generate plan';
     showControls(row);
@@ -259,6 +261,7 @@
   async function openControl(action) {
     show(await request('/api/campaigns/'+current.id));
     controlAction=action;reuseKey=crypto.randomUUID();
+    controlForm.dataset.campaign=String(current.id);
     element('campaign-tools').open=false;controlForm.hidden=false;
     element('campaign-control-title').textContent=actionNames[action];
     element('campaign-control-submit').textContent=['improve','extend'].includes(action)?'Preview changes':action==='reuse'?'Create copy':actionNames[action];
@@ -268,7 +271,7 @@
     }
     controlForm.elements.copy_name.required=action==='reuse';controlForm.elements.new_start.required=['reuse','move','extend'].includes(action);
     controlForm.elements.copy_name.value=(nameOf(current)+' copy').slice(0,80);
-    controlForm.elements.new_start.value='';controlForm.elements.feedback.value='';
+    controlForm.elements.new_start.value='';controlForm.elements.feedback.value='';controlForm.elements.extra_count.value='2';
     element('control-start-label').firstChild.textContent='First post · '+current.brief.timezone;
     controlForm.scrollIntoView({block:'nearest'});
     setTimeout(()=>controlForm.querySelector('label:not([hidden]) input,label:not([hidden]) textarea,button').focus(),0);
@@ -281,10 +284,11 @@
     let path=base+'/control',body={revision,action:controlAction,snapshot:current.control_snapshot,start:controlForm.elements.new_start.value};
     if(controlAction==='reuse'){path=base+'/reuse';body={revision,name:controlForm.elements.copy_name.value,start:controlForm.elements.new_start.value,request_key:reuseKey};}
     if(['improve','extend'].includes(controlAction)){path='/api/ai/campaigns/'+current.id+'/improve';body={revision,mode:controlAction,feedback:controlForm.elements.feedback.value,count:Number(controlForm.elements.extra_count.value),start:controlForm.elements.new_start.value};}
-    show(await request(path,body));
+    const updated=await request(path,body);controlForm.hidden=true;show(updated);
   },['pause','resume','move'].includes(controlAction)?'Saved. Review drafts before scheduling.':controlAction==='reuse'?'Copy saved. Review its dates and captions.':'Changes ready to review.');};
   function showControls(row){
-    controlForm.hidden=true;
+    if(controlForm.dataset.campaign!==String(row.id))controlForm.hidden=true;
+    element('campaign-tools').inert=false;
     element('campaign-state').textContent=row.state==='paused'?'Paused · drafts kept':'';
     document.querySelector('[data-campaign-action="pause"]').textContent=row.state==='paused'?'Resume campaign':'Pause campaign';
     element('improve-remaining').hidden=!row.posts.length;
@@ -308,14 +312,20 @@
     }
     panel.append(actions);
   }
+  function report(message, failed=false) {
+    const proposal=element('campaign-suggestion');
+    const target=!controlForm.hidden ? controlForm : !proposal.hidden ? proposal : current ? element('campaign-review').querySelector('.campaign-control-bar') : form;
+    target.append(status);status.textContent=message;
+    if(failed)status.scrollIntoView({block:'nearest'});
+  }
   async function run(action, successMessage='') {
     if (busy) return;
     busy = true;
     const controls = document.querySelectorAll('main input,main select,main button,main textarea');
     controls.forEach(control => control.disabled = true);
-    status.textContent = 'Working…';
-    try { await action(); status.textContent = successMessage; }
-    catch (error) { status.textContent = error.message; }
+    report('Working…');
+    try { await action(); report(successMessage); }
+    catch (error) { report(error.message,true); }
     finally {
       controls.forEach(control => control.disabled = false); busy = false;
       document.querySelector('#campaign-review details[data-dirty="true"] textarea')?.dispatchEvent(new Event('input',{bubbles:true}));

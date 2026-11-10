@@ -159,7 +159,7 @@ struct NativeCampaignView: View {
             .sorted { (key($0), dates[$0]["local"].string,$0) < (key($1),dates[$1]["local"].string,$1) }
     }
     @ViewBuilder private var review: some View {
-        CampaignActionsView(row:current,working:working,refresh:{
+        CampaignActionsView(row:current,working:working,rename:{newName=campaignName(current);renaming=true},refresh:{
             await perform {try await reopen(current["id"].int)}
         },request:{path,body in
             var succeeded=false
@@ -171,7 +171,6 @@ struct NativeCampaignView: View {
             return succeeded
         }).id(current["id"].int)
         Section {
-            Button("Rename campaign"){newName=campaignName(current);renaming=true}
             Picker("View",selection:$calendarView){Text("Previews").tag(false);Text("Calendar").tag(true)}.pickerStyle(.segmented)
             Picker("Sort by",selection:$sortBy){ForEach(["Date","Platform","Media type"],id:\.self){Text($0)}}
             if calendarView {
@@ -227,9 +226,11 @@ struct NativeCampaignView: View {
             }
         }
         if current["draft_ids"].array.isEmpty {
+            if current["posts"].array.isEmpty {
             Section("What would you change?") {
                 TextField("Your feedback", text: $feedback, axis: .vertical)
                 Button(current["posts"].array.isEmpty ? "Generate plan" : "Update plan") { Task { await perform { try await generate() } } }
+            }
             }
             if !current["posts"].array.isEmpty {
                 Button("Save posts to Schedule") {

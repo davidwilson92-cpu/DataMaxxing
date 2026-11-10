@@ -2,6 +2,19 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testCampaignToolsCancelWithoutChangingSavedPlan() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let saved=app.buttons["saved-campaign-6"]
+        XCTAssertTrue(saved.waitForExistence(timeout:8));saved.tap()
+        for title in ["Move remaining dates","Reuse campaign","Add posts"] {
+            let menu=app.buttons["campaign-actions"];reveal(menu,in:app);menu.tap()
+            app.buttons[title].tap()
+            let cancel=app.buttons["Cancel"];XCTAssertTrue(cancel.waitForExistence(timeout:8));reveal(cancel,in:app);cancel.tap()
+            XCTAssertFalse(app.buttons["Cancel"].exists)
+            XCTAssertTrue(app.staticTexts["Try the wheel."].exists)
+        }
+    }
     func testCampaignPauseAndImprovementPreviewKeepOriginalUntilApply() {
         let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
         XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()

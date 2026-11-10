@@ -10,7 +10,7 @@ from pydantic import Field
 from sqlalchemy import select, update
 
 from . import ai, ai_consent, allowances, media_inspection, performance
-from .campaigns import Revision, RevisionNote, premium, has_campaign_access, parse_posts, repeats_caption, replace
+from .campaigns import Brief, Revision, RevisionNote, premium, has_campaign_access, parse_posts, repeats_caption, replace, spec
 from .campaign_review import current_plan, dates
 from .db import (Brand, Campaign, ContentSeries, Draft, MediaAsset, Publication, PublishReview,
                  ScheduledPost, SeriesOccurrence, User, get_db, get_preferences, utcnow)
@@ -154,11 +154,11 @@ def reuse(cid: int, body: Reuse, uid=Depends(premium), db=Depends(get_db)):
     name = ' '.join(body.name.split())
     if not name:
         raise HTTPException(400, 'Enter a campaign name.')
-    if not view['posts'] or any(p.get('status') == 'removed' or len(p.get('media_ids', [])) > 1
-                              or p.get('simple') is False for p in view['posts']):
-        raise HTTPException(409, 'This campaign contains removed or expanded posts. Copy its brief into a new campaign instead.')
+    if not view['posts'] or any(p.get('status') == 'removed' for p in view['posts']):
+        raise HTTPException(409, 'This campaign has no posts or contains removed posts. Restore the posts before reusing it.')
     moved = shifted(view, list(range(len(view['posts']))), body.start)
-    media_ids = list(dict.fromkeys(view['brief']['media'] + [p['asset_id'] for p in view['posts'] if p.get('asset_id')]))
+    media_ids = list(dict.fromkeys(view['brief']['media'] + [aid for p in view['posts']
+                                for aid in p.get('media_ids', [p['asset_id']] if p.get('asset_id') else [])]))
     assets = [owned(db, MediaAsset, uid, aid) for aid in media_ids]
     if len(assets) > 10:
         raise HTTPException(400, 'A reused campaign supports up to ten attachments.')
@@ -171,6 +171,34 @@ def reuse(cid: int, body: Reuse, uid=Depends(premium), db=Depends(get_db)):
     new = Campaign(user_id=uid, payload_json=json.dumps(copy))
     db.add(new)
     db.flush()
+    if view['draft_ids']:
+        # Reuse canonical posts, including threads, Stories and owned attachments.
+        # Conversation state, prior approvals and delivery records are not a template.
+        from .workspace import clean_workspace
+        series_spec = dict(spec(Brief(**brief)).model_dump(), count=len(copy['posts']))
+        series = ContentSeries(user_id=uid, request_key=f'campaign-{new.id}', spec_json=json.dumps(series_spec))
+        db.add(series)
+        db.flush()
+        for i, did in enumerate(view['draft_ids']):
+            source = owned(db, Draft, uid, did)
+            workspace = json.loads(source.workspace_json)
+            template = {k: workspace[k] for k in ('media_asset_ids', 'instagram_format', 'instagram_audio',
+                        'video_duration', 'link_url', 'selected_platforms', 'active_platform', 'platform_selection_explicit') if k in workspace}
+            workspace = clean_workspace(template, db, uid)
+            draft = Draft(user_id=uid, title=source.title, brief=source.brief, instruction=source.instruction,
+                          thread_length=source.thread_length, variants_json=source.variants_json,
+                          platforms_json=source.platforms_json, workspace_json=json.dumps(workspace))
+            db.add(draft)
+            db.flush()
+            copy['draft_ids'].append(draft.id)
+            if i == 0:
+                series_spec['draft_id'] = draft.id
+                series_spec['source'] = {k: getattr(draft, k) for k in ('brief', 'instruction', 'platforms_json',
+                                        'workspace_json', 'variants_json', 'thread_length')}
+            db.add(SeriesOccurrence(user_id=uid, series_id=series.id, draft_id=draft.id, position=i,
+                                   due_at=datetime.fromisoformat(moved[i]['utc'])))
+        new.payload_json = json.dumps(copy)
+        series.spec_json = json.dumps(series_spec)
     data.setdefault('copies', {})[key] = dict(id=new.id, signature=signature)
     replace(db, row, body.revision, data)
     return current_plan(db, new)

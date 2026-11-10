@@ -107,7 +107,8 @@ def test_reuse_is_separate_idempotent_and_retains_original(plan):
     copied=client.post(base+'/reuse',json=payload)
     assert copied.status_code==200,copied.text
     copy=copied.json()
-    assert copy['id']!=before['id'] and copy['draft_ids']==[] and copy['name']=='Next launch'
+    assert copy['id']!=before['id'] and not set(copy['draft_ids']) & set(ids) and copy['name']=='Next launch'
+    assert len(copy['draft_ids'])==len(ids)
     assert copy['dates'][0]['local'][:16]==future()
     assert [p['caption'] for p in copy['posts']]==[p['caption'] for p in before['posts']]
     assert client.post(base+'/reuse',json=payload).json()['id']==copy['id']
@@ -117,14 +118,20 @@ def test_reuse_is_separate_idempotent_and_retains_original(plan):
         assert len(db.scalars(select(Campaign).where(Campaign.user_id==uid)).all())==2
 
 
-def test_reuse_rejects_removed_or_multi_platform_posts(plan):
+def test_reuse_preserves_multi_platform_posts(plan):
     client,uid,base,_=plan
     ids=client.post(base+'/accept',json={'revision':2}).json()['draft_ids']
     with SessionLocal() as db:
-        db.get(Draft,ids[0]).platforms_json='["instagram","facebook"]';db.commit()
+        source=db.get(Draft,ids[0]);source.platforms_json='["instagram","facebook"]'
+        source.variants_json=json.dumps({'instagram':{'posts':['Photo caption']},'facebook':{'posts':['Facebook version']}});db.commit()
     row=view(client,base)
     response=client.post(base+'/reuse',json=dict(revision=row['revision'],name='Copy',start=future(),request_key=str(uuid4())))
-    assert response.status_code==409
+    assert response.status_code==200,response.text
+    with SessionLocal() as db:
+        duplicate=db.get(Draft,response.json()['draft_ids'][0])
+        assert json.loads(duplicate.variants_json)=={'instagram':{'posts':['Photo caption']},'facebook':{'posts':['Facebook version']}}
+        assert json.loads(duplicate.platforms_json)==['instagram','facebook']
+        assert duplicate.status=='draft'
 
 
 def test_improvement_is_saved_preview_then_applies_once(plan,monkeypatch):
@@ -275,3 +282,50 @@ def test_reuse_changed_retry_body_does_not_silently_return_wrong_copy(plan):
     body=dict(revision=row['revision'],name='Copy',start=future(),request_key=str(uuid4()))
     assert client.post(base+'/reuse',json=body).status_code==200
     assert client.post(base+'/reuse',json=dict(body,name='Different copy')).status_code==409
+
+
+def test_pause_revokes_exact_approved_delivery_and_old_review_cannot_resend(monkeypatch):
+    from test_schedule_editing import scheduled
+    from test_campaigns import brief
+    from nova.campaign_review import dates
+    from nova import scheduler
+    client,body,approved,jobs=scheduled()
+    monkeypatch.setattr(allowances,'tier',lambda db,uid:'premium')
+    did=body['draft_id']
+    with SessionLocal() as db:
+        draft=db.get(Draft,did);uid=draft.user_id
+        due=db.get(ScheduledPost,jobs[0]['id']).scheduled_at
+        data=dict(name='Scheduled launch',brief=dict(brief(),platforms=['x'],count=1),
+                  posts=[dict(platform='x',caption='Approved text x',asset_id=None)],
+                  dates=[dates(due,'Europe/London')],draft_ids=[did],assets=[],feedback='')
+        campaign=Campaign(user_id=uid,payload_json=json.dumps(data));db.add(campaign);db.flush()
+        base='/api/campaigns/'+str(campaign.id)
+        series=ContentSeries(user_id=uid,request_key=f'campaign-{campaign.id}',spec_json=json.dumps(data['brief']))
+        db.add(series);db.flush()
+        db.add(SeriesOccurrence(user_id=uid,series_id=series.id,position=0,draft_id=did,due_at=due));db.commit()
+    paused=control(client,base,'pause')
+    assert paused.status_code==200,paused.text
+    assert control(client,base,'resume').status_code==200
+    assert client.post('/api/schedule',json=approved).status_code==200
+    with SessionLocal() as db:
+        pub=db.scalar(select(Publication).where(Publication.draft_id==did))
+        assert pub.status=='cancelled'
+        job=db.get(ScheduledPost,jobs[0]['id']);assert job.status=='cancelled'
+        job.scheduled_at=utcnow()-timedelta(seconds=1);db.commit()
+    monkeypatch.setattr(scheduler,'publish_platform',lambda *a,**k:pytest.fail('Revoked job sent'))
+    scheduler.process_due()
+
+
+def test_reuse_story_does_not_silently_convert_format(plan):
+    client,uid,base,_=plan
+    did=client.post(base+'/accept',json={'revision':2}).json()['draft_ids'][0]
+    with SessionLocal() as db:
+        draft=db.get(Draft,did);workspace=json.loads(draft.workspace_json)
+        workspace['instagram_format']='story';draft.workspace_json=json.dumps(workspace);db.commit()
+    row=view(client,base)
+    assert not row['posts'][0]['simple']
+    response=client.post(base+'/reuse',json=dict(revision=row['revision'],name='Copy',start=future(),request_key=str(uuid4())))
+    assert response.status_code==200,response.text
+    with SessionLocal() as db:
+        copied=db.get(Draft,response.json()['draft_ids'][0])
+        assert json.loads(copied.workspace_json)['instagram_format']=='story'

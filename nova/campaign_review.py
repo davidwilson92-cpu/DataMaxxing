@@ -58,11 +58,13 @@ def current_plan(db, row):
             continue
         variants = json.loads(draft.variants_json)
         platforms = json.loads(draft.platforms_json)
-        media = json.loads(draft.workspace_json).get('media_asset_ids', [])
+        workspace = json.loads(draft.workspace_json)
+        media = workspace.get('media_asset_ids', [])
         post['media_ids'] = media
         platform = next(iter(platforms), post['platform'])
         captions = variants.get(platform, {}).get('posts', [])
-        simple = len(platforms) == 1 and len(captions) == 1 and len(media) <= 1 and set(variants) == {platform}
+        simple = (len(platforms) == 1 and len(captions) == 1 and len(media) <= 1 and set(variants) == {platform}
+                  and workspace.get('instagram_format', 'post') == 'post' and not workspace.get('instagram_audio'))
         post.update(status=draft.status, draft_revision=draft.revision, platform=platform,
                     caption='\n\n'.join(captions), asset_id=media[0] if media else None,
                     simple=simple, editable=bool(simple and draft.status=='draft' and slot and slot.status=='planned' and series.status in ('active','paused')))

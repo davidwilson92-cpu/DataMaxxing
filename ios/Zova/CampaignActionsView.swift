@@ -4,6 +4,7 @@ import SwiftUI
 struct CampaignActionsView: View {
     let row: JSONValue
     let working: Bool
+    let rename: () -> Void
     let refresh: () async -> Void
     let request: (String, JSONValue) async -> Bool
     @State private var action = ""
@@ -37,6 +38,7 @@ struct CampaignActionsView: View {
     }
     private var actionsMenu: some View {
         Menu {
+            Button("Rename campaign",systemImage:"pencil",action:rename)
             Button(paused ? "Resume campaign" : "Pause campaign",systemImage:paused ? "play" : "pause") { begin(paused ? "resume" : "pause") }
             Button("Move remaining dates",systemImage:"calendar") { begin("move") }
             Button("Add posts",systemImage:"plus") { begin("extend") }
