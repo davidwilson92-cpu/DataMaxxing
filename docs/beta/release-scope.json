@@ -352,7 +352,7 @@
     "tests/test_release_privacy.py": "d0b56a9af3819ba4a695934bc48e7201d3fde1a5fb48875d8327abc9cb8d3e41",
     "ios/Zova/ProductStore.swift": "e48760ef77b1620ea912acec29efa027500024aa851733939c8d5a2f1c254334",
     "nova/templates/landing.html": "7818cba1c87c35c8d04fea40f6c35ef988dd2fc984f87b5230b73c3b02735e53",
-    "ios/Zova/CampaignActionsView.swift": "3c1cdf64bef3eac99c69cac708f8a07e2d9ba9a8f6854e7556c5a73db07a7ac6",
+    "ios/Zova/CampaignActionsView.swift": "4480bd2c05866f0b80167a4c2704fb19c4814a7faccce141915be03093f5de01",
     "tests/test_restore_drill_safety.py": "c83548fb53832d6857fe95fb086da8b12b1cff2f46cd745ff21cdb976766b1f0",
     "nova/templates/help.html": "130379b5f0e4cfd133a66a7a4a056f48af620bac74ccedf2e29ab2823fd3b0ee",
     "nova/workspace.py": "5dbdc561773d32f4fda87e447c1f361a5ff6936a900da29dd732b72fb3f13a44",

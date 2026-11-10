@@ -66,9 +66,18 @@ struct CampaignActionsView: View {
         }.accessibilityIdentifier("campaign-all")
     }
     private var viewPicker: some View {
-        HStack(spacing:2) {
-            viewButton("Previews",calendar:false)
-            viewButton("Calendar",calendar:true)
+        Group {
+            if textSize.isAccessibilitySize {
+                VStack(spacing:2) {
+                    viewButton("Previews",calendar:false)
+                    viewButton("Calendar",calendar:true)
+                }
+            } else {
+                HStack(spacing:2) {
+                    viewButton("Previews",calendar:false)
+                    viewButton("Calendar",calendar:true)
+                }
+            }
         }.padding(3).background(Color(white:0.12),in:RoundedRectangle(cornerRadius:9))
     }
     private func viewButton(_ title:String,calendar:Bool) -> some View {
