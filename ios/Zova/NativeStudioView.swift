@@ -31,6 +31,7 @@ struct NativeStudioView: View {
     @State private var camera = false
     @State private var picker: [PhotosPickerItem] = []
     @State private var photoLibrary = false
+    @State private var savedMedia = false
     @State private var recoveryExport: URL?
     @State private var compared: ProductDraft?
     @FocusState private var captionEditing: Bool
@@ -122,6 +123,9 @@ struct NativeStudioView: View {
         }.foregroundStyle(ZovaDesign.ink)
             .photosPicker(isPresented: $photoLibrary, selection: $picker, maxSelectionCount: max(1, 10 - store.draft.media.count), selectionBehavior: .ordered, matching: .any(of: [.images, .videos]), preferredItemEncoding: .compatible)
             .confirmationDialog("Discard the unsaved copy on this iPhone? Your server draft stays unchanged.", isPresented: $discardRecovery, titleVisibility: .visible) { Button("Discard local copy", role: .destructive) { store.discardRecovery() } }
+        .sheet(isPresented: $savedMedia) { NativeMediaLibrary(existing: store.draft.media.map { $0["id"].int }, limit: 10-store.draft.media.count) { assets in
+                try await store.attachSavedMedia(assets)
+            }.environmentObject(store) }
         .sheet(isPresented: $history) { NativeHistoryView().environmentObject(store) }
             .sheet(isPresented: $options) { NativePostOptionsView().environmentObject(store) }
             .sheet(isPresented: Binding(get: { previewMode != nil }, set: { if !$0 { previewMode = nil } })) {
@@ -293,6 +297,7 @@ struct NativeStudioView: View {
                 HStack {
                     Menu {
                         Button("Photo library", systemImage: "photo") { focused = false; photoLibrary = true }
+                        Button("Saved media", systemImage: "photo.on.rectangle") { focused = false; savedMedia = true }
                         Button("Choose file", systemImage: "folder") { importer = true }
                         if UIImagePickerController.isSourceTypeAvailable(.camera) { Button("Camera", systemImage: "camera") { openCamera() } }
                     } label: { Image(systemName: "plus").font(.title3).frame(width: 44, height: 44) }.accessibilityLabel("Add attachment").disabled(store.busy)

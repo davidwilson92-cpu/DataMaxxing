@@ -66,6 +66,15 @@ final class NativeProductFixtures: URLProtocol {
         lock.lock(); defer { lock.unlock() }
         let path = request.url!.path, input = body(request)
         func ok(_ value: JSONValue) -> (Int, JSONValue, [String: String]) { (200, value, [:]) }
+        if path == "/api/media/library" {
+            let query=URLComponents(url:request.url!,resolvingAgainstBaseURL:false)?.queryItems ?? []
+            let search=query.first { $0.name=="q" }?.value ?? ""
+            let kind=query.first { $0.name=="kind" }?.value ?? "all"
+            let assets:[JSONValue] = [(51,"Pottery wheel.jpg","image","image/jpeg"),(52,"Studio tour.mp4","video","video/mp4")].map { id,name,type,mime in
+                .object(["id":.integer(id),"filename":.string(name),"kind":.string(type),"mime_type":.string(mime),"url":.string("/media/preview/\(id)"),"thumbnail":.string("/media/thumbnail/\(id)"),"states":.strings(["saved"]),"uses":.array([])])
+            }
+            return ok(.object(["assets":.array(assets.filter { (search.isEmpty || $0["filename"].string.localizedCaseInsensitiveContains(search)) && (kind=="all" || $0["kind"].string==kind) }),"next_before":.null]))
+        }
         if path == "/api/v1/native-config" { return ok(.object(["enabled": .bool(true), "redirect_uri": .string("https://zova-social.com/mobile/callback")])) }
         if path == "/api/v1/native-handoff" { return ok(.object(["ticket": .string(String(repeating: "t", count: 64))])) }
         if path == "/api/v1/native-web-session" { return (200, .object(["destination": .string("/studio")]), ["Set-Cookie":"nova_session=ios.synthetic-fixture; Path=/; Max-Age=900; Secure; HttpOnly; SameSite=Lax"]) }
@@ -147,6 +156,9 @@ final class NativeProductFixtures: URLProtocol {
             if request.httpMethod == "POST" {
                 guard partialRevision == input["revision"].int else { return (409,.object(["detail":.string("Brief changed")]),[:]) }
                 partialCampaign = input; partialRevision += 1
+                partialCampaign["assets"] = .array(input["media"].array.map { id in
+                    .object(["id":id,"filename":.string(id.int==51 ? "Pottery wheel.jpg" : "Studio tour.mp4"),"kind":.string(id.int==51 ? "image" : "video")])
+                })
             }
             return ok(.object(["revision":.integer(partialRevision), "brief":partialCampaign]))
         }

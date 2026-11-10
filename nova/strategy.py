@@ -288,6 +288,8 @@ def recommend(request: Request, body: RecommendationRequest = RecommendationRequ
             action['source'] = sources.get(source_id)
             action['discovery'] = {k:v for k,v in discovery.items() if k!='topics'}
             action['performance_evidence']={'available':performance['available'],'checked_at':(performance.get('evidence') or {}).get('fetched_at'),'note':performance['note']}
+            from .recommendation_basis import evidence_basis
+            action['learning'] = evidence_basis(performance, action['platform'])
             action['strategy_context'] = confirmed
             action['voice_context'] = {k:v for k,v in voice.items() if k!='example_posts'}
             if refinement: action['refinement'] = {'from_id':body.refine_action_id,'direction':body.refinement.strip()}
@@ -330,7 +332,7 @@ def recommend(request: Request, body: RecommendationRequest = RecommendationRequ
         if changed.rowcount != 1:
             db.rollback(); raise HTTPException(409,'This idea changed. Reopen Next move.')
     for a in proposals:
-        identity = {k:v for k,v in a.items() if k not in ('source','discovery','performance_evidence')}
+        identity = {k:v for k,v in a.items() if k not in ('source','discovery','performance_evidence','learning')}
         identity['source_url'] = (a.get('source') or {}).get('url')
         key = hashlib.sha256((str(revision)+json.dumps(identity,sort_keys=True)).encode()).hexdigest()
         previous=db.scalar(select(StrategyAction).where(StrategyAction.action_key==key))

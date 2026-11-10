@@ -2,6 +2,27 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testSavedMediaCanBeReusedAndCancelledWithoutChangingBrief() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let library=app.buttons["Saved media"]
+        for _ in 0..<5 where !library.isHittable {app.swipeUp()}
+        XCTAssertTrue(library.isHittable);library.tap()
+        let photo=app.buttons["library-asset-51"]
+        XCTAssertTrue(photo.waitForExistence(timeout:8));photo.tap()
+        capture(app,"Saved media — selectable owned assets")
+        app.buttons["Use selected (1)"].tap()
+        XCTAssertTrue(app.buttons["Remove Pottery wheel.jpg"].waitForExistence(timeout:8))
+        library.tap();XCTAssertTrue(photo.waitForExistence(timeout:8));XCTAssertFalse(photo.isEnabled)
+        app.buttons["library-asset-52"].tap();app.buttons["Cancel"].tap()
+        XCTAssertFalse(app.buttons["Remove Studio tour.mp4"].exists)
+        app.buttons["close-campaign"].tap();app.buttons["Campaign"].tap()
+        for _ in 0..<5 where !app.buttons["Remove Pottery wheel.jpg"].isHittable {app.swipeUp()}
+        XCTAssertTrue(app.buttons["Remove Pottery wheel.jpg"].exists)
+        app.buttons["Remove Pottery wheel.jpg"].tap();library.tap()
+        XCTAssertTrue(photo.waitForExistence(timeout:8));XCTAssertTrue(photo.isEnabled)
+        app.buttons["Cancel"].tap()
+    }
     func testCampaignCompactToolbarKeepsPostVisibleAndNavigationAvailable() {
         let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
         XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()

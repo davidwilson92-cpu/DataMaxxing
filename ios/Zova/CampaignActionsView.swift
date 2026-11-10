@@ -168,6 +168,7 @@ struct CampaignActionsView: View {
         let suggestion=row["suggestion"],posts=suggestion["posts"].array
         Section(suggestion["mode"].string=="extend" ? "New follow-ups" : "Proposed improvements") {
             Text("\(posts.count) \(posts.count == 1 ? "post" : "posts") · " + suggestion["basis"].string).font(.caption).foregroundStyle(.secondary)
+            NativeLearningEvidence(value: suggestion["learning"])
             if suggestion["positions"].array.contains(where: { $0.int<row["posts"].array.count && row["posts"].array[$0.int]["status"].string=="scheduled" }) {
                 Text("Applying changes unschedules these posts. Review them again before publishing.").font(.callout)
             }

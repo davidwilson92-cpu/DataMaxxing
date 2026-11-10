@@ -311,6 +311,15 @@ final class ProductStore: ObservableObject {
         }
         changeSerial += 1; try await save()
     }
+    func attachSavedMedia(_ assets: [JSONValue]) async throws {
+        guard draft.editable, !busy else { throw ZovaFailure.server("Wait for this post to finish saving.") }
+        let additions = assets.filter { a in !draft.media.contains { $0["id"] == a["id"] } }
+        try validateAttachments(additions.map { $0["mime_type"].string })
+        let media = draft.media + additions
+        draft.workspace["media"] = .array(media); draft.workspace["media_asset_ids"] = .array(media.map { $0["id"] })
+        if media.contains(where: { $0["kind"].string == "video" }) { draft.selected = draft.selected.filter { ["instagram", "tiktok"].contains($0) }; draft.workspace["video_duration"] = .number(0) }
+        changeSerial += 1; try await save()
+    }
     func removeMedia(_ id: Int) {
         let media = draft.media.filter { $0["id"].int != id }
         draft.workspace["media"] = .array(media); draft.workspace["media_asset_ids"] = .array(media.map { $0["id"] })
