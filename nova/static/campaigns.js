@@ -279,7 +279,11 @@
   }
   element('improve-remaining').onclick=()=>run(()=>openControl('improve'));
   for(const button of document.querySelectorAll('[data-campaign-action]')) button.onclick=()=>run(()=>openControl(button.dataset.campaignAction==='pause'&&current.state==='paused'?'resume':button.dataset.campaignAction));
-  element('campaign-control-cancel').onclick=()=>{controlForm.hidden=true;element('improve-remaining').focus();};
+  element('campaign-control-cancel').onclick=()=>{
+    controlForm.hidden=true;
+    const improve=element('improve-remaining');
+    (controlAction==='improve'&&!improve.hidden?improve:element('campaign-tools').querySelector('summary')).focus();
+  };
   controlForm.onsubmit=event=>{event.preventDefault();run(async()=>{
     const revision=current.revision,base='/api/campaigns/'+current.id;
     let path=base+'/control',body={revision,action:controlAction,snapshot:current.control_snapshot,start:controlForm.elements.new_start.value};

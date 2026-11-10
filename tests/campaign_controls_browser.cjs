@@ -62,6 +62,16 @@ const fs = require('node:fs');
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
       assert.deepEqual(errors,[]);
       if(process.env.ZOVA_SCREENSHOTS){fs.mkdirSync(process.env.ZOVA_SCREENSHOTS,{recursive:true});await page.screenshot({path:process.env.ZOVA_SCREENSHOTS+'/campaign-controls-'+width+'.png',fullPage:true});}
+      // A completed campaign has no Improve button; cancelling reuse still restores keyboard focus.
+      await page.route(/\/api\/campaigns\/\d+$/,async route=>{
+        const response=await route.fetch(),row=await response.json();
+        row.posts.forEach(post=>post.status='published');
+        await route.fulfill({response,json:row});
+      });
+      await page.reload();await page.getByLabel('Saved campaigns').selectOption({label:'Spring flowers'});
+      await page.locator('#improve-remaining').waitFor({state:'hidden'});
+      await tool('Reuse campaign');await control.getByRole('button',{name:'Cancel',exact:true}).click();
+      assert.equal(await page.locator('#campaign-tools summary').evaluate(el=>el===document.activeElement),true);
       console.log(width+': create, cancel, pause/resume, move, save, improve/discard/apply, reload, lost-response reuse, extend and calendar passed');
       await page.close();
     }
