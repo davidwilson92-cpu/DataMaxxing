@@ -97,7 +97,7 @@ struct NativeProductRoot: View {
         ZStack {
             Group {
                 switch session.phase {
-                case .opening: ZovaDesign.dark.ignoresSafeArea().overlay(ProgressView("Opening Zova…").tint(ZovaDesign.violet).foregroundStyle(.white))
+                case .opening: ZovaDesign.dark.ignoresSafeArea().overlay(ProgressView("Opening Zovaâ€¦").tint(ZovaDesign.violet).foregroundStyle(.white))
                 case .signedOut: welcome
                 case .product: NativeProductTabs(session: session).environmentObject(session.store)
                 }
@@ -120,7 +120,7 @@ struct NativeProductRoot: View {
                 signInButton
                 welcomeLinks
                 Text("Use your existing Zova account, or create one in the secure sign-in window.").font(.subheadline).foregroundStyle(.white.opacity(0.75))
-                Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isn’t analysed.").font(.footnote).foregroundStyle(.white.opacity(0.75))
+                Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isnâ€™t analysed.").font(.footnote).foregroundStyle(.white.opacity(0.75))
                 if let message = session.message { Text(message).font(.callout).accessibilityAddTraits(.updatesFrequently) }
                 if let receipt = session.deletionReceipt {
                     Link(destination: receipt) {
@@ -136,7 +136,7 @@ struct NativeProductRoot: View {
         Button { Task { await session.login() } } label: {
             HStack {
                 if session.working { ProgressView().tint(.white) }
-                Text(session.working ? "Opening sign-in…" : "Continue to Zova")
+                Text(session.working ? "Opening sign-inâ€¦" : "Continue to Zova")
             }
         }.buttonStyle(ZovaPrimary()).disabled(session.working).accessibilityIdentifier("continue-zova")
     }
@@ -188,8 +188,7 @@ struct NativeProductTabs: View {
                     }
                 }.padding(.horizontal, 6).background(ZovaDesign.dark.ignoresSafeArea(edges: .bottom))
             }
-        }.background(store.selectedTab == 4 ? Color.black : store.selectedTab == 3 ? ZovaDesign.dark : .white)
-            .preferredColorScheme([3,4].contains(store.selectedTab) ? .dark : .light)
+        }.background(store.selectedTab == 3 ? ZovaDesign.dark : .white).preferredColorScheme(store.selectedTab == 3 ? .dark : .light)
             .tint(ZovaDesign.purple).background(NativeKeyboardDismiss().allowsHitTesting(false))
             .sheet(isPresented: $nextMove) { NativeNextMoveView().environmentObject(store) }
             .sheet(isPresented: $strategy) { NativeNextMoveView(planning: true).environmentObject(store) }

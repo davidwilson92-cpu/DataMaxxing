@@ -73,7 +73,7 @@ struct NativeCampaignView: View {
             .scrollContentBackground(.hidden)
             }
             }
-            .background(Color.black).preferredColorScheme(.dark).tint(.white)
+            .background(Color.white).preferredColorScheme(.light).tint(ZovaDesign.purple)
             .buttonStyle(.borderless)
             .disabled(working)
             .navigationTitle(current.isNull ? "Campaigns" : campaignName(current))
@@ -86,7 +86,7 @@ struct NativeCampaignView: View {
             }
             .sheet(isPresented: $consent) { NativeAIConsentView().environmentObject(store) }
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color.black,for:.navigationBar)
+            .toolbarBackground(Color.white,for:.navigationBar)
             .toolbarBackground(.visible,for:.navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button {
@@ -152,7 +152,7 @@ struct NativeCampaignView: View {
             }
         }
         Section {
-            Picker("Timing", selection:$suggested) { Text("Zova’s suggested times").tag(true);Text("Choose my time").tag(false) }
+            Picker("Timing", selection:$suggested) { Text("Zovaâ€™s suggested times").tag(true);Text("Choose my time").tag(false) }
             DatePicker("First post", selection: $start, in: Date()..., displayedComponents:suggested ? [.date] : [.date,.hourAndMinute]).environment(\.timeZone, dateFormatter.timeZone)
             Picker("Frequency", selection: $frequency) { Text("Daily").tag("daily"); Text("Weekly").tag("weekly") }
             Stepper("\(count) posts", value: $count, in: 1...10)
@@ -194,7 +194,7 @@ struct NativeCampaignView: View {
                 let post=current["posts"].array[index]
                 VStack(alignment: .leading, spacing: 6) {
                     let slot=current["dates"].array[index],zone=current["brief"]["timezone"].string
-                    CampaignStrip(platform:post["platform"].string,date:ProductLinks.displayDate(ProductLinks.date(slot["utc"].string) ?? start,timezone:zone)+" · "+zone)
+                    CampaignStrip(platform:post["platform"].string,date:ProductLinks.displayDate(ProductLinks.date(slot["utc"].string) ?? start,timezone:zone)+" Â· "+zone)
                     ForEach(campaignAssets(current,post),id:\.["id"].int){asset in CampaignMediaTile(asset:asset)}
                     Text(post["caption"].string)
                     if !post["timing_warning"].string.isEmpty {
@@ -233,8 +233,8 @@ struct NativeCampaignView: View {
                             try await reopen(current["id"].int)
                         } } }
                     }
-                }.padding(12).background(Color(white:0.075),in:RoundedRectangle(cornerRadius:14))
-                    .overlay(RoundedRectangle(cornerRadius:14).stroke(Color.white.opacity(0.16)))
+                }.padding(12).background(Color.white,in:RoundedRectangle(cornerRadius:14))
+                    .overlay(RoundedRectangle(cornerRadius:14).stroke(ZovaDesign.line))
             }
         }
         if current["draft_ids"].array.isEmpty {

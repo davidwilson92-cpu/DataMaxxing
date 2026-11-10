@@ -113,7 +113,7 @@ struct CampaignCalendar: View {
                     let count=items.count
                     Button {selected=key} label:{
                         VStack(spacing:1){ Text(String(i+1));if count>0 {LazyVGrid(columns:[GridItem(.adaptive(minimum:12, maximum:14),spacing:1)],spacing:1){ForEach(marks,id:\.self){ NativePlatformMark(platform:$0,size:12).background(.white,in:RoundedRectangle(cornerRadius:2)) }}} }
-                            .frame(maxWidth:.infinity,minHeight:44).background(selected==key ? ZovaDesign.purple : .clear,in:RoundedRectangle(cornerRadius:6))
+                            .frame(maxWidth:.infinity,minHeight:44).background(selected==key ? ZovaDesign.pale : .clear,in:RoundedRectangle(cornerRadius:6))
                     }.disabled(count==0).accessibilityLabel("\(key), \(count) posts").accessibilityHint(marks.joined(separator:", "))
                 }
             }

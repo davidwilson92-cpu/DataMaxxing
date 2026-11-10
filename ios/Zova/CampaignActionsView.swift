@@ -52,9 +52,10 @@ struct CampaignActionsView: View {
                 }
             }.font(.subheadline).foregroundStyle(.white).tint(.white)
                 .padding(.horizontal,10).padding(.vertical,4)
-                .background(Color.black,in:RoundedRectangle(cornerRadius:12))
+                .background(LinearGradient(colors:[.black,Color(red:0.13,green:0.08,blue:0.18)],startPoint:.topLeading,endPoint:.bottomTrailing),in:RoundedRectangle(cornerRadius:12))
                 .overlay(RoundedRectangle(cornerRadius:12).stroke(Color.white.opacity(0.22)))
-            if paused { Label("Paused · drafts kept",systemImage:"pause.circle").font(.caption) }
+                .environment(\.colorScheme,.dark)
+            if paused { Label("Paused Â· drafts kept",systemImage:"pause.circle").font(.caption) }
             if !action.isEmpty { editor }
         }
         if !row["suggestion"].isNull { proposal }
@@ -127,7 +128,7 @@ struct CampaignActionsView: View {
                 HStack { submitButton; Button("Cancel"){action=""} }
                 VStack(alignment:.leading) { submitButton; Button("Cancel"){action=""} }
             }
-        }.padding(12).background(Color(white:0.1),in:RoundedRectangle(cornerRadius:12))
+        }.padding(12).background(ZovaDesign.pale,in:RoundedRectangle(cornerRadius:12))
     }
     private var note:String {
         switch action {
@@ -157,7 +158,7 @@ struct CampaignActionsView: View {
     @ViewBuilder private var proposal: some View {
         let suggestion=row["suggestion"],posts=suggestion["posts"].array
         Section(suggestion["mode"].string=="extend" ? "New follow-ups" : "Proposed improvements") {
-            Text("\(posts.count) \(posts.count == 1 ? "post" : "posts") · " + suggestion["basis"].string).font(.caption).foregroundStyle(.secondary)
+            Text("\(posts.count) \(posts.count == 1 ? "post" : "posts") Â· " + suggestion["basis"].string).font(.caption).foregroundStyle(.secondary)
             if suggestion["positions"].array.contains(where: { $0.int<row["posts"].array.count && row["posts"].array[$0.int]["status"].string=="scheduled" }) {
                 Text("Applying changes unschedules these posts. Review them again before publishing.").font(.callout)
             }

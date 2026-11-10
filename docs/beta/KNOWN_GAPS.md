@@ -1,12 +1,12 @@
-# Compact Campaign layout follow-up — 10 November 2026
+# Compact Campaign layout follow-up â€” 10 November 2026
 
 Build 23's controls occupied excessive vertical space on the owner's iPhone.
 The bounded presentation fix is recorded in CAMPAIGN_COMPACT_TOOLBAR_20261110.md:
-one compact control panel, black background/white menus, web/native parity and
+one compact control panel, white backdrop with black/violet toolbar and white menu text, web/native parity and
 normal/large-text validation. This new candidate is not yet deployed. All broader
 79-section commercial findings remain tracked.
 
-# Campaign controls candidate — 10 November 2026
+# Campaign controls candidate â€” 10 November 2026
 
 Pause/resume, move remaining dates, reuse and reviewed AI improvements/extensions
 are in validation on codex/campaign-controls. See CAMPAIGN_CONTROLS_20261110.md
@@ -15,7 +15,7 @@ live posting or real customer billing is part of this task. Real-device/provider
 and live-model acceptance remain distinct from synthetic tests. The existing
 79-section commercial register retains all recorded findings.
 
-# Performance candidate — 31 October 2026
+# Performance candidate â€” 31 October 2026
 
 The isolated codex/performance-20261031 candidate adds batched draft/series reads,
 scoped short-lived provider caching, parallel reads, private compact thumbnails,
@@ -31,7 +31,7 @@ New opt-in read-only export and first-touch web signup attribution are under val
 
 # Beta known gaps and required follow-up
 
-## Latest tester remediation — 30 October 2026 (candidate, not deployed)
+## Latest tester remediation â€” 30 October 2026 (candidate, not deployed)
 
 All 51 new workbook findings and 12 virtual-tester themes are mapped in
 QA_REMEDIATION_20261030.md and its JSON companion. Candidate changes cover native
@@ -52,7 +52,7 @@ optional OPENAI_CONTENT_MODEL routing is prepared but not enabled in production.
 The retained 79-section commercial register is unchanged. Charges stay disabled;
 Render remains the host. No commercial-ready or zero-defect claim is authorised.
 
-## External distribution update — 28 October 2026
+## External distribution update â€” 28 October 2026
 
 Owner explicitly lifted the earlier hold and requested release to existing testers.
 Build 0.1.0 (13), unchanged validated runtime 9504809, was added to Zova Social
@@ -61,7 +61,7 @@ immediately accepted it; the external group visibly shows build 13 as Testing.
 The historical hold below is superseded. No runtime, billing or hosting change;
 all outstanding commercial findings and evidence limits remain as recorded.
 
-## Native tracker follow-up — 27 October 2026
+## Native tracker follow-up â€” 27 October 2026
 
 Runtime 9504809 corrects X format clarity, target sizes, adaptive large-text/landscape
 layouts, connection guidance and retained protected deletion receipts. Native
@@ -81,7 +81,7 @@ health/sign-in and disabled billing verified. No pending deletion requests remai
 See NATIVE_QA_FIXES_20261027.md; retain original 57 statuses below as historical.
 All 79 separate commercial findings remain recorded; this is not commercial certification.
 
-## Original tester tracker audit of native build 12 — 27 October 2026
+## Original tester tracker audit of native build 12 â€” 27 October 2026
 
 See NATIVE_QA_REVIEW_20261027.md for all 57 original cases, seven populated bugs
 and five UX observations. Fresh focused regressions: 164 passed; unchanged native
@@ -102,7 +102,7 @@ No runtime/deployment or release-setting change in this audit. External build 12
 remains held at the owner's request; build11 is still the external testing build.
 All 79 commercial findings remain separately retained; charges remain disabled.
 
-## Native iPhone replacement — 27 October 2026
+## Native iPhone replacement â€” 27 October 2026
 
 SwiftUI replacement is implemented in draft PR35. Shared security/data and
 provider contracts remain. Render 2de31e1 is live after a completed backup and
@@ -117,7 +117,7 @@ explicitly chose to keep it approved for now: external release/Notify Testers is
 on hold. Build11 remains Testing externally. See NATIVE_IOS_PARITY_20261027.md.
 All 79 historical findings remain open where not separately evidenced.
 
-## Next Move intelligence candidate — 26 October 2026
+## Next Move intelligence candidate â€” 26 October 2026
 
 Next Move now carries saved strategy, current explicit/approved voice and fresh
 available performance into quick ideas, new batches and refinements. Automatic
@@ -132,7 +132,7 @@ AI adherence is claimed. All 79 commercial findings remain retained; charges,
 paid monitoring and Render hosting stay unchanged.
 
 
-## Security and functional review — 26 October 2026
+## Security and functional review â€” 26 October 2026
 
 See ../COMMERCIAL_SECURITY_REVIEW_20261026.md. The bounded candidate replaces
 permanent anonymous local-media links with owner access / expiring provider
@@ -151,7 +151,7 @@ operational recovery evidence, independent security assurance and the 79 histori
 findings remain open where not evidenced.
 Customer charges and paid monitoring remain disabled. Do not migrate hosting.
 
-## Tester and owner remediation — 25 October 2026
+## Tester and owner remediation â€” 25 October 2026
 
 The candidate addresses the supplied 57-case QA tracker (7 observed defects,
 5 UX issues) and owner feedback. See QA_REMEDIATION_20261025.md for every case,
@@ -180,7 +180,7 @@ missing legacy media, unpriced calls and unknown publication remain recorded.
 Render, disabled customer charges and inactive paid monitoring remain unchanged.
 
 
-## External beta acceptance — 21 October 2026
+## External beta acceptance â€” 21 October 2026
 
 Apple now shows build 0.1.0 (10) as Testing in the external beta group, with
 zero external testers. Apple approval does not close device, recovery or
@@ -197,9 +197,9 @@ See BETA_ACCEPTANCE_20261021.md for exact candidate, test and deployment evidenc
 No native source, schema, user data, provider grant or billing change is included.
 All 79 retained commercial findings remain; none is broadly marked resolved.
 
-## External beta preparation — 20 October 2026
+## External beta preparation â€” 20 October 2026
 
-Follow-up recovery checks found four missing legacy upload files (29–30 August).
+Follow-up recovery checks found four missing legacy upload files (29â€“30 August).
 Read-only checks found no references to them in current draft workspaces, saved
 publish reviews or schedules. Preserve these records; no restored file or provider
 outcome is inferred. The bounded follow-up checks attachment existence/size before
@@ -243,7 +243,7 @@ delivered alerts, production recovery, real-phone acceptance or Apple external
 approval. Those remain recorded gates, not waived checks. Provider-side grant
 revocation remains separate from local unlinking. All 79 historical sections remain.
 
-## Current commercial review — 19 October 2026
+## Current commercial review â€” 19 October 2026
 
 The owner now requests commercial-readiness assessment and improvement, followed by a credit-supported cloud migration. The current candidate adds explicit AI permission, correct/failure-safe Performance, simpler Account/Drafts/help, safer error diagnostics and dormant separate-worker controls. See `../COMMERCIAL_READINESS_20261019.md`, `../architecture/CLOUD_MIGRATION_20261019.md` and `current-reconciliation-20261019.json`. These bounded fixes do not close entire historical sections. All 79 remain retained; no broad RLS/service migration, charges or cloud cutover is activated. Existing older release/rollback hashes below are historical: use the latest handoff for the active candidate. A rollback must preserve the new AI permission boundary or pause AI processing.
 
