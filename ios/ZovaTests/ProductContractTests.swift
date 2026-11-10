@@ -2,6 +2,30 @@ import XCTest
 @testable import Zova
 
 final class ProductContractTests: XCTestCase {
+    func testUploadRetryPreservesSelectionOrderForEveryFailureSubset() {
+        // Four selected assets, two pre-existing. Exhaust all initial/retry failures.
+        for firstFailures in 0..<16 {
+            for retryFailures in 0..<16 {
+                var order=NativeUploadOrder(); order.begin(existingCount:2)
+                var actual=[90,91]
+                var remaining: [Int]=[]
+                for slot in 0..<4 {
+                    if firstFailures & (1 << slot) != 0 { remaining.append(slot); continue }
+                    actual.insert(slot,at:order.insertionIndex(for:slot));order.didAttach(slot:slot)
+                }
+                var pendingAgain: [Int]=[]
+                for slot in remaining {
+                    if retryFailures & (1 << slot) != 0 { pendingAgain.append(slot); continue }
+                    actual.insert(slot,at:order.insertionIndex(for:slot));order.didAttach(slot:slot)
+                }
+                for slot in pendingAgain {
+                    actual.insert(slot,at:order.insertionIndex(for:slot));order.didAttach(slot:slot)
+                }
+                XCTAssertEqual(actual,[90,91,0,1,2,3])
+            }
+        }
+    }
+
     func testFacebookAvailabilityRequiresCustomerApprovalOrAnExistingPage() {
         var account: JSONValue = .object(["connection_options": .object(["facebook": .object(["available": .bool(true)])])])
         XCTAssertFalse(ProductConnections.canConnect("facebook", account: account))

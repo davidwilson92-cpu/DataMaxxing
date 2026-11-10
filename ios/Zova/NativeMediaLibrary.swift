@@ -1,5 +1,14 @@
 import SwiftUI
 
+// Preserve picker order when any subset of files succeeds before a retry.
+struct NativeUploadOrder {
+    private var baseCount = 0
+    private var completed: Set<Int> = []
+    mutating func begin(existingCount: Int) { baseCount=existingCount; completed=[] }
+    func insertionIndex(for slot: Int) -> Int { baseCount + completed.filter { $0 < slot }.count }
+    mutating func didAttach(slot: Int) { completed.insert(slot) }
+}
+
 struct NativeMediaLibrary: View {
     @EnvironmentObject var store: ProductStore
     @Environment(\.dismiss) private var dismiss

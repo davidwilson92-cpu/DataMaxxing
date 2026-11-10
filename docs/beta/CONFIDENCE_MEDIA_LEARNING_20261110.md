@@ -33,7 +33,7 @@ No additional AI request or model upgrade is introduced by this disclosure.
 
 Bulk upload recovery retains completed assets. Web Studio retries failed files only
 and reconstructs the original chosen order; native selection uses ordered photo
-picking and retains failed selections while the screen/session is alive. Saved media
+picking, tracks original slots across retries and retains failed selections while the screen/session is alive. Saved media
 provides recovery for a completed upload whose response or brief save was interrupted.
 Uploads are not silently restarted after app termination.
 
@@ -51,6 +51,7 @@ Uploads are not silently restarted after app termination.
 | Web batch failure obscured completed uploads | Per-file requests, progress, retained successes and failed-only retry | Two-file fault injection; three requests total; original order after retry/reload |
 | Native Studio stopped at the first failed file | Continue remaining files, retain retry selections; save failures do not re-upload an already attached file | Source review and native compile/regression; physical picker fault exercise remains unverified |
 | Campaign progress disappeared after a later failure | Per-file uploaded/waiting/unconfirmed states and retained IDs | Campaign recovery browser tests and existing media validation suites |
+| Native retry could append an early failed file after later successes | Shared ordered-slot tracking with authority/attachment guards | All 256 initial/retry failure subsets for a four-file batch; physical picker fault exercise still unverified |
 | Status summaries omitted queued/review states | Shared state labels and explicit preparing/awaiting-approval counts | State projection tests; no publication-side mutation |
 | Uncertain outcomes looked retryable | Preserve destination/results checks and no-auto-resend guidance | Reviewed publication, timeout, race and unknown-outcome regression suites |
 | Recommendation rationale could not be inspected | Deterministic evidence from the actual performance context, not model-generated metrics | Zero/null/stale/platform tests; Next Move input-capture tests |

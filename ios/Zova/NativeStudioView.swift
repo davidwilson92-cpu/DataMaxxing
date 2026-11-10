@@ -32,10 +32,12 @@ struct NativeStudioView: View {
     @State private var picker: [PhotosPickerItem] = []
     @State private var photoLibrary = false
     @State private var savedMedia = false
-    @State private var failedFiles: [URL] = []
-    @State private var failedPhotos: [PhotosPickerItem] = []
+    @State private var failedFiles: [(URL, Int)] = []
+    @State private var failedPhotos: [(PhotosPickerItem, Int)] = []
     @State private var uploadProgress = ""
     @State private var uploadEpoch = -1
+    @State private var uploadMediaIDs: [Int] = []
+    @State private var uploadOrder = NativeUploadOrder()
     @State private var recoveryExport: URL?
     @State private var compared: ProductDraft?
     @FocusState private var captionEditing: Bool
@@ -171,13 +173,16 @@ struct NativeStudioView: View {
     }
     @MainActor private func retryUploads() async {
         guard uploadEpoch == store.authority else { return }
+        guard uploadMediaIDs == store.draft.media.map({ $0["id"].int }) else { store.error = "Attachments changed. Choose the remaining files again."; return }
         let files=failedFiles, photos=failedPhotos
-        if !files.isEmpty { await uploadFiles(files) }
-        if !photos.isEmpty { await uploadPhotos(photos) }
+        if !files.isEmpty { await uploadFiles(files.map { $0.0 }, positions: files.map { $0.1 }) }
+        if !photos.isEmpty { await uploadPhotos(photos.map { $0.0 }, positions: photos.map { $0.1 }) }
     }
-    @MainActor private func uploadFiles(_ files: [URL]) async {
+    @MainActor private func uploadFiles(_ files: [URL], positions: [Int]? = nil) async {
         let epoch=store.authority;uploadEpoch=epoch;failedFiles=[]
-        defer {uploadProgress=""}
+        let slots=positions ?? Array(files.indices)
+        if positions == nil { failedPhotos=[]; uploadOrder.begin(existingCount:store.draft.media.count) }
+        defer {uploadProgress=""; if epoch == store.authority { uploadMediaIDs=store.draft.media.map { $0["id"].int } }}
         for (index,url) in files.enumerated() {
             guard epoch == store.authority else {return}
             uploadProgress="Uploading \(index+1) of \(files.count) · \(url.lastPathComponent)"
@@ -185,17 +190,20 @@ struct NativeStudioView: View {
             do {
                 guard url.startAccessingSecurityScopedResource() else {throw ZovaFailure.server("Choose that file again to allow access.")}
                 defer {url.stopAccessingSecurityScopedResource()}
-                try await store.upload(url,name:url.lastPathComponent,mime:UTType(filenameExtension:url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
+                try await store.upload(url,name:url.lastPathComponent,mime:UTType(filenameExtension:url.pathExtension)?.preferredMIMEType ?? "application/octet-stream",at:uploadOrder.insertionIndex(for: slots[index]))
             } catch {
                 guard epoch == store.authority else {return}
-                if store.draft.media.count == before {failedFiles.append(url)}
+                if store.draft.media.count == before {failedFiles.append((url,slots[index]))}
                 store.handle(error)
             }
+            if epoch == store.authority, store.draft.media.count > before { uploadOrder.didAttach(slot: slots[index]) }
         }
     }
-    @MainActor private func uploadPhotos(_ items: [PhotosPickerItem]) async {
+    @MainActor private func uploadPhotos(_ items: [PhotosPickerItem], positions: [Int]? = nil) async {
         let epoch=store.authority;uploadEpoch=epoch;failedPhotos=[]
-        defer {uploadProgress=""}
+        let slots=positions ?? Array(items.indices)
+        if positions == nil { failedFiles=[]; uploadOrder.begin(existingCount:store.draft.media.count) }
+        defer {uploadProgress=""; if epoch == store.authority { uploadMediaIDs=store.draft.media.map { $0["id"].int } }}
         for (index,item) in items.enumerated() {
             guard epoch == store.authority else {return}
             uploadProgress="Uploading \(index+1) of \(items.count)"
@@ -204,12 +212,13 @@ struct NativeStudioView: View {
                 guard let media=try await item.loadTransferable(type:PickedMedia.self) else {throw ZovaFailure.server("This photo or video could not be opened.")}
                 defer {NativeMediaFiles.remove(media.url)}
                 guard epoch == store.authority else {return}
-                try await store.upload(media.url,name:media.url.lastPathComponent,mime:UTType(filenameExtension:media.url.pathExtension)?.preferredMIMEType ?? "application/octet-stream")
+                try await store.upload(media.url,name:media.url.lastPathComponent,mime:UTType(filenameExtension:media.url.pathExtension)?.preferredMIMEType ?? "application/octet-stream",at:uploadOrder.insertionIndex(for: slots[index]))
             } catch {
                 guard epoch == store.authority else {return}
-                if store.draft.media.count == before {failedPhotos.append(item)}
+                if store.draft.media.count == before {failedPhotos.append((item,slots[index]))}
                 store.handle(error)
             }
+            if epoch == store.authority, store.draft.media.count > before { uploadOrder.didAttach(slot: slots[index]) }
         }
     }
     private func run(_ work: @escaping @MainActor () async throws -> Void) { Task { await store.perform(work) } }
