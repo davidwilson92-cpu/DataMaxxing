@@ -2,7 +2,7 @@
   const element = id => document.getElementById(id);
   const form = element('campaign-form'), list = element('campaign-list');
   const status = element('campaign-status');
-  const records = new Map(), uploaded = new Map();
+  const records = new Map(), uploaded = new Map(), uploadState = new Map();
   let current = null, busy = false, briefReady = false, revision = 0, saved = '', writing = null;
   let zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const saveNote = element('brief-save');
@@ -67,12 +67,13 @@
     for (const file of selectedFiles) {
       const row = document.createElement('li'), name = document.createElement('span'), remove = document.createElement('button');
       name.textContent = file.name;
+      const progress=document.createElement('small');progress.textContent=uploaded.has(file)?'Uploaded':uploadState.get(file)||'Waiting';progress.setAttribute('role','status');
       remove.type = 'button'; remove.textContent = 'Remove';
       remove.setAttribute('aria-label','Remove '+file.name);
       remove.onclick = () => { selectedFiles.delete(file); uploaded.delete(file); renderFiles(); changed(); status.textContent=''; picker.focus(); };
       const id=uploaded.get(file);
       if(id){const preview=document.createElement('img');preview.loading='lazy';preview.alt='';preview.src=window.zovaWorkspaceUrl('/media/thumbnail/'+id);row.append(preview);}
-      row.append(name,remove); rows.append(row);
+      remove.disabled=busy;row.append(name,progress,remove); rows.append(row);
     }
     element('retry-campaign-uploads').hidden=![...selectedFiles].some(file=>!uploaded.has(file));
     element('campaign-file-count').textContent = selectedFiles.size ? selectedFiles.size+' of 10 files selected' : 'Choose or drop up to 10 files';
@@ -87,6 +88,7 @@
     renderFiles(); status.textContent='';
     run(async()=>{await uploadPending();await flush();});
   }
+  element('campaign-library').onclick=()=>window.zovaMediaLibrary({existing:[...uploaded.values()],limit:10-selectedFiles.size,onSelect:async assets=>{if(busy)throw new Error('Wait for the current change to finish.');for(const a of assets){if([...uploaded.values()].includes(a.id))continue;const f={name:a.filename};selectedFiles.add(f);uploaded.set(f,a.id);}renderFiles();changed();await flush();}});
   picker.onchange = () => { addFiles(Array.from(picker.files)); picker.value=''; };
   drop.ondragover = event => { event.preventDefault(); if (!busy) drop.classList.add('drag-over'); };
   drop.ondragleave = () => drop.classList.remove('drag-over');
@@ -183,6 +185,7 @@
     element('campaign-heading').textContent=row?nameOf(row):'Campaigns';
     element('campaign-name-form').hidden=true;
     if (!row) return;
+    element('campaign-confidence').textContent=row.publication_summary?.text||'';
     document.querySelectorAll('#campaign-review button,#campaign-view,#campaign-sort,#campaign-list').forEach(control=>control.disabled=false);
     remember(row);
     list.value = String(row.id);
@@ -219,10 +222,11 @@
       }
       text.textContent=post.caption;card.append(text);
       if(row.dates[i].reason){const why=document.createElement('small');why.className='timing-reason';why.textContent=row.dates[i].reason;card.append(why);}
+      if(post.recovery_note){const note=document.createElement('p');note.className='support-note';note.textContent=post.recovery_note;card.append(note);}
       if(post.timing_warning){const note=document.createElement('p');note.setAttribute('role','status');note.textContent=post.timing_warning;card.append(note);}
       const footer=document.createElement('div');footer.className='post-actions';card.append(footer);
       if (!row.draft_ids.length || post.editable) editCard(footer,row,i);
-      if (post.status) {const state=document.createElement('small');state.className='campaign-post-state';state.textContent=post.status.replaceAll('_',' ');footer.append(state);}
+      if (post.status) {const state=document.createElement('small');state.className='campaign-post-state';state.textContent=post.status_label||post.status.replaceAll('_',' ');footer.append(state);}
       if(post.schedule){
         const panel=document.createElement('details'),open=document.createElement('summary');
         open.textContent='Change time';panel.append(open);
@@ -305,7 +309,7 @@
     const panel=element('campaign-suggestion');panel.replaceChildren();panel.hidden=!row.suggestion;
     if(!row.suggestion)return;
     const proposal=row.suggestion,title=document.createElement('h2'),basis=document.createElement('p');
-    title.textContent=proposal.mode==='extend'?'New follow-ups':'Proposed improvements';basis.textContent=proposal.posts.length+(proposal.posts.length===1?' post · ':' posts · ')+proposal.basis;panel.append(title,basis);
+    title.textContent=proposal.mode==='extend'?'New follow-ups':'Proposed improvements';basis.textContent=proposal.posts.length+(proposal.posts.length===1?' post · ':' posts · ')+proposal.basis;panel.append(title,basis);if(proposal.learning)panel.insertAdjacentHTML('beforeend',window.zovaLearningMarkup(proposal.learning));
     if(proposal.positions.some(i=>row.posts[i]?.status==='scheduled')){const notice=document.createElement('p');notice.textContent='Applying changes unschedules these posts. Review them again before publishing.';panel.append(notice);}
     proposal.posts.forEach((post,n)=>{
       const card=document.createElement('article'),label=document.createElement('strong'),text=document.createElement('p');
@@ -337,7 +341,7 @@
     try { await action(); report(successMessage); }
     catch (error) { report(error.message,true); }
     finally {
-      controls.forEach(control => control.disabled = false); busy = false;
+      controls.forEach(control => control.disabled = false); busy = false;renderFiles();
       document.querySelector('#campaign-review details[data-dirty="true"] textarea')?.dispatchEvent(new Event('input',{bubbles:true}));
     }
   }
@@ -350,14 +354,14 @@
     const files=Array.from(selectedFiles), failures=[];
     for(const [index,file] of files.entries()) {
       if(uploaded.has(file)) continue;
-      status.textContent='Uploading '+(index+1)+' of '+files.length+' · '+file.name;
+      status.textContent='Uploading '+(index+1)+' of '+files.length+' · '+file.name;uploadState.set(file,'Uploading…');renderFiles();
       const upload=new FormData();upload.append('files',file);
       try {uploaded.set(file,(await request('/api/media',upload)).assets[0].id);}
-      catch(error){failures.push(file.name+' — '+error.message);continue;}
+      catch(error){uploadState.set(file,'Not confirmed — check Saved media before retrying');renderFiles();failures.push(file.name+' — '+error.message);continue;}
       await flush();
       renderFiles();
     }
-    if(failures.length) throw new Error(failures.join(' · ')+' — Retry uploads.');
+    renderFiles();if(failures.length) throw new Error(failures.join(' · ')+' — Successful uploads are kept. Check Saved media before retrying an interrupted upload.');
   }
   element('retry-campaign-uploads').onclick=()=>run(uploadPending);
   form.onsubmit = event => {

@@ -47,7 +47,8 @@ const fs = require('node:fs');
       await page.getByLabel('Sort by').selectOption('date');await submit();
       const proposal=page.locator('#campaign-suggestion');await proposal.waitFor({state:'visible'});
       assert.equal(await cards.first().locator('p').first().innerText(),original);
-      await proposal.locator('summary').first().click();assert.equal(await proposal.locator('details p').first().innerText(),original);
+      const originals=proposal.locator('details').filter({has:page.locator('summary',{hasText:'Original caption'})});
+      await originals.first().locator('summary').click();assert.equal(await originals.first().locator('p').innerText(),original);
       // Saved preview survives refresh and explicit campaign reopening.
       await page.reload();await page.getByLabel('Saved campaigns').selectOption({label:'Friday flowers'});await proposal.waitFor({state:'visible'});
       await page.getByRole('button',{name:'Keep originals',exact:true}).click();await proposal.waitFor({state:'hidden'});

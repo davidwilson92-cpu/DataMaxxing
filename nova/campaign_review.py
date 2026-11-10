@@ -39,6 +39,9 @@ def current_plan(db, row):
         warning = caption_date_warning(post['caption'],original,data['dates'][i]['local'])
         if warning: post['timing_warning'] = warning
     if not ids:
+        from .publication_status import summary
+        for post in data['posts']: post.update(status='draft', status_label='Draft', recovery_note='')
+        data['publication_summary'] = summary(data['posts'])
         data['control_snapshot'] = fingerprint(data)
         return data
     drafts = {d.id: d for d in db.scalars(select(Draft).where(Draft.user_id == row.user_id, Draft.id.in_(ids)))}
@@ -89,6 +92,12 @@ def current_plan(db, row):
         extra={a.id:{'id':a.id,'name':a.filename,'kind':'video' if a.mime_type.startswith('video/') else 'image'}
                for a in db.scalars(select(MediaAsset).where(MediaAsset.user_id==row.user_id,MediaAsset.id.in_(needed)))}
         data['assets']=list({a['id']:a for a in [*data['assets'],*extra.values()]}.values())
+    from .publication_status import summary, LABELS, guidance
+    for i, post in enumerate(data['posts']):
+        post['draft_id'] = ids[i] if i < len(ids) else None
+        post['status_label'] = LABELS.get(post.get('status', 'draft'), 'Check results')
+        post['recovery_note'] = guidance(post.get('status'))
+    data['publication_summary'] = summary(data['posts'])
     data['control_snapshot'] = fingerprint(data)
     return data
 

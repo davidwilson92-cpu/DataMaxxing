@@ -1,0 +1,88 @@
+{
+  "workload": "Local production ASGI preview, disposable authenticated accounts, 1024x1024 synthetic JPEG, five samples, no external services",
+  "upload_bytes": 792770,
+  "before": {
+    "upload": {
+      "median_ms": 42.4,
+      "samples": [
+        174.72,
+        42.4,
+        39.88,
+        48.77,
+        41.18
+      ]
+    },
+    "save": {
+      "median_ms": 30.28,
+      "samples": [
+        24.76,
+        19.32,
+        30.32,
+        33.28,
+        30.28
+      ]
+    },
+    "reopen": {
+      "median_ms": 8.8,
+      "samples": [
+        10.97,
+        8.8,
+        8.38,
+        7.11,
+        10.53
+      ]
+    },
+    "navigation": {
+      "median_ms": 7.11,
+      "samples": [
+        7.03,
+        6.74,
+        7.11,
+        8.09,
+        8.68
+      ]
+    }
+  },
+  "after": {
+    "upload": {
+      "median_ms": 41.69,
+      "samples": [
+        46.83,
+        46.62,
+        41.69,
+        40.87,
+        39.85
+      ]
+    },
+    "save": {
+      "median_ms": 19.63,
+      "samples": [
+        22.79,
+        24.19,
+        19.28,
+        19.63,
+        19.22
+      ]
+    },
+    "reopen": {
+      "median_ms": 7.25,
+      "samples": [
+        7.25,
+        9.61,
+        6.92,
+        7.24,
+        8.0
+      ]
+    },
+    "navigation": {
+      "median_ms": 7.31,
+      "samples": [
+        7.27,
+        7.31,
+        7.99,
+        7.7,
+        6.93
+      ]
+    }
+  }
+}

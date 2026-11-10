@@ -284,7 +284,7 @@ final class ProductStore: ObservableObject {
         let video = mimes.contains(where: { $0.hasPrefix("video/") }) || draft.media.contains(where: { $0["kind"].string == "video" })
         guard count <= 10, !video || count == 1 else { throw ZovaFailure.server("Use one video or up to ten images per post.") }
     }
-    func upload(_ url: URL, name: String, mime: String) async throws {
+    func upload(_ url: URL, name: String, mime: String, at insertionIndex: Int? = nil) async throws {
         guard draft.editable else { throw ZovaFailure.server("Start a new post to attach media.") }
         let video = mime.hasPrefix("video/")
         guard draft.media.count < 10, !(video && !draft.media.isEmpty), !draft.media.contains(where: { $0["kind"].string == "video" }) else {
@@ -299,7 +299,8 @@ final class ProductStore: ObservableObject {
         guard epoch == authority, !Task.isCancelled else { throw CancellationError() }
         let response = try await api.upload(file: converted ?? url, name: converted == nil ? name : (name as NSString).deletingPathExtension + ".jpg", mime: converted == nil ? mime : "image/jpeg", brand: brand)
         guard epoch == authority else { throw CancellationError() }
-        let media = draft.media + response["assets"].array
+        var media = draft.media
+        media.insert(contentsOf: response["assets"].array, at: min(max(0, insertionIndex ?? media.count), media.count))
         draft.workspace["media"] = .array(media); draft.workspace["media_asset_ids"] = .array(media.map { $0["id"] })
         if video {
             // Match Studio: video destinations currently support Instagram/TikTok.
@@ -309,6 +310,15 @@ final class ProductStore: ObservableObject {
                 draft.workspace["video_duration"] = .number(duration.seconds)
             }
         }
+        changeSerial += 1; try await save()
+    }
+    func attachSavedMedia(_ assets: [JSONValue]) async throws {
+        guard draft.editable, !busy else { throw ZovaFailure.server("Wait for this post to finish saving.") }
+        let additions = assets.filter { a in !draft.media.contains { $0["id"] == a["id"] } }
+        try validateAttachments(additions.map { $0["mime_type"].string })
+        let media = draft.media + additions
+        draft.workspace["media"] = .array(media); draft.workspace["media_asset_ids"] = .array(media.map { $0["id"] })
+        if media.contains(where: { $0["kind"].string == "video" }) { draft.selected = draft.selected.filter { ["instagram", "tiktok"].contains($0) }; draft.workspace["video_duration"] = .number(0) }
         changeSerial += 1; try await save()
     }
     func removeMedia(_ id: Int) {

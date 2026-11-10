@@ -286,7 +286,8 @@ def propose(cid: int, body: Suggestion, uid=Depends(premium), db=Depends(get_db)
     if body.mode == 'improve':
         for post, i in zip(posts, positions):
             post['asset_id'] = view['posts'][i]['asset_id']  # Caption improvements keep the owner's media choice.
-    data['suggestion'] = dict(mode=body.mode, snapshot=before, positions=positions, posts=posts, dates=new_dates,
+    from .recommendation_basis import evidence_basis
+    data['suggestion'] = dict(learning=evidence_basis(evidence), mode=body.mode, snapshot=before, positions=positions, posts=posts, dates=new_dates,
         basis='Uses recent account performance and saved direction. Results are observations, not guarantees.' if evidence.get('available')
               else 'No usable performance data yet. Ideas to test, using your brief and any saved strategy and voice.')
     replace(db, row, body.revision, data)

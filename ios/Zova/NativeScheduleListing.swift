@@ -23,6 +23,12 @@ struct NativeScheduleView: View {
                     Text("Schedule").font(.title2.bold()); Spacer()
                     Button("+ New post") { run { try await store.newPost() } }.font(.subheadline.bold()).buttonStyle(.borderedProminent).tint(ZovaDesign.purple).frame(minHeight: 44)
                 }
+                if !summary.isNull {
+                    Text("\(summary["scheduled"].int) scheduled in the next 7 days").font(.caption).foregroundStyle(.secondary)
+                    if summary["needs_review"].int > 0 {
+                        Button("\(summary["needs_review"].int) need attention →") { calendarMode = false; filter = "needs_review"; reload() }.font(.caption).frame(minHeight:44)
+                    }
+                }
                 if summary["unconfirmed"].int > 0 {
                     Button("Check publication results before retrying →") { calendarMode = false; filter = "awaiting_results"; reload() }.font(.caption).foregroundStyle(.orange)
                 }

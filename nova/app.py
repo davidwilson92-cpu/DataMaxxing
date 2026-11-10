@@ -1448,6 +1448,8 @@ from .connection_review import router as connection_review_router
 app.include_router(connection_review_router)
 from .media_export import router as media_export_router
 app.include_router(media_export_router)
+from .media_library import router as media_library_router
+app.include_router(media_library_router)
 from .instagram_audio import router as instagram_audio_router
 app.include_router(instagram_audio_router)
 
