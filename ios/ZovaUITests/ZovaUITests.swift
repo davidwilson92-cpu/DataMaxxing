@@ -296,7 +296,12 @@ final class ZovaUITests: XCTestCase {
         capture(app, "Native Next Move — largest accessibility text")
         reveal(app.buttons["Draft post"], in: app)
         assertTarget(app.buttons["Draft post"], app: app)
-        app.swipeDown(); app.swipeDown(); app.buttons["Close ✦ Next move"].tap()
+        app.swipeDown(); app.swipeDown()
+        // A downward gesture may already dismiss the sheet at its scroll boundary.
+        // Verify the destination instead of tapping a button on a closed sheet.
+        let closeMove = app.buttons["Close ✦ Next move"]
+        if closeMove.exists { closeMove.tap() }
+        XCTAssertTrue(app.buttons["tab-Schedule"].isHittable, "Next Move must return to the native navigation")
         app.buttons["tab-Schedule"].tap()
         XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout: 8))
         reveal(app.buttons["Next month"], in: app); assertTarget(app.buttons["Next month"], app: app)
