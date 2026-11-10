@@ -183,6 +183,7 @@
     element('campaign-heading').textContent=row?nameOf(row):'Campaigns';
     element('campaign-name-form').hidden=true;
     if (!row) return;
+    document.querySelectorAll('#campaign-review button,#campaign-view,#campaign-sort,#campaign-list').forEach(control=>control.disabled=false);
     remember(row);
     list.value = String(row.id);
     element('campaign-media').hidden = true;
