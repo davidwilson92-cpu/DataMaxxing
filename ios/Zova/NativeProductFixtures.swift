@@ -24,6 +24,7 @@ final class NativeProductFixtures: URLProtocol {
         if ProcessInfo.processInfo.arguments.contains("--fixture-thread") { primaryPlatform = "x" }
         partialCampaign = .null; partialRevision = 0
         campaign = .object(["id":.integer(6),"revision":.integer(1),"state":.string("active"),"control_snapshot":.string(String(repeating:"a",count:64)),"feedback":.string(""),"assets":.array([]),"draft_ids":.array([]),
+            "publication_summary":.object(["text":.string("1 draft"),"attention":.integer(0),"draft_ids":.array([])]),
             "brief":.object(["idea":.string("Pottery launch"),"timezone":.string("Europe/London")]),
             "dates":.array([.object(["utc":.string("2027-03-01T12:00:00Z"),"local":.string("2027-03-01T12:00:00+00:00")])]),
             "posts":.array([.object(["platform":.string("instagram"),"caption":.string("Try the wheel.")])])])
@@ -40,9 +41,10 @@ final class NativeProductFixtures: URLProtocol {
         .object(["id": .integer(id), "revision": .integer(1), "status": .string("draft"), "display_title": .string("Meet the maker"), "title": .string("Meet the maker"), "brief": .string("The story behind our small pottery studio."), "instruction": .string(""), "thread_length": .integer(1), "platforms": .strings([primaryPlatform]), "variants": .object([primaryPlatform: .object(["posts": .strings(["New to pottery? Start with a small piece of clay and give yourself time to learn. What would you like to try making?"])])]), "workspace": .object(["selected_platforms": .strings([primaryPlatform]), "active_platform": .string(primaryPlatform), "media": .array([]), "media_asset_ids": .array([]), "composer": .string(""), "conversation": .array([.object(["role": .string("user"), "content": .string("The story behind our small pottery studio.")])])])])
     }
     static var strategy: JSONValue { .object(["goal": .string("Generate pottery class enquiries"), "description": .string("I run a pottery studio in Leeds for curious beginners. I want more weekend bookings."), "content_direction": .string("Studio moments, simple tips, new classes. Two videos a week. Keep it friendly."), "audience": .string("Local beginners"), "themes": .string("Beginner pottery tips, clay process, common questions"), "rhythm": .string("Two posts each week"), "platforms": .strings(["instagram"])]) }
+    static var learning: JSONValue { .object(["summary": .string("A test based on your direction and voice."), "note": .string("Not enough fresh performance evidence for this recommendation. Results are not predicted."), "sample_size": .integer(0), "examples": .array([]), "checked_at": .null]) }
     static func actions() -> JSONValue {
         .object(["revision": .integer(strategyRevision), "history": .array([]), "items": .array(["Share one tip for centring clay", "Explain what beginners need for class", "Invite questions about starting pottery"].enumerated().map { index, title in
-            .object(["id": .integer(batch * 3 + index + 1), "title": .string(title), "reason": .string("Help local beginners feel confident enough to try a pottery class."), "kind": .string("draft"), "platform": .string(primaryPlatform), "format": .string("post"), "brief": .string(title), "basis": .string("Strategy · Voice"), "learning": .object(["summary": .string("A test based on your direction and voice."), "note": .string("Not enough fresh performance evidence for this recommendation. Results are not predicted."), "sample_size": .integer(0), "examples": .array([]), "checked_at": .null]), "strategy_context": strategy, "source": .null])
+            .object(["id": .integer(batch * 3 + index + 1), "title": .string(title), "reason": .string("Help local beginners feel confident enough to try a pottery class."), "kind": .string("draft"), "platform": .string(primaryPlatform), "format": .string("post"), "brief": .string(title), "basis": .string("Strategy · Voice"), "learning": learning, "strategy_context": strategy, "source": .null])
         })])
     }
     override class func canInit(with request: URLRequest) -> Bool { true }
@@ -176,7 +178,7 @@ final class NativeProductFixtures: URLProtocol {
         }
         if path == "/api/ai/campaigns/6/improve" {
             campaign["revision"] = .integer(campaign["revision"].int+1)
-            campaign["suggestion"] = .object(["mode":.string("improve"),"positions":.array([.integer(0)]),"dates":campaign["dates"],"basis":.string("Synthetic proposal using the saved brief and voice."),"posts":.array([.object(["platform":.string("instagram"),"caption":.string("Your first pot starts with one small ball of clay.")])])])
+            campaign["suggestion"] = .object(["mode":.string("improve"),"learning":learning,"positions":.array([.integer(0)]),"dates":campaign["dates"],"basis":.string("Synthetic proposal using the saved brief and voice."),"posts":.array([.object(["platform":.string("instagram"),"caption":.string("Your first pot starts with one small ball of clay.")])])])
             return ok(campaign)
         }
         if path == "/api/campaigns/6/suggestion" {

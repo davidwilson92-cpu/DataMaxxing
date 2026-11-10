@@ -13,7 +13,9 @@ def summary(posts):
     attention = sum(counts[k] for k in ('failed', 'partial', 'unknown', 'needs_review', 'publishing'))
     parts = []
     for key, label in [('scheduled', 'scheduled'), ('published', 'published'), ('draft', 'drafts'), ('review', 'awaiting approval'), ('queued', 'preparing'), ('pending', 'processing')]:
-        if counts[key]: parts.append(f'{counts[key]} {label}')
+        if counts[key]:
+            if key == 'draft' and counts[key] == 1: label = 'draft'
+            parts.append(f'{counts[key]} {label}')
     if attention: parts.append(f"{attention} {'needs' if attention == 1 else 'need'} attention")
     return {'text': ' · '.join(parts), 'attention': attention,
             'draft_ids': [p['draft_id'] for p in posts if p.get('draft_id') and p.get('status') in ('failed','partial','unknown','needs_review','publishing')]}

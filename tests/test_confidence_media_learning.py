@@ -99,3 +99,8 @@ def test_uncertain_summary_links_only_to_affected_drafts_without_resending():
 
 def test_queued_and_reviewed_posts_are_not_missing_from_summary():
     assert summary([{'status':'queued'},{'status':'review'}])['text']=='1 awaiting approval · 1 preparing'
+
+
+def test_summary_labels_one_draft_and_multiple_drafts():
+    assert summary([{"status":"draft"}])["text"] == "1 draft"
+    assert summary([{"status":"draft"},{"status":"draft"}])["text"] == "2 drafts"

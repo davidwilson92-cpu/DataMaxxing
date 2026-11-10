@@ -52,6 +52,7 @@ final class ZovaUITests: XCTestCase {
         let all=app.buttons["campaign-all"], calendar=app.buttons["Calendar"]
         XCTAssertTrue(all.waitForExistence(timeout:8))
         XCTAssertTrue(app.staticTexts["Try the wheel."].isHittable,"First caption should be visible without scrolling")
+        XCTAssertEqual(app.staticTexts["campaign-publication-summary"].label,"1 draft")
         XCTAssertLessThan(calendar.frame.maxY-all.frame.minY,150,"Controls should occupy two compact rows")
         XCTAssertGreaterThanOrEqual(app.buttons["campaign-actions"].frame.height,44)
         XCTAssertGreaterThanOrEqual(all.frame.height,44)
@@ -107,6 +108,10 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Paused · drafts kept"].waitForExistence(timeout:8))
         app.buttons["campaign-improve"].tap()
         let preview=app.buttons["Preview changes"];XCTAssertTrue(preview.waitForExistence(timeout:8));reveal(preview,in:app);preview.tap()
+        let evidence=app.buttons["An idea to test"];XCTAssertTrue(evidence.waitForExistence(timeout:8));reveal(evidence,in:app);evidence.tap()
+        XCTAssertTrue(app.staticTexts["Not enough fresh performance evidence for this recommendation. Results are not predicted."].exists)
+        capture(app,"Campaign — evidence distinguishes a test from measured results")
+        evidence.tap()
         let original=app.buttons["Original caption"];XCTAssertTrue(original.waitForExistence(timeout:8));reveal(original,in:app);original.tap()
         XCTAssertTrue(app.staticTexts["Try the wheel."].firstMatch.exists)
         capture(app,"Campaign — improvement preview retains original")
