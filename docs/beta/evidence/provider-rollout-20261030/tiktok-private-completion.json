@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-10-30T16:12:40.161122+00:00",
+  "draft_id": 75,
+  "publication_id": 16,
+  "publication_count_for_draft": 1,
+  "connection_id": 27,
+  "status": "published",
+  "privacy_level": "SELF_ONLY",
+  "pending": false,
+  "requires_tiktok_completion": false,
+  "public_url_available": false,
+  "provider_status": "PUBLISH_COMPLETE",
+  "provider_failure": null,
+  "provider_public_ids_count": 0,
+  "receipt_sha256": "b43e72790f11cfd5ee10100b198ecc559dd0c1d714b3298fe86ffb09a9345787",
+  "updated_at": "2026-10-30T16:11:37.331355+00:00",
+  "old_publication8_status": "pending",
+  "source": "Read-only production database and TikTok status query via existing adapter after the single owner-approved UI submission"
+}

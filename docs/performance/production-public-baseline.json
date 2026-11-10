@@ -1,0 +1,82 @@
+{
+  "/health": {
+    "ms": [
+      284.92,
+      182.36,
+      191.21,
+      192.34,
+      162.86
+    ],
+    "median_ms": 191.21,
+    "status": 200,
+    "decoded_bytes": 48,
+    "headers": {
+      "cache-control": "no-store",
+      "content-encoding": null,
+      "content-length": null,
+      "server": "cloudflare",
+      "etag": null,
+      "cf-cache-status": "DYNAMIC"
+    }
+  },
+  "/login": {
+    "ms": [
+      193.05,
+      252.3,
+      190.51,
+      185.19,
+      168.75
+    ],
+    "median_ms": 190.51,
+    "status": 200,
+    "decoded_bytes": 3580,
+    "headers": {
+      "cache-control": "no-store",
+      "content-encoding": "gzip",
+      "content-length": null,
+      "server": "cloudflare",
+      "etag": null,
+      "cf-cache-status": "DYNAMIC"
+    }
+  },
+  "/static/nova.css?v=6.3": {
+    "ms": [
+      200.91,
+      197.16,
+      181.9,
+      180.17,
+      192.38
+    ],
+    "median_ms": 192.38,
+    "status": 200,
+    "decoded_bytes": 75670,
+    "headers": {
+      "cache-control": null,
+      "content-encoding": "gzip",
+      "content-length": null,
+      "server": "cloudflare",
+      "etag": "W/\"4d21994ad579b28f4822809e04c1de3f\"",
+      "cf-cache-status": "DYNAMIC"
+    }
+  },
+  "/static/strategy.js?v=20261027": {
+    "ms": [
+      176.22,
+      198.35,
+      185.83,
+      190.92,
+      195.28
+    ],
+    "median_ms": 190.92,
+    "status": 200,
+    "decoded_bytes": 27920,
+    "headers": {
+      "cache-control": null,
+      "content-encoding": "gzip",
+      "content-length": null,
+      "server": "cloudflare",
+      "etag": "W/\"089879fcdd19eb7bead5da139514ce6b\"",
+      "cf-cache-status": "DYNAMIC"
+    }
+  }
+}

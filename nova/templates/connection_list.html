@@ -5,7 +5,7 @@
  <div class="connection-identity">
   {% with platform=p %}{% include "social_icon.html" %}{% endwith %}
   <strong>{{ option.name }}</strong>
-  {% for row in rows %}<small class="connection-account">{{ row.username or row.display_name or 'Connected account' }}<span class="connection-state"><span aria-hidden="true">✓</span> Connected{% if p == 'instagram' and 'instagram_business_basic' not in (row.scope or '') %} via Facebook{% endif %}</span></small>{% endfor %}
+  {% for row in rows %}<small class="connection-account" data-connection-id="{{ row.id }}">{{ row.username or row.display_name or 'Connected account' }}<span class="connection-state"><span aria-hidden="true">✓</span> Connected{% if p == 'instagram' and 'instagram_business_basic' not in (row.scope or '') %} via Facebook{% endif %}</span></small>{% endfor %}
   {% if not rows %}<small>{% if option.ready %}Not connected{% else %}Setup in progress{% endif %}</small>{% endif %}
  </div>
  {% if rows %}

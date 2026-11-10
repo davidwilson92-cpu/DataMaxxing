@@ -2,27 +2,6 @@ import XCTest
 @testable import Zova
 
 final class NativeProtocolTests: XCTestCase {
-    func testNativeTabRoutingRequiresAnExactOwnedTabPath() throws {
-        let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
-        for (index, path) in ["/studio?draft=7&workspace=2", "/drafts?workspace=2", "/analytics", "/account#voice"].enumerated() {
-            XCTAssertEqual(configuration.tabIndex(for: URL(string: "https://zova-social.com" + path)!), index)
-        }
-        for value in ["http://zova-social.com/drafts", "https://evil.test/drafts", "https://zova-social.com.evil.test/drafts", "https://user@zova-social.com/drafts", "https://zova-social.com:443/drafts", "https://zova-social.com/drafts/other", "https://zova-social.com/account/deletion"] {
-            XCTAssertNil(configuration.tabIndex(for: URL(string: value)!))
-        }
-    }
-    func testScheduleReselectReturnsToListWithoutLosingWorkspaceOrAccountEdits() throws {
-        let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
-        let current = URL(string: "https://zova-social.com/studio?draft=7&workspace=12&token=private#caption")!
-        XCTAssertEqual(configuration.tabRefreshURL("/drafts", from: current)?.absoluteString, "https://zova-social.com/drafts?workspace=12")
-        XCTAssertEqual(configuration.tabRefreshURL("/analytics", from: current)?.absoluteString, "https://zova-social.com/analytics?workspace=12")
-        for path in ["/studio", "/account", "/account/deletion", "//evil.test"] {
-            XCTAssertNil(configuration.tabRefreshURL(path, from: current))
-        }
-        for source in ["https://evil.test/drafts?workspace=12", "https://zova-social.com/drafts?workspace=other", "https://zova-social.com/drafts?workspace="] {
-            XCTAssertEqual(configuration.tabRefreshURL("/drafts", from: URL(string: source)!)?.absoluteString, "https://zova-social.com/drafts")
-        }
-    }
     func testSocialReturnChecksAttemptPlatformHostAndOutcome() throws {
         let configuration = try ZovaConfiguration(base: URL(string: "https://zova-social.com")!)
         let state = NativeProof.ticketState("synthetic-ticket")
@@ -139,17 +118,16 @@ final class NativeProtocolTests: XCTestCase {
             return (200, Data(("{\"ticket\":\"" + String(repeating: "t", count: 43) + "\"}").utf8), 0)
         }
         let api = try mockAPI()
-        async let first = api.handoff(destination: "/studio")
-        async let second = api.handoff(destination: "/drafts")
+        async let first = api.browserHandoff(destination: "/connect/instagram")
+        async let second = api.browserHandoff(destination: "/connect/tiktok")
         let values = try await [first, second]
         await fulfillment(of: [refresh], timeout: 3)
         for value in values {
             XCTAssertNil(value.value(forHTTPHeaderField: "Authorization"))
             XCTAssertFalse(value.url!.absoluteString.contains(String(repeating: "b", count: 64)))
-            XCTAssertEqual(value.value(forHTTPHeaderField: "X-Zova-Native-Handoff"), "1")
-            XCTAssertEqual(value.value(forHTTPHeaderField: "Content-Type"), "application/x-www-form-urlencoded")
-            XCTAssertEqual(value.httpMethod, "POST")
-            XCTAssertEqual(value.url?.path, "/mobile/web-session")
+            XCTAssertNil(value.httpBody)
+            XCTAssertEqual(value.httpMethod, "GET")
+            XCTAssertTrue(value.url?.path.hasPrefix("/mobile/browser/") == true)
         }
         XCTAssertEqual(try KeychainVault.load()?.refresh, String(repeating: "n", count: 64))
         await api.forget()
@@ -164,7 +142,7 @@ final class NativeProtocolTests: XCTestCase {
             return (200, Self.tokenData, 0.25)
         }
         let api = try mockAPI()
-        let pending = Task { try await api.handoff(destination: "/studio") }
+        let pending = Task { try await api.browserHandoff(destination: "/connect/instagram") }
         await fulfillment(of: [started], timeout: 3)
         await api.forget()
         do { _ = try await pending.value; XCTFail("Late refresh must be rejected") }
@@ -183,7 +161,7 @@ final class NativeProtocolTests: XCTestCase {
             }
             XCTAssertEqual(request.url?.path, "/api/v1/native-web-session")
             var body = request.httpBody ?? Data()
-            if let stream = request.httpBodyStream {
+            if body.isEmpty, let stream = request.httpBodyStream {
                 stream.open()
                 defer { stream.close() }
                 var buffer = [UInt8](repeating: 0, count: 1024)

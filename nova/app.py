@@ -8,6 +8,7 @@ import html
 import json
 import logging
 import os
+import re
 import secrets
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
@@ -19,17 +20,18 @@ from zoneinfo import ZoneInfo
 import httpx
 import jwt
 from oauthlib.oauth1 import Client as OAuth1Client
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import Response, HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
+from .assets import PublicAssets, url as asset_url
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from . import ai, billing, brands, allowances, customer_service, readiness
+from . import ai, billing, brands, allowances, customer_service, readiness, distribution
 from .connections import connection_options, safe_login_next
 from .db import (
     Activity, AuthIdentity, AuthState, Creator, CreatorPreferences, Draft, MediaAsset, OAuth2Connection, OAuthState,
@@ -53,6 +55,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 HERE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
+templates.env.globals['asset_url'] = asset_url
 
 
 def base_url() -> str:
@@ -173,12 +176,18 @@ async def lifespan(app: FastAPI):
     mode = validate_runtime()
     bootstrap_legacy_account()
     task = asyncio.create_task(scheduler_loop()) if mode == 'embedded' else None
+    from .discovery_jobs import loop as discovery_loop
+    discovery_task = asyncio.create_task(discovery_loop()) if mode != 'disabled' else None
     try:
         yield
     finally:
         if task is not None:
             task.cancel()
             try: await task
+            except asyncio.CancelledError: pass
+        if discovery_task is not None:
+            discovery_task.cancel()
+            try: await discovery_task
             except asyncio.CancelledError: pass
 
 
@@ -190,19 +199,32 @@ app.add_middleware(BodyLimitMiddleware)
 app.include_router(recovery_router)
 from .ai_consent import router as ai_consent_router
 app.include_router(ai_consent_router)
+from .native_presentation import router as native_presentation_router
+app.include_router(native_presentation_router)
 from .schedule_routes import router as schedule_router
 app.include_router(schedule_router)
 from .strategy import router as strategy_router, strategy_context
 from .series import router as series_router
 app.include_router(strategy_router)
 app.include_router(series_router)
-app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
+from .campaigns import router as campaign_router
+app.include_router(campaign_router)
+from .campaign_controls import router as campaign_controls_router
+app.include_router(campaign_controls_router)
+
+@app.get('/campaigns', response_class=HTMLResponse)
+def campaign_page(request:Request, db:Session=Depends(get_db)):
+    from .campaigns import has_campaign_access
+    user = current_user(request)
+    return templates.TemplateResponse(request, "campaigns.html", template_context(request,user,premium=has_campaign_access(db,user.id)))
+
+app.mount("/static", GZipMiddleware(PublicAssets(directory=str(HERE / "static")), compresslevel=4), name="static")
 
 
 @app.exception_handler(HTTPException)
 async def authentication_error(request: Request, exc: HTTPException):
     # Only browser pages redirect. APIs and OAuth callbacks retain their errors.
-    private_pages = {"/studio", "/account", "/account/deletion", "/brands", "/analytics", "/drafts", "/subscribe",
+    private_pages = {"/studio", "/campaigns", "/account", "/account/deletion", "/brands", "/analytics", "/drafts", "/subscribe",
                      "/onboarding/socials", "/onboarding/writing-style", "/onboarding/complete"}
     connection_path = request.url.path
     oauth_starts = {value["start"]: f"/connect/{key}" for key, value in connection_options().items()}
@@ -254,7 +276,7 @@ def signup_page(request: Request, error: str | None = None):
     return templates.TemplateResponse(request, "auth.html", template_context(request, heading="Create your Zova account", subheading="Use your email to create a workspace. Connect your social accounts afterwards, or skip that step.", action="/signup", button="Create Zova account", saved=saved, countries=sorted(pycountry.countries,key=lambda c:c.name), error=error, apple_ready=apple_configured()))
 
 @app.post("/signup")
-def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str, Form()], password: Annotated[str, Form()], password_confirmation: Annotated[str, Form()], country: Annotated[str, Form()] = "", accept_terms: Annotated[str | None, Form()] = None, marketing_consent: Annotated[str | None, Form()] = None, db: Session=Depends(get_db)):
+def signup(request: Request, background_tasks: BackgroundTasks, name: Annotated[str, Form()], email: Annotated[str, Form()], password: Annotated[str, Form()], password_confirmation: Annotated[str, Form()], country: Annotated[str, Form()] = "", accept_terms: Annotated[str | None, Form()] = None, marketing_consent: Annotated[str | None, Form()] = None, db: Session=Depends(get_db)):
     def retry(location, status=303):
         response=RedirectResponse(location,status)
         response.set_cookie('zova_signup_input',encrypt(json.dumps({'name':name[:160],'email':email[:320],'country':country[:2],'expires':utcnow().timestamp()+600})),max_age=600,httponly=True,secure=base_url().startswith('https://'),samesite='lax',path='/signup')
@@ -273,6 +295,9 @@ def signup(request: Request, name: Annotated[str, Form()], email: Annotated[str,
     db.info.update(brand_id=0,brand_user_id=user.id);request.state.brand_id=0
     get_preferences(db,user.id)
     readiness.event(user.id,'signup',user.id)
+    distribution.record_signup(user.id,request)
+    from .verification import welcome_verification
+    welcome_verification(user, background_tasks)
     from .mobile_auth import resume_destination
     resp=RedirectResponse(resume_destination(request.cookies.get('zova_mobile_grant'), db) or "/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
 
@@ -340,7 +365,9 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
         user.last_login_at = utcnow()
         db.commit()
     if not identity: db.add(AuthIdentity(user_id=user.id, provider="apple", subject=subject)); db.commit()
-    if created:readiness.event(user.id,'signup',user.id)
+    if created:
+        readiness.event(user.id,'signup',user.id)
+        distribution.record_signup(user.id,request)
     from .mobile_auth import resume_destination
     native_resume = resume_destination(state.partition('.')[2], db)
     resp = RedirectResponse(native_resume or ("/onboarding/socials" if created else "/studio"), 303); set_user_cookie(resp, user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
@@ -580,6 +607,9 @@ def drafts_page(request:Request,db:Session=Depends(get_db)):
     user=current_user(request)
     query=request.query_params.get("q","").strip()[:200]
     statement=select(Draft).where(Draft.user_id==user.id)
+    if 'post' in request.query_params:
+        post=request.query_params['post']
+        statement=statement.where(Draft.id==(int(post) if post.isascii() and post.isdigit() and len(post)<=18 else -1))
     selected_status=request.query_params.get('status','all')
     if selected_status not in {'all','draft','scheduled','published','needs_review','awaiting_results'}:selected_status='all'
     if selected_status=='awaiting_results':statement=statement.where(Draft.id.in_(select(Publication.draft_id).where(Publication.user_id==user.id,Publication.brand_id==db.info.get('brand_id',0),Publication.status.in_(('unknown','pending','publishing','queued')))))
@@ -593,7 +623,9 @@ def drafts_page(request:Request,db:Session=Depends(get_db)):
     has_more=len(rows)>30
     rows=rows[:30]
     drafts=[]
+    from .workspace import draft_kind
     for row in rows:
+        if draft_kind(row) == 'conversation' and 'post' not in request.query_params: continue
         try:platforms=json.loads(row.platforms_json or "[]")
         except (TypeError,json.JSONDecodeError):platforms=[]
         try:
@@ -699,7 +731,10 @@ def save_preferences(request:Request,writing_tone:Annotated[str,Form()]="",audie
     try:ZoneInfo(timezone_name)
     except Exception:timezone_name="Europe/London"
     mark_edits(prefs,dict(writing_tone=writing_tone[:5000],audience=audience[:5000],topics=topics[:5000],things_to_avoid=things_to_avoid[:5000],example_posts=example_posts[:12000],preferred_post_length=max(30,min(preferred_post_length,4000)),timezone=timezone_name))
-    db.commit(); return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=voice",303)
+    db.commit()
+    if 'application/json' in request.headers.get('accept', ''):
+        return {'saved': True}
+    return RedirectResponse("/onboarding/complete" if next_url == "/onboarding/complete" else "/account?saved=voice",303)
 
 @app.post('/account/voice/clear-examples')
 def clear_voice_examples(request:Request, db:Session=Depends(get_db)):
@@ -898,6 +933,7 @@ def oauth_tiktok_callback(request:Request,code:str|None=None,state:str|None=None
 
 # ---------- API models ----------
 class GenerateRequest(BaseModel):
+    include_saved_draft: bool = False
     media_asset_ids:list[int]=Field(default_factory=list,max_length=10)
     brief:str=Field(min_length=1,max_length=12000); instruction:str=Field(default="",max_length=5000); platforms:list[str]; thread_length:int=1; link_url:str=""; draft_id:int|None=None
     source_draft_id:int|None=Field(default=None,gt=0)
@@ -956,7 +992,7 @@ def conversation_plan(body:ConversationRequest,request:Request,db:Session=Depend
             result=plan_message(body.message,context).model_dump()
             result['media_inspection']=inspected
             return result
-        except Exception:raise HTTPException(502,'I could not interpret that request. Your draft is unchanged; please try again.')
+        except Exception:raise HTTPException(502,'I could not interpret that request. Your idea is saved. Try “Draft a caption for Friday appointments”.')
     finally:
         ai_user.reset(ai_context)
 
@@ -1100,6 +1136,9 @@ def api_generate(body:GenerateRequest,request:Request,db:Session=Depends(get_db)
             row=Draft(user_id=user.id,brief=body.brief,instruction=body.instruction,platforms_json=json.dumps(platforms),variants_json=json.dumps(variants,ensure_ascii=False),workspace_json=json.dumps(target_workspace,ensure_ascii=False),thread_length=body.thread_length)
             db.add(row);db.commit();db.refresh(row)
         readiness.event(user.id,'generated',row.id)
+        if body.include_saved_draft:
+            snapshot = api_draft(row.id, request, db)
+            return {'draft_id':row.id,'saved':True,'revision':snapshot['revision'],'draft':snapshot}
         return {'draft_id':row.id,'variants':variants,'saved':True,'revision':row.revision}
 
 
@@ -1170,21 +1209,31 @@ def api_create_draft(request:Request,db:Session=Depends(get_db)):
     return {"id":row.id,"revision":row.revision}
 
 @app.get("/api/drafts")
-def api_drafts(request:Request,db:Session=Depends(get_db)):
+def api_drafts(request:Request,offset:int=Query(0,ge=0,le=100000),status:str=Query("all",pattern="^(all|draft|scheduled|published|needs_review|awaiting_results)$"),limit:int=Query(100,ge=1,le=100),db:Session=Depends(get_db)):
     user=current_user(request)
     query=request.query_params.get("q","").strip()[:200]
     statement=select(Draft).where(Draft.user_id==user.id)
+    if status=='awaiting_results':statement=statement.where(Draft.id.in_(select(Publication.draft_id).where(Publication.user_id==user.id,Publication.brand_id==db.info.get('brand_id',0),Publication.status.in_(('unknown','pending','publishing','queued')))))
+    elif status=='needs_review':statement=statement.where(Draft.status.in_(('needs_review','failed','partial')))
+    elif status=='draft':statement=statement.where(Draft.status.in_(('draft','cancelled')))
+    elif status!='all':statement=statement.where(Draft.status==status)
     if query:statement=statement.where(or_(Draft.title.icontains(query,autoescape=True),Draft.brief.icontains(query,autoescape=True),Draft.variants_json.icontains(query,autoescape=True),Draft.workspace_json.icontains(query,autoescape=True)))
-    rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).limit(100)).all()
-    from .workspace import draft_media_previews
+    rows=db.scalars(statement.order_by(Draft.updated_at.desc(),Draft.id.desc()).offset(offset).limit(limit)).all()
+    from .workspace import draft_media_previews, draft_kind
     previews=draft_media_previews(db,rows,user.id)
+    links = {}
+    if rows:
+        activities = db.execute(select(Activity.draft_id, Activity.platform, Activity.url).where(
+            Activity.user_id == user.id, Activity.draft_id.in_([row.id for row in rows]),
+            Activity.url.is_not(None)).order_by(Activity.id.desc()))
+        for activity in activities:
+            links.setdefault(activity.draft_id, []).append({'platform': activity.platform, 'url': activity.url})
     output=[]
     for r in rows:
-        acts=db.scalars(select(Activity).where(Activity.user_id==user.id,Activity.draft_id==r.id,Activity.url.is_not(None)).order_by(Activity.id.desc())).all()
         title=draft_title(r)
         try:platforms=json.loads(r.platforms_json or "[]")
         except (TypeError,ValueError):platforms=[]
-        output.append({"id":r.id,"thumbnail":previews.get(r.id),"title":title[:100],"brief":r.brief,"platforms":platforms,"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":[{"platform":a.platform,"url":a.url} for a in acts if a.url]})
+        output.append({"id":r.id,"kind":draft_kind(r),"revision":r.revision,"thumbnail":previews.get(r.id),"title":title[:100],"brief":r.brief,"platforms":platforms,"status":r.status,"created_at":r.created_at.isoformat(),"updated_at":r.updated_at.isoformat(),"links":links.get(r.id,[])})
     return output
 
 @app.get("/api/drafts/{draft_id}")
@@ -1195,6 +1244,45 @@ def api_draft(draft_id:int,request:Request,db:Session=Depends(get_db)):
     from .workspace import hydrate_workspace_media
     workspace=hydrate_workspace_media(json.loads(row.workspace_json or "{}"),db,user.id)
     return {"title":row.title,"display_title":draft_title(row),"planned":planned_context(db,row.id),"id":row.id,"brief":row.brief,"instruction":row.instruction,"revision":row.revision,"workspace":workspace,"platforms":json.loads(row.platforms_json or "[]"),"variants":json.loads(row.variants_json or "{}"),"thread_length":row.thread_length,"status":row.status,"created_at":row.created_at.isoformat(),"updated_at":row.updated_at.isoformat()}
+
+class ReportedOutcome(BaseModel):
+    previous: str = Field(max_length=500)
+    note: str = Field(max_length=500)
+
+
+def published_for_notes(db, user_id, draft_id):
+    row = db.scalar(select(Draft).where(Draft.id == draft_id, Draft.user_id == user_id,
+                    Draft.brand_id == db.info.get('brand_id', 0), Draft.status == 'published'))
+    if row is None:
+        raise HTTPException(404, 'Published post not found')
+    return row
+
+
+@app.get('/api/drafts/{draft_id}/reported-outcome')
+def read_reported_outcome(draft_id: int, request: Request, db: Session = Depends(get_db)):
+    row = published_for_notes(db, current_user(request).id, draft_id)
+    return {'note': json.loads(row.workspace_json or '{}').get('reported_outcome', '')}
+
+
+@app.put('/api/drafts/{draft_id}/reported-outcome')
+def save_reported_outcome(draft_id: int, body: ReportedOutcome, request: Request, db: Session = Depends(get_db)):
+    row = published_for_notes(db, current_user(request).id, draft_id)
+    workspace = json.loads(row.workspace_json or '{}')
+    previous = workspace.get('reported_outcome', '')
+    note = body.note.strip()
+    if previous == note:
+        return {'note': note}
+    if previous != body.previous:
+        raise HTTPException(409, 'The result changed. Reopen it before saving.')
+    workspace['reported_outcome'] = note
+    updated = db.execute(update(Draft).where(Draft.id == row.id, Draft.user_id == row.user_id,
+        Draft.brand_id == row.brand_id, Draft.status == 'published', Draft.workspace_json == row.workspace_json
+    ).values(workspace_json=json.dumps(workspace, ensure_ascii=False)))
+    if updated.rowcount != 1:
+        raise HTTPException(409, 'The post changed. Reopen it before saving.')
+    db.commit()
+    return {'note': note}
+
 
 @app.patch("/api/drafts/{draft_id}")
 def api_save_draft(draft_id:int,body:DraftSaveRequest,request:Request,db:Session=Depends(get_db)):
@@ -1240,38 +1328,62 @@ def api_activity(request:Request,db:Session=Depends(get_db)):
 
 @app.get("/api/analytics")
 def api_analytics(request:Request,db:Session=Depends(get_db)):
-    user=current_user(request); view=_analytics_dashboard(analytics_for_user(db,user.id),recent_posts_for_user(db,user.id,limit=30)); return {**view["platforms"],"_summary":view["summary"],"_note":view["note"]}
+    user=current_user(request); view,_=_performance_view(db,user.id); return {**view["platforms"],"_summary":view["summary"],"_note":view["note"]}
 
 from .analytics_view import dashboard as _analytics_dashboard
 
+def _performance_view(db, uid, days=7, refresh=False):
+    from .performance import connection_stamp
+    from .social import json_meta
+    def connections():
+        return db.scalars(select(SocialConnection).where(
+            SocialConnection.user_id == uid, SocialConnection.active.is_(True)
+        ).execution_options(populate_existing=True)).all()
+    def identity(rows):
+        return sorted((row.platform, row.id, row.account_id, row.scope,
+                       json_meta(row).get('connection_health') == 'reconnect') for row in rows)
+    before = identity(connections())
+    accounts = analytics_for_user(db, uid, True, refresh)
+    feed = recent_posts_for_user(db, uid, limit=30, refresh=refresh)
+    after = connections()
+    if before != identity(after):
+        raise HTTPException(409, 'Your social connections changed. Refresh results to use the current accounts.')
+    return _analytics_dashboard(accounts, feed, window_days=days), connection_stamp(after)
+
 @app.get("/api/analytics/dashboard")
-def api_analytics_dashboard(request:Request,days:int=Query(7),db:Session=Depends(get_db)):
+def api_analytics_dashboard(request:Request,days:int=Query(7),refresh:bool=Query(True),db:Session=Depends(get_db)):
     from .performance import record
     user=current_user(request)
     if days not in (7,30):raise HTTPException(400,'Choose a 7 or 30 day post window')
-    view=_analytics_dashboard(analytics_for_user(db,user.id),recent_posts_for_user(db,user.id,limit=30),window_days=days)
+    view,connections=_performance_view(db,user.id,days,refresh)
     from sqlalchemy.exc import SQLAlchemyError
     try:
-        record(db,user.id,view)
+        record(db,user.id,view,connections=connections)
         view['recommendation_history_saved']=True
     except SQLAlchemyError:
         db.rollback()
         log.warning('Performance evidence could not be saved for recommendations')
         view['note']+=' These results could not be saved for Next move; refresh to try again.'
         view['recommendation_history_saved']=False
+    from .campaigns import has_campaign_access
+    from .campaign_review import campaign_results
+    if has_campaign_access(db,user.id):
+        view['campaigns'] = campaign_results(db,user.id,view)
     return view
 
 @app.post("/api/insights")
 def api_insights(body:InsightRequest,request:Request,db:Session=Depends(get_db)):
     from .analytics_view import insight_fallback
     user=current_user(request)
-    data=analytics_for_user(db,user.id)
-    feed=recent_posts_for_user(db,user.id,limit=30)
-    dashboard=_analytics_dashboard(data,feed,window_days=body.days)
+    dashboard,_=_performance_view(db,user.id,body.days)
     summary=dashboard.get('summary') or {}
     connected=any(value.get('connected') for value in dashboard['platforms'].values())
     answer=insight_fallback(dashboard,body.question,body.days)
-    if connected and os.environ.get("OPENAI_API_KEY"):
+    # Analysis of numbers supplied by the creator does not require OAuth. The
+    # normal AI consent and allowance checks still apply inside ai_action.
+    supplied_figures = bool(re.search(r'\d', body.question) and re.search(
+        r'\b(?:views?|saves?|comments?|clicks?|sales?|likes?|orders?|bookings?|enquir(?:y|ies)|conversions?)\b', body.question, re.I))
+    if (connected or supplied_figures) and os.environ.get("OPENAI_API_KEY"):
         try:
             with allowances.ai_action(db,user.id):
                 answer=ai.analyse_performance(question=body.question,dashboard=dashboard,preferences=get_preferences(db,user.id))
@@ -1314,7 +1426,11 @@ def help_page(request:Request):
 
 from .operations import router as operations_router
 app.include_router(operations_router)
+from .connection_health import router as connection_health_router
+app.include_router(connection_health_router)
 app.include_router(readiness.router)
+app.include_router(distribution.router)
+app.middleware("http")(distribution.capture_reference)
 from .verification import router as verification_router
 app.include_router(verification_router)
 
@@ -1332,6 +1448,8 @@ from .connection_review import router as connection_review_router
 app.include_router(connection_review_router)
 from .media_export import router as media_export_router
 app.include_router(media_export_router)
+from .media_library import router as media_library_router
+app.include_router(media_library_router)
 from .instagram_audio import router as instagram_audio_router
 app.include_router(instagram_audio_router)
 

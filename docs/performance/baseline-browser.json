@@ -1,0 +1,3149 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "network": {
+    "latency_ms": 70,
+    "download_bytes_s": 500000,
+    "upload_bytes_s": 250000
+  },
+  "cpu_slowdown": 4,
+  "runs": [
+    {
+      "name": "login_page",
+      "interaction_ms": 1530.55,
+      "fcp_ms": 1348,
+      "lcp_ms": 1348,
+      "dom_ready_ms": 1257.3000001907349,
+      "long_tasks_ms": [
+        85
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.css",
+          "ms": 191.59999990463257,
+          "bytes": 458,
+          "transfer": 758,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 271.7999999523163,
+          "bytes": 16406,
+          "transfer": 16706,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 238.20000004768372,
+          "bytes": 2733,
+          "transfer": 3033,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 213.40000009536743,
+          "bytes": 1245,
+          "transfer": 1545,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 219.20000004768372,
+          "bytes": 2335,
+          "transfer": 2635,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 405.2999999523163,
+          "bytes": 615,
+          "transfer": 915,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 234.5,
+          "bytes": 3400,
+          "transfer": 3700,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 254.09999990463257,
+          "bytes": 413,
+          "transfer": 713,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 307,
+          "bytes": 331,
+          "transfer": 631,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/account-fields.js",
+          "ms": 414,
+          "bytes": 1110,
+          "transfer": 1410,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/account-access.css",
+          "ms": 297.2999999523163,
+          "bytes": 807,
+          "transfer": 1107,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/zova-night.css",
+          "ms": 296.10000014305115,
+          "bytes": 3452,
+          "transfer": 3752,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 97,
+          "bytes": 349,
+          "transfer": 649,
+          "kind": "other",
+          "blocking": "non-blocking"
+        }
+      ]
+    },
+    {
+      "name": "login_to_composer",
+      "interaction_ms": 2875.73,
+      "fcp_ms": 2160,
+      "lcp_ms": 2160,
+      "dom_ready_ms": 2518.5,
+      "long_tasks_ms": [
+        375
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.js",
+          "ms": 94.20000004768372,
+          "bytes": 678,
+          "transfer": 978,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.js",
+          "ms": 93.29999995231628,
+          "bytes": 1542,
+          "transfer": 1842,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connection-health.js",
+          "ms": 336,
+          "bytes": 1075,
+          "transfer": 1375,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/brand-context.css",
+          "ms": 0,
+          "bytes": 458,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 0,
+          "bytes": 16406,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 0,
+          "bytes": 2733,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 0,
+          "bytes": 1245,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 0,
+          "bytes": 2335,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 0,
+          "bytes": 615,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 0,
+          "bytes": 3400,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 0,
+          "bytes": 413,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 0,
+          "bytes": 331,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.css",
+          "ms": 93.20000004768372,
+          "bytes": 581,
+          "transfer": 881,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-attachments.css",
+          "ms": 78.89999985694885,
+          "bytes": 437,
+          "transfer": 737,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.css",
+          "ms": 105.90000009536743,
+          "bytes": 5527,
+          "transfer": 5827,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.css",
+          "ms": 100.5,
+          "bytes": 3042,
+          "transfer": 3342,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-design.css",
+          "ms": 181.89999985694885,
+          "bytes": 4138,
+          "transfer": 4438,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-layout.css",
+          "ms": 169.5,
+          "bytes": 1405,
+          "transfer": 1705,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.css",
+          "ms": 169.09999990463257,
+          "bytes": 463,
+          "transfer": 763,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/x-brand.svg",
+          "ms": 283.2000000476837,
+          "bytes": 246,
+          "transfer": 546,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/facebook-brand.svg",
+          "ms": 373.7999999523163,
+          "bytes": 365,
+          "transfer": 665,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/tiktok-brand.svg",
+          "ms": 372.90000009536743,
+          "bytes": 424,
+          "transfer": 724,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.css",
+          "ms": 173.79999995231628,
+          "bytes": 979,
+          "transfer": 1279,
+          "kind": "link",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.js",
+          "ms": 415.39999985694885,
+          "bytes": 2250,
+          "transfer": 2550,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/readiness.js",
+          "ms": 359.40000009536743,
+          "bytes": 1400,
+          "transfer": 1700,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio.js",
+          "ms": 159.60000014305115,
+          "bytes": 5941,
+          "transfer": 6241,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-experience.js",
+          "ms": 159.5,
+          "bytes": 5466,
+          "transfer": 5766,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-music.js",
+          "ms": 231.90000009536743,
+          "bytes": 2320,
+          "transfer": 2620,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-state.js",
+          "ms": 261.59999990463257,
+          "bytes": 5536,
+          "transfer": 5836,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-publish.js",
+          "ms": 270.2000000476837,
+          "bytes": 6616,
+          "transfer": 6916,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/strategy.js",
+          "ms": 269.2999999523163,
+          "bytes": 8011,
+          "transfer": 8311,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-official.png",
+          "ms": 226.90000009536743,
+          "bytes": 10842,
+          "transfer": 11142,
+          "kind": "css",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/connections/check",
+          "ms": 255.79999995231628,
+          "bytes": 223,
+          "transfer": 523,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/drafts",
+          "ms": 536.4000000953674,
+          "bytes": 35992,
+          "transfer": 36292,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1.0999999046325684,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "other",
+          "blocking": "non-blocking"
+        }
+      ]
+    },
+    {
+      "name": "studio_history_ready",
+      "interaction_ms": 3231.72,
+      "fcp_ms": 2160,
+      "lcp_ms": 2160,
+      "dom_ready_ms": 2518.5,
+      "long_tasks_ms": [
+        375
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.js",
+          "ms": 94.20000004768372,
+          "bytes": 678,
+          "transfer": 978,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.js",
+          "ms": 93.29999995231628,
+          "bytes": 1542,
+          "transfer": 1842,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connection-health.js",
+          "ms": 336,
+          "bytes": 1075,
+          "transfer": 1375,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/brand-context.css",
+          "ms": 0,
+          "bytes": 458,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 0,
+          "bytes": 16406,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 0,
+          "bytes": 2733,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 0,
+          "bytes": 1245,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 0,
+          "bytes": 2335,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 0,
+          "bytes": 615,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 0,
+          "bytes": 3400,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 0,
+          "bytes": 413,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 0,
+          "bytes": 331,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.css",
+          "ms": 93.20000004768372,
+          "bytes": 581,
+          "transfer": 881,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-attachments.css",
+          "ms": 78.89999985694885,
+          "bytes": 437,
+          "transfer": 737,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.css",
+          "ms": 105.90000009536743,
+          "bytes": 5527,
+          "transfer": 5827,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.css",
+          "ms": 100.5,
+          "bytes": 3042,
+          "transfer": 3342,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-design.css",
+          "ms": 181.89999985694885,
+          "bytes": 4138,
+          "transfer": 4438,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-layout.css",
+          "ms": 169.5,
+          "bytes": 1405,
+          "transfer": 1705,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.css",
+          "ms": 169.09999990463257,
+          "bytes": 463,
+          "transfer": 763,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/x-brand.svg",
+          "ms": 283.2000000476837,
+          "bytes": 246,
+          "transfer": 546,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/facebook-brand.svg",
+          "ms": 373.7999999523163,
+          "bytes": 365,
+          "transfer": 665,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/tiktok-brand.svg",
+          "ms": 372.90000009536743,
+          "bytes": 424,
+          "transfer": 724,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.css",
+          "ms": 173.79999995231628,
+          "bytes": 979,
+          "transfer": 1279,
+          "kind": "link",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.js",
+          "ms": 415.39999985694885,
+          "bytes": 2250,
+          "transfer": 2550,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/readiness.js",
+          "ms": 359.40000009536743,
+          "bytes": 1400,
+          "transfer": 1700,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio.js",
+          "ms": 159.60000014305115,
+          "bytes": 5941,
+          "transfer": 6241,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-experience.js",
+          "ms": 159.5,
+          "bytes": 5466,
+          "transfer": 5766,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-music.js",
+          "ms": 231.90000009536743,
+          "bytes": 2320,
+          "transfer": 2620,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-state.js",
+          "ms": 261.59999990463257,
+          "bytes": 5536,
+          "transfer": 5836,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-publish.js",
+          "ms": 270.2000000476837,
+          "bytes": 6616,
+          "transfer": 6916,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/strategy.js",
+          "ms": 269.2999999523163,
+          "bytes": 8011,
+          "transfer": 8311,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-official.png",
+          "ms": 226.90000009536743,
+          "bytes": 10842,
+          "transfer": 11142,
+          "kind": "css",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/connections/check",
+          "ms": 255.79999995231628,
+          "bytes": 223,
+          "transfer": 523,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/drafts",
+          "ms": 536.4000000953674,
+          "bytes": 35992,
+          "transfer": 36292,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1.0999999046325684,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "other",
+          "blocking": "non-blocking"
+        }
+      ]
+    },
+    {
+      "name": "studio_repeat_0",
+      "interaction_ms": 1069.81,
+      "fcp_ms": 364,
+      "lcp_ms": 364,
+      "dom_ready_ms": 445.2000000476837,
+      "long_tasks_ms": [
+        58
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.js",
+          "ms": 0,
+          "bytes": 678,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.js",
+          "ms": 0,
+          "bytes": 1542,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connection-health.js",
+          "ms": 0,
+          "bytes": 1075,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/brand-context.css",
+          "ms": 0,
+          "bytes": 458,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 0,
+          "bytes": 16406,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 0,
+          "bytes": 2733,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 0,
+          "bytes": 1245,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 0,
+          "bytes": 2335,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 0,
+          "bytes": 615,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 0,
+          "bytes": 3400,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 0,
+          "bytes": 413,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 0,
+          "bytes": 331,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.css",
+          "ms": 0,
+          "bytes": 581,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-attachments.css",
+          "ms": 0,
+          "bytes": 437,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.css",
+          "ms": 0,
+          "bytes": 5527,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.css",
+          "ms": 0,
+          "bytes": 3042,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-design.css",
+          "ms": 0,
+          "bytes": 4138,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-layout.css",
+          "ms": 0,
+          "bytes": 1405,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.css",
+          "ms": 0,
+          "bytes": 463,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/x-brand.svg",
+          "ms": 0,
+          "bytes": 246,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/facebook-brand.svg",
+          "ms": 0,
+          "bytes": 365,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/tiktok-brand.svg",
+          "ms": 0,
+          "bytes": 424,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.css",
+          "ms": 0,
+          "bytes": 979,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.js",
+          "ms": 0,
+          "bytes": 2250,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/readiness.js",
+          "ms": 0,
+          "bytes": 1400,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio.js",
+          "ms": 0,
+          "bytes": 5941,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-experience.js",
+          "ms": 0,
+          "bytes": 5466,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-music.js",
+          "ms": 0,
+          "bytes": 2320,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-state.js",
+          "ms": 0,
+          "bytes": 5536,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-publish.js",
+          "ms": 0,
+          "bytes": 6616,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/strategy.js",
+          "ms": 0,
+          "bytes": 8011,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-official.png",
+          "ms": 0,
+          "bytes": 10842,
+          "transfer": 0,
+          "kind": "css",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/connections/check",
+          "ms": 94.70000004768372,
+          "bytes": 223,
+          "transfer": 523,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/drafts",
+          "ms": 479.10000014305115,
+          "bytes": 35992,
+          "transfer": 36292,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "other",
+          "blocking": "non-blocking"
+        }
+      ]
+    },
+    {
+      "name": "studio_repeat_1",
+      "interaction_ms": 1077.83,
+      "fcp_ms": 292,
+      "lcp_ms": 292,
+      "dom_ready_ms": 462.19999980926514,
+      "long_tasks_ms": [
+        95
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.js",
+          "ms": 0,
+          "bytes": 678,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.js",
+          "ms": 0,
+          "bytes": 1542,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connection-health.js",
+          "ms": 0,
+          "bytes": 1075,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/brand-context.css",
+          "ms": 0,
+          "bytes": 458,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 0,
+          "bytes": 16406,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 0,
+          "bytes": 2733,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 0,
+          "bytes": 1245,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 0,
+          "bytes": 2335,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 0,
+          "bytes": 615,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 0,
+          "bytes": 3400,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 0,
+          "bytes": 413,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 0,
+          "bytes": 331,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.css",
+          "ms": 0,
+          "bytes": 581,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-attachments.css",
+          "ms": 0,
+          "bytes": 437,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.css",
+          "ms": 0,
+          "bytes": 5527,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.css",
+          "ms": 0,
+          "bytes": 3042,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-design.css",
+          "ms": 0,
+          "bytes": 4138,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-layout.css",
+          "ms": 0,
+          "bytes": 1405,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.css",
+          "ms": 0,
+          "bytes": 463,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/x-brand.svg",
+          "ms": 0,
+          "bytes": 246,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/facebook-brand.svg",
+          "ms": 0,
+          "bytes": 365,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/tiktok-brand.svg",
+          "ms": 0,
+          "bytes": 424,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.css",
+          "ms": 0,
+          "bytes": 979,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-official.png",
+          "ms": 0,
+          "bytes": 10842,
+          "transfer": 0,
+          "kind": "css",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.js",
+          "ms": 0,
+          "bytes": 2250,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/readiness.js",
+          "ms": 0,
+          "bytes": 1400,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio.js",
+          "ms": 0,
+          "bytes": 5941,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.js",
+          "ms": 0,
+          "bytes": 5466,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.js",
+          "ms": 0,
+          "bytes": 2320,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-state.js",
+          "ms": 0,
+          "bytes": 5536,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-publish.js",
+          "ms": 0,
+          "bytes": 6616,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.js",
+          "ms": 0,
+          "bytes": 8011,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/api/connections/check",
+          "ms": 102.5,
+          "bytes": 223,
+          "transfer": 523,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/drafts",
+          "ms": 508.7000000476837,
+          "bytes": 35992,
+          "transfer": 36292,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1.5999999046325684,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "other",
+          "blocking": "non-blocking"
+        }
+      ]
+    },
+    {
+      "name": "studio_repeat_2",
+      "interaction_ms": 1077.01,
+      "fcp_ms": 336,
+      "lcp_ms": 336,
+      "dom_ready_ms": 535.3000001907349,
+      "long_tasks_ms": [
+        124
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.js",
+          "ms": 0,
+          "bytes": 678,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.js",
+          "ms": 0,
+          "bytes": 1542,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connection-health.js",
+          "ms": 0,
+          "bytes": 1075,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/brand-context.css",
+          "ms": 0,
+          "bytes": 458,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 0,
+          "bytes": 16406,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 0,
+          "bytes": 2733,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 0,
+          "bytes": 1245,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 0,
+          "bytes": 2335,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 0,
+          "bytes": 615,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 0,
+          "bytes": 3400,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 0,
+          "bytes": 413,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 0,
+          "bytes": 331,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.css",
+          "ms": 0,
+          "bytes": 581,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-attachments.css",
+          "ms": 0,
+          "bytes": 437,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.css",
+          "ms": 0,
+          "bytes": 5527,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.css",
+          "ms": 0,
+          "bytes": 3042,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-design.css",
+          "ms": 0,
+          "bytes": 4138,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-layout.css",
+          "ms": 0,
+          "bytes": 1405,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.css",
+          "ms": 0,
+          "bytes": 463,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/x-brand.svg",
+          "ms": 0,
+          "bytes": 246,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/facebook-brand.svg",
+          "ms": 0,
+          "bytes": 365,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/tiktok-brand.svg",
+          "ms": 0,
+          "bytes": 424,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.css",
+          "ms": 0,
+          "bytes": 979,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.js",
+          "ms": 0,
+          "bytes": 2250,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-official.png",
+          "ms": 0,
+          "bytes": 10842,
+          "transfer": 0,
+          "kind": "css",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/readiness.js",
+          "ms": 0,
+          "bytes": 1400,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio.js",
+          "ms": 0,
+          "bytes": 5941,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.js",
+          "ms": 0,
+          "bytes": 5466,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.js",
+          "ms": 0,
+          "bytes": 2320,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-state.js",
+          "ms": 0,
+          "bytes": 5536,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-publish.js",
+          "ms": 0,
+          "bytes": 6616,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.js",
+          "ms": 0,
+          "bytes": 8011,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/api/connections/check",
+          "ms": 116.5,
+          "bytes": 223,
+          "transfer": 523,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/drafts",
+          "ms": 503.7999999523163,
+          "bytes": 35992,
+          "transfer": 36292,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1.5,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "other",
+          "blocking": "non-blocking"
+        }
+      ]
+    },
+    {
+      "name": "next_move_open",
+      "interaction_ms": 3065.24,
+      "fcp_ms": 336,
+      "lcp_ms": 336,
+      "dom_ready_ms": 535.3000001907349,
+      "long_tasks_ms": [
+        124,
+        152
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.js",
+          "ms": 0,
+          "bytes": 678,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.js",
+          "ms": 0,
+          "bytes": 1542,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connection-health.js",
+          "ms": 0,
+          "bytes": 1075,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/brand-context.css",
+          "ms": 0,
+          "bytes": 458,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 0,
+          "bytes": 16406,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 0,
+          "bytes": 2733,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 0,
+          "bytes": 1245,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 0,
+          "bytes": 2335,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 0,
+          "bytes": 615,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 0,
+          "bytes": 3400,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 0,
+          "bytes": 413,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 0,
+          "bytes": 331,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.css",
+          "ms": 0,
+          "bytes": 581,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-attachments.css",
+          "ms": 0,
+          "bytes": 437,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.css",
+          "ms": 0,
+          "bytes": 5527,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.css",
+          "ms": 0,
+          "bytes": 3042,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-design.css",
+          "ms": 0,
+          "bytes": 4138,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-layout.css",
+          "ms": 0,
+          "bytes": 1405,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.css",
+          "ms": 0,
+          "bytes": 463,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/x-brand.svg",
+          "ms": 0,
+          "bytes": 246,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/facebook-brand.svg",
+          "ms": 0,
+          "bytes": 365,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/tiktok-brand.svg",
+          "ms": 0,
+          "bytes": 424,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.css",
+          "ms": 0,
+          "bytes": 979,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.js",
+          "ms": 0,
+          "bytes": 2250,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-official.png",
+          "ms": 0,
+          "bytes": 10842,
+          "transfer": 0,
+          "kind": "css",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/readiness.js",
+          "ms": 0,
+          "bytes": 1400,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio.js",
+          "ms": 0,
+          "bytes": 5941,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.js",
+          "ms": 0,
+          "bytes": 5466,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.js",
+          "ms": 0,
+          "bytes": 2320,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-state.js",
+          "ms": 0,
+          "bytes": 5536,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-publish.js",
+          "ms": 0,
+          "bytes": 6616,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.js",
+          "ms": 0,
+          "bytes": 8011,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/api/connections/check",
+          "ms": 116.5,
+          "bytes": 223,
+          "transfer": 523,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/drafts",
+          "ms": 503.7999999523163,
+          "bytes": 35992,
+          "transfer": 36292,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1.5,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "other",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy",
+          "ms": 94.30000019073486,
+          "bytes": 275,
+          "transfer": 575,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy/actions",
+          "ms": 91.90000009536743,
+          "bytes": 273,
+          "transfer": 573,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/privacy/ai",
+          "ms": 78,
+          "bytes": 57,
+          "transfer": 357,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy/recommend",
+          "ms": 2105.4000000953674,
+          "bytes": 2987,
+          "transfer": 3287,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1.5,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "css",
+          "blocking": "non-blocking"
+        }
+      ]
+    },
+    {
+      "name": "next_move_fresh",
+      "interaction_ms": 1664.2,
+      "fcp_ms": 336,
+      "lcp_ms": 336,
+      "dom_ready_ms": 535.3000001907349,
+      "long_tasks_ms": [
+        124,
+        152
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.js",
+          "ms": 0,
+          "bytes": 678,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.js",
+          "ms": 0,
+          "bytes": 1542,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connection-health.js",
+          "ms": 0,
+          "bytes": 1075,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/brand-context.css",
+          "ms": 0,
+          "bytes": 458,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 0,
+          "bytes": 16406,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 0,
+          "bytes": 2733,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 0,
+          "bytes": 1245,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 0,
+          "bytes": 2335,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 0,
+          "bytes": 615,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 0,
+          "bytes": 3400,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 0,
+          "bytes": 413,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 0,
+          "bytes": 331,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.css",
+          "ms": 0,
+          "bytes": 581,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-attachments.css",
+          "ms": 0,
+          "bytes": 437,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.css",
+          "ms": 0,
+          "bytes": 5527,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.css",
+          "ms": 0,
+          "bytes": 3042,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-design.css",
+          "ms": 0,
+          "bytes": 4138,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-layout.css",
+          "ms": 0,
+          "bytes": 1405,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.css",
+          "ms": 0,
+          "bytes": 463,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/x-brand.svg",
+          "ms": 0,
+          "bytes": 246,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/facebook-brand.svg",
+          "ms": 0,
+          "bytes": 365,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/tiktok-brand.svg",
+          "ms": 0,
+          "bytes": 424,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.css",
+          "ms": 0,
+          "bytes": 979,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.js",
+          "ms": 0,
+          "bytes": 2250,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-official.png",
+          "ms": 0,
+          "bytes": 10842,
+          "transfer": 0,
+          "kind": "css",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/readiness.js",
+          "ms": 0,
+          "bytes": 1400,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio.js",
+          "ms": 0,
+          "bytes": 5941,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.js",
+          "ms": 0,
+          "bytes": 5466,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.js",
+          "ms": 0,
+          "bytes": 2320,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-state.js",
+          "ms": 0,
+          "bytes": 5536,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-publish.js",
+          "ms": 0,
+          "bytes": 6616,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.js",
+          "ms": 0,
+          "bytes": 8011,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/api/connections/check",
+          "ms": 116.5,
+          "bytes": 223,
+          "transfer": 523,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/drafts",
+          "ms": 503.7999999523163,
+          "bytes": 35992,
+          "transfer": 36292,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1.5,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "other",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy",
+          "ms": 94.30000019073486,
+          "bytes": 275,
+          "transfer": 575,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy/actions",
+          "ms": 91.90000009536743,
+          "bytes": 273,
+          "transfer": 573,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/privacy/ai",
+          "ms": 78,
+          "bytes": 57,
+          "transfer": 357,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy/recommend",
+          "ms": 2105.4000000953674,
+          "bytes": 2987,
+          "transfer": 3287,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1.5,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "css",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy/recommend",
+          "ms": 1487.7999999523163,
+          "bytes": 5755,
+          "transfer": 6055,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        }
+      ]
+    },
+    {
+      "name": "next_move_cached",
+      "interaction_ms": 356.7,
+      "fcp_ms": 336,
+      "lcp_ms": 336,
+      "dom_ready_ms": 535.3000001907349,
+      "long_tasks_ms": [
+        124,
+        152,
+        51
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.js",
+          "ms": 0,
+          "bytes": 678,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.js",
+          "ms": 0,
+          "bytes": 1542,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connection-health.js",
+          "ms": 0,
+          "bytes": 1075,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/brand-context.css",
+          "ms": 0,
+          "bytes": 458,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 0,
+          "bytes": 16406,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 0,
+          "bytes": 2733,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 0,
+          "bytes": 1245,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 0,
+          "bytes": 2335,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 0,
+          "bytes": 615,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 0,
+          "bytes": 3400,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 0,
+          "bytes": 413,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 0,
+          "bytes": 331,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.css",
+          "ms": 0,
+          "bytes": 581,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-attachments.css",
+          "ms": 0,
+          "bytes": 437,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.css",
+          "ms": 0,
+          "bytes": 5527,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.css",
+          "ms": 0,
+          "bytes": 3042,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-design.css",
+          "ms": 0,
+          "bytes": 4138,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-layout.css",
+          "ms": 0,
+          "bytes": 1405,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.css",
+          "ms": 0,
+          "bytes": 463,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/x-brand.svg",
+          "ms": 0,
+          "bytes": 246,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/facebook-brand.svg",
+          "ms": 0,
+          "bytes": 365,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/tiktok-brand.svg",
+          "ms": 0,
+          "bytes": 424,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.css",
+          "ms": 0,
+          "bytes": 979,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio-intro.js",
+          "ms": 0,
+          "bytes": 2250,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-official.png",
+          "ms": 0,
+          "bytes": 10842,
+          "transfer": 0,
+          "kind": "css",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/readiness.js",
+          "ms": 0,
+          "bytes": 1400,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/studio.js",
+          "ms": 0,
+          "bytes": 5941,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-experience.js",
+          "ms": 0,
+          "bytes": 5466,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/instagram-music.js",
+          "ms": 0,
+          "bytes": 2320,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-state.js",
+          "ms": 0,
+          "bytes": 5536,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-publish.js",
+          "ms": 0,
+          "bytes": 6616,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/strategy.js",
+          "ms": 0,
+          "bytes": 8011,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/api/connections/check",
+          "ms": 116.5,
+          "bytes": 223,
+          "transfer": 523,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/drafts",
+          "ms": 503.7999999523163,
+          "bytes": 35992,
+          "transfer": 36292,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1.5,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "other",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy",
+          "ms": 94.30000019073486,
+          "bytes": 275,
+          "transfer": 575,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy/actions",
+          "ms": 91.90000009536743,
+          "bytes": 273,
+          "transfer": 573,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/privacy/ai",
+          "ms": 78,
+          "bytes": 57,
+          "transfer": 357,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy/recommend",
+          "ms": 2105.4000000953674,
+          "bytes": 2987,
+          "transfer": 3287,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1.5,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "css",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy/recommend",
+          "ms": 1487.7999999523163,
+          "bytes": 5755,
+          "transfer": 6055,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy",
+          "ms": 78,
+          "bytes": 275,
+          "transfer": 575,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/strategy/actions",
+          "ms": 87.70000004768372,
+          "bytes": 5755,
+          "transfer": 6055,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        }
+      ]
+    },
+    {
+      "name": "performance_ready",
+      "interaction_ms": 4183.82,
+      "fcp_ms": 500,
+      "lcp_ms": 4100,
+      "dom_ready_ms": 500.2000000476837,
+      "long_tasks_ms": [
+        280
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.js",
+          "ms": 0,
+          "bytes": 678,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.js",
+          "ms": 0,
+          "bytes": 1542,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connection-health.js",
+          "ms": 0,
+          "bytes": 1075,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/brand-context.css",
+          "ms": 0,
+          "bytes": 458,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 0,
+          "bytes": 16406,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 0,
+          "bytes": 2733,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 0,
+          "bytes": 1245,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 0,
+          "bytes": 2335,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 0,
+          "bytes": 615,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 0,
+          "bytes": 3400,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 0,
+          "bytes": 413,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 0,
+          "bytes": 331,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-layout.css",
+          "ms": 0,
+          "bytes": 1405,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.css",
+          "ms": 0,
+          "bytes": 463,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/analytics.js",
+          "ms": 88.29999995231628,
+          "bytes": 2994,
+          "transfer": 3294,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/analytics/dashboard",
+          "ms": 3148.399999856949,
+          "bytes": 10181,
+          "transfer": 10481,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "other",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/x-brand.svg",
+          "ms": 0,
+          "bytes": 246,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/facebook-brand.svg",
+          "ms": 0,
+          "bytes": 365,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/tiktok-brand.svg",
+          "ms": 0,
+          "bytes": 424,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-official.png",
+          "ms": 0,
+          "bytes": 10842,
+          "transfer": 0,
+          "kind": "css",
+          "blocking": "non-blocking"
+        }
+      ]
+    },
+    {
+      "name": "performance_window_change",
+      "interaction_ms": 3202.79,
+      "fcp_ms": 500,
+      "lcp_ms": 4100,
+      "dom_ready_ms": 500.2000000476837,
+      "long_tasks_ms": [
+        280,
+        94
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.js",
+          "ms": 0,
+          "bytes": 678,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.js",
+          "ms": 0,
+          "bytes": 1542,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connection-health.js",
+          "ms": 0,
+          "bytes": 1075,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/brand-context.css",
+          "ms": 0,
+          "bytes": 458,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 0,
+          "bytes": 16406,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 0,
+          "bytes": 2733,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 0,
+          "bytes": 1245,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 0,
+          "bytes": 2335,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 0,
+          "bytes": 615,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 0,
+          "bytes": 3400,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 0,
+          "bytes": 413,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 0,
+          "bytes": 331,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-layout.css",
+          "ms": 0,
+          "bytes": 1405,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.css",
+          "ms": 0,
+          "bytes": 463,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/analytics.js",
+          "ms": 88.29999995231628,
+          "bytes": 2994,
+          "transfer": 3294,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/analytics/dashboard",
+          "ms": 3148.399999856949,
+          "bytes": 10181,
+          "transfer": 10481,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "other",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/x-brand.svg",
+          "ms": 0,
+          "bytes": 246,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/facebook-brand.svg",
+          "ms": 0,
+          "bytes": 365,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/tiktok-brand.svg",
+          "ms": 0,
+          "bytes": 424,
+          "transfer": 0,
+          "kind": "img",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/instagram-official.png",
+          "ms": 0,
+          "bytes": 10842,
+          "transfer": 0,
+          "kind": "css",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/api/analytics/dashboard",
+          "ms": 3142.100000143051,
+          "bytes": 10183,
+          "transfer": 10483,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        }
+      ]
+    },
+    {
+      "name": "schedule_ready",
+      "interaction_ms": 990.57,
+      "fcp_ms": 432,
+      "lcp_ms": 980,
+      "dom_ready_ms": 622.5,
+      "long_tasks_ms": [
+        53,
+        129
+      ],
+      "resources": [
+        {
+          "path": "/static/brand-context.js",
+          "ms": 0,
+          "bytes": 678,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.js",
+          "ms": 0,
+          "bytes": 1542,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connection-health.js",
+          "ms": 0,
+          "bytes": 1075,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/brand-context.css",
+          "ms": 0,
+          "bytes": 458,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/nova.css",
+          "ms": 0,
+          "bytes": 16406,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/refinement.css",
+          "ms": 0,
+          "bytes": 2733,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/connections.css",
+          "ms": 0,
+          "bytes": 1245,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.css",
+          "ms": 0,
+          "bytes": 2335,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/workspace-ui.js",
+          "ms": 0,
+          "bytes": 615,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/commercial-polish.css",
+          "ms": 0,
+          "bytes": 3400,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.css",
+          "ms": 0,
+          "bytes": 413,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/social-brand.js",
+          "ms": 0,
+          "bytes": 331,
+          "transfer": 0,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/schedule.css",
+          "ms": 92.5,
+          "bytes": 2426,
+          "transfer": 2726,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/studio-layout.css",
+          "ms": 0,
+          "bytes": 1405,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/ai-privacy.css",
+          "ms": 0,
+          "bytes": 463,
+          "transfer": 0,
+          "kind": "link",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/static/drafts.js",
+          "ms": 103.40000009536743,
+          "bytes": 4877,
+          "transfer": 5177,
+          "kind": "script",
+          "blocking": "blocking"
+        },
+        {
+          "path": "/api/schedules",
+          "ms": 90.09999990463257,
+          "bytes": 2,
+          "transfer": 302,
+          "kind": "fetch",
+          "blocking": "non-blocking"
+        },
+        {
+          "path": "/static/zova-mark.svg",
+          "ms": 1.2999999523162842,
+          "bytes": 349,
+          "transfer": 0,
+          "kind": "other",
+          "blocking": "non-blocking"
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

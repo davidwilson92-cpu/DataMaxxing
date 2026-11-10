@@ -85,7 +85,7 @@ async function openNextMove(planning=false){
  setPlanningView(planning);clearNextMoveDisplay();strategyStatus('Loading…');
  const panel=document.getElementById('strategyPanel');if(!panel.open)panel.showModal();
  await strategyTask(null,async epoch=>{
-  const data=await api('/api/strategy');if(epoch!==strategyViewEpoch)return;
+  const data=await api(planning?'/api/strategy':'/api/strategy?include_actions=true');if(epoch!==strategyViewEpoch)return;
   const reloadPlan=!strategyLoaded||data.revision!==strategyRevision;
   if(data.revision!==strategyRevision){moveItems=[];moveIndex=0;moveOffset=0;quickMoveRequest=null;}
   strategyRevision=data.revision;hasConfirmedStrategy=Boolean(data.confirmed.goal);
@@ -98,7 +98,7 @@ async function openNextMove(planning=false){
   if(!reloadPlan&&JSON.stringify(strategyInputs())!==strategyInputSnapshot)strategyInputChanged();
   strategyLoaded=true;setPlanningView(planning);
   if(planning){strategyStatus('');return;}
-  const items=await loadNextMoves(epoch);if(epoch!==strategyViewEpoch||!items)return;
+  const items=data.actions?applyNextMoves(data.actions,epoch):await loadNextMoves(epoch);if(epoch!==strategyViewEpoch||!items)return;
   if(hasConfirmedStrategy&&(!items.length||items.every(a=>a.stale&&!a.draft_id))){
    strategyStatus('Finding your next post…');
    await requestMoves(epoch);
@@ -173,13 +173,13 @@ function nextMoveCard(a){
  <h3 tabindex="-1">${esc(conciseCopy(a.title,14))}</h3>
  ${stale?'<p class="move-stale">Check the source before drafting.</p>':''}
  <div class="move-actions"><button class="button primary move-draft" onclick="${action}">${label}<span aria-hidden="true">→</span></button></div></div>
- <section class="move-recommendation" aria-labelledby="moveRecommendation${a.id}"><h4 id="moveRecommendation${a.id}">✦ AI recommendation</h4><p>${esc(conciseCopy(moveReason(a.reason),32))}</p>${a.source?nextMoveSource(a):'<small>'+esc(a.basis||('Based on your '+(a.strategy_context?.one_off?'topic':'strategy')))+'</small>'}<details class="move-refine"><summary>Refine idea</summary><label class="visually-hidden" for="moveFeedback${a.id}">What would you change?</label><textarea id="moveFeedback${a.id}" rows="2" maxlength="500" placeholder="More personal, less filming…" oninput="moveRefinements.set(${a.id},this.value)">${esc(moveRefinements.get(a.id)||'')}</textarea><button type="button" class="quiet-button" onclick="refineMove(${a.id},this)">Update idea →</button></details></section>
+ <section class="move-recommendation" aria-labelledby="moveRecommendation${a.id}"><h4 id="moveRecommendation${a.id}">✦ AI recommendation</h4><p>${esc(conciseCopy(moveReason(a.reason),32))}</p>${a.source?nextMoveSource(a):''}<div class="move-tools">${window.zovaLearningMarkup?window.zovaLearningMarkup(a.learning):''}<details class="move-refine"><summary>Refine idea</summary><label class="visually-hidden" for="moveFeedback${a.id}">What would you change?</label><textarea id="moveFeedback${a.id}" rows="2" maxlength="500" placeholder="More personal, less filming…" oninput="moveRefinements.set(${a.id},this.value)">${esc(moveRefinements.get(a.id)||'')}</textarea><button type="button" class="quiet-button" onclick="refineMove(${a.id},this)">Update idea →</button></details></div></section>
  <div class="move-pager" role="group" aria-label="Browse ideas"><button type="button" onclick="changeMove(-1,this)" aria-label="Previous idea" ${moveIndex===0?'disabled':''}>←</button><span role="status">Idea ${moveOffset+moveIndex+1}</span><button class="move-next" type="button" onclick="changeMove(1,this)" aria-label="Next idea">Next idea <span aria-hidden="true">→</span></button></div>
  </article>`;
 }
 function renderNextMove(){
  moveIndex=Math.max(0,Math.min(moveIndex,moveItems.length-1));
- document.getElementById('strategyActions').innerHTML=moveItems.length?nextMoveCard(moveItems[moveIndex]):(hasConfirmedStrategy?'<div class="move-empty"><h3>Your next post starts here</h3><button class="button primary" onclick="refreshStrategyActions(this)">Find an idea</button></div>':`<div class="move-empty"><h3>What are you posting about?</h3><label for="quickMoveBrief" class="visually-hidden">Topic for your next post</label><textarea id="quickMoveBrief" rows="3" maxlength="2000" placeholder="A new product, a useful tip, a day behind the scenes…">${esc(quickMoveRequest?.brief||'')}</textarea><fieldset><legend>Platform</legend>${['instagram','tiktok','x','facebook'].map(p=>`<label class="inline-choice"><input type="radio" name="quick_move_platform" value="${p}" ${(quickMoveRequest?.platforms||[]).includes(p)?'checked':''}>${movePlatform(p)}</label>`).join('')}</fieldset><button class="button primary" onclick="quickNextMove(this)">Find my next post</button></div>`);
+ document.getElementById('strategyActions').innerHTML=moveItems.length?nextMoveCard(moveItems[moveIndex]):(hasConfirmedStrategy?'<div class="move-empty"><h3>Your next post starts here</h3><button class="button primary" onclick="refreshStrategyActions(this)">Find an idea</button></div>':`<div class="move-empty"><h3>What are you posting about?</h3>${(!quickMoveRequest?.brief && (document.getElementById('brief')?.value?.trim()||typeof lastBrief!=='undefined'&&lastBrief))?'<button type="button" id="useDraftTopic" onclick="useActiveDraftTopic()">Use this draft</button>':''}<label for="quickMoveBrief" class="visually-hidden">Topic for your next post</label><textarea id="quickMoveBrief" oninput="document.getElementById('useDraftTopic')?.toggleAttribute('hidden',Boolean(this.value.trim()))" rows="3" maxlength="2000" placeholder="A new product, a useful tip, a day behind the scenes…">${esc(quickMoveRequest?.brief||'')}</textarea><fieldset><legend>Platform</legend>${['instagram','tiktok','x','facebook'].map(p=>`<label class="inline-choice"><input type="radio" name="quick_move_platform" value="${p}" ${(quickMoveRequest?.platforms||[]).includes(p)?'checked':''}>${movePlatform(p)}</label>`).join('')}</fieldset><button class="button primary" onclick="quickNextMove(this)">Find my next post</button></div>`);
 }
 async function changeMove(direction,button){
  if(strategyPending||!moveItems.length)return;
@@ -215,6 +215,12 @@ function applyNextMoves(data,epoch=strategyViewEpoch,append=false,selectNew=fals
  document.getElementById('recommendButton').hidden=strategyPlanning||moveItems.length>0||!(hasConfirmedStrategy||quickMoveRequest);
  document.getElementById('recommendButton').setAttribute('aria-label',items.length?'Refresh ideas':'Find post ideas');
  return items;
+}
+function useActiveDraftTopic(){
+ const field=document.getElementById('quickMoveBrief');
+ if(!field)return;
+ field.value=(document.getElementById('brief')?.value.trim()||lastBrief||'').slice(0,2000);
+ field.dispatchEvent(new Event('input'));field.focus();
 }
 async function loadNextMoves(epoch=strategyViewEpoch){const data=await api('/api/strategy/actions');return applyNextMoves(data,epoch);}
 async function refreshStrategyActions(button){await strategyTask(button,async epoch=>{strategyStatus('Finding your next post…');await requestMoves(epoch,true);if(epoch===strategyViewEpoch){moveOffset=0;strategyStatus('');renderNextMove();}});}

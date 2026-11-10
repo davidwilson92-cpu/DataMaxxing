@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Schedule | Zova{% endblock %}
 {% block body_class %}app-body schedule-page{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/schedule.css?v=20261025">{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset_url('schedule.css') }}">{% endblock %}
 {% block site_header %}{% endblock %}{% block site_footer %}{% endblock %}
 {% block body %}
 <div class="app-shell">{% set active_page = 'drafts' %}{% include "app_nav.html" %}
 <div class="app-workspace library-workspace">
   <header class="app-topbar library-topbar"><h1>Schedule</h1><a class="button primary" href="/studio"><span aria-hidden="true">+</span> New post</a></header>
   <main class="schedule-workspace">
+    <p class="support-note">{{ work_summary.scheduled }} scheduled in the next 7 days{% if work_summary.needs_review %} · <a href="/drafts?view=saved&status=needs_review">{{ work_summary.needs_review }} need attention →</a>{% endif %}</p>
     {% if work_summary.unconfirmed %}<p class="schedule-caution"><a href="/drafts?view=saved&status=awaiting_results">Check publication results before retrying →</a></p>{% endif %}
     {% if work_summary.overdue %}<p class="schedule-caution">{{ work_summary.overdue }} scheduled {{ 'delivery is' if work_summary.overdue == 1 else 'deliveries are' }} overdue. Check its status below. Pending does not mean published.</p>{% endif %}
     <nav class="schedule-tabs" aria-label="Your content"><button type="button" id="calendarTab" aria-pressed="true" aria-controls="schedulePanel">Calendar</button><button type="button" id="savedTab" aria-pressed="false" aria-controls="savedPanel">Saved posts</button><a href="/studio?series=1">Recurring drafts</a></nav>
@@ -27,5 +28,5 @@
       <nav class="schedule-pagination" aria-label="Saved post pages">{% if page>1 %}<a href="/drafts?view=saved&page={{ page-1 }}&status={{ selected_status }}&q={{ request.query_params.get('q','')|urlencode }}">← Newer</a>{% endif %}{% if has_more %}<a href="/drafts?view=saved&page={{ page+1 }}&status={{ selected_status }}&q={{ request.query_params.get('q','')|urlencode }}">Older →</a>{% endif %}</nav>
     </section>
   </main>
-</div></div><script src="/static/drafts.js?v=20261025-schedule"></script>
+</div></div><script src="{{ asset_url('drafts.js') }}"></script>
 {% endblock %}
