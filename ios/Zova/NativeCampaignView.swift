@@ -235,7 +235,6 @@ struct NativeCampaignView: View {
                     }
                 }.padding(12).background(Color(white:0.075),in:RoundedRectangle(cornerRadius:14))
                     .overlay(RoundedRectangle(cornerRadius:14).stroke(Color.white.opacity(0.16)))
-                    .accessibilityIdentifier("campaign-post-\(index)")
             }
         }
         if current["draft_ids"].array.isEmpty {

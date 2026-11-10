@@ -10,6 +10,7 @@ struct CampaignActionsView: View {
     let rename: () -> Void
     let refresh: () async -> Void
     let request: (String, JSONValue) async -> Bool
+    @Environment(\.dynamicTypeSize) private var textSize
     @State private var action = ""
     @State private var name = ""
     @State private var feedback = ""
@@ -31,12 +32,18 @@ struct CampaignActionsView: View {
     var body: some View {
         VStack(alignment:.leading,spacing:8) {
             VStack(spacing:4) {
-                HStack(spacing:8) {
-                    Button(action:allCampaigns) { Label("All campaigns",systemImage:"chevron.left") }
-                        .frame(minHeight:44).accessibilityIdentifier("campaign-all")
-                    Spacer(minLength:0)
-                    improveButton
-                    actionsMenu
+                if textSize.isAccessibilitySize {
+                    VStack(alignment:.leading,spacing:4) {
+                        allButton
+                        HStack { improveButton; Spacer(minLength:0); actionsMenu }
+                    }
+                } else {
+                    HStack(spacing:8) {
+                        allButton
+                        Spacer(minLength:0)
+                        improveButton
+                        actionsMenu
+                    }
                 }
                 Divider().overlay(Color.white.opacity(0.16))
                 ViewThatFits(in:.horizontal) {
@@ -47,11 +54,15 @@ struct CampaignActionsView: View {
                 .padding(.horizontal,10).padding(.vertical,4)
                 .background(Color.black,in:RoundedRectangle(cornerRadius:12))
                 .overlay(RoundedRectangle(cornerRadius:12).stroke(Color.white.opacity(0.22)))
-                .accessibilityIdentifier("campaign-toolbar")
             if paused { Label("Paused · drafts kept",systemImage:"pause.circle").font(.caption) }
             if !action.isEmpty { editor }
         }
         if !row["suggestion"].isNull { proposal }
+    }
+    private var allButton: some View {
+        Button(action:allCampaigns) {
+            Label("All campaigns",systemImage:"chevron.left").frame(minHeight:44)
+        }.accessibilityIdentifier("campaign-all")
     }
     private var viewPicker: some View {
         HStack(spacing:2) {
