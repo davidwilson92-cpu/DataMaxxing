@@ -44,6 +44,7 @@ Uploads are not silently restarted after app termination.
 | Previously uploaded content required another upload | Owner/workspace-scoped media library in both attachment flows | `test_confidence_media_learning.py`; `confidence_browser.cjs`; native library UI tests |
 | Aggregate draft status could mislabel replacement media | Frozen publication and schedule references determine usage | Published-original/replacement/upcoming-use integration test |
 | Several uses of one file looked like several copies of a post | References grouped by canonical draft/campaign IDs | Same-title, multi-state, remove-without-delete test |
+| Searching/filtering discarded selected saved media | Keep choices across search/type filters on both clients; block application during loading | Phone/desktop selection and delayed-search race tests; native cross-filter UI test |
 | A failed brief save could duplicate a selected attachment on retry | Deduplicate existing IDs before applying the selection | Browser abort-first-save test, one attachment after retry/reload |
 | Picker controls could re-enable already attached files after failure | Restore each control's previous ownership/selection constraint | Browser disabled-existing-selection check |
 | Old workspace replies could affect a new selection | Server ownership checks plus client authority/version guards | Cross-account/brand tests; native authority checks; stale Studio reply suite |
@@ -56,7 +57,8 @@ Uploads are not silently restarted after app termination.
 | Uncertain outcomes looked retryable | Preserve destination/results checks and no-auto-resend guidance | Reviewed publication, timeout, race and unknown-outcome regression suites |
 | Recommendation rationale could not be inspected | Deterministic evidence from the actual performance context, not model-generated metrics | Zero/null/stale/platform tests; Next Move input-capture tests |
 | Extra evidence pushed Your strategy off a short screen | Combine secondary evidence/refinement controls and remove repeated basis text | `next_move_focus_browser.cjs`, 390×650 and 390×760 |
-| Native evidence could repeat the same basis text | Match concise web labels; disclose detail on expansion | Native Next Move fixture and UI assertion |
+| Native evidence could repeat the same basis text | Match concise web labels; disclose detail on expansion | Native Next Move and campaign fixture/UI assertions |
+| Selected media had a visual check without an explicit spoken state | Expose Selected/Not selected to iOS accessibility | Native cross-filter/reopen UI assertions; full physical VoiceOver audit remains open |
 
 ## Baseline and evidence classification
 
@@ -79,9 +81,11 @@ Evidence types are kept separate:
 
 ## Route and journey coverage
 
-The generated `route-inventory.csv` inventories 161 OpenAPI method/path operations;
-it is an inventory, not a claim that every route was manually exercised. Static files,
-framework documentation and signed media transport are covered separately where tested.
+The generated `route-inventory.csv` inventories 161 OpenAPI method/path operations.
+`complete-route-inventory.csv` additionally traverses included routers and records
+182 operations/mounts, including hidden routes, framework documentation and static
+delivery. These are inventories, not a claim that every route was manually exercised;
+the execution coverage and its limits are mapped below.
 
 | Journey/state family | Coverage approach and test families | Boundary |
 |---|---|---|
@@ -94,7 +98,7 @@ framework documentation and signed media transport are covered separately where 
 | AI consent, voice, strategy, sparse/stale/zero performance | AI privacy, strategy revision/series, Next Move intelligence and evidence tests | No new live-model evaluation or revenue inference |
 | Premium eligibility and disabled charges | Brand/allowance and Stripe test-mode suites | No live purchase or billing setting changed |
 | Offline/save failure/retry/concurrency | Aborted save/upload browser tests; revision, worker and timeout suites | App termination during a physical Photos upload unverified |
-| Navigation/accessibility | 390px and desktop browser, short composer viewports, keyboard/Escape/focus, native normal/largest text | Full VoiceOver audit and all hardware sizes unverified |
+| Navigation/accessibility | 320px enlarged-control keyboard check, 390px and desktop browser, short composer viewports, keyboard/Escape/focus, native normal/largest text | Full VoiceOver audit and all hardware sizes unverified |
 
 Status enumeration and owner/brand access are exhaustively covered for the selected
 finite cases. Broader journeys use risk-based combinations (device × workflow,
@@ -118,7 +122,7 @@ were not hands-on timed; their latency and accessibility scores remain U.
 | Media organisation/reuse | Reuse without uploading again; visual selection | 1 → 3 | New private library and fault recovery; no folders/tags/semantic search |
 | Publishing clarity/recovery | Understand pending/failure; recover without duplicate posts | 2 → 3 | Shared projections, affected-post routes, existing durable-send tests |
 | Recommendation evidence/authenticity | Brand context and inspectable relevant results | 2 → 3 for evidence; authenticity U | Deterministic evidence; no fabricated live model quality score |
-| Mobile/web consistency | Same work and controls, usable small-screen layout | 2 → pending native final validation | Web complete; native evidence recorded separately |
+| Mobile/web consistency | Same work and controls, usable small-screen layout | 2 → 3 for targeted journeys | Web/browser and native simulator checks pass; physical provider parity U |
 | Performance/accessibility | Responsive interaction with reachable controls | 2 → 3 locally | Synthetic timings and targeted checks; production/WCAG audit U |
 | Trust/control | Reviewable AI changes, consent, accurate limits | 3 → 3 | No silent publish/strategy overwrite or new charges |
 
@@ -209,3 +213,189 @@ assets and draft references. Native rollback means stopping further distribution
 shipping a corrected higher-numbered build; installed binaries cannot be remotely
 downgraded. Preserve the existing approval, unknown-outcome and consent protections
 throughout any rollback. Never resend an uncertain publication as part of recovery.
+If an old server revision is restored after a future native rollout, the new library
+endpoint would be unavailable to installed clients; their existing device-upload flow
+remains. Prefer a scoped roll-forward retaining that read-only endpoint, and explicitly
+verify client/server compatibility before a rollback. No such rollout occurred here.
+
+
+## Performance measurements
+
+Local medians in milliseconds. Both revisions use identical isolated workloads;
+providers and AI are deterministic delayed fixtures. Baseline and candidate were
+measured sequentially without the earlier concurrent local test load. These small
+samples show no material regression and do not establish a speedup or live SLA.
+
+| Operation | Before | Candidate |
+|---|---:|---:|
+| Login | 1,034 | 1,049 |
+| Studio response | 33.7 | 32.6 |
+| Draft listing (1,000 drafts) | 44.2 | 43.9 |
+| Schedule | 56.9 | 54.8 |
+| Performance | 97.9 | 99.5 |
+| Next Move, synthetic model | 485.1 | 476.9 |
+| Caption generation, synthetic model | 422.7 | 395.6 |
+| Upload 793 KB synthetic JPEG | 42.4 | 41.7 |
+| Save draft with media | 30.3 | 19.6 |
+| Reopen saved draft | 8.8 | 7.3 |
+| Campaign page response | 7.1 | 7.3 |
+
+The new library's 500-asset/1,000-draft workload returns 30 assets in a 29.7 ms
+median across eight samples (10 SQL statements, about 9.9 KB). Local browser opening
+measured 102 ms at 390px and 116 ms at desktop. These are separate fixtures, not
+production or physical-device measurements. The final CI fixture measured library
+opening at 75 ms (phone) and 58 ms (desktop); see `browser-ci.json`. Large video/network transfer times are
+not inferred from the small image test.
+
+Reproducible source: `scripts/benchmark_performance.py`,
+`scripts/benchmark_media_library.py` and the saved upload-measurement script.
+Raw samples and route inventory are in [the evidence directory](evidence/confidence-media-learning-20261110/).
+
+## Screenshot review
+
+Screenshots show synthetic accounts and content. Baseline native images come from
+the preceding compact-toolbar validation; candidate images come from this branch's
+simulator checks. They are not screenshots of a new distributed build.
+
+| Surface | Before | Candidate |
+|---|---|---|
+| Phone campaign/attachment entry | [Campaign before](evidence/confidence-media-learning-20261110/campaign-before-390.png) | [Saved media](evidence/confidence-media-learning-20261110/library-390.png) |
+| Desktop | [Campaign before](evidence/confidence-media-learning-20261110/campaign-before-1366.png) | [Saved media](evidence/confidence-media-learning-20261110/library-1366.png) |
+| Studio recovery | Existing upload experience; failure captured in test | [Reopened attachments, phone](evidence/confidence-media-learning-20261110/studio-390.png), [desktop](evidence/confidence-media-learning-20261110/studio-1366.png) |
+| Short-screen Next Move | [Before](evidence/confidence-media-learning-20261110/next-move-before-650.png) | [Compact secondary controls](evidence/confidence-media-learning-20261110/next-move-focused-650.png) |
+| Native campaign | [Normal](evidence/confidence-media-learning-20261110/native-campaign-before.png), [largest text](evidence/confidence-media-learning-20261110/native-campaign-before-largest.png) | [Normal](evidence/confidence-media-learning-20261110/native-campaign.png), [largest text](evidence/confidence-media-learning-20261110/native-campaign-largest.png) |
+
+
+Native saved-media selection: [normal](evidence/confidence-media-learning-20261110/native-library.png) and [largest accessibility text](evidence/confidence-media-learning-20261110/native-library-largest.png). Selection, filenames, Cancel and Use selected remain reachable. The automated accessibility-value assertions verify selected/unselected state after filtering and reopening; spoken VoiceOver output is not claimed as manually verified.
+
+Native AI presentation: [Next Move before](evidence/confidence-media-learning-20261110/native-next-move-before.png) → [candidate](evidence/confidence-media-learning-20261110/native-next-move.png); [campaign refinement before](evidence/confidence-media-learning-20261110/native-refinement-before.png) → [inspectable evidence](evidence/confidence-media-learning-20261110/native-campaign-evidence.png) and [original retained until Apply](evidence/confidence-media-learning-20261110/native-refinement.png). These fixture campaigns omit a display name and therefore show the existing “Campaign 6” fallback; real saved campaign naming was not changed.
+
+## Final critical review
+
+| Lens | Challenge | Decision |
+|---|---|---|
+| Customer | Can I find yesterday's photo without understanding storage? | Saved media is beside existing attachments; cancel, reuse and reopen are exercised. Filename search remains a limit for large collections. |
+| Product designer | Will more evidence make the first useful action harder to find? | Details stay collapsed; the short-screen layout preserves the proposal, action and strategy link. No compulsory onboarding was added. |
+| Social-media specialist | Does a stronger-sounding recommendation actually have better evidence? | Examples come from available data, retain platform/date/format, and disclose sample limitations. No promised engagement or sales lift. |
+| QA/security | Can partial failure, a switched account or a retry corrupt the result? | Preserve owned canonical IDs, compare authority/revisions, retry failed files and test order permutations. Real device/provider acceptance remains open. |
+
+Synthetic tasks included the gym's trial post, florist's collection offer, barber's
+cancellation, bakery's changed date, pottery class, retailer's reusable product media,
+creator's performance question and cautious owner's consent decline. These are mapped
+to the existing/new test families in the journey matrix. The reactions are analyst
+hypotheses applied to those paths, not ten independent people completing usability tests.
+
+## Follow-ups requiring separate evidence or scope
+
+| Work | Value | Dependency / cost / complexity |
+|---|---|---|
+| Resumable background video upload and upload idempotency | Recover large transfers after termination without extra assets | Native background transfer design, storage multipart support and durable ownership/retry ledger; medium-high engineering and storage/request cost |
+| Optional media folders/tags | Find assets in large collections | Real library search failures and user demand first; medium UI/data migration effort, small storage overhead |
+| Matched performance cohorts | Better comparison by platform, format and post age | Sufficient permitted provider history and sound sample sizes; medium analytics work, provider-fetch cost |
+| Live caption/voice evaluations | Establish authentic quality and willingness to pay | Consenting real owners, approved examples, blind evaluations and measured model cost; no automatic stronger-model upgrade |
+| Physical-device and independent security acceptance | Evidence beyond mocks and simulator | Review build after release authorisation, device/iCloud/network tests and scoped independent assessor; external time/cost not committed |
+
+## Validation addendum
+
+Review PR: [#49](https://github.com/davidwilson92-cpu/DataMaxxing/pull/49), based on
+`codex/campaign-qa-fixes`, the established Render release branch. `main` is historical
+and is not this candidate's release target. No merge or release was performed.
+
+Final runtime candidate `723a26a`:
+[full required application run](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/42872780694)
+**passed**: 826 SQLite tests, 827 PostgreSQL tests, the JS/client/browser suites,
+synthetic backup/restore, hosting-image smoke test, dependency audits and production
+guardrails. SQLite skips the two real-PostgreSQL-only tests; PostgreSQL skips the
+SQLite backup test because its dump/restore runs separately. These are complementary
+coverage, not unexplained skips. Both dependency audits found no known vulnerabilities
+at the time of this run; that is not proof of absence of security defects.
+
+The same final runtime `723a26a` **passed 46 native unit tests, 28 UI tests and iPhone Release compilation** in [native run 42872781079](https://github.com/davidwilson92-cpu/DataMaxxing/actions/runs/42872781079). This includes exhaustive 256-case four-file retry ordering, normal/largest-text media selection, selection across filters, accessibility values, campaign status/evidence and preservation of original captions until Apply. The simulator screenshots above were visually inspected.
+
+CI reported non-blocking notices about older pinned actions being run on Node 24 and macOS runner capacity. Updating the action pins can be handled in a separate maintenance change; neither notice represents a failed application or native test.
+
+The final evidence commit changes documentation/artifacts only. The passing runs above identify the exact validated runtime; any fresh PR checks triggered by documentation alone are separate from these recorded results.
+
+No production settings were modified. The unchanged billing guards were exercised in
+regression; customer charges remain disabled. The existing released build is unchanged.
+
+Additional keyboard check: at 320px with enlarged library controls, Enter opens,
+Space selects, Tab cannot reach the obscured page, Escape cancels and focus returns
+to Add/Saved media. Browser chrome remains reachable as expected for a native HTML
+dialog. Selected attachments remain unchanged after cancellation. This is a targeted
+keyboard/layout check, not a full screen-reader or WCAG certification.
+[Enlarged-controls screenshot](evidence/confidence-media-learning-20261110/library-320-large-text.png).
+
+
+## Physical-device acceptance before wider distribution
+
+After the owner authorises a review build, check a real iPhone with Photos/iCloud:
+
+1. Select several campaign photos/videos, interrupt one transfer, retry and verify
+   original ordering and a saved/reopened brief. Completed files must remain reusable.
+2. Background and terminate during separate transfers. Confirm completed assets remain
+   in Saved media; unfinished files require deliberate reselection, not an unseen resend.
+3. Use saved-media search/type filters with VoiceOver and largest text; verify selected
+   state, Cancel, Use selected, dismissal and focus are understandable.
+4. Switch brand/account after a failed operation and verify no old asset or pending
+   retry can be applied to the new context.
+5. Check connected/expired social profiles and final-review cancellation. Any real
+   publication requires its own explicit approval; an uncertain result must not resend.
+
+These are focused remaining acceptance paths, not instructions already performed or
+an authorisation to distribute. No external dependency has been marked passed merely
+because the deterministic tests passed.
+
+
+## Comparable-task capability matrix
+
+**D** means documented by the supplier, not hands-on verified. **U** means not
+established by the reviewed sources. Every competitor's task timing, failure rate,
+AI authenticity and accessibility quality remains U. A documented feature does not
+prove an equivalent implementation or user outcome. Sources were checked 10 Nov 2026.
+
+| Product | First caption | Campaign/refinement | Reusable media | Publishing clarity/recovery |
+|---|---|---|---|---|
+| Buffer | D AI drafting | D drafts/queue; campaign-level refinement U | U for owned-asset library parity | D draft/approval/queue states; ambiguous-outcome recovery U |
+| Later | D caption generation and rephrasing | D calendar planning; whole-campaign AI refinement U | D synced library, labels/notes/filtering | D scheduling; duplicate-safe failure recovery U |
+| Metricool | D AI text | D planning/editing/duplication | D Post Library; not assumed identical to an asset library | D edit/reschedule and reminder publishing; uncertainty handling U |
+| SocialBee | D AI captions | D Copilot strategy/categories/posts | Asset-library parity U | D overdue/upcoming/published, with some manual-completion states |
+| Planable | D generated captions | D planning, review, approval and scheduling | D workspace library and reuse | D draft/scheduled/published statuses and permissions; uncertainty handling U |
+| Predis.ai | D creative/caption generation | D calendar/publishing; reviewed remaining-post optimisation U | D asset library; owned reuse semantics U | D publishing/approval features; timeout recovery U |
+| Hootsuite | D AI content assistance | D planning/approvals | D managed content libraries | D publishing tasks/approval; uncertainty handling U |
+
+| Product | Recommendation relevance/evidence | Mobile/web consistency | Performance/accessibility | Trust/control |
+|---|---|---|---|---|
+| Buffer | D AI and insights; per-recommendation evidence U | D mobile drafts synced with web | U | D draft approvals; independent security U |
+| Later | D prompt/tone; performance-to-recommendation linkage U | D iOS captions and synced media; selected features desktop-only | U | D editable output; independently verified privacy/security U |
+| Metricool | D analytics and posting times; explanatory evidence U | D mobile feature matrix; Post Library documentation conflicts | U | D approvals; independent security U |
+| SocialBee | D editable brand context and strategy; causal evidence U | D companion/reminder flow, not assumed full web parity | U | D review before publishing; independent security U |
+| Planable | D caption generation; performance linkage U | D mobile uploads; full parity U | U | D workspace permissions and review approvals; independent security U |
+| Predis.ai | D visual brand consistency; evidence-based recommendations U | U for native parity | U | D approval features; independent security U |
+| Hootsuite | D brand context/performance questions; social listening is separately supplied | D mobile approvals/planner; content library unavailable in mobile | U | D content availability/permissions; independent security U |
+
+Additional supporting sources:
+
+- [Buffer mobile drafts](https://support.buffer.com/articles/creating-managing-and-approving-draft-posts-on-the-buffer-mobile-app-XSRim1JeUl) documents drafting before channel selection and synced web/mobile drafts. Preserve Zova's equivalent low-friction start; do not require connection before drafting.
+- [Later Caption Writer](https://help.later.com/hc/en-us/articles/12252569781015-Later-s-Caption-Writer), dated 2 Jul 2026, and [media organisation](https://help.later.com/hc/en-us/articles/360042771474-Access-Organize-Your-Media-Library), updated 24 Aug 2026, support caption and reuse comparisons. Zova matches the basic reuse task; Later's richer media organisation remains a gap, not silently declared unnecessary.
+- [Metricool mobile features](https://help.metricool.com/features-available-in-the-mobile-app-213ni) lists mobile Post Library access, while [its Post Library guide](https://help.metricool.com/posts-library-u05cj) says it is unavailable in the mobile version described. This inconsistency is marked unverified; no parity claim is made from it.
+- [SocialBee mobile](https://help.socialbee.com/hc/en-us/articles/29979248854935-Using-the-SocialBee-Mobile-App) documents reminders and manual completion. This reinforces keeping finish-in-platform visibly different from confirmed automatic delivery.
+- [Planable product](https://planable.io/product/), [media library](https://planable.io/guides/media-library/) dated 30 Mar 2026, and [scheduling](https://help.planable.io/hc/en-us/articles/21715441152028-How-to-schedule-a-post) updated 29 Oct 2026 support the comparison. Zova now covers reuse and explicit state labels; team collaboration and archival media management remain separate scope.
+- [Hootsuite content libraries](https://help.hootsuite.com/s/article/manage-library) and [mobile updates](https://www.hootsuite.com/whats-new/accelerate-your-strategy-with-hootsuites-latest-mobile-updates) distinguish web library management from mobile publishing tasks. Zova's library is implemented on both surfaces, but that alone does not establish superior usability.
+
+An additional [Buffer incident report](https://status.buffer.com/incidents/01M6R5MCP3V06DKZ27CHZ1M7GY)
+records a resolved 6 Nov 2026 issue affecting saving posts/drafts behind an upload-wait
+message. This is supplier-confirmed historical evidence, not a claim of a current fault.
+It reinforces testing save/reopen and stuck-upload recovery separately from happy-path
+publishing. No competitor defect rate or comparative reliability score is inferred.
+
+
+Native test-harness correction: run 42855699951 passed 46 unit tests and 27 of 28 UI
+tests, including media reuse, cross-filter selection and largest-text controls. The
+remaining assertion exposed an outdated offline Next Move fixture with no `learning`
+field. The fixture now matches the backend evidence contract and the same disclosure
+assertions remain enabled. That failed run is not counted as full native acceptance;
+the corrected candidate passed the final run linked above. Campaign fixtures were
+also extended to exercise their status summary and evidence disclosure. The final
+review corrected singular “1 draft” wording and added explicit native selection
+accessibility values; earlier passing runs do not substitute for final validation.
