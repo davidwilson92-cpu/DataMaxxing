@@ -1,7 +1,7 @@
 import SwiftUI
 
 func campaignName(_ row: JSONValue) -> String {
-    row["name"].string.isEmpty ? String(row["brief"]["idea"].string.prefix(80)) : row["name"].string
+    row["name"].string.isEmpty ? "Campaign \(row["id"].int)" : row["name"].string
 }
 
 func campaignAssets(_ row: JSONValue, _ post: JSONValue) -> [JSONValue] {
@@ -64,12 +64,13 @@ struct CampaignStrip: View {
 
 struct CampaignCalendar: View {
     let days: [String]
+    let platforms:[String]
     @Binding var selected: String
     @State private var month: Date
     private let calendar: Calendar
     private let formatter: DateFormatter
-    init(days:[String], selected:Binding<String>) {
-        self.days=days; _selected=selected
+    init(days:[String], platforms:[String], selected:Binding<String>) {
+        self.days=days; self.platforms=platforms; _selected=selected
         let utc=TimeZone(secondsFromGMT:0)!
         var cal=Calendar(identifier:.gregorian);cal.timeZone=utc; calendar=cal
         let f=DateFormatter();f.locale=Locale(identifier:"en_US_POSIX");f.timeZone=utc;f.dateFormat="yyyy-MM-dd";formatter=f
@@ -97,11 +98,13 @@ struct CampaignCalendar: View {
                 ForEach(0..<((calendar.component(.weekday,from:month)+5)%7),id:\.self){_ in Color.clear.frame(height:1)}
                 ForEach(0..<(calendar.range(of:.day,in:.month,for:month)?.count ?? 0),id:\.self){i in
                     let key=formatter.string(from:calendar.date(byAdding:.day,value:i,to:month)!)
-                    let count=days.filter{$0==key}.count
+                    let items=zip(days,platforms).filter{$0.0==key}
+                    let marks=Array(Set(items.map{$0.1})).sorted()
+                    let count=items.count
                     Button {selected=key} label:{
-                        VStack(spacing:1){ Text(String(i+1));if count>0 {Text(String(count)).font(.caption2.bold())} }
+                        VStack(spacing:1){ Text(String(i+1));if count>0 {LazyVGrid(columns:[GridItem(.adaptive(minimum:12, maximum:14),spacing:1)],spacing:1){ForEach(marks,id:\.self){ NativePlatformMark(platform:$0,size:12) }}} }
                             .frame(maxWidth:.infinity,minHeight:44).background(selected==key ? ZovaDesign.pale : .clear,in:RoundedRectangle(cornerRadius:6))
-                    }.disabled(count==0).accessibilityLabel("\(key), \(count) posts")
+                    }.disabled(count==0).accessibilityLabel("\(key), \(count) posts").accessibilityHint(marks.joined(separator:", "))
                 }
             }
             if !days.contains(selected){Text("No posts this month.").font(.caption)}

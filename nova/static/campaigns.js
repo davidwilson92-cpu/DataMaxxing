@@ -6,7 +6,7 @@
   let current = null, busy = false, briefReady = false, revision = 0, saved = '', writing = null;
   let zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const saveNote = element('brief-save');
-  function nameOf(row){return row.name || row.brief.idea.slice(0,80);}
+  function nameOf(row){return row.name || 'Campaign '+row.id;}
   const timingField=form.elements.timing,startField=form.elements.start;
   function startValue(){return startField.type==='date' && startField.value ? startField.value+'T23:00' : startField.value;}
   function setTimeMode(value){
@@ -18,7 +18,7 @@
   timingField.onchange=()=>{setTimeMode(timingField.value);changed();};
   setTimeMode('suggest');
   function snapshot() {
-    return JSON.stringify({recommend_times:form.elements.timing.value==="suggest",idea:form.elements.idea.value,platforms:[...form.querySelectorAll('[name=platform]:checked')].map(el=>el.value),
+    return JSON.stringify({name:form.elements.namedItem("name").value,recommend_times:form.elements.timing.value==="suggest",idea:form.elements.idea.value,platforms:[...form.querySelectorAll('[name=platform]:checked')].map(el=>el.value),
       start:startValue(), timezone:zone, frequency:form.elements.frequency.value,
       count:form.elements.count.valueAsNumber || null, media:[...selectedFiles].map(file=>uploaded.get(file)).filter(Boolean)});
   }
@@ -45,7 +45,7 @@
     if(draft){
       setTimeMode(draft.recommend_times?'suggest':'manual');
       startField.value=draft.recommend_times?draft.start.slice(0,10):draft.start;
-      for(const key of ['idea','frequency','count']) form.elements[key].value=draft[key]??'';
+      for(const key of ['name','idea','frequency','count']) form.elements[key].value=draft[key]??'';
       form.querySelectorAll('[name=platform]').forEach(el=>el.checked=draft.platforms.includes(el.value));
       zone=draft.timezone;
       for(const a of draft.assets){const file={name:a.filename};selectedFiles.add(file);uploaded.set(file,a.id);}
@@ -141,7 +141,7 @@
     panel.append(cancel);
     summary.onclick=event=>{if(panel.dataset.dirty==='true')event.preventDefault();};
     panel.ontoggle=()=>{
-      if(panel.open && card.isConnected) for (const other of card.parentElement.querySelectorAll('details[open]')) if(other!==panel) other.open=false;
+      if(panel.open && card.isConnected) for (const other of element('campaign-posts').querySelectorAll('details[open]')) if(other!==panel) other.open=false;
     };
     card.append(panel);
   }
@@ -161,10 +161,10 @@
     for(const day of ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']){const cell=document.createElement('b');cell.textContent=day;grid.append(cell);}
     for(let i=0;i<(first.getUTCDay()+6)%7;i++)grid.append(document.createElement('span'));
     for(let d=1;d<=new Date(Date.UTC(y,m,0)).getUTCDate();d++){
-      const day=activeMonth+'-'+String(d).padStart(2,'0'),n=slots.filter(s=>s.day===day).length;
+      const day=activeMonth+'-'+String(d).padStart(2,'0'),daySlots=slots.filter(s=>s.day===day),n=daySlots.length;
       const cell=document.createElement(n?'button':'span');cell.textContent=d;
-      if(n){const label=n===1?'1 post':n+' posts';const badge=document.createElement('small');badge.textContent=label;cell.append(badge);
-        cell.setAttribute('aria-label',day+', '+label);cell.setAttribute('aria-pressed',String(selectedDay===day));cell.onclick=()=>{selectedDay=day;show(current);};}
+      if(n){const label=n===1?'1 post':n+' posts';const badge=document.createElement('small');const platforms=[...new Set(daySlots.map(s=>s.post.platform))].sort();badge.className='calendar-marks';badge.innerHTML=platforms.map(platform=>window.zovaPlatformLabel(platform)).join('');cell.append(badge);
+        cell.setAttribute('aria-label',day+', '+label+', '+platforms.join(', '));cell.setAttribute('aria-pressed',String(selectedDay===day));cell.onclick=()=>{selectedDay=day;show(current);};}
       grid.append(cell);
     }
     host.append(nav,grid);if(!slots.some(s=>s.day.startsWith(activeMonth))) host.append('No posts this month.');
@@ -216,10 +216,9 @@
       text.textContent=post.caption;card.append(text);
       if(row.dates[i].reason){const why=document.createElement('small');why.className='timing-reason';why.textContent=row.dates[i].reason;card.append(why);}
       if(post.timing_warning){const note=document.createElement('p');note.setAttribute('role','status');note.textContent=post.timing_warning;card.append(note);}
-      const asset = row.assets.find(a => a.id === post.asset_id);
-      if (asset) card.append(document.createTextNode(asset.name + ' '));
-      if (!row.draft_ids.length || post.editable) editCard(card,row,i);
-      if (post.status) {const state=document.createElement('small');state.className='campaign-post-state';state.textContent=post.status.replaceAll('_',' ');card.append(state);}
+      const footer=document.createElement('div');footer.className='post-actions';card.append(footer);
+      if (!row.draft_ids.length || post.editable) editCard(footer,row,i);
+      if (post.status) {const state=document.createElement('small');state.className='campaign-post-state';state.textContent=post.status.replaceAll('_',' ');footer.append(state);}
       if(post.schedule){
         const panel=document.createElement('details'),open=document.createElement('summary');
         open.textContent='Change time';panel.append(open);
@@ -241,7 +240,7 @@
       if (row.draft_ids[i] && post.status!=='removed') {
         const link = document.createElement('a');
         link.href = '/studio?draft='+row.draft_ids[i]+'&workspace='+document.querySelector('meta[name=zova-workspace]').content;
-        link.textContent = 'Open in Studio'; card.append(link);
+        link.textContent = 'Open in Studio'; footer.append(link);
       }
       cards.append(card);
     });
@@ -289,7 +288,7 @@
       await uploadPending();
       await flush();
       for(const file of files) media.push(uploaded.get(file));
-      show(await request('/api/campaigns',{idea:data.get('idea'),platforms,media,start:startValue(),recommend_times:timingField.value==='suggest',
+      show(await request('/api/campaigns',{name:data.get('name'),idea:data.get('idea'),platforms,media,start:startValue(),recommend_times:timingField.value==='suggest',
         timezone:zone,brief_revision:revision,count:Number(data.get('count')),frequency:data.get('frequency')}));
       form.reset();setTimeMode('suggest'); uploaded.clear(); selectedFiles.clear(); renderFiles();revision++;zone=Intl.DateTimeFormat().resolvedOptions().timeZone;saved=snapshot();saveNote.textContent='';
       await generate('');

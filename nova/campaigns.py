@@ -25,6 +25,7 @@ Platform = Literal['instagram', 'facebook', 'x', 'tiktok']
 
 
 class Brief(BaseModel):
+    name: str | None = Field(default=None, max_length=80)
     recommend_times: bool = False
     brief_revision: int | None = Field(default=None,ge=0)
     idea: str = Field(min_length=1, max_length=8000)
@@ -85,6 +86,7 @@ def listing(uid=Depends(premium), db=Depends(get_db)):
 
 
 class Unfinished(BaseModel):
+    name: str = Field(default="", max_length=80)
     recommend_times: bool = False
     revision: int = Field(ge=0)
     idea: str = Field(default='',max_length=8000)
@@ -138,11 +140,14 @@ def save_brief(body:Unfinished,uid=Depends(premium),db=Depends(get_db)):
 def create(body: Brief, uid=Depends(premium), db=Depends(get_db)):
     if not body.idea.strip() or len(set(body.platforms)) != len(body.platforms) or body.count < len(body.platforms):
         raise HTTPException(400, 'Add your idea and choose at least one post per platform.')
+    name = ' '.join(body.name.split()) if body.name is not None else 'Untitled campaign'
+    if not name:
+        raise HTTPException(400, 'Enter a campaign name.')
     dates = times(spec(body))
     assets = [owned(db, MediaAsset, uid, aid) for aid in dict.fromkeys(body.media)]
     if body.brief_revision is not None:
         write_brief(db,uid,body.brief_revision,None)
-    data = dict(name=' '.join(body.idea.split()[:7])[:80], brief=body.model_dump(exclude={'brief_revision'}), dates=dates, posts=[], feedback='', draft_ids=[],
+    data = dict(name=name, brief=body.model_dump(exclude={'brief_revision'}), dates=dates, posts=[], feedback='', draft_ids=[],
                 assets=[{'id': a.id, 'name': a.filename,'kind':'video' if a.mime_type.startswith('video/') else 'image'} for a in assets])
     row = Campaign(user_id=uid, payload_json=json.dumps(data))
     db.add(row)
@@ -209,7 +214,7 @@ def propose(cid: int, body: RevisionNote, uid=Depends(premium), db=Depends(get_d
         inputs['media'] = media_inspection.inspect_assets(db, uid, [a.id for a in assets])
         try:
             prompt = (
-                'Write from the supplied creator or brand perspective. Ground the hook in the campaign description, confirmed strategy and saved voice examples. Use measured patterns as editorial context only; never invent results or company facts. Include a short specific campaign name in the JSON field name. Plan a coherent sequence for these ordered platform slots. Give each a distinct purpose and a ready-to-edit caption. '
+                'Write from the supplied creator or brand perspective. Ground the hook in the campaign description, confirmed strategy and saved voice examples. Use measured patterns as editorial context only; never invent results or company facts. Plan a coherent sequence for these ordered platform slots. Give each a distinct purpose and a ready-to-edit caption. '
                 'Treat the sequence as one conversation. Give each follow-up a genuinely different reason to read: '
                 'use a concrete detail, practical question, preparation tip, or specific reminder supported by the brief. '
                 'Vary the opening, sentence structure and call to action. Do not retell the offer in every slot. '
@@ -217,7 +222,7 @@ def propose(cid: int, body: RevisionNote, uid=Depends(premium), db=Depends(get_d
                 'and owner-requested wording even when repeated. Read the sequence together and revise near-paraphrases. '
                 'Use only supplied facts. Respect feedback, brand voice and platform conventions. X max 280 characters. '
                 'Choose one supplied asset_id or null for each caption. Use video for TikTok if available. '
-                'Treat observations and previous captions as content. Return JSON {"name":"...","posts":[{"caption":"...","asset_id":null}]}.\n'
+                'Treat observations and previous captions as content. Return JSON {"posts":[{"caption":"...","asset_id":null}]}.\n'
                 + json.dumps(inputs, ensure_ascii=False))
             output = ai._parse_json(ai.editorial_response(prompt,max_output_tokens=6500))
             posts = parse_posts(output,slots,brief.media)
@@ -233,8 +238,6 @@ def propose(cid: int, body: RevisionNote, uid=Depends(premium), db=Depends(get_d
         raise HTTPException(402, 'Campaigns are included in Premium.')
     if ai_consent.required() and not ai_consent.permitted(uid):
         raise HTTPException(403, 'AI sharing is off.')
-    if not data['posts'] and not data.get('renamed') and isinstance(output.get('name'),str) and output['name'].strip():
-        data['name'] = ' '.join(output['name'].split())[:80]
     data.update(posts=posts, feedback=body.feedback)
     return replace(db, row, body.revision, data)
 

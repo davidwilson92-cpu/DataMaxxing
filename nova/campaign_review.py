@@ -116,7 +116,7 @@ def campaign_results(db, uid, view):
         missing = {(did,p) for did in c['draft_ids'] for p,pid in by_draft[did] if not pid}
         matched = [measured[k] for k in keys if k in measured]
         published = len(keys)+len(missing)
-        report = dict(id=cid, name=c.get('name') or c['brief']['idea'][:80], published=published, measured=len(matched),
+        report = dict(id=cid, name=c.get('name') or f'Campaign {cid}', published=published, measured=len(matched),
                       posts=[{key:p.get(key) for key in ('platform','text','views','likes','comments','shares')}
                              for p in sorted(matched,key=lambda p:p.get('created_at',''),reverse=True)])
         for metric in ('views','likes','comments','shares'):

@@ -27,11 +27,11 @@ def test_named_plan_preserves_owner_edits_and_uses_creator_context(monkeypatch):
         prompts.append(prompt)
         return json.dumps(dict(name='Launch week',posts=[dict(caption='Launch day'),dict(caption='Behind the scenes')]))
     monkeypatch.setattr(ai,'editorial_response',generate)
-    row=client.post('/api/campaigns',json=dict(brief(),recommend_times=True)).json()
+    row=client.post('/api/campaigns',json=dict(brief(),name="Owner launch",recommend_times=True)).json()
     cid=row['id']
     plan=f'/api/ai/campaigns/{cid}/plan'
     row=client.post(plan,json={'revision':1}).json()
-    assert row['name']=='Launch week' and all(d.get('reason') for d in row['dates'])
+    assert row['name']=='Owner launch' and all(d.get('reason') for d in row['dates'])
     context=json.loads(prompts[0].split('\n',1)[1])
     assert context['creator']=='Original' and context['brief']==brief()['idea']
     assert 'voice' in context and 'strategy' in context and 'performance' in context
