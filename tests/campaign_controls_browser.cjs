@@ -35,7 +35,7 @@ const fs = require('node:fs');
       assert.equal(await cards.first().locator('p').first().innerText(),original);
       await tool('Pause campaign');await control.getByRole('button',{name:'Cancel',exact:true}).click();
       assert.equal(await page.locator('#campaign-state').innerText(),'');
-      await tool('Pause campaign');await submit();await page.getByText('Paused Â· drafts kept',{exact:true}).waitFor();
+      await tool('Pause campaign');await submit();await page.getByText('Paused · drafts kept',{exact:true}).waitFor();
       await tool('Resume campaign');await submit();assert.equal(await page.locator('#campaign-state').innerText(),'');
       await tool('Move remaining dates');await control.locator('[name=new_start]').fill('2027-02-01T12:00');await submit();
       assert.match(await cards.first().locator('time').getAttribute('datetime'),/^2027-02-01T12:00/);

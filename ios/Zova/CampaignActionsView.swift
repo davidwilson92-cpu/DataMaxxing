@@ -55,7 +55,7 @@ struct CampaignActionsView: View {
                 .background(LinearGradient(colors:[.black,Color(red:0.13,green:0.08,blue:0.18)],startPoint:.topLeading,endPoint:.bottomTrailing),in:RoundedRectangle(cornerRadius:12))
                 .overlay(RoundedRectangle(cornerRadius:12).stroke(Color.white.opacity(0.22)))
                 .environment(\.colorScheme,.dark)
-            if paused { Label("Paused Â· drafts kept",systemImage:"pause.circle").font(.caption) }
+            if paused { Label("Paused · drafts kept",systemImage:"pause.circle").font(.caption) }
             if !action.isEmpty { editor }
         }
         if !row["suggestion"].isNull { proposal }
@@ -158,7 +158,7 @@ struct CampaignActionsView: View {
     @ViewBuilder private var proposal: some View {
         let suggestion=row["suggestion"],posts=suggestion["posts"].array
         Section(suggestion["mode"].string=="extend" ? "New follow-ups" : "Proposed improvements") {
-            Text("\(posts.count) \(posts.count == 1 ? "post" : "posts") Â· " + suggestion["basis"].string).font(.caption).foregroundStyle(.secondary)
+            Text("\(posts.count) \(posts.count == 1 ? "post" : "posts") · " + suggestion["basis"].string).font(.caption).foregroundStyle(.secondary)
             if suggestion["positions"].array.contains(where: { $0.int<row["posts"].array.count && row["posts"].array[$0.int]["status"].string=="scheduled" }) {
                 Text("Applying changes unschedules these posts. Review them again before publishing.").font(.callout)
             }

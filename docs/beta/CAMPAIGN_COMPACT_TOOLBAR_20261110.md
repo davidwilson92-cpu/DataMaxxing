@@ -1,4 +1,4 @@
-# Compact Campaign controls â€” 10 November 2026
+# Compact Campaign controls — 10 November 2026
 
 Owner follow-up to released build 23: remove excessive spacing above campaign posts, use black menus with white text. The owner subsequently clarified that the overall backdrop must be white, with a subtle purple fade on the black toolbar. This is a presentation change; no billing, API, data model, scheduling, approval or ownership change.
 

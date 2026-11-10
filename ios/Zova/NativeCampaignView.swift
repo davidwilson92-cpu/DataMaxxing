@@ -152,7 +152,7 @@ struct NativeCampaignView: View {
             }
         }
         Section {
-            Picker("Timing", selection:$suggested) { Text("Zovaâ€™s suggested times").tag(true);Text("Choose my time").tag(false) }
+            Picker("Timing", selection:$suggested) { Text("Zova’s suggested times").tag(true);Text("Choose my time").tag(false) }
             DatePicker("First post", selection: $start, in: Date()..., displayedComponents:suggested ? [.date] : [.date,.hourAndMinute]).environment(\.timeZone, dateFormatter.timeZone)
             Picker("Frequency", selection: $frequency) { Text("Daily").tag("daily"); Text("Weekly").tag("weekly") }
             Stepper("\(count) posts", value: $count, in: 1...10)
@@ -194,7 +194,7 @@ struct NativeCampaignView: View {
                 let post=current["posts"].array[index]
                 VStack(alignment: .leading, spacing: 6) {
                     let slot=current["dates"].array[index],zone=current["brief"]["timezone"].string
-                    CampaignStrip(platform:post["platform"].string,date:ProductLinks.displayDate(ProductLinks.date(slot["utc"].string) ?? start,timezone:zone)+" Â· "+zone)
+                    CampaignStrip(platform:post["platform"].string,date:ProductLinks.displayDate(ProductLinks.date(slot["utc"].string) ?? start,timezone:zone)+" · "+zone)
                     ForEach(campaignAssets(current,post),id:\.["id"].int){asset in CampaignMediaTile(asset:asset)}
                     Text(post["caption"].string)
                     if !post["timing_warning"].string.isEmpty {

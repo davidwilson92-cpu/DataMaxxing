@@ -14,7 +14,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(app.buttons["campaign-actions"].frame.height,44)
         XCTAssertGreaterThanOrEqual(all.frame.height,44)
         XCTAssertGreaterThanOrEqual(app.buttons["Edit post"].frame.height,44)
-        capture(app,"Campaign â€” compact black toolbar and first post")
+        capture(app,"Campaign — white backdrop with compact black toolbar")
         calendar.tap()
         XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout:5))
         app.buttons["Previews"].tap()
@@ -33,7 +33,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(menu.waitForExistence(timeout:8));reveal(menu,in:app)
         XCTAssertTrue(menu.isHittable)
         XCTAssertLessThanOrEqual(menu.frame.maxX,app.frame.maxX)
-        capture(app,"Campaign â€” compact toolbar at accessibility text size")
+        capture(app,"Campaign — compact toolbar at accessibility text size")
         menu.tap();app.buttons["Reuse campaign"].tap()
         let cancel=app.buttons["Cancel"];XCTAssertTrue(cancel.waitForExistence(timeout:8));reveal(cancel,in:app);cancel.tap()
         let all=app.buttons["campaign-all"];reveal(all,in:app);all.tap()
@@ -61,12 +61,12 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(menu.waitForExistence(timeout:8));menu.tap()
         app.buttons["Pause campaign"].tap()
         let pause=app.buttons["Pause campaign"];XCTAssertTrue(pause.waitForExistence(timeout:8));reveal(pause,in:app);pause.tap()
-        XCTAssertTrue(app.staticTexts["Paused Â· drafts kept"].waitForExistence(timeout:8))
+        XCTAssertTrue(app.staticTexts["Paused · drafts kept"].waitForExistence(timeout:8))
         app.buttons["campaign-improve"].tap()
         let preview=app.buttons["Preview changes"];XCTAssertTrue(preview.waitForExistence(timeout:8));reveal(preview,in:app);preview.tap()
         let original=app.buttons["Original caption"];XCTAssertTrue(original.waitForExistence(timeout:8));reveal(original,in:app);original.tap()
         XCTAssertTrue(app.staticTexts["Try the wheel."].firstMatch.exists)
-        capture(app,"Campaign â€” improvement preview retains original")
+        capture(app,"Campaign — improvement preview retains original")
         let apply=app.buttons["campaign-apply-improvements"];reveal(apply,in:app);apply.tap()
         XCTAssertTrue(app.staticTexts["Your first pot starts with one small ball of clay."].waitForExistence(timeout:8))
         XCTAssertFalse(app.buttons["Original caption"].exists)
@@ -120,7 +120,7 @@ final class ZovaUITests: XCTestCase {
         reveal(app.staticTexts["Synthetic thread part 5"], in: app)
         XCTAssertTrue(app.buttons["Connect X"].exists)
         XCTAssertFalse(app.buttons["Review final post"].isEnabled)
-        capture(app, "Review â€” five posts retained with connection recovery")
+        capture(app, "Review — five posts retained with connection recovery")
         app.buttons["Remove from this review"].tap()
         XCTAssertTrue(app.staticTexts["Select a platform above. Your captions stay saved."].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Close Review post"].exists)
@@ -139,26 +139,26 @@ final class ZovaUITests: XCTestCase {
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["Close Post options"].exists, "Invalid partial URL must keep the sheet open")
         XCTAssertFalse(app.alerts.firstMatch.exists)
-        capture(app, "Post options â€” incomplete link retained inline")
+        capture(app, "Post options — incomplete link retained inline")
     }
     func testNativeProductTabsAndNextMoveContainNoEmbeddedWebScreens() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         XCTAssertTrue(app.buttons["next-move"].waitForExistence(timeout: 12))
-        capture(app, "Native Studio â€” empty")
+        capture(app, "Native Studio — empty")
         XCTAssertEqual(app.webViews.count, 0)
         app.buttons["next-move"].tap()
         XCTAssertTrue(app.staticTexts["AI recommendation"].waitForExistence(timeout: 8))
-        capture(app, "Native Next Move â€” mobile parity")
+        capture(app, "Native Next Move — mobile parity")
         app.buttons["Next idea"].tap(); app.buttons["Next idea"].tap(); app.buttons["Next idea"].tap()
         XCTAssertTrue(app.staticTexts["Idea 4"].waitForExistence(timeout: 8))
         app.buttons["your-strategy"].tap()
         XCTAssertTrue(app.textFields["You and your audience"].exists || app.textViews["You and your audience"].exists)
-        capture(app, "Native Strategy â€” two inputs")
+        capture(app, "Native Strategy — two inputs")
         app.buttons["Close Your strategy"].tap()
         for tab in ["Schedule", "Performance", "Account"] {
             app.buttons["tab-" + tab].tap()
             XCTAssertTrue(app.staticTexts[tab].firstMatch.waitForExistence(timeout: 8))
-            capture(app, "Native " + tab + " â€” mobile parity")
+            capture(app, "Native " + tab + " — mobile parity")
             XCTAssertEqual(app.webViews.count, 0)
         }
     }
@@ -168,7 +168,7 @@ final class ZovaUITests: XCTestCase {
         let composer = app.textFields["post-composer"]
         XCTAssertTrue(composer.waitForExistence(timeout: 12))
         composer.tap(); composer.typeText("A simple pottery tip")
-        capture(app, "Native Studio â€” keyboard")
+        capture(app, "Native Studio — keyboard")
         XCTAssertTrue(app.keyboards.firstMatch.exists, "Background saving must keep the keyboard open")
         XCTAssertFalse(app.alerts.firstMatch.exists, "Typing must autosave without an alert: " + app.debugDescription)
         XCTAssertFalse(app.staticTexts["How can we grow your\nengagement today?"].exists)
@@ -178,7 +178,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.staticTexts["A simple pottery tip"].exists)
         XCTAssertFalse((composer.value as? String ?? "").contains("A simple pottery tip"))
-        capture(app, "Native Studio â€” proposed caption")
+        capture(app, "Native Studio — proposed caption")
         app.buttons["tab-Schedule"].tap(); app.buttons["tab-Studio"].tap()
         XCTAssertTrue(app.textFields["caption-0"].exists)
         XCTAssertEqual(app.webViews.count, 0)
@@ -190,7 +190,7 @@ final class ZovaUITests: XCTestCase {
         let direction = app.textFields["What would you like to post?"]
         XCTAssertTrue(direction.waitForExistence(timeout: 5)); direction.tap(); direction.typeText(" Include studio tours.")
         app.swipeUp()
-        let update = app.buttons["Update my strategy âœ¦"]
+        let update = app.buttons["Update my strategy ✦"]
         XCTAssertTrue(update.waitForExistence(timeout: 5)); update.tap()
         let save = app.buttons["Save strategy"]
         for _ in 0..<3 { if save.isHittable { break }; app.swipeUp() }
@@ -222,7 +222,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(finalReview.waitForExistence(timeout: 8)); finalReview.tap()
         XCTAssertTrue(app.buttons["confirm-publication"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Come join us.")).firstMatch.exists)
-        capture(app, "Native immutable final review â€” no publication")
+        capture(app, "Native immutable final review — no publication")
         app.buttons["Close Confirm publish"].tap()
         app.buttons["tab-Schedule"].tap()
         XCTAssertTrue(app.buttons["Saved posts"].waitForExistence(timeout: 8)); app.buttons["Saved posts"].tap()
@@ -249,7 +249,7 @@ final class ZovaUITests: XCTestCase {
         app.switches["Your brand"].tap()
         for _ in 0..<3 { if consent.isHittable { break }; app.swipeUp() }
         consent.tap(); XCTAssertTrue(finalReview.isEnabled)
-        capture(app, "Native TikTok â€” explicit privacy and commercial consent")
+        capture(app, "Native TikTok — explicit privacy and commercial consent")
         app.swipeDown(); privacy.tap(); app.buttons["Only me"].tap()
         XCTAssertEqual(consent.value as? String, "0"); XCTAssertFalse(finalReview.isEnabled)
         XCTAssertEqual(app.webViews.count, 0)
@@ -298,9 +298,9 @@ final class ZovaUITests: XCTestCase {
         let x = app.buttons["X"]
         if x.value as? String != "Selected" { x.tap() }
         XCTAssertTrue(app.staticTexts["One update, up to 280 characters."].waitForExistence(timeout: 5))
-        app.buttons["x-format"].tap(); app.buttons["Thread Â· 3 posts"].tap()
+        app.buttons["x-format"].tap(); app.buttons["Thread · 3 posts"].tap()
         XCTAssertTrue(app.staticTexts["3 connected posts, read in order."].waitForExistence(timeout: 5))
-        capture(app, "Native Studio â€” clear X formats and larger targets")
+        capture(app, "Native Studio — clear X formats and larger targets")
         app.buttons["tab-Schedule"].tap()
         XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout: 8))
         for name in ["Previous month", "Next month", "Refresh schedule", "Today"] { assertTarget(app.buttons[name], app: app) }
@@ -317,7 +317,7 @@ final class ZovaUITests: XCTestCase {
             assertTarget(app.buttons["tab-" + tab], app: app)
             XCTAssertLessThanOrEqual(app.buttons["tab-" + tab].frame.height, 80, "Navigation must leave room for content")
         }
-        capture(app, "Native Studio â€” largest accessibility text")
+        capture(app, "Native Studio — largest accessibility text")
         let composer = app.textFields["post-composer"]
         XCTAssertTrue(composer.isHittable, "An empty Studio must show where to type, without scrolling past its input: " + app.debugDescription)
         composer.tap(); composer.typeText("A large-text pottery idea")
@@ -325,18 +325,18 @@ final class ZovaUITests: XCTestCase {
         let send = app.buttons["Send idea"]; reveal(send, in: app); assertTarget(send, app: app)
         let ready = expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: send)
         wait(for: [ready], timeout: 10)
-        capture(app, "Native Studio â€” largest text with keyboard and Send")
+        capture(app, "Native Studio — largest text with keyboard and Send")
         send.tap(); XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 10))
         app.buttons["next-move"].tap()
         XCTAssertTrue(app.staticTexts["next-move-title"].waitForExistence(timeout: 8))
         XCTAssertGreaterThan(app.staticTexts["next-move-title"].frame.height, 60, "The presented sheet must inherit the large text preference")
-        capture(app, "Native Next Move â€” largest accessibility text")
+        capture(app, "Native Next Move — largest accessibility text")
         reveal(app.buttons["Draft post"], in: app)
         assertTarget(app.buttons["Draft post"], app: app)
         app.swipeDown(); app.swipeDown()
         // A downward gesture may already dismiss the sheet at its scroll boundary.
         // Verify the destination instead of tapping a button on a closed sheet.
-        let closeMove = app.buttons["Close âœ¦ Next move"]
+        let closeMove = app.buttons["Close ✦ Next move"]
         if closeMove.exists { closeMove.tap() }
         XCTAssertTrue(app.buttons["tab-Schedule"].isHittable, "Next Move must return to the native navigation")
         app.buttons["tab-Schedule"].tap()
@@ -345,13 +345,13 @@ final class ZovaUITests: XCTestCase {
         let day = app.buttons["calendar-day-1"]
         revealCalendarDay(day, in: app); assertTarget(day, app: app); day.tap()
         XCTAssertTrue(app.buttons["Show month"].waitForExistence(timeout: 5))
-        capture(app, "Native Schedule â€” scaled calendar")
+        capture(app, "Native Schedule — scaled calendar")
         app.buttons["tab-Performance"].tap()
         XCTAssertTrue(app.staticTexts["Performance"].waitForExistence(timeout: 8))
-        capture(app, "Native Performance â€” largest accessibility text")
+        capture(app, "Native Performance — largest accessibility text")
         app.buttons["tab-Account"].tap()
         XCTAssertTrue(app.buttons["Your details"].waitForExistence(timeout: 8))
-        capture(app, "Native Account â€” largest accessibility text")
+        capture(app, "Native Account — largest accessibility text")
         XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
     }
     func testLandscapeComposerAndAllTabsRemainUsable() {
@@ -363,7 +363,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(composer.waitForExistence(timeout: 12)); reveal(composer, in: app)
         composer.tap(); composer.typeText("A landscape pottery idea")
         let send = app.buttons["Send idea"]; reveal(send, in: app)
-        assertTarget(send, app: app); capture(app, "Native landscape â€” keyboard and Send")
+        assertTarget(send, app: app); capture(app, "Native landscape — keyboard and Send")
         send.tap()
         XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 10))
         for tab in ["Schedule", "Performance", "Account", "Studio"] {
@@ -374,7 +374,7 @@ final class ZovaUITests: XCTestCase {
             case "Account": XCTAssertTrue(app.buttons["Your details"].waitForExistence(timeout: 8))
             default: XCTAssertTrue(app.textFields["caption-0"].waitForExistence(timeout: 8)); app.swipeDown()
             }
-            capture(app, "Native landscape â€” " + tab)
+            capture(app, "Native landscape — " + tab)
         }
         XCTAssertTrue(app.textFields["caption-0"].exists)
         XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
@@ -389,13 +389,13 @@ final class ZovaUITests: XCTestCase {
         app.buttons["tab-Studio"].tap(); app.buttons["tab-Account"].tap()
         XCTAssertEqual(app.textFields["Writing tone"].value as? String, "Warm, curious and conversational")
         reveal(app.textFields["Writing tone"], in: app, down: true)
-        capture(app, "Native voice â€” saved scan fields")
+        capture(app, "Native voice — saved scan fields")
         XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
     }
     func testScheduledEditStopsDeliveryAndReturnsToSavedListWithoutRestart() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         XCTAssertTrue(app.buttons["tab-Schedule"].waitForExistence(timeout: 12)); app.buttons["tab-Schedule"].tap()
-        let manage = app.buttons["Manage schedule â†’"]
+        let manage = app.buttons["Manage schedule →"]
         XCTAssertTrue(manage.waitForExistence(timeout: 8)); reveal(manage, in: app); manage.tap()
         app.buttons["Edit caption / media"].tap()
         app.buttons["Stop deliveries and edit"].tap()
@@ -416,7 +416,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(app.secureTextFields["Current password"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.buttons["Delete my account"].isEnabled)
         XCTAssertTrue(app.textFields["Type DELETE to confirm"].exists)
-        capture(app, "Native account deletion â€” explicit protected request")
+        capture(app, "Native account deletion — explicit protected request")
         // Offline fixture only: this never contacts or deletes a real account.
         app.secureTextFields["Current password"].tap(); app.secureTextFields["Current password"].typeText("Synthetic-fixture-password")
         XCTAssertFalse(app.buttons["Delete my account"].isEnabled)
@@ -427,7 +427,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertFalse(app.secureTextFields["Current password"].exists)
         reveal(app.buttons["deletion-receipt"], in: app)
         assertTarget(app.buttons["deletion-receipt"], app: app)
-        capture(app, "Native deletion â€” receipt available after sign-out")
+        capture(app, "Native deletion — receipt available after sign-out")
         XCTAssertFalse(app.alerts.firstMatch.exists, app.debugDescription)
     }
     func testSixWeekCalendarAndReturnToStudioRemainResponsive() {
@@ -457,7 +457,7 @@ final class ZovaUITests: XCTestCase {
         }
         XCTAssertTrue(app.buttons["calendar-day-1"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.buttons["calendar-day-28"].exists)
-        capture(app, "Native Schedule â€” bounded month grid")
+        capture(app, "Native Schedule — bounded month grid")
         app.buttons["Today"].tap()
         app.buttons["tab-Studio"].tap()
         XCTAssertTrue(app.textFields["post-composer"].waitForExistence(timeout: 8))
@@ -465,12 +465,12 @@ final class ZovaUITests: XCTestCase {
     func testScheduleCanBeReviewedRescheduledAndCancelledExplicitly() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         XCTAssertTrue(app.buttons["tab-Schedule"].waitForExistence(timeout: 12)); app.buttons["tab-Schedule"].tap()
-        let manage = app.buttons["Manage schedule â†’"]
+        let manage = app.buttons["Manage schedule →"]
         XCTAssertTrue(manage.waitForExistence(timeout: 8))
         for _ in 0..<3 { if manage.isHittable { break }; app.swipeUp() }
         manage.tap()
         XCTAssertTrue(app.buttons["Save new time"].waitForExistence(timeout: 8))
-        capture(app, "Native scheduled delivery â€” guarded editing")
+        capture(app, "Native scheduled delivery — guarded editing")
         app.buttons["Save new time"].tap()
         XCTAssertTrue(manage.waitForExistence(timeout: 8)); manage.tap()
         XCTAssertTrue(app.buttons["Cancel scheduled post"].waitForExistence(timeout: 8)); app.buttons["Cancel scheduled post"].tap()
