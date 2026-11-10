@@ -307,7 +307,7 @@ def edit_slot(cid: int, position: int, body: SlotEdit, uid=Depends(premium), db=
             raise HTTPException(409, 'Open this post in Schedule to review its current state.')
         series = db.scalar(select(ContentSeries).where(ContentSeries.user_id==uid,ContentSeries.request_key==f'campaign-{cid}'))
         claimed = db.execute(update(ContentSeries).where(ContentSeries.id==series.id, ContentSeries.revision==body.series_revision,
-                             ContentSeries.status=='active').values(revision=ContentSeries.revision+1))
+                             ContentSeries.status.in_(['active','paused'])).values(revision=ContentSeries.revision+1))
         if claimed.rowcount != 1:
             raise HTTPException(409, 'Schedule changed. Reopen this campaign.')
         draft = owned(db, Draft, uid, did)
@@ -349,7 +349,8 @@ def accept(cid: int, body: Revision, uid=Depends(premium), db=Depends(get_db)):
     if claim.rowcount != 1:
         raise HTTPException(409, 'Campaign changed. Reopen the plan.')
     series_spec = spec(brief).model_dump()
-    series = ContentSeries(user_id=uid, request_key=f'campaign-{cid}', spec_json=json.dumps(series_spec))
+    series_spec['count'] = len(data['posts'])
+    series = ContentSeries(user_id=uid, request_key=f'campaign-{cid}', spec_json=json.dumps(series_spec), status=data.get('state','active'))
     db.add(series)
     db.flush()
     for i, post in enumerate(data['posts']):

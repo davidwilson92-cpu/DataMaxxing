@@ -2,6 +2,38 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testCampaignToolsCancelWithoutChangingSavedPlan() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let saved=app.buttons["saved-campaign-6"]
+        XCTAssertTrue(saved.waitForExistence(timeout:8));saved.tap()
+        for title in ["Move remaining dates","Reuse campaign","Add posts"] {
+            let menu=app.buttons["campaign-actions"];reveal(menu,in:app);menu.tap()
+            app.buttons[title].tap()
+            let cancel=app.buttons["Cancel"];XCTAssertTrue(cancel.waitForExistence(timeout:8));reveal(cancel,in:app);cancel.tap()
+            XCTAssertFalse(app.buttons["Cancel"].exists)
+            XCTAssertTrue(app.staticTexts["Try the wheel."].exists)
+        }
+    }
+    func testCampaignPauseAndImprovementPreviewKeepOriginalUntilApply() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let saved=app.buttons["saved-campaign-6"]
+        XCTAssertTrue(saved.waitForExistence(timeout:8));saved.tap()
+        let menu=app.buttons["campaign-actions"]
+        XCTAssertTrue(menu.waitForExistence(timeout:8));menu.tap()
+        app.buttons["Pause campaign"].tap()
+        let pause=app.buttons["Pause campaign"];XCTAssertTrue(pause.waitForExistence(timeout:8));reveal(pause,in:app);pause.tap()
+        XCTAssertTrue(app.staticTexts["Paused · drafts kept"].waitForExistence(timeout:8))
+        app.buttons["campaign-improve"].tap()
+        let preview=app.buttons["Preview changes"];XCTAssertTrue(preview.waitForExistence(timeout:8));reveal(preview,in:app);preview.tap()
+        let original=app.buttons["Original caption"];XCTAssertTrue(original.waitForExistence(timeout:8));reveal(original,in:app);original.tap()
+        XCTAssertTrue(app.staticTexts["Try the wheel."].firstMatch.exists)
+        capture(app,"Campaign — improvement preview retains original")
+        let apply=app.buttons["campaign-apply-improvements"];reveal(apply,in:app);apply.tap()
+        XCTAssertTrue(app.staticTexts["Your first pot starts with one small ball of clay."].waitForExistence(timeout:8))
+        XCTAssertFalse(app.buttons["Original caption"].exists)
+    }
     func testUnfinishedCampaignRestoresAfterReturningToStudio() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         let entry = app.buttons["Campaign"]
@@ -264,7 +296,12 @@ final class ZovaUITests: XCTestCase {
         capture(app, "Native Next Move — largest accessibility text")
         reveal(app.buttons["Draft post"], in: app)
         assertTarget(app.buttons["Draft post"], app: app)
-        app.swipeDown(); app.swipeDown(); app.buttons["Close ✦ Next move"].tap()
+        app.swipeDown(); app.swipeDown()
+        // A downward gesture may already dismiss the sheet at its scroll boundary.
+        // Verify the destination instead of tapping a button on a closed sheet.
+        let closeMove = app.buttons["Close ✦ Next move"]
+        if closeMove.exists { closeMove.tap() }
+        XCTAssertTrue(app.buttons["tab-Schedule"].isHittable, "Next Move must return to the native navigation")
         app.buttons["tab-Schedule"].tap()
         XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout: 8))
         reveal(app.buttons["Next month"], in: app); assertTarget(app.buttons["Next month"], app: app)

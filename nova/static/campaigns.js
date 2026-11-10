@@ -174,7 +174,7 @@
   }
   element('campaign-view').onchange=element('campaign-sort').onchange=()=>show(current);
   const nameForm=element('campaign-name-form');
-  element('rename-campaign').onclick=()=>{nameForm.hidden=false;nameForm.elements.name.value=nameOf(current);nameForm.elements.name.focus();};
+  element('rename-campaign').onclick=()=>{element('campaign-tools').open=false;nameForm.hidden=false;nameForm.elements.name.value=nameOf(current);nameForm.elements.name.focus();};
   nameForm.onsubmit=event=>{event.preventDefault();run(async()=>show(await request('/api/campaigns/'+current.id+'/name',{revision:current.revision,name:nameForm.elements.name.value})));};
   function show(row) {
     current = row;
@@ -183,6 +183,7 @@
     element('campaign-heading').textContent=row?nameOf(row):'Campaigns';
     element('campaign-name-form').hidden=true;
     if (!row) return;
+    document.querySelectorAll('#campaign-review button,#campaign-view,#campaign-sort,#campaign-list').forEach(control=>control.disabled=false);
     remember(row);
     list.value = String(row.id);
     element('campaign-media').hidden = true;
@@ -249,17 +250,87 @@
     });
     element('campaign-feedback').value = row.feedback || '';
     element('campaign-actions').hidden = !!row.draft_ids.length;
+    element('campaign-feedback').closest('label').hidden=!!row.posts.length;
+    element('campaign-revise').hidden=!!row.posts.length;
     element('campaign-accept').hidden = !row.posts.length;
     element('campaign-revise').textContent = row.posts.length ? 'Update plan' : 'Generate plan';
+    showControls(row);
+  }
+  let controlAction='', reuseKey='';
+  const controlForm=element('campaign-control-form');
+  const actionNames={pause:'Pause campaign',resume:'Resume campaign',move:'Move remaining dates',reuse:'Reuse campaign',extend:'Add posts',improve:'Improve remaining posts'};
+  async function openControl(action) {
+    show(await request('/api/campaigns/'+current.id));
+    controlAction=action;reuseKey=crypto.randomUUID();
+    controlForm.dataset.campaign=String(current.id);
+    element('campaign-tools').open=false;controlForm.hidden=false;
+    element('campaign-control-title').textContent=actionNames[action];
+    element('campaign-control-submit').textContent=['improve','extend'].includes(action)?'Preview changes':action==='reuse'?'Create copy':actionNames[action];
+    element('campaign-control-note').textContent=({pause:'Stops remaining scheduled posts. Resume will keep them as drafts for final review.',resume:'Posts remain drafts until you review and schedule them.',move:'Moves remaining posts together. Scheduled posts return to drafts for final review.',reuse:'Copies captions and media into a new plan. Review date-sensitive wording before scheduling.',improve:'Preview caption changes. Applying them returns scheduled posts to drafts for final approval.',extend:'Preview new follow-ups using your campaign, strategy, voice and available results.'})[action];
+    for(const [key,visible] of Object.entries({name:action==='reuse',start:['reuse','move','extend'].includes(action),count:action==='extend',feedback:['improve','extend'].includes(action)})) {
+      element('control-'+key+'-label').hidden=!visible;
+    }
+    controlForm.elements.copy_name.required=action==='reuse';controlForm.elements.new_start.required=['reuse','move','extend'].includes(action);
+    controlForm.elements.copy_name.value=(nameOf(current)+' copy').slice(0,80);
+    controlForm.elements.new_start.value='';controlForm.elements.feedback.value='';controlForm.elements.extra_count.value='2';
+    element('control-start-label').firstChild.textContent='First post · '+current.brief.timezone;
+    controlForm.scrollIntoView({block:'nearest'});
+    setTimeout(()=>controlForm.querySelector('label:not([hidden]) input,label:not([hidden]) textarea,button').focus(),0);
+  }
+  element('improve-remaining').onclick=()=>run(()=>openControl('improve'));
+  for(const button of document.querySelectorAll('[data-campaign-action]')) button.onclick=()=>run(()=>openControl(button.dataset.campaignAction==='pause'&&current.state==='paused'?'resume':button.dataset.campaignAction));
+  element('campaign-control-cancel').onclick=()=>{
+    controlForm.hidden=true;
+    const improve=element('improve-remaining');
+    (controlAction==='improve'&&!improve.hidden?improve:element('campaign-tools').querySelector('summary')).focus();
+  };
+  controlForm.onsubmit=event=>{event.preventDefault();run(async()=>{
+    const revision=current.revision,base='/api/campaigns/'+current.id;
+    let path=base+'/control',body={revision,action:controlAction,snapshot:current.control_snapshot,start:controlForm.elements.new_start.value};
+    if(controlAction==='reuse'){path=base+'/reuse';body={revision,name:controlForm.elements.copy_name.value,start:controlForm.elements.new_start.value,request_key:reuseKey};}
+    if(['improve','extend'].includes(controlAction)){path='/api/ai/campaigns/'+current.id+'/improve';body={revision,mode:controlAction,feedback:controlForm.elements.feedback.value,count:Number(controlForm.elements.extra_count.value),start:controlForm.elements.new_start.value};}
+    const updated=await request(path,body);controlForm.hidden=true;show(updated);
+  },['pause','resume','move'].includes(controlAction)?'Saved. Review drafts before scheduling.':controlAction==='reuse'?'Copy saved. Review its dates and captions.':'Changes ready to review.');};
+  function showControls(row){
+    if(controlForm.dataset.campaign!==String(row.id))controlForm.hidden=true;
+    element('campaign-tools').inert=false;
+    element('campaign-state').textContent=row.state==='paused'?'Paused · drafts kept':'';
+    document.querySelector('[data-campaign-action="pause"]').textContent=row.state==='paused'?'Resume campaign':'Pause campaign';
+    element('improve-remaining').hidden=!row.posts.some(post=>['draft','scheduled'].includes(post.status||'draft') && (!row.draft_ids.length||post.simple));
+    const panel=element('campaign-suggestion');panel.replaceChildren();panel.hidden=!row.suggestion;
+    if(!row.suggestion)return;
+    const proposal=row.suggestion,title=document.createElement('h2'),basis=document.createElement('p');
+    title.textContent=proposal.mode==='extend'?'New follow-ups':'Proposed improvements';basis.textContent=proposal.posts.length+(proposal.posts.length===1?' post · ':' posts · ')+proposal.basis;panel.append(title,basis);
+    if(proposal.positions.some(i=>row.posts[i]?.status==='scheduled')){const notice=document.createElement('p');notice.textContent='Applying changes unschedules these posts. Review them again before publishing.';panel.append(notice);}
+    proposal.posts.forEach((post,n)=>{
+      const card=document.createElement('article'),label=document.createElement('strong'),text=document.createElement('p');
+      label.textContent=({instagram:'Instagram',facebook:'Facebook',x:'X',tiktok:'TikTok'})[post.platform]+' · '+new Date(proposal.dates[n].utc).toLocaleString(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:row.brief.timezone,timeZoneName:'short'});text.textContent=post.caption;card.append(label,text);
+      if(post.asset_id){const media=document.createElement('img');media.src=window.zovaWorkspaceUrl('/media/thumbnail/'+post.asset_id);media.alt=row.assets.find(a=>a.id===post.asset_id)?.name||'Post attachment';media.loading='lazy';media.className='proposal-media';card.append(media);}
+      const previous=row.posts[proposal.positions[n]];
+      if(previous){const old=document.createElement('details'),summary=document.createElement('summary'),caption=document.createElement('p');summary.textContent='Original caption';caption.textContent=previous.caption;old.append(summary,caption);card.append(old);}
+      panel.append(card);
+    });
+    const actions=document.createElement('div');actions.className='campaign-inline-actions';
+    for(const [action,label] of [['apply','Apply changes'],['discard','Keep originals']]){
+      const button=document.createElement('button');button.type='button';button.textContent=label;if(action==='apply')button.className='button';
+      button.onclick=()=>run(async()=>show(await request('/api/campaigns/'+row.id+'/suggestion',{revision:row.revision,action})),action==='apply'?'Drafts updated. Nothing has been published.':'Originals kept.');actions.append(button);
+    }
+    panel.append(actions);
+  }
+  function report(message, failed=false) {
+    const proposal=element('campaign-suggestion');
+    const target=!controlForm.hidden ? controlForm : !proposal.hidden ? proposal : current ? element('campaign-review').querySelector('.campaign-control-bar') : form;
+    target.append(status);status.textContent=message;
+    if(failed)status.scrollIntoView({block:'nearest'});
   }
   async function run(action, successMessage='') {
     if (busy) return;
     busy = true;
     const controls = document.querySelectorAll('main input,main select,main button,main textarea');
     controls.forEach(control => control.disabled = true);
-    status.textContent = 'Working…';
-    try { await action(); status.textContent = successMessage; }
-    catch (error) { status.textContent = error.message; }
+    report('Working…');
+    try { await action(); report(successMessage); }
+    catch (error) { report(error.message,true); }
     finally {
       controls.forEach(control => control.disabled = false); busy = false;
       document.querySelector('#campaign-review details[data-dirty="true"] textarea')?.dispatchEvent(new Event('input',{bubbles:true}));

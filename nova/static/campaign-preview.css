@@ -57,3 +57,14 @@
 .campaign-timing{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
 .campaign-timing select,.campaign-timing input{width:100%;min-width:0}
 @media(max-width:360px){.campaign-timing{grid-template-columns:1fr}}
+.campaign-control-bar,.campaign-inline-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem}
+.campaign-control-bar{border-block:1px solid #e8e0ed;padding:.65rem 0}
+.campaign-control-bar summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:#6433a7}
+#campaign-tools>div{display:grid;gap:.3rem;padding:.4rem;border:1px solid #e5dced;border-radius:10px;background:#fff}
+#campaign-control-form,#campaign-suggestion{padding:1rem;border:1px solid #d5c4ed;border-radius:14px;background:#faf8fd}
+#campaign-control-form h2,#campaign-suggestion h2{font-size:1.1rem;margin:0}
+#campaign-control-form p,#campaign-suggestion>p{font-size:.9rem;color:#65586e;margin:.2rem 0}
+#campaign-control-form input,#campaign-control-form textarea{border:1px solid #b8a8c5;border-radius:8px;padding:.65rem;background:#fff;color:#201829;max-width:100%}
+.campaign .optional,#campaign-state{font-size:.8rem;color:#6a5a75}
+#campaign-suggestion article{background:#fff;border:1px solid #e1d7ed;padding:.85rem}
+.proposal-media{max-width:100%;height:100px;object-fit:contain;border-radius:8px}
