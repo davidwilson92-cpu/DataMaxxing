@@ -209,6 +209,8 @@ app.include_router(strategy_router)
 app.include_router(series_router)
 from .campaigns import router as campaign_router
 app.include_router(campaign_router)
+from .campaign_controls import router as campaign_controls_router
+app.include_router(campaign_controls_router)
 
 @app.get('/campaigns', response_class=HTMLResponse)
 def campaign_page(request:Request, db:Session=Depends(get_db)):

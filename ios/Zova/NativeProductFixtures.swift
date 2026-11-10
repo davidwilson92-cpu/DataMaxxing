@@ -23,7 +23,7 @@ final class NativeProductFixtures: URLProtocol {
         primaryPlatform = tiktok ? "tiktok" : "instagram"
         if ProcessInfo.processInfo.arguments.contains("--fixture-thread") { primaryPlatform = "x" }
         partialCampaign = .null; partialRevision = 0
-        campaign = .object(["id":.integer(6),"revision":.integer(1),"feedback":.string(""),"assets":.array([]),"draft_ids":.array([]),
+        campaign = .object(["id":.integer(6),"revision":.integer(1),"state":.string("active"),"control_snapshot":.string(String(repeating:"a",count:64)),"feedback":.string(""),"assets":.array([]),"draft_ids":.array([]),
             "brief":.object(["idea":.string("Pottery launch"),"timezone":.string("Europe/London")]),
             "dates":.array([.object(["utc":.string("2027-03-01T12:00:00Z"),"local":.string("2027-03-01T12:00:00+00:00")])]),
             "posts":.array([.object(["platform":.string("instagram"),"caption":.string("Try the wheel.")])])])
@@ -152,6 +152,22 @@ final class NativeProductFixtures: URLProtocol {
         }
         if path == "/api/campaigns" { return ok(.array([campaign])) }
         if path == "/api/campaigns/6" { return ok(campaign) }
+        if path == "/api/campaigns/6/control" {
+            campaign["revision"] = .integer(campaign["revision"].int+1)
+            campaign["state"] = .string(input["action"].string=="pause" ? "paused" : "active")
+            return ok(campaign)
+        }
+        if path == "/api/ai/campaigns/6/improve" {
+            campaign["revision"] = .integer(campaign["revision"].int+1)
+            campaign["suggestion"] = .object(["mode":.string("improve"),"positions":.array([.integer(0)]),"dates":campaign["dates"],"basis":.string("Synthetic proposal using the saved brief and voice."),"posts":.array([.object(["platform":.string("instagram"),"caption":.string("Your first pot starts with one small ball of clay.")])])])
+            return ok(campaign)
+        }
+        if path == "/api/campaigns/6/suggestion" {
+            if input["action"].string=="apply" { campaign["posts"] = campaign["suggestion"]["posts"] }
+            campaign["suggestion"] = .null
+            campaign["revision"] = .integer(campaign["revision"].int+1)
+            return ok(campaign)
+        }
         if path == "/api/campaigns/6/posts/0" {
             campaign["revision"] = .integer(campaign["revision"].int+1)
             campaign["posts"] = .array([.object(["platform":input["platform"],"caption":input["caption"],"asset_id":input["asset_id"]])])

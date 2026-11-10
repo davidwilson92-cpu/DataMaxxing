@@ -1,3 +1,12 @@
+# Campaign controls candidate — 10 November 2026
+
+Pause/resume, move remaining dates, reuse and reviewed AI improvements/extensions
+are in validation on codex/campaign-controls. See CAMPAIGN_CONTROLS_20261110.md
+for the coverage matrix and simulated persona critique. No production deployment,
+live posting or real customer billing is part of this task. Real-device/provider
+and live-model acceptance remain distinct from synthetic tests. The existing
+79-section commercial register retains all recorded findings.
+
 # Performance candidate — 31 October 2026
 
 The isolated codex/performance-20261031 candidate adds batched draft/series reads,

@@ -29,16 +29,22 @@ def caption_date_warning(caption, original, planned):
 
 
 def current_plan(db, row):
+    from .campaign_controls import fingerprint
     data = dict(json.loads(row.payload_json), id=row.id, revision=row.revision)
+    data.pop('copies', None)
+    data.setdefault('state', 'active')
     ids = data['draft_ids']
     for i,post in enumerate(data['posts']):
         original = post.get('caption_date',data['dates'][i]['local'])
         warning = caption_date_warning(post['caption'],original,data['dates'][i]['local'])
         if warning: post['timing_warning'] = warning
     if not ids:
+        data['control_snapshot'] = fingerprint(data)
         return data
     drafts = {d.id: d for d in db.scalars(select(Draft).where(Draft.user_id == row.user_id, Draft.id.in_(ids)))}
     series = db.scalar(select(ContentSeries).where(ContentSeries.user_id == row.user_id, ContentSeries.request_key == f'campaign-{row.id}'))
+    if series:
+        data.update(state=series.status, series_revision=series.revision)
     slots = {o.position:o for o in db.scalars(select(SeriesOccurrence).where(SeriesOccurrence.series_id == series.id))} if series else {}
     jobs = {}
     for job in db.scalars(select(ScheduledPost).where(ScheduledPost.user_id == row.user_id,
@@ -59,7 +65,7 @@ def current_plan(db, row):
         simple = len(platforms) == 1 and len(captions) == 1 and len(media) <= 1 and set(variants) == {platform}
         post.update(status=draft.status, draft_revision=draft.revision, platform=platform,
                     caption='\n\n'.join(captions), asset_id=media[0] if media else None,
-                    editable=bool(simple and draft.status=='draft' and slot and slot.status=='planned' and series.status=='active'))
+                    simple=simple, editable=bool(simple and draft.status=='draft' and slot and slot.status=='planned' and series.status in ('active','paused')))
         if slot and series:
             post['series_revision'] = series.revision
             scheduled = jobs.get(draft.id, [])
@@ -81,6 +87,7 @@ def current_plan(db, row):
         extra={a.id:{'id':a.id,'name':a.filename,'kind':'video' if a.mime_type.startswith('video/') else 'image'}
                for a in db.scalars(select(MediaAsset).where(MediaAsset.user_id==row.user_id,MediaAsset.id.in_(needed)))}
         data['assets']=list({a['id']:a for a in [*data['assets'],*extra.values()]}.values())
+    data['control_snapshot'] = fingerprint(data)
     return data
 
 

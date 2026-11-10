@@ -2,6 +2,25 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testCampaignPauseAndImprovementPreviewKeepOriginalUntilApply() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let saved=app.buttons["saved-campaign-6"]
+        XCTAssertTrue(saved.waitForExistence(timeout:8));saved.tap()
+        let menu=app.buttons["campaign-actions"]
+        XCTAssertTrue(menu.waitForExistence(timeout:8));menu.tap()
+        app.buttons["Pause campaign"].tap()
+        let pause=app.buttons["Pause campaign"];XCTAssertTrue(pause.waitForExistence(timeout:8));reveal(pause,in:app);pause.tap()
+        XCTAssertTrue(app.staticTexts["Paused · drafts kept"].waitForExistence(timeout:8))
+        app.buttons["campaign-improve"].tap()
+        let preview=app.buttons["Preview changes"];XCTAssertTrue(preview.waitForExistence(timeout:8));reveal(preview,in:app);preview.tap()
+        let original=app.buttons["Original caption"];XCTAssertTrue(original.waitForExistence(timeout:8));reveal(original,in:app);original.tap()
+        XCTAssertTrue(app.staticTexts["Try the wheel."].firstMatch.exists)
+        capture(app,"Campaign — improvement preview retains original")
+        let apply=app.buttons["campaign-apply-improvements"];reveal(apply,in:app);apply.tap()
+        XCTAssertTrue(app.staticTexts["Your first pot starts with one small ball of clay."].waitForExistence(timeout:8))
+        XCTAssertFalse(app.buttons["Original caption"].exists)
+    }
     func testUnfinishedCampaignRestoresAfterReturningToStudio() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         let entry = app.buttons["Campaign"]

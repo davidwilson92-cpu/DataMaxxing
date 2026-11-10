@@ -251,6 +251,62 @@
     element('campaign-actions').hidden = !!row.draft_ids.length;
     element('campaign-accept').hidden = !row.posts.length;
     element('campaign-revise').textContent = row.posts.length ? 'Update plan' : 'Generate plan';
+    showControls(row);
+  }
+  let controlAction='', reuseKey='';
+  const controlForm=element('campaign-control-form');
+  const actionNames={pause:'Pause campaign',resume:'Resume campaign',move:'Move remaining dates',reuse:'Reuse campaign',extend:'Add posts',improve:'Improve remaining posts'};
+  async function openControl(action) {
+    show(await request('/api/campaigns/'+current.id));
+    controlAction=action;reuseKey=crypto.randomUUID();
+    element('campaign-tools').open=false;controlForm.hidden=false;
+    element('campaign-control-title').textContent=actionNames[action];
+    element('campaign-control-submit').textContent=['improve','extend'].includes(action)?'Preview changes':action==='reuse'?'Create copy':actionNames[action];
+    element('campaign-control-note').textContent=({pause:'Stops remaining scheduled posts. Resume will keep them as drafts for final review.',resume:'Posts remain drafts until you review and schedule them.',move:'Moves remaining posts together. Scheduled posts return to drafts for final review.',reuse:'Copies captions and media into a new plan. Review date-sensitive wording before scheduling.',improve:'Preview caption changes. Applying them returns scheduled posts to drafts for final approval.',extend:'Preview new follow-ups using your campaign, strategy, voice and available results.'})[action];
+    for(const [key,visible] of Object.entries({name:action==='reuse',start:['reuse','move','extend'].includes(action),count:action==='extend',feedback:['improve','extend'].includes(action)})) {
+      element('control-'+key+'-label').hidden=!visible;
+    }
+    controlForm.elements.copy_name.required=action==='reuse';controlForm.elements.new_start.required=['reuse','move','extend'].includes(action);
+    controlForm.elements.copy_name.value=(nameOf(current)+' copy').slice(0,80);
+    controlForm.elements.new_start.value='';controlForm.elements.feedback.value='';
+    element('control-start-label').firstChild.textContent='First post · '+current.brief.timezone;
+    controlForm.scrollIntoView({block:'nearest'});
+    setTimeout(()=>controlForm.querySelector('label:not([hidden]) input,label:not([hidden]) textarea,button').focus(),0);
+  }
+  element('improve-remaining').onclick=()=>run(()=>openControl('improve'));
+  for(const button of document.querySelectorAll('[data-campaign-action]')) button.onclick=()=>run(()=>openControl(button.dataset.campaignAction==='pause'&&current.state==='paused'?'resume':button.dataset.campaignAction));
+  element('campaign-control-cancel').onclick=()=>{controlForm.hidden=true;element('improve-remaining').focus();};
+  controlForm.onsubmit=event=>{event.preventDefault();run(async()=>{
+    const revision=current.revision,base='/api/campaigns/'+current.id;
+    let path=base+'/control',body={revision,action:controlAction,snapshot:current.control_snapshot,start:controlForm.elements.new_start.value};
+    if(controlAction==='reuse'){path=base+'/reuse';body={revision,name:controlForm.elements.copy_name.value,start:controlForm.elements.new_start.value,request_key:reuseKey};}
+    if(['improve','extend'].includes(controlAction)){path='/api/ai/campaigns/'+current.id+'/improve';body={revision,mode:controlAction,feedback:controlForm.elements.feedback.value,count:Number(controlForm.elements.extra_count.value),start:controlForm.elements.new_start.value};}
+    show(await request(path,body));
+  },['pause','resume','move'].includes(controlAction)?'Saved. Review drafts before scheduling.':controlAction==='reuse'?'Copy saved. Review its dates and captions.':'Changes ready to review.');};
+  function showControls(row){
+    controlForm.hidden=true;
+    element('campaign-state').textContent=row.state==='paused'?'Paused · drafts kept':'';
+    document.querySelector('[data-campaign-action="pause"]').textContent=row.state==='paused'?'Resume campaign':'Pause campaign';
+    element('improve-remaining').hidden=!row.posts.length;
+    const panel=element('campaign-suggestion');panel.replaceChildren();panel.hidden=!row.suggestion;
+    if(!row.suggestion)return;
+    const proposal=row.suggestion,title=document.createElement('h2'),basis=document.createElement('p');
+    title.textContent=proposal.mode==='extend'?'New follow-ups':'Proposed improvements';basis.textContent=proposal.posts.length+' posts · '+proposal.basis;panel.append(title,basis);
+    if(proposal.positions.some(i=>row.posts[i]?.status==='scheduled')){const notice=document.createElement('p');notice.textContent='Applying changes unschedules these posts. Review them again before publishing.';panel.append(notice);}
+    proposal.posts.forEach((post,n)=>{
+      const card=document.createElement('article'),label=document.createElement('strong'),text=document.createElement('p');
+      label.textContent=({instagram:'Instagram',facebook:'Facebook',x:'X',tiktok:'TikTok'})[post.platform]+' · '+new Date(proposal.dates[n].utc).toLocaleString(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:row.brief.timezone,timeZoneName:'short'});text.textContent=post.caption;card.append(label,text);
+      if(post.asset_id){const media=document.createElement('img');media.src=window.zovaWorkspaceUrl('/media/thumbnail/'+post.asset_id);media.alt=row.assets.find(a=>a.id===post.asset_id)?.name||'Post attachment';media.loading='lazy';media.className='proposal-media';card.append(media);}
+      const previous=row.posts[proposal.positions[n]];
+      if(previous){const old=document.createElement('details'),summary=document.createElement('summary'),caption=document.createElement('p');summary.textContent='Original caption';caption.textContent=previous.caption;old.append(summary,caption);card.append(old);}
+      panel.append(card);
+    });
+    const actions=document.createElement('div');actions.className='campaign-inline-actions';
+    for(const [action,label] of [['apply','Apply changes'],['discard','Keep originals']]){
+      const button=document.createElement('button');button.type='button';button.textContent=label;if(action==='apply')button.className='button';
+      button.onclick=()=>run(async()=>show(await request('/api/campaigns/'+row.id+'/suggestion',{revision:row.revision,action})),action==='apply'?'Drafts updated. Nothing has been published.':'Originals kept.');actions.append(button);
+    }
+    panel.append(actions);
   }
   async function run(action, successMessage='') {
     if (busy) return;

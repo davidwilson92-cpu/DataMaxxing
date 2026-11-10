@@ -159,6 +159,17 @@ struct NativeCampaignView: View {
             .sorted { (key($0), dates[$0]["local"].string,$0) < (key($1),dates[$1]["local"].string,$1) }
     }
     @ViewBuilder private var review: some View {
+        CampaignActionsView(row:current,working:working,refresh:{
+            await perform {try await reopen(current["id"].int)}
+        },request:{path,body in
+            var succeeded=false
+            await perform {
+                select(try await store.request(path,method:"POST",body:body))
+                message="Saved. Nothing has been published."
+                succeeded=true
+            }
+            return succeeded
+        }).id(current["id"].int)
         Section {
             Button("Rename campaign"){newName=campaignName(current);renaming=true}
             Picker("View",selection:$calendarView){Text("Previews").tag(false);Text("Calendar").tag(true)}.pickerStyle(.segmented)
