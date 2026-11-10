@@ -188,7 +188,8 @@ struct NativeProductTabs: View {
                     }
                 }.padding(.horizontal, 6).background(ZovaDesign.dark.ignoresSafeArea(edges: .bottom))
             }
-        }.background(store.selectedTab == 3 ? ZovaDesign.dark : .white).preferredColorScheme(store.selectedTab == 3 ? .dark : .light)
+        }.background(store.selectedTab == 4 ? Color.black : store.selectedTab == 3 ? ZovaDesign.dark : .white)
+            .preferredColorScheme([3,4].contains(store.selectedTab) ? .dark : .light)
             .tint(ZovaDesign.purple).background(NativeKeyboardDismiss().allowsHitTesting(false))
             .sheet(isPresented: $nextMove) { NativeNextMoveView().environmentObject(store) }
             .sheet(isPresented: $strategy) { NativeNextMoveView(planning: true).environmentObject(store) }

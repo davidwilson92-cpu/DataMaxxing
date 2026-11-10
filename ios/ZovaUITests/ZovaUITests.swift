@@ -2,6 +2,41 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testCampaignCompactToolbarKeepsPostVisibleAndNavigationAvailable() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let saved=app.buttons["saved-campaign-6"]
+        XCTAssertTrue(saved.waitForExistence(timeout:8));saved.tap()
+        let all=app.buttons["campaign-all"], calendar=app.buttons["Calendar"]
+        XCTAssertTrue(all.waitForExistence(timeout:8))
+        XCTAssertTrue(app.staticTexts["Try the wheel."].isHittable,"First caption should be visible without scrolling")
+        XCTAssertLessThan(calendar.frame.maxY-all.frame.minY,150,"Controls should occupy two compact rows")
+        XCTAssertGreaterThanOrEqual(app.buttons["campaign-actions"].frame.height,44)
+        capture(app,"Campaign — compact black toolbar and first post")
+        calendar.tap()
+        XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout:5))
+        app.buttons["Previews"].tap()
+        app.buttons["Sort by"].tap();app.buttons["Platform"].tap()
+        XCTAssertTrue(app.staticTexts["Try the wheel."].exists)
+        all.tap();XCTAssertTrue(saved.waitForExistence(timeout:5))
+    }
+    func testCampaignToolbarSupportsAccessibilityText() {
+        let app=XCUIApplication()
+        app.launchArguments=["--native-fixture","-UIPreferredContentSizeCategoryName","UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let saved=app.buttons["saved-campaign-6"]
+        XCTAssertTrue(saved.waitForExistence(timeout:8));reveal(saved,in:app);saved.tap()
+        let menu=app.buttons["campaign-actions"]
+        XCTAssertTrue(menu.waitForExistence(timeout:8));reveal(menu,in:app)
+        XCTAssertTrue(menu.isHittable)
+        XCTAssertLessThanOrEqual(menu.frame.maxX,app.frame.maxX)
+        capture(app,"Campaign — compact toolbar at accessibility text size")
+        menu.tap();app.buttons["Reuse campaign"].tap()
+        let cancel=app.buttons["Cancel"];XCTAssertTrue(cancel.waitForExistence(timeout:8));reveal(cancel,in:app);cancel.tap()
+        let all=app.buttons["campaign-all"];reveal(all,in:app);all.tap()
+        XCTAssertTrue(saved.waitForExistence(timeout:8))
+    }
     func testCampaignToolsCancelWithoutChangingSavedPlan() {
         let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
         XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()

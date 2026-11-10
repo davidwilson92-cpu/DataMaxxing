@@ -4,6 +4,9 @@ import SwiftUI
 struct CampaignActionsView: View {
     let row: JSONValue
     let working: Bool
+    @Binding var calendarView: Bool
+    @Binding var sortBy: String
+    let allCampaigns: () -> Void
     let rename: () -> Void
     let refresh: () async -> Void
     let request: (String, JSONValue) async -> Bool
@@ -26,19 +29,56 @@ struct CampaignActionsView: View {
     }
 
     var body: some View {
-        Section {
-            ViewThatFits(in:.horizontal) {
-                HStack { improveButton; Spacer(); actionsMenu }
-                VStack(alignment:.leading) { improveButton; actionsMenu }
-            }
+        VStack(alignment:.leading,spacing:8) {
+            VStack(spacing:4) {
+                HStack(spacing:8) {
+                    Button(action:allCampaigns) { Label("All campaigns",systemImage:"chevron.left") }
+                        .frame(minHeight:44).accessibilityIdentifier("campaign-all")
+                    Spacer(minLength:0)
+                    improveButton
+                    actionsMenu
+                }
+                Divider().overlay(Color.white.opacity(0.16))
+                ViewThatFits(in:.horizontal) {
+                    HStack(spacing:8) { viewPicker; sortMenu }
+                    VStack(alignment:.leading,spacing:4) { viewPicker; sortMenu }
+                }
+            }.font(.subheadline).foregroundStyle(.white).tint(.white)
+                .padding(.horizontal,10).padding(.vertical,4)
+                .background(Color.black,in:RoundedRectangle(cornerRadius:12))
+                .overlay(RoundedRectangle(cornerRadius:12).stroke(Color.white.opacity(0.22)))
+                .accessibilityIdentifier("campaign-toolbar")
             if paused { Label("Paused · drafts kept",systemImage:"pause.circle").font(.caption) }
             if !action.isEmpty { editor }
         }
         if !row["suggestion"].isNull { proposal }
     }
+    private var viewPicker: some View {
+        HStack(spacing:2) {
+            viewButton("Previews",calendar:false)
+            viewButton("Calendar",calendar:true)
+        }.padding(3).background(Color(white:0.12),in:RoundedRectangle(cornerRadius:9))
+    }
+    private func viewButton(_ title:String,calendar:Bool) -> some View {
+        Button {calendarView=calendar} label: {
+            Text(title).fontWeight(calendarView==calendar ? .semibold : .regular)
+                .frame(maxWidth:.infinity,minHeight:44)
+                .padding(.horizontal,8)
+                .background(calendarView==calendar ? Color(white:0.25) : .clear,in:RoundedRectangle(cornerRadius:7))
+        }.accessibilityAddTraits(calendarView==calendar ? [.isSelected] : [])
+    }
+    private var sortMenu: some View {
+        Menu {
+            Picker("Sort by",selection:$sortBy) {
+                ForEach(["Date","Platform","Media type"],id:\.self){Text($0)}
+            }
+        } label: { Label(sortBy,systemImage:"arrow.up.arrow.down").fixedSize().frame(minHeight:44) }
+            .accessibilityLabel("Sort by").accessibilityValue(sortBy)
+    }
     @ViewBuilder private var improveButton: some View {
         if canImprove {
-            Button("Improve remaining posts") { begin("improve") }
+            Button { begin("improve") } label: { Label("Improve",systemImage:"sparkles").frame(minHeight:44) }
+                .accessibilityLabel("Improve remaining posts")
                 .accessibilityIdentifier("campaign-improve")
         }
     }
@@ -76,7 +116,7 @@ struct CampaignActionsView: View {
                 HStack { submitButton; Button("Cancel"){action=""} }
                 VStack(alignment:.leading) { submitButton; Button("Cancel"){action=""} }
             }
-        }.padding(12).background(ZovaDesign.pale,in:RoundedRectangle(cornerRadius:12))
+        }.padding(12).background(Color(white:0.1),in:RoundedRectangle(cornerRadius:12))
     }
     private var note:String {
         switch action {

@@ -1,3 +1,11 @@
+# Compact Campaign layout follow-up — 10 November 2026
+
+Build 23's controls occupied excessive vertical space on the owner's iPhone.
+The bounded presentation fix is recorded in CAMPAIGN_COMPACT_TOOLBAR_20261110.md:
+one compact control panel, black background/white menus, web/native parity and
+normal/large-text validation. This new candidate is not yet deployed. All broader
+79-section commercial findings remain tracked.
+
 # Campaign controls candidate — 10 November 2026
 
 Pause/resume, move remaining dates, reuse and reviewed AI improvements/extensions

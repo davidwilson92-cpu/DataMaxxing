@@ -18,6 +18,13 @@ const fs = require('node:fs');
       await page.getByRole('button',{name:'Build campaign',exact:true}).click();
       const cards=page.locator('#campaign-posts article');await cards.first().waitFor();
       const original=await cards.first().locator('p').first().innerText();
+      const toolbar=page.locator('.campaign-command-panel');
+      assert((await toolbar.boundingBox()).height<=140,'Campaign controls must remain compact');
+      assert.equal(await page.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(0, 0, 0)');
+      await page.locator('#campaign-tools summary').click();
+      await page.getByRole('button',{name:'Reuse campaign',exact:true}).focus();
+      await page.keyboard.press('Escape');
+      assert.equal(await page.locator('#campaign-tools').getAttribute('open'),null);
       const control=page.locator('#campaign-control-form');
       async function tool(name){await page.locator('#campaign-tools summary').click();await page.getByRole('button',{name,exact:true}).click();await control.waitFor({state:'visible'});}
       async function submit(){await page.locator('#campaign-control-submit').click();await control.waitFor({state:'hidden'});}

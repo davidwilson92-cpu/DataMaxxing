@@ -37,6 +37,16 @@ struct NativeCampaignView: View {
 
     var body: some View {
         NavigationStack {
+            Group {
+            if !current.isNull && ready && !locked {
+                ScrollView {
+                    VStack(alignment:.leading,spacing:12) {
+                        review
+                        if working { ProgressView() }
+                        if !message.isEmpty { Text(message).foregroundStyle(.secondary) }
+                    }.padding(.horizontal,16).padding(.vertical,8)
+                }
+            } else {
             Form {
                 if locked {
                     Section("Premium") {
@@ -54,15 +64,16 @@ struct NativeCampaignView: View {
                                 }
                             }
                         }
-                    } else {
-                        Button("All campaigns") { current = .null; feedback = ""; message = "" }
                     }
-                    if current.isNull { brief } else { review }
+                    brief
                 }
                 if working { ProgressView() }
                 if !message.isEmpty { Text(message).foregroundStyle(.secondary) }
             }
-            .scrollContentBackground(.hidden).background(Color.white).preferredColorScheme(.light)
+            .scrollContentBackground(.hidden)
+            }
+            }
+            .background(Color.black).preferredColorScheme(.dark).tint(.white)
             .buttonStyle(.borderless)
             .disabled(working)
             .navigationTitle(current.isNull ? "Campaigns" : campaignName(current))
@@ -75,6 +86,8 @@ struct NativeCampaignView: View {
             }
             .sheet(isPresented: $consent) { NativeAIConsentView().environmentObject(store) }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color.black,for:.navigationBar)
+            .toolbarBackground(.visible,for:.navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button {
                     if embedded {store.selectedTab = 0; return}
@@ -159,7 +172,9 @@ struct NativeCampaignView: View {
             .sorted { (key($0), dates[$0]["local"].string,$0) < (key($1),dates[$1]["local"].string,$1) }
     }
     @ViewBuilder private var review: some View {
-        CampaignActionsView(row:current,working:working,rename:{newName=campaignName(current);renaming=true},refresh:{
+        CampaignActionsView(row:current,working:working,calendarView:$calendarView,sortBy:$sortBy,
+        allCampaigns:{current = .null; feedback = ""; message = ""},
+        rename:{newName=campaignName(current);renaming=true},refresh:{
             await perform {try await reopen(current["id"].int)}
         },request:{path,body in
             var succeeded=false
@@ -170,15 +185,11 @@ struct NativeCampaignView: View {
             }
             return succeeded
         }).id(current["id"].int)
-        Section {
-            Picker("View",selection:$calendarView){Text("Previews").tag(false);Text("Calendar").tag(true)}.pickerStyle(.segmented)
-            Picker("Sort by",selection:$sortBy){ForEach(["Date","Platform","Media type"],id:\.self){Text($0)}}
             if calendarView {
                 CampaignCalendar(days:current["dates"].array.map {String($0["local"].string.prefix(10))},platforms:current["posts"].array.map {$0["platform"].string},selected:$selectedDay)
                     .id(current["id"].int)
             }
-        }
-        Section {
+        LazyVStack(alignment:.leading,spacing:16) {
             ForEach(positions, id: \.self) { index in
                 let post=current["posts"].array[index]
                 VStack(alignment: .leading, spacing: 6) {
@@ -222,7 +233,9 @@ struct NativeCampaignView: View {
                             try await reopen(current["id"].int)
                         } } }
                     }
-                }
+                }.padding(12).background(Color(white:0.075),in:RoundedRectangle(cornerRadius:14))
+                    .overlay(RoundedRectangle(cornerRadius:14).stroke(Color.white.opacity(0.16)))
+                    .accessibilityIdentifier("campaign-post-\(index)")
             }
         }
         if current["draft_ids"].array.isEmpty {
