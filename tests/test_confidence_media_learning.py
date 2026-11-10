@@ -92,6 +92,10 @@ def test_evidence_is_platform_scoped_honest_about_zero_and_missing_and_staleness
 def test_uncertain_summary_links_only_to_affected_drafts_without_resending():
     result=summary([{'draft_id':1,'status':'scheduled'},{'draft_id':2,'status':'unknown'},{'draft_id':3,'status':'published'}])
     assert result['attention']==1 and result['draft_ids']==[2]
-    assert result['text']=='1 scheduled · 1 published · 1 need attention'
+    assert result['text']=='1 scheduled · 1 published · 1 needs attention'
     assert 'will not resend automatically' in guidance('unknown')
     assert 'do not resend' in guidance('pending')
+
+
+def test_queued_and_reviewed_posts_are_not_missing_from_summary():
+    assert summary([{'status':'queued'},{'status':'review'}])['text']=='1 awaiting approval · 1 preparing'

@@ -84,14 +84,19 @@ struct NativeMediaLibrary: View {
 
 struct NativeLearningEvidence: View {
     let value: JSONValue
+    private var label: String {
+        if isStale { return "Evidence needs refresh" }
+        return value["sample_size"].int > 0 ? "Evidence · \(value["sample_size"].int) posts" : "An idea to test"
+    }
     private var isStale: Bool {
         guard let date = ProductLinks.date(value["checked_at"].string) else { return false }
         return Date().timeIntervalSince(date) > 86400
     }
     var body: some View {
         if !value.isNull {
-            DisclosureGroup(isStale ? "Evidence used — refresh needed" : value["summary"].string) {
+            DisclosureGroup(label) {
                 VStack(alignment: .leading, spacing: 8) {
+                    Text(value["summary"].string)
                     Text(value["note"].string)
                     if !value["checked_at"].string.isEmpty { Text("Evidence checked: " + value["checked_at"].string) }
                     ForEach(Array(value["examples"].array.enumerated()), id: \.offset) { _, post in

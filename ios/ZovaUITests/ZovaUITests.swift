@@ -2,6 +2,20 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testSavedMediaAtLargestTextKeepsSelectionAndDismissalReachable() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture","-UIPreferredContentSizeCategoryName","UICTContentSizeCategoryAccessibilityXXXL"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let library=app.buttons["Saved media"]
+        for _ in 0..<8 where !library.isHittable {app.swipeUp()}
+        XCTAssertTrue(library.isHittable);library.tap()
+        let photo=app.buttons["library-asset-51"]
+        XCTAssertTrue(photo.waitForExistence(timeout:8));photo.tap()
+        XCTAssertTrue(app.buttons["Use selected (1)"].isHittable)
+        XCTAssertTrue(app.buttons["Cancel"].isHittable)
+        capture(app,"Saved media — largest accessibility text")
+        app.buttons["Cancel"].tap()
+        XCTAssertFalse(app.buttons["Remove Pottery wheel.jpg"].exists)
+    }
     func testSavedMediaCanBeReusedAndCancelledWithoutChangingBrief() {
         let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
         XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
@@ -170,6 +184,10 @@ final class ZovaUITests: XCTestCase {
         XCTAssertEqual(app.webViews.count, 0)
         app.buttons["next-move"].tap()
         XCTAssertTrue(app.staticTexts["AI recommendation"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["An idea to test"].exists)
+        app.buttons["An idea to test"].tap()
+        XCTAssertTrue(app.staticTexts["Not enough fresh performance evidence. Results are not predicted."].exists)
+        app.buttons["An idea to test"].tap()
         capture(app, "Native Next Move — mobile parity")
         app.buttons["Next idea"].tap(); app.buttons["Next idea"].tap(); app.buttons["Next idea"].tap()
         XCTAssertTrue(app.staticTexts["Idea 4"].waitForExistence(timeout: 8))

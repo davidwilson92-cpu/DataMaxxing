@@ -48,6 +48,11 @@ final class NativeProductFixtures: URLProtocol {
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
+        if request.url!.path.hasPrefix("/media/") {
+            let bytes=Data(base64Encoded:"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jN2kAAAAASUVORK5CYII=")!
+            client?.urlProtocol(self,didReceive:HTTPURLResponse(url:request.url!,statusCode:200,httpVersion:nil,headerFields:["Content-Type":"image/png"])!,cacheStoragePolicy:.notAllowed)
+            client?.urlProtocol(self,didLoad:bytes);client?.urlProtocolDidFinishLoading(self);return
+        }
         let (status, value, headers) = Self.response(request)
         let data = (try? value.encoded()) ?? Data()
         client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: ["Content-Type":"application/json"].merging(headers) { _, new in new })!, cacheStoragePolicy: .notAllowed)

@@ -4,7 +4,7 @@
   window.zovaLearningMarkup = value => {
     if (!value) return '';
     const stale=value.checked_at && Date.now()-new Date(value.checked_at).getTime()>86400000;
-    return `<details class="learning-evidence"><summary>${escape(stale?'Evidence needs refresh':value.sample_size?'Evidence · '+value.sample_size+' posts':'Strategy-led test')}</summary><p>${escape(value.summary)} ${escape(value.note)}</p>${value.checked_at?`<small>Checked ${escape(new Date(value.checked_at).toLocaleString())}</small>`:''}${(value.examples||[]).map(p=>`<blockquote><p>${escape(p.text||'Post without a caption')}</p><small>${escape(p.platform)} · ${escape(p.created_at||'Date unavailable')} · ${escape(p.format||'Format unavailable')}</small><p>${Object.entries(p.metrics).map(([k,v])=>escape(k)+': '+(v===null?'Unavailable':escape(v))).join(' · ')}</p></blockquote>`).join('')}</details>`;
+    return `<details class="learning-evidence"><summary>${escape(stale?'Evidence needs refresh':value.sample_size?'Evidence · '+value.sample_size+' posts':'An idea to test')}</summary><p>${escape(value.summary)} ${escape(value.note)}</p>${value.checked_at?`<small>Checked ${escape(new Date(value.checked_at).toLocaleString())}</small>`:''}${(value.examples||[]).map(p=>`<blockquote><p>${escape(p.text||'Post without a caption')}</p><small>${escape(p.platform)} · ${escape(p.created_at||'Date unavailable')} · ${escape(p.format||'Format unavailable')}</small><p>${Object.entries(p.metrics).map(([k,v])=>escape(k)+': '+(v===null?'Unavailable':escape(v))).join(' · ')}</p></blockquote>`).join('')}</details>`;
   };
   window.zovaMediaLibrary = ({existing=[],limit=10,onSelect}) => {
     const previous=document.activeElement, workspace=document.querySelector('meta[name=zova-workspace]')?.content;

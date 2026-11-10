@@ -1,3 +1,12 @@
+# Publishing confidence, media reuse and evidence — 10 November 2026
+
+Review-only candidate on `codex/confidence-media-learning-20261110`. Private saved-media
+selection, retained partial uploads, clearer publication states and inspectable AI
+evidence are implemented on web and native iOS. See CONFIDENCE_MEDIA_LEARNING_20261110.md
+for traceability, benchmark sources, validation and remaining physical-device/provider
+checks. No production deployment or distribution is authorised by this task. Customer
+charges remain disabled; Render and all 79 historical commercial findings are retained.
+
 # Compact Campaign layout follow-up — 10 November 2026
 
 Build 23's controls occupied excessive vertical space on the owner's iPhone.
