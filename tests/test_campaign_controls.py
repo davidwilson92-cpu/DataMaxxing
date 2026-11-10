@@ -202,6 +202,8 @@ def test_extend_review_saves_new_canonical_drafts_without_publishing(plan,monkey
     with SessionLocal() as db:
         assert all(db.get(Draft,i).status=='draft' for i in row['draft_ids'])
         assert not db.scalar(select(ScheduledPost.id).where(ScheduledPost.user_id==uid))
+        series=db.scalar(select(ContentSeries).where(ContentSeries.user_id==uid))
+        assert json.loads(series.spec_json)['count']==4
     assert improve(client,base,mode='extend',count=2,start=future(1)).status_code==400
 
 

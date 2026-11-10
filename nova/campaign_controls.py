@@ -340,5 +340,9 @@ def decide(cid: int, body: Decision, uid=Depends(premium), db=Depends(get_db)):
                     workspace['media_asset_ids'] = [post['asset_id']] if post['asset_id'] else []
                     draft.workspace_json = json.dumps(workspace)
                     draft.variants_json = variants
+        if series and extending:
+            settings = json.loads(series.spec_json)
+            settings['count'] = len(data['posts'])
+            series.spec_json = json.dumps(settings)
     replace(db, row, body.revision, data)
     return current_plan(db, row)
