@@ -21,6 +21,11 @@ const fs = require('node:fs');
       const control=page.locator('#campaign-control-form');
       async function tool(name){await page.locator('#campaign-tools summary').click();await page.getByRole('button',{name,exact:true}).click();await control.waitFor({state:'visible'});}
       async function submit(){await page.locator('#campaign-control-submit').click();await control.waitFor({state:'hidden'});}
+      // Cancel a local post edit; secondary actions must become usable again.
+      await cards.first().locator('.post-actions summary').click();
+      await cards.first().getByLabel('Caption',{exact:true}).fill('Do not save this edit');
+      await cards.first().getByRole('button',{name:'Cancel',exact:true}).click();
+      assert.equal(await cards.first().locator('p').first().innerText(),original);
       await tool('Pause campaign');await control.getByRole('button',{name:'Cancel',exact:true}).click();
       assert.equal(await page.locator('#campaign-state').innerText(),'');
       await tool('Pause campaign');await submit();await page.getByText('Paused · drafts kept',{exact:true}).waitFor();
@@ -29,7 +34,10 @@ const fs = require('node:fs');
       assert.match(await cards.first().locator('time').getAttribute('datetime'),/^2027-02-01T12:00/);
       await page.getByRole('button',{name:'Save posts to Schedule',exact:true}).click();await page.getByText('Open in Studio',{exact:true}).first().waitFor();
       await page.getByRole('button',{name:'Improve remaining posts',exact:true}).click();await control.waitFor({state:'visible'});
-      await control.locator('[name=feedback]').fill('Make it welcoming and local.');await submit();
+      await control.locator('[name=feedback]').fill('Make it welcoming and local.');
+      await page.getByLabel('Sort by').selectOption('platform');
+      assert.equal(await control.locator('[name=feedback]').inputValue(),'Make it welcoming and local.');
+      await page.getByLabel('Sort by').selectOption('date');await submit();
       const proposal=page.locator('#campaign-suggestion');await proposal.waitFor({state:'visible'});
       assert.equal(await cards.first().locator('p').first().innerText(),original);
       await proposal.locator('summary').first().click();assert.equal(await proposal.locator('details p').first().innerText(),original);
