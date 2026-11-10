@@ -13,6 +13,17 @@ const fs=require('node:fs');
   await saved.click();const dialog=page.getByRole('dialog',{name:'Saved media'});
   await dialog.getByText('Friday bouquet.jpg',{exact:true}).waitFor();timings.push({width,library_ms:Math.round(performance.now()-start)});
   await dialog.getByLabel('Friday bouquet.jpg',{exact:true}).check();
+  let releaseSearch;const searchGate=new Promise(resolve=>releaseSearch=resolve);
+  await page.route('**/api/media/library?*',async route=>{await searchGate;await route.continue();});
+  await dialog.getByLabel('Search files').fill('Barber');await dialog.getByRole('button',{name:'Search',exact:true}).click();
+  assert(await dialog.getByRole('button',{name:'Use selected'}).isDisabled(),'Cannot apply during an unfinished search');
+  releaseSearch();
+  await dialog.getByLabel('Barber cancellation.jpg',{exact:true}).check();
+  await page.unroute('**/api/media/library?*');
+  assert.equal(await dialog.locator('footer span').innerText(),'2 selected','Filtering keeps the first choice');
+  await dialog.getByLabel('Search files').fill('');await dialog.getByRole('button',{name:'Search',exact:true}).click();
+  await dialog.getByLabel('Friday bouquet.jpg',{exact:true}).waitFor();assert(await dialog.getByLabel('Friday bouquet.jpg',{exact:true}).isChecked());
+  await dialog.getByLabel('Barber cancellation.jpg',{exact:true}).uncheck();
   await page.screenshot({path:`outputs/confidence-media-learning/library-${width}.png`,fullPage:true});
   await dialog.getByRole('button',{name:'Close saved media'}).click();
   assert.equal(await page.locator('#campaign-files li').count(),0,'Cancel preserves selection');
@@ -63,7 +74,3 @@ const fs=require('node:fs');
  console.log(JSON.stringify({passed:true,timings}));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
-
-
-
-

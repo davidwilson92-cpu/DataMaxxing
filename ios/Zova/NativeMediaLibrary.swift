@@ -77,7 +77,7 @@ struct NativeMediaLibrary: View {
         loading = true; error = ""
         let epoch = store.authority
         if let ownerEpoch, ownerEpoch != epoch { dismiss(); return }; ownerEpoch = epoch
-        if reset { rows = []; picks = []; cursor = 0 }
+        if reset { rows = []; cursor = 0 }
         var components = URLComponents(); components.queryItems = [URLQueryItem(name: "q", value: query), URLQueryItem(name: "kind", value: kind)]
         if cursor > 0 { components.queryItems?.append(URLQueryItem(name: "before", value: String(cursor))) }
         Task {
