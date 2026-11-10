@@ -38,7 +38,7 @@ const fs=require('node:fs');
   await page.goto('http://127.0.0.1:8798/studio');
   await page.waitForFunction(()=>!studioLoading);await page.locator('#brief').fill('Friday bouquet collection.');await page.locator('#studio-library').click();
   await dialog.getByLabel('Friday bouquet.jpg',{exact:true}).check().catch(async e=>{console.log(page.url(),await page.locator('body').innerText(),errors);throw e;});await dialog.getByRole('button',{name:'Use selected'}).click();
-  await dialog.waitFor({state:'detached'}).catch(async e=>{console.log(await dialog.innerText());throw e;});await page.waitForFunction(()=>document.querySelector('#autosaveStatus').textContent==='Saved');
+  await dialog.waitFor({state:'detached'}).catch(async e=>{console.log(await dialog.innerText());throw e;});await page.waitForFunction(()=>saveLabel==='Saved');
   await page.reload();await page.locator('.attachment-card').waitFor();
   assert.equal(await page.locator('.attachment-card').count(),1);assert.equal(await page.locator('#brief').inputValue(),'Friday bouquet collection.');
   await page.screenshot({path:`outputs/confidence-media-learning/studio-${width}.png`,fullPage:true});
@@ -49,6 +49,7 @@ const fs=require('node:fs');
  console.log(JSON.stringify({passed:true,timings}));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
+
 
 
 
