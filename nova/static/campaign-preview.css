@@ -58,9 +58,14 @@
 .campaign-timing select,.campaign-timing input{width:100%;min-width:0}
 @media(max-width:360px){.campaign-timing{grid-template-columns:1fr}}
 .campaign-control-bar,.campaign-inline-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem}
-.campaign-control-bar{border-block:1px solid #e8e0ed;padding:.65rem 0}
-.campaign-control-bar summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:#6433a7}
-#campaign-tools>div{display:grid;gap:.3rem;padding:.4rem;border:1px solid #e5dced;border-radius:10px;background:#fff}
+.campaign-command-panel{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;padding:.5rem;border:1px solid #504958;border-radius:12px;background:linear-gradient(115deg,#080709,#21142e);color:#fff}
+.campaign-control-bar{gap:.5rem}
+.campaign-control-bar summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:.5rem;padding:0 .75rem;color:#fff;border:1px solid #504958;border-radius:8px}
+.campaign-command-panel select{min-height:44px;padding:.5rem .65rem;background:#000!important;color:#fff}
+.campaign-command-panel .campaign-toolbar{gap:.5rem;flex-wrap:nowrap}
+#campaign-tools{position:relative}
+#campaign-tools>div{position:absolute;top:calc(100% + .4rem);right:0;z-index:5;display:grid;gap:.3rem;width:max-content;max-width:calc(100vw - 3rem);padding:.4rem;border:1px solid #61576c;border-radius:10px;background:#000;box-shadow:0 8px 24px #0009}
+#campaign-tools>div button{width:100%;text-align:left}
 #campaign-control-form,#campaign-suggestion{padding:1rem;border:1px solid #d5c4ed;border-radius:14px;background:#faf8fd}
 #campaign-control-form h2,#campaign-suggestion h2{font-size:1.1rem;margin:0}
 #campaign-control-form p,#campaign-suggestion>p{font-size:.9rem;color:#65586e;margin:.2rem 0}
@@ -68,3 +73,9 @@
 .campaign .optional,#campaign-state{font-size:.8rem;color:#6a5a75}
 #campaign-suggestion article{background:#fff;border:1px solid #e1d7ed;padding:.85rem}
 .proposal-media{max-width:100%;height:100px;object-fit:contain;border-radius:8px}
+
+.campaign-page .campaign .campaign-command-panel :is(button,summary,select),.campaign-page .campaign #campaign-tools button{background:#070609;color:#fff;border-color:#61566e}
+.campaign-page .campaign .campaign-command-panel label{color:#fff}
+#campaign-state:empty{display:none}
+.campaign :is(button,select,summary,a):focus-visible{outline:2px solid #9160d5;outline-offset:3px}
+@media(max-width:540px){.campaign-command-panel>div{width:100%;justify-content:space-between}.campaign-command-panel .campaign-toolbar label{flex:1;min-width:0}.campaign-command-panel select{width:100%;min-width:0}.campaign #campaign-review{gap:.75rem;margin-top:.75rem}}

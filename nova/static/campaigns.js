@@ -258,6 +258,11 @@
   }
   let controlAction='', reuseKey='';
   const controlForm=element('campaign-control-form');
+  const toolsMenu=element('campaign-tools');
+  document.addEventListener('click',event=>{if(toolsMenu.open&&!toolsMenu.contains(event.target))toolsMenu.open=false;});
+  toolsMenu.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&toolsMenu.open){toolsMenu.open=false;toolsMenu.querySelector('summary').focus();event.preventDefault();}
+  });
   const actionNames={pause:'Pause campaign',resume:'Resume campaign',move:'Move remaining dates',reuse:'Reuse campaign',extend:'Add posts',improve:'Improve remaining posts'};
   async function openControl(action) {
     show(await request('/api/campaigns/'+current.id));
