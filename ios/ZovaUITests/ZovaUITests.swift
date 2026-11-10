@@ -36,7 +36,8 @@ final class ZovaUITests: XCTestCase {
         capture(app,"Campaign — compact toolbar at accessibility text size")
         menu.tap();app.buttons["Reuse campaign"].tap()
         let cancel=app.buttons["Cancel"];XCTAssertTrue(cancel.waitForExistence(timeout:8));reveal(cancel,in:app);cancel.tap()
-        let all=app.buttons["campaign-all"];reveal(all,in:app);all.tap()
+        // Cancelling the expanded form preserves its scroll offset; return to the toolbar above.
+        let all=app.buttons["campaign-all"];reveal(all,in:app,down:true);all.tap()
         XCTAssertTrue(saved.waitForExistence(timeout:8))
     }
     func testCampaignToolsCancelWithoutChangingSavedPlan() {
