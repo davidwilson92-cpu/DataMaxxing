@@ -1,3 +1,29 @@
+# Publishing confidence, media reuse and evidence — 10 November 2026
+
+Review-only candidate on `codex/confidence-media-learning-20261110`. Private saved-media
+selection, retained partial uploads, clearer publication states and inspectable AI
+evidence are implemented on web and native iOS. See CONFIDENCE_MEDIA_LEARNING_20261110.md
+for traceability, benchmark sources, validation and remaining physical-device/provider
+checks. No production deployment or distribution is authorised by this task. Customer
+charges remain disabled; Render and all 79 historical commercial findings are retained.
+
+# Compact Campaign layout follow-up — 10 November 2026
+
+Build 23's controls occupied excessive vertical space on the owner's iPhone.
+The bounded presentation fix is recorded in CAMPAIGN_COMPACT_TOOLBAR_20261110.md:
+one compact control panel, white backdrop with black/violet toolbar and white menu text, web/native parity and
+normal/large-text validation. This new candidate is not yet deployed. All broader
+79-section commercial findings remain tracked.
+
+# Campaign controls candidate — 10 November 2026
+
+Pause/resume, move remaining dates, reuse and reviewed AI improvements/extensions
+are in validation on codex/campaign-controls. See CAMPAIGN_CONTROLS_20261110.md
+for the coverage matrix and simulated persona critique. No production deployment,
+live posting or real customer billing is part of this task. Real-device/provider
+and live-model acceptance remain distinct from synthetic tests. The existing
+79-section commercial register retains all recorded findings.
+
 # Performance candidate — 31 October 2026
 
 The isolated codex/performance-20261031 candidate adds batched draft/series reads,

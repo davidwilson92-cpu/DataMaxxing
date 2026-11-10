@@ -26,7 +26,7 @@ struct NativePerformanceView: View {
                     ForEach(Array(dashboard["campaigns"].array.enumerated()), id: \.offset) { _, row in
                         ZovaCard {
                             Text(row["name"].string).font(.headline)
-                            Text("\(row["measured"].int) of \(row["published"].int) published posts measured").font(.caption)
+                            Text(row["published"].int == 0 ? "No posts published in this period." : "\(row["measured"].int) of \(row["published"].int) published posts measured").font(.caption)
                             if row["published"].int > 0 {
                                 ForEach(["views","likes","comments","shares"], id: \.self) { key in
                                     LabeledContent(key.capitalized, value: number(row[key]))

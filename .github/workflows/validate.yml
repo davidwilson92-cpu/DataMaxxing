@@ -54,6 +54,26 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/next_move_focus_browser.cjs
           NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/studio_intro_browser.cjs
           NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/account_fields_browser.cjs
+      - name: Check campaign control and recovery journeys
+        run: |
+          python tests/campaign_controls_preview.py > "$RUNNER_TEMP/zova-campaign-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8797/health > /dev/null; then break; fi
+            sleep 1
+          done
+          NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/campaign_controls_browser.cjs
+      - name: Check private media reuse and save recovery in browser
+        run: |
+          python tests/confidence_preview.py > "$RUNNER_TEMP/zova-confidence-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 45); do
+            if curl --silent --fail http://127.0.0.1:8798/health > /dev/null; then break; fi
+            sleep 1
+          done
+          NODE_PATH="$RUNNER_TEMP/zova-browser/node_modules" node tests/confidence_browser.cjs
       - run: python -m pip_audit --format json -o dependency-audit.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -63,6 +83,8 @@ jobs:
             test-results.xml
             dependency-audit.json
             ${{ runner.temp }}/zova-preview.log
+            ${{ runner.temp }}/zova-confidence-preview.log
+            outputs/confidence-media-learning/
   postgres-release:
     runs-on: ubuntu-latest
     services:

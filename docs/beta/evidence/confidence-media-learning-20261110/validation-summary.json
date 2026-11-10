@@ -1,0 +1,23 @@
+{
+  "runtime": "723a26af2bfa2a58190ffa2ede5272004c0d8d61",
+  "application_run": 42872780694,
+  "sqlite": {
+    "passed": 826,
+    "skipped": 2
+  },
+  "postgres": {
+    "passed": 827,
+    "skipped": 1
+  },
+  "native_run": 42872781079,
+  "native": {
+    "unit_passed": 46,
+    "ui_passed": 28,
+    "release_build": "passed",
+    "device": "iPhone 17 Pro Max simulator"
+  },
+  "upload_order_combinations": 256,
+  "production_deployed": false,
+  "testflight_distributed": false,
+  "customer_charges_enabled": false
+}

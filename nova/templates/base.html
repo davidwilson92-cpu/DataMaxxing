@@ -13,7 +13,7 @@
 <link rel="icon" href="{{ asset_url('zova-mark.svg') }}" type="image/svg+xml">
 <link rel="stylesheet" href="{{ asset_url('zova-base.css') }}">
 <script defer src="{{ asset_url('workspace-ui.js') }}"></script>
-<link rel="stylesheet" href="{{ asset_url('commercial-polish.css') }}">
+<link rel="stylesheet" href="{{ asset_url('commercial-polish.css') }}"><link rel="stylesheet" href="{{ asset_url('workspace-tabs.css') }}">
 <style>:root{--zova-instagram-mark:url("{{ asset_url('instagram-official.png') }}")}</style>
 <link rel="stylesheet" href="{{ asset_url('social-brand.css') }}">
 <script src="{{ asset_url('social-brand.js') }}" data-icons='{{ {"x":asset_url("x-brand.svg"),"facebook":asset_url("facebook-brand.svg"),"tiktok":asset_url("tiktok-brand.svg")} | tojson }}'></script>
@@ -22,7 +22,7 @@
 {% if native_shell %}<link rel="stylesheet" href="{{ asset_url('ios-shell.css') }}"><script defer src="{{ asset_url('ios-shell.js') }}"></script>{% endif %}
 {% if request.url.path in ['/studio','/drafts','/analytics'] %}
 <link rel="stylesheet" href="{{ asset_url('studio-layout.css') }}">
-{% else %}
+{% elif request.url.path != '/campaigns' %}
 <link rel="stylesheet" href="{{ asset_url('zova-night.css') }}">
 {% endif %}
 {% if user %}<link rel="stylesheet" href="{{ asset_url('ai-privacy.css') }}">{% endif %}
@@ -43,6 +43,7 @@
 </header>
 {% endblock %}
 {% block body %}{% endblock %}
+{% if user and request.url.path in ["/studio","/campaigns","/drafts","/analytics","/account"] %}{% include "mobile_workspace_tabs.html" %}{% endif %}
 {% block site_footer %}
 <footer class="footer"><span>Zova · Operated by {{ operator_name }}</span><span>Because content is the fun part.</span><nav class="legal-links" aria-label="Legal"><a href="/privacy-policy">Privacy</a><a href="/terms-of-service">Terms</a><a href="/refund-policy">Refunds</a><a href="/data-deletion">Delete data</a><a href="/security">Security</a></nav></footer>
 {% endblock %}

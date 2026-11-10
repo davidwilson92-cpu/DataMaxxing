@@ -2,6 +2,136 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testSavedMediaAtLargestTextKeepsSelectionAndDismissalReachable() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture","-UIPreferredContentSizeCategoryName","UICTContentSizeCategoryAccessibilityXXXL"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let library=app.buttons["Saved media"]
+        for _ in 0..<8 where !library.isHittable {app.swipeUp()}
+        XCTAssertTrue(library.isHittable);library.tap()
+        let photo=app.buttons["library-asset-51"]
+        XCTAssertTrue(photo.waitForExistence(timeout:8));photo.tap()
+        XCTAssertTrue(app.buttons["Use selected (1)"].isHittable)
+        XCTAssertTrue(app.buttons["Cancel"].isHittable)
+        capture(app,"Saved media — largest accessibility text")
+        app.buttons["Cancel"].tap()
+        XCTAssertFalse(app.buttons["Remove Pottery wheel.jpg"].exists)
+    }
+    func testSavedMediaCanBeReusedAndCancelledWithoutChangingBrief() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let library=app.buttons["Saved media"]
+        for _ in 0..<5 where !library.isHittable {app.swipeUp()}
+        XCTAssertTrue(library.isHittable);library.tap()
+        let photo=app.buttons["library-asset-51"]
+        XCTAssertTrue(photo.waitForExistence(timeout:8));photo.tap()
+        app.buttons["Videos"].tap()
+        let video=app.buttons["library-asset-52"]
+        XCTAssertTrue(video.waitForExistence(timeout:8));video.tap()
+        XCTAssertTrue(app.buttons["Use selected (2)"].exists)
+        video.tap();app.buttons["All"].tap()
+        XCTAssertTrue(app.buttons["library-asset-51"].waitForExistence(timeout:8))
+        XCTAssertTrue(app.buttons["Use selected (1)"].exists)
+        XCTAssertEqual(photo.value as? String,"Selected")
+        capture(app,"Saved media — selectable owned assets")
+        app.buttons["Use selected (1)"].tap()
+        XCTAssertTrue(app.buttons["Remove Pottery wheel.jpg"].waitForExistence(timeout:8))
+        library.tap();XCTAssertTrue(photo.waitForExistence(timeout:8));XCTAssertFalse(photo.isEnabled)
+        app.buttons["library-asset-52"].tap();app.buttons["Cancel"].tap()
+        XCTAssertFalse(app.buttons["Remove Studio tour.mp4"].exists)
+        app.buttons["close-campaign"].tap();app.buttons["Campaign"].tap()
+        for _ in 0..<5 where !app.buttons["Remove Pottery wheel.jpg"].isHittable {app.swipeUp()}
+        XCTAssertTrue(app.buttons["Remove Pottery wheel.jpg"].exists)
+        app.buttons["Remove Pottery wheel.jpg"].tap();library.tap()
+        XCTAssertTrue(photo.waitForExistence(timeout:8));XCTAssertTrue(photo.isEnabled)
+        XCTAssertEqual(photo.value as? String,"Not selected")
+        app.buttons["Cancel"].tap()
+    }
+    func testCampaignCompactToolbarKeepsPostVisibleAndNavigationAvailable() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let saved=app.buttons["saved-campaign-6"]
+        XCTAssertTrue(saved.waitForExistence(timeout:8));saved.tap()
+        let all=app.buttons["campaign-all"], calendar=app.buttons["Calendar"]
+        XCTAssertTrue(all.waitForExistence(timeout:8))
+        XCTAssertTrue(app.staticTexts["Try the wheel."].isHittable,"First caption should be visible without scrolling")
+        XCTAssertEqual(app.staticTexts["campaign-publication-summary"].label,"1 draft")
+        XCTAssertLessThan(calendar.frame.maxY-all.frame.minY,150,"Controls should occupy two compact rows")
+        XCTAssertGreaterThanOrEqual(app.buttons["campaign-actions"].frame.height,44)
+        XCTAssertGreaterThanOrEqual(all.frame.height,44)
+        XCTAssertGreaterThanOrEqual(app.buttons["Edit post"].frame.height,44)
+        capture(app,"Campaign — white backdrop with compact black toolbar")
+        calendar.tap()
+        XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout:5))
+        app.buttons["Previews"].tap()
+        app.buttons["Sort by"].tap();app.buttons["Platform"].tap()
+        XCTAssertTrue(app.staticTexts["Try the wheel."].exists)
+        all.tap();XCTAssertTrue(saved.waitForExistence(timeout:5))
+    }
+    func testCampaignToolbarSupportsAccessibilityText() {
+        let app=XCUIApplication()
+        app.launchArguments=["--native-fixture","-UIPreferredContentSizeCategoryName","UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let saved=app.buttons["saved-campaign-6"]
+        XCTAssertTrue(saved.waitForExistence(timeout:8));reveal(saved,in:app);saved.tap()
+        let menu=app.buttons["campaign-actions"]
+        XCTAssertTrue(menu.waitForExistence(timeout:8));reveal(menu,in:app)
+        XCTAssertTrue(menu.isHittable)
+        XCTAssertLessThanOrEqual(menu.frame.maxX,app.frame.maxX)
+        capture(app,"Campaign — compact toolbar at accessibility text size")
+        menu.tap();app.buttons["Reuse campaign"].tap()
+        let cancel=app.buttons["Cancel"];XCTAssertTrue(cancel.waitForExistence(timeout:8));reveal(cancel,in:app);cancel.tap()
+        // Cancelling the expanded form preserves its scroll offset; return to the toolbar above.
+        let all=app.buttons["campaign-all"];reveal(all,in:app,down:true);all.tap()
+        XCTAssertTrue(saved.waitForExistence(timeout:8))
+    }
+    func testCampaignToolsCancelWithoutChangingSavedPlan() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let saved=app.buttons["saved-campaign-6"]
+        XCTAssertTrue(saved.waitForExistence(timeout:8));saved.tap()
+        for title in ["Move remaining dates","Reuse campaign","Add posts"] {
+            let menu=app.buttons["campaign-actions"];reveal(menu,in:app);menu.tap()
+            app.buttons[title].tap()
+            let cancel=app.buttons["Cancel"];XCTAssertTrue(cancel.waitForExistence(timeout:8));reveal(cancel,in:app);cancel.tap()
+            XCTAssertFalse(app.buttons["Cancel"].exists)
+            XCTAssertTrue(app.staticTexts["Try the wheel."].exists)
+        }
+    }
+    func testCampaignPauseAndImprovementPreviewKeepOriginalUntilApply() {
+        let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        let saved=app.buttons["saved-campaign-6"]
+        XCTAssertTrue(saved.waitForExistence(timeout:8));saved.tap()
+        let menu=app.buttons["campaign-actions"]
+        XCTAssertTrue(menu.waitForExistence(timeout:8));menu.tap()
+        app.buttons["Pause campaign"].tap()
+        let pause=app.buttons["Pause campaign"];XCTAssertTrue(pause.waitForExistence(timeout:8));reveal(pause,in:app);pause.tap()
+        XCTAssertTrue(app.staticTexts["Paused · drafts kept"].waitForExistence(timeout:8))
+        app.buttons["campaign-improve"].tap()
+        let preview=app.buttons["Preview changes"];XCTAssertTrue(preview.waitForExistence(timeout:8));reveal(preview,in:app);preview.tap()
+        let evidence=app.buttons["An idea to test"];XCTAssertTrue(evidence.waitForExistence(timeout:8));reveal(evidence,in:app);evidence.tap()
+        XCTAssertTrue(app.staticTexts["Not enough fresh performance evidence for this recommendation. Results are not predicted."].exists)
+        capture(app,"Campaign — evidence distinguishes a test from measured results")
+        evidence.tap()
+        let original=app.buttons["Original caption"];XCTAssertTrue(original.waitForExistence(timeout:8));reveal(original,in:app);original.tap()
+        XCTAssertTrue(app.staticTexts["Try the wheel."].firstMatch.exists)
+        capture(app,"Campaign — improvement preview retains original")
+        let apply=app.buttons["campaign-apply-improvements"];reveal(apply,in:app);apply.tap()
+        XCTAssertTrue(app.staticTexts["Your first pot starts with one small ball of clay."].waitForExistence(timeout:8))
+        XCTAssertFalse(app.buttons["Original caption"].exists)
+    }
+    func testUnfinishedCampaignRestoresAfterReturningToStudio() {
+        let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
+        let entry = app.buttons["Campaign"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 12)); entry.tap()
+        let brief = app.textViews["Campaign brief"]
+        XCTAssertTrue(brief.waitForExistence(timeout: 8)); brief.tap(); brief.typeText("Saturday alterations")
+        app.buttons["close-campaign"].tap(); entry.tap()
+        XCTAssertTrue(brief.waitForExistence(timeout: 8))
+        XCTAssertEqual(brief.value as? String, "Saturday alterations")
+    }
+
     func testEditCampaignAndReadItsPerformance() {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         let entry = app.buttons["Campaign"]
@@ -68,6 +198,10 @@ final class ZovaUITests: XCTestCase {
         XCTAssertEqual(app.webViews.count, 0)
         app.buttons["next-move"].tap()
         XCTAssertTrue(app.staticTexts["AI recommendation"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["An idea to test"].exists)
+        app.buttons["An idea to test"].tap()
+        XCTAssertTrue(app.staticTexts["Not enough fresh performance evidence for this recommendation. Results are not predicted."].exists)
+        app.buttons["An idea to test"].tap()
         capture(app, "Native Next Move — mobile parity")
         app.buttons["Next idea"].tap(); app.buttons["Next idea"].tap(); app.buttons["Next idea"].tap()
         XCTAssertTrue(app.staticTexts["Idea 4"].waitForExistence(timeout: 8))
@@ -253,7 +387,12 @@ final class ZovaUITests: XCTestCase {
         capture(app, "Native Next Move — largest accessibility text")
         reveal(app.buttons["Draft post"], in: app)
         assertTarget(app.buttons["Draft post"], app: app)
-        app.swipeDown(); app.swipeDown(); app.buttons["Close ✦ Next move"].tap()
+        app.swipeDown(); app.swipeDown()
+        // A downward gesture may already dismiss the sheet at its scroll boundary.
+        // Verify the destination instead of tapping a button on a closed sheet.
+        let closeMove = app.buttons["Close ✦ Next move"]
+        if closeMove.exists { closeMove.tap() }
+        XCTAssertTrue(app.buttons["tab-Schedule"].isHittable, "Next Move must return to the native navigation")
         app.buttons["tab-Schedule"].tap()
         XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout: 8))
         reveal(app.buttons["Next month"], in: app); assertTarget(app.buttons["Next month"], app: app)

@@ -105,6 +105,11 @@ function fitVisibleViewport(){
 }
 document.getElementById('brief').addEventListener('focus',fitVisibleViewport);
 document.getElementById('brief').addEventListener('blur',fitVisibleViewport);
+// Keep the composer under the pointer until the action runs. Blurring the
+// textarea on pointer-down otherwise moves the mobile toolbar before click.
+document.querySelector('.composer-toolbar')?.addEventListener('pointerdown',event=>{
+ if(event.target.closest('button')&&document.activeElement===document.getElementById('brief'))event.preventDefault();
+});
 window.visualViewport?.addEventListener('resize',fitVisibleViewport);
 window.addEventListener('resize',fitVisibleViewport);
 fitVisibleViewport();
