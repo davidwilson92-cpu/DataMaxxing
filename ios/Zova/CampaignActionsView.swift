@@ -18,6 +18,12 @@ struct CampaignActionsView: View {
     private var zone: TimeZone { TimeZone(identifier:row["brief"]["timezone"].string) ?? .current }
     private var hasDate: Bool { ["move","reuse","extend"].contains(action) }
     private var aiAction: Bool { ["improve","extend"].contains(action) }
+    private var canImprove: Bool {
+        row["posts"].array.contains { post in
+            ["", "draft", "scheduled"].contains(post["status"].string) &&
+            (row["draft_ids"].array.isEmpty || post["simple"].bool)
+        }
+    }
 
     var body: some View {
         Section {
@@ -31,7 +37,7 @@ struct CampaignActionsView: View {
         if !row["suggestion"].isNull { proposal }
     }
     @ViewBuilder private var improveButton: some View {
-        if !row["posts"].array.isEmpty {
+        if canImprove {
             Button("Improve remaining posts") { begin("improve") }
                 .accessibilityIdentifier("campaign-improve")
         }
@@ -43,7 +49,8 @@ struct CampaignActionsView: View {
             Button("Move remaining dates",systemImage:"calendar") { begin("move") }
             Button("Add posts",systemImage:"plus") { begin("extend") }
             Button("Reuse campaign",systemImage:"doc.on.doc") { begin("reuse") }
-        } label: { Label("Campaign actions",systemImage:"ellipsis.circle").frame(minHeight:44) }
+        } label: { Image(systemName:"ellipsis.circle").frame(minWidth:44,minHeight:44) }
+        .accessibilityLabel("Campaign actions")
         .accessibilityIdentifier("campaign-actions")
     }
     private func begin(_ value:String) {
@@ -69,7 +76,7 @@ struct CampaignActionsView: View {
                 HStack { submitButton; Button("Cancel"){action=""} }
                 VStack(alignment:.leading) { submitButton; Button("Cancel"){action=""} }
             }
-        }.padding(12).background(Color.purple.opacity(0.05),in:RoundedRectangle(cornerRadius:12))
+        }.padding(12).background(ZovaDesign.pale,in:RoundedRectangle(cornerRadius:12))
     }
     private var note:String {
         switch action {
@@ -94,13 +101,12 @@ struct CampaignActionsView: View {
                 body = .object(["revision":row["revision"],"mode":.string(action),"feedback":.string(feedback),"count":.integer(count),"start":local])
             }
             Task { if await request(path,body) {action=""} }
-        }.buttonStyle(.borderedProminent).tint(.purple).disabled(working || (action=="reuse" && (name.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty || name.count>80)))
+        }.buttonStyle(ZovaPrimary()).disabled(working || (action=="reuse" && (name.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty || name.count>80)))
     }
     @ViewBuilder private var proposal: some View {
         let suggestion=row["suggestion"],posts=suggestion["posts"].array
         Section(suggestion["mode"].string=="extend" ? "New follow-ups" : "Proposed improvements") {
-            Text(suggestion["basis"].string).font(.caption).foregroundStyle(.secondary)
-            Text("\(posts.count) posts").font(.caption)
+            Text("\(posts.count) \(posts.count == 1 ? "post" : "posts") · " + suggestion["basis"].string).font(.caption).foregroundStyle(.secondary)
             if suggestion["positions"].array.contains(where: { $0.int<row["posts"].array.count && row["posts"].array[$0.int]["status"].string=="scheduled" }) {
                 Text("Applying changes unschedules these posts. Review them again before publishing.").font(.callout)
             }
@@ -115,7 +121,7 @@ struct CampaignActionsView: View {
                     }
                 }
             }
-            Button("Apply changes") { decide("apply") }.buttonStyle(.borderedProminent).tint(.purple)
+            Button("Apply changes") { decide("apply") }.buttonStyle(ZovaPrimary())
                 .accessibilityIdentifier("campaign-apply-improvements")
             Button("Keep originals") { decide("discard") }
         }

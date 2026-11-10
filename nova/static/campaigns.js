@@ -292,11 +292,11 @@
     element('campaign-tools').inert=false;
     element('campaign-state').textContent=row.state==='paused'?'Paused · drafts kept':'';
     document.querySelector('[data-campaign-action="pause"]').textContent=row.state==='paused'?'Resume campaign':'Pause campaign';
-    element('improve-remaining').hidden=!row.posts.length;
+    element('improve-remaining').hidden=!row.posts.some(post=>['draft','scheduled'].includes(post.status||'draft') && (!row.draft_ids.length||post.simple));
     const panel=element('campaign-suggestion');panel.replaceChildren();panel.hidden=!row.suggestion;
     if(!row.suggestion)return;
     const proposal=row.suggestion,title=document.createElement('h2'),basis=document.createElement('p');
-    title.textContent=proposal.mode==='extend'?'New follow-ups':'Proposed improvements';basis.textContent=proposal.posts.length+' posts · '+proposal.basis;panel.append(title,basis);
+    title.textContent=proposal.mode==='extend'?'New follow-ups':'Proposed improvements';basis.textContent=proposal.posts.length+(proposal.posts.length===1?' post · ':' posts · ')+proposal.basis;panel.append(title,basis);
     if(proposal.positions.some(i=>row.posts[i]?.status==='scheduled')){const notice=document.createElement('p');notice.textContent='Applying changes unschedules these posts. Review them again before publishing.';panel.append(notice);}
     proposal.posts.forEach((post,n)=>{
       const card=document.createElement('article'),label=document.createElement('strong'),text=document.createElement('p');
