@@ -6,4 +6,11 @@ Native review moves out of separate Form sections into a scrolling post list. On
 
 Web mirrors the black palette and compact action/view/sort panel. Secondary actions open as a dropdown rather than pushing the posts down. Escape closes it and restores keyboard focus; clicking outside also dismisses it. Saved-campaign selection remains directly available.
 
-Validation in progress: local phone-width visual review; existing campaign journey regression plus compact-height, black-background and dropdown keyboard checks; native normal/large-text navigation and visual evidence; required full application/PostgreSQL/native CI. Record final outcomes here before handover. No production deployment or new TestFlight build is claimed for this candidate. The 79-section commercial register remains unchanged.
+Validation:
+
+- Local UI inspection at 320px, 390px and 1366px: black background, compact panel, readable platform headers/calendar marks, dropdown containment, sort/calendar switching and action cancellation. No horizontal overflow. Small-phone panel measured 133px; desktop measured 81px. Screenshots are in workspace `outputs/campaign-compact-toolbar`.
+- 24 focused campaign-control tests passed. Initial application run 42809685913 and PR run 42809877372 passed 815 SQLite / 816 PostgreSQL tests, full browser journeys, recovery/audits and the exact-scope guard. Native-only refinements below require fresh exact-candidate checks.
+- The first native simulator run exposed inherited accessibility identifiers on the new container, overriding individual button identifiers. Remove container/post identifiers rather than weakening test selectors. Its accessibility tree also showed text-only hit areas after removing Form; a scoped button style now preserves 44-point targets. Largest accessibility text gets a stacked first row. Superseded runs were cancelled after diagnosis.
+- Final candidate `d22df22`: application runs 42811676509/42811685123 and native run 42811685114 are in progress. Record final outcomes before handover.
+
+No production deployment or new TestFlight build is claimed for this candidate. The 79-section commercial register remains unchanged.
