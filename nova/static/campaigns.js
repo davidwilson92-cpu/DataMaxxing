@@ -70,8 +70,11 @@
       remove.type = 'button'; remove.textContent = 'Remove';
       remove.setAttribute('aria-label','Remove '+file.name);
       remove.onclick = () => { selectedFiles.delete(file); uploaded.delete(file); renderFiles(); changed(); status.textContent=''; picker.focus(); };
+      const id=uploaded.get(file);
+      if(id){const preview=document.createElement('img');preview.loading='lazy';preview.alt='';preview.src=window.zovaWorkspaceUrl('/media/thumbnail/'+id);row.append(preview);}
       row.append(name,remove); rows.append(row);
     }
+    element('retry-campaign-uploads').hidden=![...selectedFiles].some(file=>!uploaded.has(file));
     element('campaign-file-count').textContent = selectedFiles.size ? selectedFiles.size+' of 10 files selected' : 'Choose or drop up to 10 files';
   }
   function addFiles(files) {
@@ -268,16 +271,19 @@
   const generate = async feedback => show(await request('/api/ai/campaigns/'+current.id+'/plan',{revision:current.revision,feedback}));
   list.onchange = () => run(async () => show(list.value ? await request('/api/campaigns/'+Number(list.value)) : null));
   async function uploadPending() {
-    const files=Array.from(selectedFiles);
+    const files=Array.from(selectedFiles), failures=[];
     for(const [index,file] of files.entries()) {
       if(uploaded.has(file)) continue;
       status.textContent='Uploading '+(index+1)+' of '+files.length+' · '+file.name;
       const upload=new FormData();upload.append('files',file);
       try {uploaded.set(file,(await request('/api/media',upload)).assets[0].id);}
-      catch(error){throw new Error(file.name+' — '+error.message);}
+      catch(error){failures.push(file.name+' — '+error.message);continue;}
       await flush();
+      renderFiles();
     }
+    if(failures.length) throw new Error(failures.join(' · ')+' — Retry uploads.');
   }
+  element('retry-campaign-uploads').onclick=()=>run(uploadPending);
   form.onsubmit = event => {
     event.preventDefault();
     const data = new FormData(form), files = Array.from(selectedFiles), platforms = data.getAll('platform');

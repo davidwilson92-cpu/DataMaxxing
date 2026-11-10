@@ -164,26 +164,27 @@ struct NativeProductTabs: View {
     @State private var nextMove = false
     @State private var strategy = false
     @State private var keyboard = false
-    private let tabs = [("Studio", "square.and.pencil"), ("Schedule", "calendar"), ("Performance", "chart.bar"), ("Account", "person.crop.circle")]
+    private let tabs = [(0,"Studio", "square.and.pencil"), (4,"Campaign", "rectangle.stack"), (1,"Schedule", "calendar"), (2,"Performance", "chart.bar"), (3,"Account", "person.crop.circle")]
     var body: some View {
         VStack(spacing: 0) {
             NativeProductPages(session: session, nextMove: $nextMove, strategy: $strategy).id(store.brand)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             if !keyboard {
                 HStack(spacing: 0) {
-                    ForEach(tabs.indices, id: \.self) { index in
+                    ForEach(tabs, id: \.0) { tab in
+                        let index = tab.0
                         Button {
                             Task { await store.perform { try await store.save(); store.selectedTab = index } }
                         } label: {
                             VStack(spacing: 5) {
-                                Image(systemName: tabs[index].1).font(.system(size: 22))
-                                Text(tabs[index].0).font(.caption).dynamicTypeSize(...DynamicTypeSize.large).lineLimit(1)
+                                Image(systemName: tab.2).font(.system(size: 22))
+                                Text(tab.1).font(.caption).dynamicTypeSize(...DynamicTypeSize.large).lineLimit(1)
                             }
                                 .frame(maxWidth: .infinity, minHeight: 58).foregroundStyle(store.selectedTab == index ? ZovaDesign.violet : .white.opacity(0.8))
-                        }.accessibilityLabel(tabs[index].0)
+                        }.accessibilityLabel(tab.1)
                             .accessibilityAddTraits(store.selectedTab == index ? .isSelected : [])
-                            .accessibilityShowsLargeContentViewer { Label(tabs[index].0, systemImage: tabs[index].1) }
-                            .accessibilityIdentifier("tab-" + tabs[index].0).disabled(store.busy)
+                            .accessibilityShowsLargeContentViewer { Label(tab.1, systemImage: tab.2) }
+                            .accessibilityIdentifier("tab-" + tab.1).disabled(store.busy)
                     }
                 }.padding(.horizontal, 6).background(ZovaDesign.dark.ignoresSafeArea(edges: .bottom))
             }
@@ -231,6 +232,7 @@ private struct NativeProductPages: View {
     @ViewBuilder private func page(_ index: Int) -> some View {
         switch index {
         case 0: NativeStudioView(nextMove: $nextMove, strategy: $strategy)
+        case 4: NativeCampaignView(embedded: true)
         case 1: NativeScheduleView()
         case 2: NativePerformanceView()
         default: NativeAccountView(session: session, strategy: $strategy)
