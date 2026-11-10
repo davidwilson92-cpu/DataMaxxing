@@ -193,7 +193,7 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["AI recommendation"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.buttons["An idea to test"].exists)
         app.buttons["An idea to test"].tap()
-        XCTAssertTrue(app.staticTexts["Not enough fresh performance evidence. Results are not predicted."].exists)
+        XCTAssertTrue(app.staticTexts["Not enough fresh performance evidence for this recommendation. Results are not predicted."].exists)
         app.buttons["An idea to test"].tap()
         capture(app, "Native Next Move — mobile parity")
         app.buttons["Next idea"].tap(); app.buttons["Next idea"].tap(); app.buttons["Next idea"].tap()
