@@ -13,7 +13,7 @@ workflows:
           python3 scripts/check_beta_release.py
           python3 - <<'PY'
           import json, subprocess
-          number = '23'
+          number = '24'
           group = 'Zova Social Internal Beta'
           app = '6824416979'
           result = subprocess.check_output(['app-store-connect','builds','list','--json','--app-id',app,'--platform','IOS','--pre-release-version','1.0.0','--build-version-number',number,'--not-expired','--processing-state','VALID'], text=True)
@@ -25,7 +25,7 @@ workflows:
               raise SystemExit('Unexpected build returned')
           print('Verified processed Zova build', number, flush=True)
           subprocess.run(['app-store-connect','beta-groups','add-build',build['id'],'--beta-group',group], check=True)
-          subprocess.run(['app-store-connect','builds','add-beta-test-info',build['id'],'--whats-new','Campaigns now has a dedicated tab, bulk media selection, editable names, platform previews and a calendar. Test pause/resume, moving remaining dates, reusing a campaign, and previewing/applying or discarding AI caption improvements. Confirm saved posts and media remain. Customer charges stay disabled; approve any real social post explicitly.'],check=True)
+          subprocess.run(['app-store-connect','builds','add-beta-test-info',build['id'],'--whats-new','Campaign controls now sit in a compact black toolbar with white text and a subtle violet fade, on a white backdrop. Check Previews/Calendar, sorting, All campaigns and the actions menu. Try larger text and cancelling campaign tools. Confirm existing posts and media remain. Customer charges stay disabled; approve any real social post explicitly.'],check=True)
           subprocess.run(['app-store-connect','beta-groups','add-build',build['id'],'--beta-group','Zova Social External Beta'],check=True)
           details = json.loads(subprocess.check_output(['app-store-connect','builds','beta-details',build['id'],'--json'],text=True))
           if isinstance(details,list): details, = details
