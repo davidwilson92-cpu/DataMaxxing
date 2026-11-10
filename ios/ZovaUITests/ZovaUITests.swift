@@ -12,6 +12,8 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Try the wheel."].isHittable,"First caption should be visible without scrolling")
         XCTAssertLessThan(calendar.frame.maxY-all.frame.minY,150,"Controls should occupy two compact rows")
         XCTAssertGreaterThanOrEqual(app.buttons["campaign-actions"].frame.height,44)
+        XCTAssertGreaterThanOrEqual(all.frame.height,44)
+        XCTAssertGreaterThanOrEqual(app.buttons["Edit post"].frame.height,44)
         capture(app,"Campaign — compact black toolbar and first post")
         calendar.tap()
         XCTAssertTrue(app.buttons["Next month"].waitForExistence(timeout:5))

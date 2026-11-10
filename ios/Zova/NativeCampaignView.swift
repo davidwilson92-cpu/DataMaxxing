@@ -45,7 +45,7 @@ struct NativeCampaignView: View {
                         if working { ProgressView() }
                         if !message.isEmpty { Text(message).foregroundStyle(.secondary) }
                     }.padding(.horizontal,16).padding(.vertical,8)
-                }
+                }.buttonStyle(CampaignControlButtonStyle())
             } else {
             Form {
                 if locked {
@@ -216,7 +216,7 @@ struct NativeCampaignView: View {
                             Task { await perform { if store.dirty { try await store.save() }; try await store.openDraft(current["draft_ids"].array[index].int); store.selectedTab = 0; dismiss() } }
                         }
                     }
-                    }.font(.subheadline).buttonStyle(.borderless)
+                    }.font(.subheadline).buttonStyle(CampaignControlButtonStyle())
                     if !post["schedule"].isNull, index < current["dates"].array.count {
                         CampaignTimeEditor(when: current["dates"].array[index]["utc"].string, zone: current["brief"]["timezone"].string) { local in
                             await perform {
