@@ -98,6 +98,7 @@ struct NativeProductRoot: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var email = ""
     @State private var password = ""
+    @State private var recovering = false
     @State private var launched = false
     var body: some View {
         ZStack {
@@ -110,6 +111,10 @@ struct NativeProductRoot: View {
             }
             if !launched { ZovaLaunchScreen(ready: session.phase != .opening) { launched = true }.zIndex(1) }
             if scenePhase != .active { ZovaDesign.dark.ignoresSafeArea().overlay(Image("ZovaMark").resizable().scaledToFit().frame(width: 72)).zIndex(2).accessibilityHidden(true) }
+        }.sheet(isPresented: $recovering) {
+            NativeRecoveryForm(api: session.api, initialEmail: email)
+        }.onChange(of: session.phase) { _, phase in
+            if phase == .product { email = ""; password = "" }
         }.task { await session.start() }.onOpenURL { session.returned($0) }
             .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { session.returned(url) } }
             .onChange(of: scenePhase) { _, phase in
@@ -130,13 +135,15 @@ struct NativeProductRoot: View {
                 SecureField("Password", text: $password)
                     .textContentType(.password).textFieldStyle(.roundedBorder)
                 signInButton
+                if let message = session.message { Text(message).font(.callout).accessibilityAddTraits(.updatesFrequently) }
+                Button("Forgot password?") { password = ""; recovering = true }
+                    .frame(minHeight: 44).disabled(session.working)
                 Button("More sign-in options or create an account") {
                     password = ""
                     Task { await session.login() }
                 }.disabled(session.working)
                 welcomeLinks
                 Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isn’t analysed.").font(.footnote).foregroundStyle(.white.opacity(0.75))
-                if let message = session.message { Text(message).font(.callout).accessibilityAddTraits(.updatesFrequently) }
                 if let receipt = session.deletionReceipt {
                     Link(destination: receipt) {
                         Text("View deletion status").frame(minHeight: 44).contentShape(Rectangle())
@@ -175,6 +182,48 @@ struct NativeProductRoot: View {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
         return "Version \(version) (\(build))"
+    }
+}
+
+private struct NativeRecoveryForm: View {
+    let api: NativeAPI
+    @Environment(\.dismiss) private var dismiss
+    @State private var email: String
+    @State private var working = false
+    @State private var sent = false
+    @State private var error: String?
+
+    init(api: NativeAPI, initialEmail: String) {
+        self.api = api
+        _email = State(initialValue: initialEmail)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                if sent {
+                    Text("If this email belongs to a Zova account, check your inbox and spam folder for a reset link. It expires in 15 minutes.")
+                } else {
+                    TextField("Email address", text: $email)
+                        .textContentType(.username).keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Button(working ? "Requesting link…" : "Send reset link") {
+                        guard !working else { return }
+                        working = true
+                        error = nil
+                        Task {
+                            defer { working = false }
+                            do {
+                                try await api.requestPasswordReset(email: email)
+                                sent = true
+                            } catch { self.error = error.localizedDescription }
+                        }
+                    }.disabled(working || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if let error { Text(error).accessibilityAddTraits(.updatesFrequently) }
+                }
+            }.navigationTitle("Reset password")
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
     }
 }
 

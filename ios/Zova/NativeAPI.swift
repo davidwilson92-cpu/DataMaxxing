@@ -47,6 +47,21 @@ actor NativeAPI {
         guard (200...299).contains(response.statusCode), data.count <= 1_048_576 else { throw ZovaFailure.unavailable }
         return (data, response)
     }
+    func requestPasswordReset(email: String) async throws {
+        var request = URLRequest(url: try configuration.endpoint("/forgot-password"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Data(("email=" + ProductLinks.query(email)).utf8)
+        let (_, response) = try await session.data(for: request)
+        guard let status = (response as? HTTPURLResponse)?.statusCode else { throw ZovaFailure.invalidResponse }
+        switch status {
+        case 202: return
+        case 429: throw ZovaFailure.server("Please wait a moment before requesting another link.")
+        case 503: throw ZovaFailure.server("Email recovery is unavailable. Contact support@zova-social.com.")
+        default: throw ZovaFailure.unavailable
+        }
+    }
     func ensureAvailable() async throws {
         let data = try await request("/api/v1/native-config")
         struct Config: Decodable { let enabled: Bool; let redirect_uri: String }
