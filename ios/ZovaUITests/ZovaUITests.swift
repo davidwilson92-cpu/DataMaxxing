@@ -2,6 +2,21 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testWelcomeAcceptsCredentialsInsideZova() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--test-fresh-install"]
+        app.launch()
+        let email = app.textFields["Email address"]
+        let password = app.secureTextFields["Password"]
+        let submit = app.buttons["continue-zova"]
+        XCTAssertTrue(email.waitForExistence(timeout: 12))
+        XCTAssertFalse(submit.isEnabled)
+        email.tap()
+        email.typeText("creator@example.test")
+        password.tap()
+        password.typeText("example-password")
+        XCTAssertTrue(submit.isEnabled)
+    }
     func testSavedMediaAtLargestTextKeepsSelectionAndDismissalReachable() {
         let app=XCUIApplication();app.launchArguments=["--native-fixture","-UIPreferredContentSizeCategoryName","UICTContentSizeCategoryAccessibilityXXXL"];app.launch()
         XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
