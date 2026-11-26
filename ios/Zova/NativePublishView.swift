@@ -87,7 +87,7 @@ struct NativePublishView: View {
                     if ProductConnections.canConnect(platform, account: store.account) {
                         Button("Connect " + (SocialPlatform(rawValue: platform)?.title ?? platform)) { Task { await connect(platform); await perform { try await loadContexts() } } }.buttonStyle(ZovaPrimary())
                     } else {
-                        Text(ProductConnections.facebookNotice).font(.callout).foregroundStyle(.secondary)
+                        Text(ProductConnections.unavailableMessage(platform)).font(.callout).foregroundStyle(.secondary)
                     }
                     Button("Remove from this review") { platforms.removeAll { $0 == platform } }
                 } else {

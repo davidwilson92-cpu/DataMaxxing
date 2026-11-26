@@ -75,7 +75,7 @@ final class NativeProductSession: ObservableObject {
     func connect(_ platform: String) async {
         await store.perform {
             guard ProductConnections.canConnect(platform, account: self.store.account) else {
-                throw ZovaFailure.server(ProductConnections.facebookNotice)
+                throw ZovaFailure.server(ProductConnections.unavailableMessage(platform))
             }
             self.connectingPlatform = SocialPlatform(rawValue: platform)?.title ?? platform
             defer { self.connectingPlatform = nil }

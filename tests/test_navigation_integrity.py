@@ -79,3 +79,20 @@ def test_signed_out_private_pages_return_to_login(path):
     response = TestClient(app).get(path, follow_redirects=False)
     assert response.status_code == 303
     assert response.headers['location'].startswith('/login')
+
+@pytest.mark.parametrize('target', ['/campaigns', '/brands', '/account/deletion', '/studio?intro=1', '/studio?strategy=1'])
+def test_email_login_returns_to_requested_page(target):
+    from urllib.parse import parse_qs
+    _, _, _, email = account()
+    guest = TestClient(app)
+    start = guest.get(target, follow_redirects=False)
+    assert start.status_code == 303
+    login_url = start.headers['location']
+    assert parse_qs(urlsplit(login_url).query)['next'] == [target]
+    login_page = guest.get(login_url)
+    assert login_page.status_code == 200
+    assert f'name="next" value="{target}"' in login_page.text
+    result = guest.post('/login', data={'email': email, 'password':'old-password-123', 'next':target}, follow_redirects=False)
+    assert result.status_code == 303
+    assert result.headers['location'] == target
+    assert guest.get(target).status_code == 200

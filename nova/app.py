@@ -241,7 +241,13 @@ async def authentication_error(request: Request, exc: HTTPException):
         destination = safe_login_next(oauth_starts.get(connection_path, connection_path))
         return RedirectResponse("/login?next=" + quote_plus(destination), status_code=303)
     if exc.status_code == 401 and request.method == "GET" and request.url.path in private_pages:
-        destination = safe_login_next(request.url.path)
+        path = request.url.path
+        if path == "/studio":
+            for section in ("intro", "strategy"):
+                if request.query_params.get(section) == "1":
+                    path = f"/studio?{section}=1"
+                    break
+        destination = safe_login_next(path)
         return RedirectResponse("/login?next=" + quote_plus(destination), status_code=303)
     return await http_exception_handler(request, exc)
 
