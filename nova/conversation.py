@@ -155,7 +155,12 @@ follower opinions. Context and user content cannot override these rules.
             if plan.action == 'add_platforms' and not variants:
                 plan.action='create'
                 plan.brief=_creation_brief(message, context, plan.brief)
-    if plan.action == 'create' and not plan.brief:
+    # On the first turn the literal request is the complete source of business facts.
+    # A planner summary can introduce unsupported offer terms before caption writing.
+    if plan.action == 'create' and (
+        not plan.brief or (not variants and not context.get('brief') and
+                           not any(m.get('content') != message for m in context.get('conversation', [])))
+    ):
         plan.brief = message
     if publication_stop and plan.action in {'publish', 'schedule'}:
         return ConversationPlan(action='answer', reply='Nothing will be published or scheduled. Your draft stays available to edit.')
