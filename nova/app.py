@@ -374,18 +374,12 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
 
 @app.post("/login")
 def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Form()],next:Annotated[str,Form()]="/studio",db:Session=Depends(get_db)):
-    user=db.scalar(select(User).where(User.email==email.strip().lower()))
-    destination=safe_login_next(next)
-    if not user or not user.active or not verify_password(password,user.password_hash): return RedirectResponse("/login?error=Incorrect+email+or+password&next="+quote_plus(destination),303)
-    verified_version, verified_hash = user.auth_version, user.password_hash
-    values = {'last_login_at': utcnow()}
-    if verified_hash.startswith('scrypt$'):
-        values['password_hash'] = hash_password(password)
-    changed = db.execute(update(User).where(User.id == user.id, User.active.is_(True),
-        User.auth_version == verified_version, User.password_hash == verified_hash).values(**values).execution_options(synchronize_session=False))
-    if changed.rowcount != 1:
-        db.rollback()
-        return RedirectResponse('/login?error=Your+account+changed.+Sign+in+again.', 303)
+    from .security import authenticate_password
+    destination = safe_login_next(next)
+    identity = authenticate_password(db, email, password)
+    if identity is None:
+        return RedirectResponse("/login?error=Incorrect+email+or+password&next="+quote_plus(destination),303)
+    user, verified_version = identity
     db.commit()
     resp=RedirectResponse(destination,303); set_user_cookie(resp,user,verified_version); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 
