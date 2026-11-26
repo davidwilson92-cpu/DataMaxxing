@@ -54,6 +54,26 @@ def native_config(monkeypatch):
     monkeypatch.setenv('RATE_LIMIT_SCALE', '100')
 
 
+def test_password_login_issues_refreshable_device_session(monkeypatch):
+    _, uid, _, email = account()
+    client = TestClient(app)
+    credentials = {"email": email.upper(), "password": "old-password-123"}
+    path = "/api/v1/auth/password"
+    assert client.post(path, json={**credentials, "password": "wrong"}).status_code == 401
+    response = client.post(path, json=credentials)
+    assert response.status_code == 200, response.text
+    assert not response.cookies
+    pair = response.json()
+    assert client.post("/api/v1/auth/refresh", json={"refresh_token": pair["refresh_token"]}).status_code == 200
+    with SessionLocal() as db:
+        assert db.get(MobileSession, pair["session_id"]).user_id == uid
+        db.get(User, uid).active = False
+        db.commit()
+    assert client.post(path, json=credentials).status_code == 401
+    monkeypatch.setenv("ZOVA_MOBILE_ENABLED", "false")
+    assert client.post(path, json=credentials).status_code == 404
+
+
 def sign_in():
     web, uid, _, _ = account()
     verifier, state = secrets.token_urlsafe(48), secrets.token_urlsafe(32)
