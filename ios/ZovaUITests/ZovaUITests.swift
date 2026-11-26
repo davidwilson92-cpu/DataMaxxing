@@ -16,7 +16,7 @@ final class ZovaUITests: XCTestCase {
     }
     func testWelcomeAcceptsCredentialsInsideZova() {
         let app = XCUIApplication()
-        app.launchArguments = ["--test-fresh-install"]
+        app.launchArguments = ["--test-fresh-install", "--native-fixture", "--fixture-login"]
         app.launch()
         let email = app.textFields["Email address"]
         let password = app.secureTextFields["Password"]
@@ -26,8 +26,16 @@ final class ZovaUITests: XCTestCase {
         email.tap()
         email.typeText("creator@example.test")
         password.tap()
-        password.typeText("example-password")
-        XCTAssertTrue(submit.isEnabled)
+        password.typeText("wrong-password\n")
+        XCTAssertTrue(app.staticTexts["Incorrect email or password."].waitForExistence(timeout: 8))
+        password.tap()
+        password.typeText("example-password\n")
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout: 12))
+        app.terminate()
+        app.launchArguments = ["--native-fixture", "--fixture-login"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout: 12))
+        XCTAssertFalse(app.secureTextFields["Password"].exists)
     }
     func testSavedMediaAtLargestTextKeepsSelectionAndDismissalReachable() {
         let app=XCUIApplication();app.launchArguments=["--native-fixture","-UIPreferredContentSizeCategoryName","UICTContentSizeCategoryAccessibilityXXXL"];app.launch()
