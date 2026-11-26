@@ -21,7 +21,8 @@ import httpx
 import jwt
 from oauthlib.oauth1 import Client as OAuth1Client
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
-from fastapi.exception_handlers import http_exception_handler
+from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import Response, HTMLResponse, JSONResponse, RedirectResponse
 from starlette.middleware.gzip import GZipMiddleware
 from .assets import PublicAssets, url as asset_url
@@ -221,6 +222,13 @@ def campaign_page(request:Request, db:Session=Depends(get_db)):
 app.mount("/static", GZipMiddleware(PublicAssets(directory=str(HERE / "static")), compresslevel=4), name="static")
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    if request.url.path.startswith("/api/v1/auth/"):
+        return JSONResponse({"detail": "Invalid sign-in request."}, status_code=422)
+    return await request_validation_exception_handler(request, exc)
+
+
 @app.exception_handler(HTTPException)
 async def authentication_error(request: Request, exc: HTTPException):
     # Only browser pages redirect. APIs and OAuth callbacks retain their errors.
@@ -233,7 +241,8 @@ async def authentication_error(request: Request, exc: HTTPException):
         destination = safe_login_next(oauth_starts.get(connection_path, connection_path))
         return RedirectResponse("/login?next=" + quote_plus(destination), status_code=303)
     if exc.status_code == 401 and request.method == "GET" and request.url.path in private_pages:
-        return RedirectResponse("/login", status_code=303)
+        destination = safe_login_next(request.url.path)
+        return RedirectResponse("/login?next=" + quote_plus(destination), status_code=303)
     return await http_exception_handler(request, exc)
 
 
