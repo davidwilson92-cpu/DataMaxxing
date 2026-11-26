@@ -48,15 +48,19 @@ final class NativeProductSession: ObservableObject {
         do { try await api.ensureAvailable(); try await store.start(); phase = .product }
         catch { message = error.localizedDescription; phase = .signedOut }
     }
-    func login() async {
+    func login(email: String? = nil, password: String? = nil) async {
         guard !working else { return }; working = true; message = nil; deletionReceipt = nil
         defer { working = false }
         do {
             try await api.ensureAvailable()
-            let verifier = try NativeProof.random(48), state = try NativeProof.random()
-            let returned = try await signIn.open(configuration: configuration, challenge: NativeProof.challenge(verifier), state: state)
-            let code = try NativeProof.code(from: returned, configuration: configuration, state: state)
-            try await api.exchange(code: code, verifier: verifier)
+            if let email, let password {
+                try await api.login(email: email, password: password)
+            } else {
+                let verifier = try NativeProof.random(48), state = try NativeProof.random()
+                let returned = try await signIn.open(configuration: configuration, challenge: NativeProof.challenge(verifier), state: state)
+                let code = try NativeProof.code(from: returned, configuration: configuration, state: state)
+                try await api.exchange(code: code, verifier: verifier)
+            }
             store.signedOut = false; try await store.start(); phase = .product
         } catch { message = error.localizedDescription }
     }
@@ -92,6 +96,8 @@ final class NativeProductSession: ObservableObject {
 struct NativeProductRoot: View {
     @StateObject private var session = NativeProductSession()
     @Environment(\.scenePhase) private var scenePhase
+    @State private var email = ""
+    @State private var password = ""
     @State private var launched = false
     var body: some View {
         ZStack {
@@ -117,9 +123,18 @@ struct NativeProductRoot: View {
                 HStack { Image("ZovaMark").resizable().scaledToFit().frame(width: 40); Text("Zova").font(.largeTitle.bold()) }
                 Text("Because content\nis the fun part.").font(.largeTitle.bold()).fixedSize(horizontal: false, vertical: true)
                 Text("Turn your ideas into captions and a content plan with Zova, your AI social media manager.").font(.title3).foregroundStyle(.white.opacity(0.75))
+                TextField("Email address", text: $email)
+                    .textContentType(.username).keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .textFieldStyle(.roundedBorder)
+                SecureField("Password", text: $password)
+                    .textContentType(.password).textFieldStyle(.roundedBorder)
                 signInButton
+                Button("More sign-in options or create an account") {
+                    password = ""
+                    Task { await session.login() }
+                }.disabled(session.working)
                 welcomeLinks
-                Text("Use your existing Zova account, or create one in the secure sign-in window.").font(.subheadline).foregroundStyle(.white.opacity(0.75))
                 Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isn’t analysed.").font(.footnote).foregroundStyle(.white.opacity(0.75))
                 if let message = session.message { Text(message).font(.callout).accessibilityAddTraits(.updatesFrequently) }
                 if let receipt = session.deletionReceipt {
@@ -133,12 +148,18 @@ struct NativeProductRoot: View {
         }.background(ZovaDesign.dark).foregroundStyle(.white).preferredColorScheme(.dark)
     }
     private var signInButton: some View {
-        Button { Task { await session.login() } } label: {
+        Button {
+            let enteredPassword = password
+            Task {
+                await session.login(email: email, password: enteredPassword)
+                password = ""
+            }
+        } label: {
             HStack {
                 if session.working { ProgressView().tint(.white) }
-                Text(session.working ? "Opening sign-in…" : "Continue to Zova")
+                Text(session.working ? "Signing in…" : "Sign in")
             }
-        }.buttonStyle(ZovaPrimary()).disabled(session.working).accessibilityIdentifier("continue-zova")
+        }.buttonStyle(ZovaPrimary()).disabled(session.working || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty).accessibilityIdentifier("continue-zova")
     }
     private var welcomeLinks: some View {
         NativeAdaptiveRow(spacing: 24) {

@@ -58,6 +58,19 @@ actor NativeAPI {
     func exchange(code: String, verifier: String) async throws {
         let epoch = sessionEpoch
         let data = try await request("/api/v1/auth/token", body: ["client_id": "zova-ios", "redirect_uri": configuration.callback.absoluteString, "code": code, "code_verifier": verifier])
+        try acceptSignIn(data, epoch: epoch)
+    }
+    func login(email: String, password: String) async throws {
+        let epoch = sessionEpoch
+        let data: Data
+        do {
+            data = try await request("/api/v1/auth/password", body: ["email": email, "password": password])
+        } catch ZovaFailure.signInRequired {
+            throw ZovaFailure.server("Incorrect email or password.")
+        }
+        try acceptSignIn(data, epoch: epoch)
+    }
+    private func acceptSignIn(_ data: Data, epoch: Int) throws {
         let pair = try JSONDecoder().decode(TokenReply.self, from: data).tokens()
         guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
         try KeychainVault.save(pair)
