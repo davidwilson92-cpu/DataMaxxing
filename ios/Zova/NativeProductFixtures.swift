@@ -82,6 +82,14 @@ final class NativeProductFixtures: URLProtocol {
             }
             return ok(.object(["assets":.array(assets.filter { (search.isEmpty || $0["filename"].string.localizedCaseInsensitiveContains(search)) && (kind=="all" || $0["kind"].string==kind) }),"next_before":.null]))
         }
+        if path == "/api/v1/auth/password" {
+            guard input["email"].string == "creator@example.test", input["password"].string == "example-password" else {
+                return (401, .null, [:])
+            }
+            return ok(.object(["access_token": .string(String(repeating: "a", count: 64)),
+                               "refresh_token": .string(String(repeating: "r", count: 64)),
+                               "expires_in": .integer(900)]))
+        }
         if path == "/api/v1/native-config" { return ok(.object(["enabled": .bool(true), "redirect_uri": .string("https://zova-social.com/mobile/callback")])) }
         if path == "/api/v1/native-handoff" { return ok(.object(["ticket": .string(String(repeating: "t", count: 64))])) }
         if path == "/api/v1/native-web-session" { return (200, .object(["destination": .string("/studio")]), ["Set-Cookie":"nova_session=ios.synthetic-fixture; Path=/; Max-Age=900; Secure; HttpOnly; SameSite=Lax"]) }

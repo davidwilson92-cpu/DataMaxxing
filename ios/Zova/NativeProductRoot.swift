@@ -33,12 +33,13 @@ final class NativeProductSession: ObservableObject {
     }
     func start() async {
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("--native-fixture") {
+        let exerciseLogin = ProcessInfo.processInfo.arguments.contains("--fixture-login")
+        if ProcessInfo.processInfo.arguments.contains("--native-fixture") && !exerciseLogin {
             try? KeychainVault.save(NativeTokens(access: String(repeating: "a", count: 64), refresh: String(repeating: "r", count: 64), expires: Date().addingTimeInterval(900)))
             do { try await store.start(); phase = .product } catch { message = error.localizedDescription; phase = .signedOut }
             return
         }
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { phase = .signedOut; return }
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil && !exerciseLogin { phase = .signedOut; return }
         #endif
         await NativeUpgrade.clearLegacyWebDataIfNeeded()
         if !UserDefaults.standard.bool(forKey: "zova-installed") {
@@ -98,6 +99,8 @@ struct NativeProductRoot: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var email = ""
     @State private var password = ""
+    private enum Field { case email, password }
+    @FocusState private var focused: Field?
     @State private var recovering = false
     @State private var launched = false
     var body: some View {
@@ -132,8 +135,12 @@ struct NativeProductRoot: View {
                     .textContentType(.username).keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                     .textFieldStyle(.roundedBorder)
+                    .focused($focused, equals: .email).submitLabel(.next)
+                    .onSubmit { focused = .password }
                 SecureField("Password", text: $password)
                     .textContentType(.password).textFieldStyle(.roundedBorder)
+                    .focused($focused, equals: .password).submitLabel(.go)
+                    .onSubmit { submitCredentials() }
                 signInButton
                 if let message = session.message { Text(message).font(.callout).accessibilityAddTraits(.updatesFrequently) }
                 Button("Forgot password?") { password = ""; recovering = true }
@@ -154,19 +161,23 @@ struct NativeProductRoot: View {
             }.padding(28).frame(maxWidth: 560)
         }.background(ZovaDesign.dark).foregroundStyle(.white).preferredColorScheme(.dark)
     }
+    private var canSignIn: Bool {
+        !session.working && !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !password.isEmpty
+    }
+    private func submitCredentials() {
+        guard canSignIn else { return }
+        let enteredEmail = email, enteredPassword = password
+        focused = nil
+        password = ""
+        Task { await session.login(email: enteredEmail, password: enteredPassword) }
+    }
     private var signInButton: some View {
-        Button {
-            let enteredPassword = password
-            Task {
-                await session.login(email: email, password: enteredPassword)
-                password = ""
-            }
-        } label: {
+        Button(action: submitCredentials) {
             HStack {
                 if session.working { ProgressView().tint(.white) }
                 Text(session.working ? "Signing in…" : "Sign in")
             }
-        }.buttonStyle(ZovaPrimary()).disabled(session.working || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty).accessibilityIdentifier("continue-zova")
+        }.buttonStyle(ZovaPrimary()).disabled(!canSignIn).accessibilityIdentifier("continue-zova")
     }
     private var welcomeLinks: some View {
         NativeAdaptiveRow(spacing: 24) {
