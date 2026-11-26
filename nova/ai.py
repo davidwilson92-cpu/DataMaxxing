@@ -216,7 +216,7 @@ Additional instruction:
 Optional link to incorporate naturally when appropriate: {link_url or '(none)'}
 X thread length requested: {thread_length}. For non-X platforms always return one post/caption.
 
-Do not invent facts, figures, quotes, links, names or events not present in the brief or instructions. Preserve the user's substantive claims. Adapt format and wording to each platform rather than copying one version four times.
+Do not invent facts, figures, quotes, links, names or events not present in the brief or instructions. Omit any class time, price, included materials, booking method or scarcity claim unless the user supplied it. A request for a fictional example does not grant permission to invent offer terms. Preserve the user's substantive claims. Adapt format and wording to each platform rather than copying one version four times.
 {EDITORIAL_RULES}
 """
     schema = {'type': 'object', 'properties': {p: _posts_schema(thread_length if p == 'x' and thread_length in {3, 5} else 1) for p in selected}, 'required': selected, 'additionalProperties': False}
