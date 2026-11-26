@@ -318,7 +318,7 @@
     "nova/thumbnails.py": "4dc7ead8eb727110a92d9390cb9e0d1bab51b6c26789673efcaec2b45e716e6d",
     "nova/tiktok_outcomes.py": "f56bcf1de30c43f65dba674863e8da87c6470a29e34bcf2107ae70ddc0ed22ef",
     "ios/Zova/NativePerformanceView.swift": "48a9dee67ada3a00e6a0aeec3af9437d359a71758858e3ba9ca543fd847c33db",
-    "nova/templates/privacy.html": "8384c1f0fbd63c18740a0b71fd2ba3541d62d47b44f561adfd147b4650572e06",
+    "nova/templates/privacy.html": "41135e7553addd668a8aa0ce41c1a4094f81864a750efe3b0098d51c3dacb04d",
     "tests/test_synthetic_recovery.py": "9a67c6a5b25f82e5fb9f98b6f7a2c33b768828b25c30ecd16177960f46d47bfe",
     "tests/strategy_onboarding.test.cjs": "f46f0797cab6fda3a4db739b9bf511c80f79a6131a4d18dea5e8b6da7759ed1f",
     "ios/Zova/ZovaLaunchScreen.swift": "833a7c43560cd5b647594e8b7f50ed2a92a52f9f19ee514d788a512fe955bfe0",
