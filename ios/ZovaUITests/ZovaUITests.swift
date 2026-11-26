@@ -2,6 +2,18 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testPasswordRecoveryReturnsToNativeSignIn() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--test-fresh-install"]
+        app.launch()
+        let recovery = app.buttons["Forgot password?"]
+        XCTAssertTrue(recovery.waitForExistence(timeout: 12))
+        recovery.tap()
+        XCTAssertTrue(app.navigationBars["Reset password"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Send reset link"].isEnabled)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.secureTextFields["Password"].waitForExistence(timeout: 5))
+    }
     func testWelcomeAcceptsCredentialsInsideZova() {
         let app = XCUIApplication()
         app.launchArguments = ["--test-fresh-install"]
