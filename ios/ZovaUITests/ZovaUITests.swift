@@ -2,6 +2,41 @@ import XCTest
 
 final class ZovaUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
+    func testPasswordRecoveryReturnsToNativeSignIn() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--test-fresh-install"]
+        app.launch()
+        let recovery = app.buttons["Forgot password?"]
+        XCTAssertTrue(recovery.waitForExistence(timeout: 12))
+        recovery.tap()
+        XCTAssertTrue(app.navigationBars["Reset password"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Send reset link"].isEnabled)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.secureTextFields["Password"].waitForExistence(timeout: 5))
+    }
+    func testWelcomeAcceptsCredentialsInsideZova() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--test-fresh-install", "--native-fixture", "--fixture-login"]
+        app.launch()
+        let email = app.textFields["Email address"]
+        let password = app.secureTextFields["Password"]
+        let submit = app.buttons["continue-zova"]
+        XCTAssertTrue(email.waitForExistence(timeout: 12))
+        XCTAssertFalse(submit.isEnabled)
+        email.tap()
+        email.typeText("creator@example.test")
+        password.tap()
+        password.typeText("wrong-password\n")
+        XCTAssertTrue(app.staticTexts["Incorrect email or password."].waitForExistence(timeout: 8))
+        password.tap()
+        password.typeText("example-password\n")
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout: 12))
+        app.terminate()
+        app.launchArguments = ["--native-fixture", "--fixture-login"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout: 12))
+        XCTAssertFalse(app.secureTextFields["Password"].exists)
+    }
     func testSavedMediaAtLargestTextKeepsSelectionAndDismissalReachable() {
         let app=XCUIApplication();app.launchArguments=["--native-fixture","-UIPreferredContentSizeCategoryName","UICTContentSizeCategoryAccessibilityXXXL"];app.launch()
         XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()

@@ -62,7 +62,7 @@ struct NativeAccountView: View {
                             if ProductConnections.canConnect(platform.rawValue, account: store.account) {
                                 Button(connections.isEmpty ? "Connect " + platform.title : "Connection options") { Task { await session.connect(platform.rawValue) } }.buttonStyle(ZovaPrimary())
                             } else {
-                                Text(ProductConnections.facebookNotice).font(.callout).foregroundStyle(.secondary).accessibilityIdentifier("facebook-coming-soon")
+                                Text(ProductConnections.unavailableMessage(platform.rawValue)).font(.callout).foregroundStyle(.secondary).accessibilityIdentifier(platform.rawValue + "-coming-soon")
                             }
                             if platform == .instagram { Text("Creator or Business account required. You can also connect through Facebook if linked to a Page.").font(.caption).foregroundStyle(.secondary) }
                         }.padding(.vertical, 10)

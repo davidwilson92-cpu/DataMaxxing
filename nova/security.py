@@ -10,6 +10,22 @@ from fastapi import HTTPException, Request
 from .db import SessionLocal, User, RevokedSession, utcnow
 
 
+def authenticate_password(db, email: str, password: str):
+    from sqlalchemy import select, update
+    user=db.scalar(select(User).where(User.email==email.strip().lower()))
+    if not user or not user.active or not verify_password(password,user.password_hash): return None
+    verified_version, verified_hash = user.auth_version, user.password_hash
+    values = {'last_login_at': utcnow()}
+    if verified_hash.startswith('scrypt$'):
+        values['password_hash'] = hash_password(password)
+    changed = db.execute(update(User).where(User.id == user.id, User.active.is_(True),
+        User.auth_version == verified_version, User.password_hash == verified_hash).values(**values).execution_options(synchronize_session=False))
+    if changed.rowcount != 1:
+        db.rollback()
+        return None
+    return user, verified_version
+
+
 def hash_api_key(raw: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 

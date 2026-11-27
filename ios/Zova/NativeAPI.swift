@@ -47,6 +47,21 @@ actor NativeAPI {
         guard (200...299).contains(response.statusCode), data.count <= 1_048_576 else { throw ZovaFailure.unavailable }
         return (data, response)
     }
+    func requestPasswordReset(email: String) async throws {
+        var request = URLRequest(url: try configuration.endpoint("/forgot-password"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Data(("email=" + ProductLinks.query(email)).utf8)
+        let (_, response) = try await session.data(for: request)
+        guard let status = (response as? HTTPURLResponse)?.statusCode else { throw ZovaFailure.invalidResponse }
+        switch status {
+        case 202: return
+        case 429: throw ZovaFailure.server("Please wait a moment before requesting another link.")
+        case 503: throw ZovaFailure.server("Email recovery is unavailable. Contact support@zova-social.com.")
+        default: throw ZovaFailure.unavailable
+        }
+    }
     func ensureAvailable() async throws {
         let data = try await request("/api/v1/native-config")
         struct Config: Decodable { let enabled: Bool; let redirect_uri: String }
@@ -58,6 +73,19 @@ actor NativeAPI {
     func exchange(code: String, verifier: String) async throws {
         let epoch = sessionEpoch
         let data = try await request("/api/v1/auth/token", body: ["client_id": "zova-ios", "redirect_uri": configuration.callback.absoluteString, "code": code, "code_verifier": verifier])
+        try acceptSignIn(data, epoch: epoch)
+    }
+    func login(email: String, password: String) async throws {
+        let epoch = sessionEpoch
+        let data: Data
+        do {
+            data = try await request("/api/v1/auth/password", body: ["email": email, "password": password])
+        } catch ZovaFailure.signInRequired {
+            throw ZovaFailure.server("Incorrect email or password.")
+        }
+        try acceptSignIn(data, epoch: epoch)
+    }
+    private func acceptSignIn(_ data: Data, epoch: Int) throws {
         let pair = try JSONDecoder().decode(TokenReply.self, from: data).tokens()
         guard epoch == sessionEpoch else { throw ZovaFailure.signInRequired }
         try KeychainVault.save(pair)

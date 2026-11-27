@@ -40,7 +40,7 @@ def reset_credentials(uid):
 
 
 def test_reset_after_password_check_prevents_stale_login(monkeypatch):
-    import nova.app as module
+    from nova import security as module
     client, uid, _, email = account()
     original = module.verify_password
     def racing_check(password, hashed):

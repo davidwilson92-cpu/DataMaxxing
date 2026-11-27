@@ -49,7 +49,14 @@ enum SocialPlatform: String, CaseIterable, Identifiable {
 enum ProductConnections {
     static let facebookNotice = "Facebook connections are coming soon. You can still prepare and save Facebook captions."
 
+    static func unavailableMessage(_ platform: String) -> String {
+        if platform == "facebook" { return facebookNotice }
+        let name = SocialPlatform(rawValue: platform)?.title ?? platform
+        return "Connecting to " + name + " is currently unavailable. You can still prepare and save captions."
+    }
+
     static func canConnect(_ platform: String, account: JSONValue) -> Bool {
+        if account["connection_options"][platform]["available"] == .bool(false) { return false }
         guard platform == "facebook" else { return true }
         // Existing Page grants keep their reconnect path. Credential presence
         // alone is not evidence that Meta approved access for new customers.

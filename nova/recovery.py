@@ -6,7 +6,7 @@ import ssl
 from datetime import timedelta
 from email.message import EmailMessage
 from fastapi import APIRouter, Request, Form, HTTPException, BackgroundTasks
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from sqlalchemy import select, update
@@ -62,7 +62,10 @@ def forgot_page(request:Request):
 
 
 @router.post('/forgot-password')
-def forgot(background_tasks:BackgroundTasks,email:str=Form(...)):
+def forgot(request:Request,background_tasks:BackgroundTasks,email:str=Form(...)):
+    native = request.headers.get('accept') == 'application/json'
+    if native and not recovery_ready():
+        return JSONResponse({'detail':'Email recovery is unavailable. Contact Zova support.'}, status_code=503)
     email=email.strip().lower()[:320]
     # Same response whether the account exists, delivery succeeds, or this address is throttled.
     if recovery_ready() and allowed_request('recovery:'+email,3,900):
@@ -73,6 +76,8 @@ def forgot(background_tasks:BackgroundTasks,email:str=Form(...)):
                 db.add(RecoveryToken(token_hash=hash_api_key(token),user_id=user.id,auth_version=user.auth_version,expires_at=utcnow()+timedelta(minutes=15)))
                 db.commit()
                 background_tasks.add_task(deliver_recovery,email,token)
+    if native:
+        return JSONResponse({'requested': True},status_code=202)
     return RedirectResponse('/forgot-password?sent=1',303)
 
 

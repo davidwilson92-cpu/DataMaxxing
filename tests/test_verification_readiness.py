@@ -13,7 +13,10 @@ def test_private_pages_redirect_to_login():
     for path in ("/studio", "/account", "/analytics", "/drafts"):
         response = client.get(path, follow_redirects=False)
         assert response.status_code == 303
-        assert response.headers["location"] == "/login"
+        from urllib.parse import parse_qs, urlsplit
+        destination = urlsplit(response.headers["location"])
+        assert destination.path == "/login"
+        assert parse_qs(destination.query)["next"] == [path]
 
 
 def test_api_and_oauth_errors_are_not_hidden():

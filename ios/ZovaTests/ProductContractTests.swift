@@ -26,6 +26,14 @@ final class ProductContractTests: XCTestCase {
         }
     }
 
+    func testUnavailableProviderHasNoUnusableConnectionButton() {
+        for platform in SocialPlatform.allCases {
+            let disabled: JSONValue = .object(["available": .bool(false)])
+            let account: JSONValue = .object(["connection_options": .object([platform.rawValue: disabled])])
+            XCTAssertFalse(ProductConnections.canConnect(platform.rawValue, account: account))
+            XCTAssertTrue(ProductConnections.unavailableMessage(platform.rawValue).contains(platform.title))
+        }
+    }
     func testFacebookAvailabilityRequiresCustomerApprovalOrAnExistingPage() {
         var account: JSONValue = .object(["connection_options": .object(["facebook": .object(["available": .bool(true)])])])
         XCTAssertFalse(ProductConnections.canConnect("facebook", account: account))

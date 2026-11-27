@@ -21,7 +21,8 @@ import httpx
 import jwt
 from oauthlib.oauth1 import Client as OAuth1Client
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile, status
-from fastapi.exception_handlers import http_exception_handler
+from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import Response, HTMLResponse, JSONResponse, RedirectResponse
 from starlette.middleware.gzip import GZipMiddleware
 from .assets import PublicAssets, url as asset_url
@@ -221,6 +222,13 @@ def campaign_page(request:Request, db:Session=Depends(get_db)):
 app.mount("/static", GZipMiddleware(PublicAssets(directory=str(HERE / "static")), compresslevel=4), name="static")
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    if request.url.path.startswith("/api/v1/auth/"):
+        return JSONResponse({"detail": "Invalid sign-in request."}, status_code=422)
+    return await request_validation_exception_handler(request, exc)
+
+
 @app.exception_handler(HTTPException)
 async def authentication_error(request: Request, exc: HTTPException):
     # Only browser pages redirect. APIs and OAuth callbacks retain their errors.
@@ -233,7 +241,14 @@ async def authentication_error(request: Request, exc: HTTPException):
         destination = safe_login_next(oauth_starts.get(connection_path, connection_path))
         return RedirectResponse("/login?next=" + quote_plus(destination), status_code=303)
     if exc.status_code == 401 and request.method == "GET" and request.url.path in private_pages:
-        return RedirectResponse("/login", status_code=303)
+        path = request.url.path
+        if path == "/studio":
+            for section in ("intro", "strategy"):
+                if request.query_params.get(section) == "1":
+                    path = f"/studio?{section}=1"
+                    break
+        destination = safe_login_next(path)
+        return RedirectResponse("/login?next=" + quote_plus(destination), status_code=303)
     return await http_exception_handler(request, exc)
 
 
@@ -374,18 +389,12 @@ def apple_callback(code: Annotated[str | None, Form()] = None, id_token: Annotat
 
 @app.post("/login")
 def login(request: Request,email:Annotated[str,Form()],password:Annotated[str,Form()],next:Annotated[str,Form()]="/studio",db:Session=Depends(get_db)):
-    user=db.scalar(select(User).where(User.email==email.strip().lower()))
-    destination=safe_login_next(next)
-    if not user or not user.active or not verify_password(password,user.password_hash): return RedirectResponse("/login?error=Incorrect+email+or+password&next="+quote_plus(destination),303)
-    verified_version, verified_hash = user.auth_version, user.password_hash
-    values = {'last_login_at': utcnow()}
-    if verified_hash.startswith('scrypt$'):
-        values['password_hash'] = hash_password(password)
-    changed = db.execute(update(User).where(User.id == user.id, User.active.is_(True),
-        User.auth_version == verified_version, User.password_hash == verified_hash).values(**values).execution_options(synchronize_session=False))
-    if changed.rowcount != 1:
-        db.rollback()
-        return RedirectResponse('/login?error=Your+account+changed.+Sign+in+again.', 303)
+    from .security import authenticate_password
+    destination = safe_login_next(next)
+    identity = authenticate_password(db, email, password)
+    if identity is None:
+        return RedirectResponse("/login?error=Incorrect+email+or+password&next="+quote_plus(destination),303)
+    user, verified_version = identity
     db.commit()
     resp=RedirectResponse(destination,303); set_user_cookie(resp,user,verified_version); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); return resp
 

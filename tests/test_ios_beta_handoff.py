@@ -54,6 +54,48 @@ def native_config(monkeypatch):
     monkeypatch.setenv('RATE_LIMIT_SCALE', '100')
 
 
+def test_password_login_issues_refreshable_device_session(monkeypatch):
+    _, uid, _, email = account()
+    client = TestClient(app)
+    credentials = {"email": email.upper(), "password": "old-password-123"}
+    path = "/api/v1/auth/password"
+    assert client.post(path, json={**credentials, "password": "wrong"}).status_code == 401
+    response = client.post(path, json=credentials)
+    assert response.status_code == 200, response.text
+    assert not response.cookies
+    pair = response.json()
+    assert client.post("/api/v1/auth/refresh", json={"refresh_token": pair["refresh_token"]}).status_code == 200
+    with SessionLocal() as db:
+        assert db.get(MobileSession, pair["session_id"]).user_id == uid
+        db.get(User, uid).active = False
+        db.commit()
+    assert client.post(path, json=credentials).status_code == 401
+    monkeypatch.setenv("ZOVA_MOBILE_ENABLED", "false")
+    assert client.post(path, json=credentials).status_code == 404
+
+
+def test_malformed_native_auth_response_redacts_input():
+    marker = "example-private-input"
+    response = TestClient(app).post("/api/v1/auth/password", json={"password": marker})
+    assert response.status_code == 422
+    assert marker not in response.text
+    assert response.headers["cache-control"] == "no-store"
+
+
+def test_native_recovery_returns_same_receipt_for_known_and_unknown_email(monkeypatch):
+    from nova import recovery
+    monkeypatch.setattr(recovery, "recovery_ready", lambda: True)
+    monkeypatch.setattr(recovery, "deliver_recovery", lambda email, token: None)
+    _, _, _, email = account()
+    client = TestClient(app)
+    replies = [client.post("/forgot-password", headers={"accept": "application/json"},
+                           data={"email": address}) for address in (email, "absent@example.test")]
+    assert all(r.status_code == 202 and r.json() == {"requested": True} for r in replies)
+    monkeypatch.setattr(recovery, "recovery_ready", lambda: False)
+    assert client.post("/forgot-password", headers={"accept": "application/json"},
+                       data={"email": email}).status_code == 503
+
+
 def sign_in():
     web, uid, _, _ = account()
     verifier, state = secrets.token_urlsafe(48), secrets.token_urlsafe(32)
