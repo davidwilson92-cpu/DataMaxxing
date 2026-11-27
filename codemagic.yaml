@@ -1,7 +1,12 @@
 workflows:
-  # Retain the workflow ID and build counter used for builds 1–9.
+  # Retain the workflow ID and build counter used for builds 1-9.
   zova-ios-internal-beta:
-    name: Zova Social — native iPhone beta candidate
+    name: Zova Social - native iPhone beta candidate
+    triggering:
+      events: [push]
+      branch_patterns:
+        - pattern: 'release/apple-review-1.0.1'
+          include: true
     max_build_duration: 40
     instance_type: mac_mini_m2
     integrations:
@@ -18,8 +23,14 @@ workflows:
       - name: Verify isolated beta scope
         script: |
           set -eu
-          test "$CM_BRANCH" = "codex/ios-beta-native-20261027"
+          test "$CM_BRANCH" = "release/apple-review-1.0.1"
+          test "$(git rev-parse HEAD^)" = "61d0138ec177feb8139df094bfa37ecb2414c512"
           python3 scripts/check_beta_release.py
+      - name: Check that production serves native password sign-in
+        script: |
+          set -eu
+          status=$(curl --silent --show-error --max-time 45 --output /dev/null --write-out '%{http_code}' "$ZOVA_SERVER_URL/api/v1/auth/password")
+          test "$status" = 405
       - name: Generate reviewed iPhone project
         script: |
           set -eu
@@ -43,4 +54,5 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: false
-        submit_to_app_store: false
+        submit_to_app_store: true
+        release_type: MANUAL

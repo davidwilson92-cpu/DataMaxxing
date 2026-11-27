@@ -31,7 +31,7 @@
     "ios/Zova/Assets.xcassets/LaunchBackground.colorset/Contents.json": "21580d7bf4177199fdfada3839c132b3001b17eaae38211ef26808d210ed4450",
     "tests/studio_link_safety.test.cjs": "b8abb4e91074832350e16359511f27293c71a5e4c7db4a2ede3f88226fce446c",
     "ios/Zova/Assets.xcassets/ZovaMark.imageset/Contents.json": "328e40ca29bb736bedbb0582baa300e4f669998e01487df4642f2143205e117f",
-    "codemagic.yaml": "8403821d2cb066dffea354ac9cae60b3406519412ebaf952074c3d423aa01127",
+    "codemagic.yaml": "45760440c6c29ce72dbac8d867be68ffea0806053713cefb01ac6bdb5d43f4aa",
     "nova/work_summary.py": "0310fd64529660a233e629704f8812af21be84aa9e05deb1707ef347b4661066",
     "AGENTS.md": "8d238a8ffd7a11b1b00b8ff3e196a171d5316d646ec0653c2fa83d3d196817ae",
     "tests/test_operational_recovery.py": "04f4be13f4c775c5db3c7a1f58b48452e2b3c035642556136c33f14272dd56e1",
