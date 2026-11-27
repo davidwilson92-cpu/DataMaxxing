@@ -5,7 +5,10 @@ from jinja2 import Environment, DictLoader
 ROOT = Path(__file__).resolve().parents[1]
 
 def templates():
-    return Environment(loader=DictLoader({name:(ROOT/'nova/templates'/name).read_text(encoding='utf-8') for name in ['offer_summary.html','membership.html']} | {'base.html':'{% block head %}{% endblock %}{% block body %}{% endblock %}', 'support_link.html':''}))
+    from nova.assets import url as asset_url
+    env = Environment(loader=DictLoader({name:(ROOT/'nova/templates'/name).read_text(encoding='utf-8') for name in ['offer_summary.html','membership.html']} | {'base.html':'{% block head %}{% endblock %}{% block body %}{% endblock %}', 'support_link.html':''}))
+    env.globals['asset_url'] = asset_url
+    return env
 
 def test_beta_offer_leads_with_no_card_and_secondary_prices():
     env=templates()

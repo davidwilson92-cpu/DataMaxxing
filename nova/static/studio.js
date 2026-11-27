@@ -160,54 +160,46 @@ function removeAttachment(index){
 
 }
 
-async function uploadMedia(){
-
-  const input=document.getElementById("mediaInput"),files=[...input.files],status=document.getElementById("mediaStatus");
-
-  if(!files.length || mediaUploading || sendingMessage || !editableDraft())return;
-
-  const videos=files.filter(file=>file.type.startsWith("video/"));
-
-  input.value="";
-
-  if(videos.length && files.length>1){status.textContent="Add one video at a time, without images.";return;}
-
-  const version=++mediaUploadVersion;
-
-  mediaUploading=true;input.disabled=true;renderAttachments();status.textContent="Uploading… Your current attachments stay selected until this finishes.";
-
-  try{
-
-    const duration=videos.length?await readVideoDuration(videos[0]):0;
-
-    if(version!==mediaUploadVersion)return;
-
-    const form=new FormData();files.forEach(file=>form.append("files",file));
-
-    const result=await api("/api/media",{method:"POST",headers:{"X-Zova-Request":"1"},body:form});
-
-    if(version!==mediaUploadVersion)return;
-
-    uploadedMedia=result.assets;uploadedMediaIds=uploadedMedia.map(asset=>asset.id);
-
-    uploadedMediaKind=uploadedMedia.some(asset=>asset.kind==="video")?"video":"image";
-
-    uploadedVideoDuration=duration;
-
-    if(uploadedMediaKind==="video"){document.getElementById("px").checked=false;document.getElementById("pfb").checked=false;}
-
-    mediaUploading=false;renderAttachments();
-
-  }catch(error){
-
-    if(version===mediaUploadVersion){mediaUploading=false;renderAttachments();status.textContent=`Upload failed. ${error.message} Your previous attachment selection is unchanged.`;}
-
-  }finally{
-
-    if(version===mediaUploadVersion){mediaUploading=false;input.disabled=false;}
-
+let pendingStudioUpload=null;
+async function uploadMedia(retry=false){
+  const input=document.getElementById("mediaInput"),status=document.getElementById("mediaStatus");
+  if(mediaUploading||sendingMessage||!editableDraft())return;
+  let batch=retry?pendingStudioUpload:null;
+  if(retry&&(!batch||batch.version!==mediaUploadVersion||JSON.stringify(uploadedMediaIds)!==JSON.stringify(batch.expected))){status.textContent="This post changed. Select the remaining files again.";return;}
+  if(!retry){
+    const files=[...input.files];input.value="";if(!files.length)return;
+    const count=uploadedMedia.length+files.length,video=uploadedMedia.some(a=>a.kind==='video')||files.some(f=>f.type.startsWith('video/'));
+    if(count>10||(video&&count>1)){status.textContent="Use one video or up to ten images per post. Your attachments are kept.";return;}
+    batch={files,original:[...uploadedMedia],assets:new Map(),errors:new Map(),version:++mediaUploadVersion,expected:[...uploadedMediaIds]};pendingStudioUpload=batch;
   }
-
+  const version=batch.version;
+  mediaUploading=true;input.disabled=true;renderAttachments();
+  try{
+    for(const [index,file] of batch.files.entries()){
+      if(batch.assets.has(index))continue;
+      if(version!==mediaUploadVersion)return;
+      status.textContent='Uploading '+(index+1)+' of '+batch.files.length+' · '+file.name;
+      try{
+        const form=new FormData();form.append('files',file);
+        const result=await api('/api/media',{method:'POST',headers:{'X-Zova-Request':'1'},body:form});
+        if(version!==mediaUploadVersion)return;
+        batch.assets.set(index,result.assets[0]);batch.errors.delete(index);
+      }catch(error){batch.errors.set(index,error.message);}
+    }
+    if(version!==mediaUploadVersion)return;
+    uploadedMedia=[...batch.original,...batch.files.flatMap((_,i)=>batch.assets.has(i)?[batch.assets.get(i)]:[])];
+    uploadedMediaIds=uploadedMedia.map(a=>a.id);batch.expected=[...uploadedMediaIds];
+    uploadedMediaKind=uploadedMedia.some(a=>a.kind==='video')?'video':uploadedMedia.length?'image':null;
+    if(uploadedMediaKind==='video'){
+      uploadedVideoDuration=await readVideoDuration(batch.files[0]);if(version!==mediaUploadVersion)return;
+      document.getElementById('px').checked=false;document.getElementById('pfb').checked=false;
+    }
+    mediaUploading=false;renderAttachments();
+    if(batch.errors.size){
+      status.textContent='Upload failed for '+batch.errors.size+' file(s). Successful files and your previous attachments are kept. Check Saved media before retrying an interrupted upload.';
+      status.insertAdjacentHTML?.('beforeend',' <button type="button" class="quiet-button" onclick="uploadMedia(true).then(()=>scheduleAutosave())">Retry remaining files</button>');
+    }else pendingStudioUpload=null;
+  }finally{if(version===mediaUploadVersion){mediaUploading=false;input.disabled=false;}}
 }
 
 function readVideoDuration(file){return new Promise(resolve=>{const video=document.createElement("video"),url=URL.createObjectURL(file);let done=false;const finish=value=>{if(done)return;done=true;clearTimeout(timer);URL.revokeObjectURL(url);resolve(value);};const timer=setTimeout(()=>finish(0),10000);video.preload="metadata";video.onloadedmetadata=()=>finish(Number.isFinite(video.duration)?video.duration:0);video.onerror=()=>finish(0);video.src=url;});}

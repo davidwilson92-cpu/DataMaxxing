@@ -1,0 +1,13 @@
+Zova Social native iPhone beta
+
+Studio, Next Move, Schedule, Performance and Account now use native iPhone screens. Your existing Zova account, saved drafts, strategy, voice and social connections are shared with web.
+
+Please test:
+- Upgrade without deleting the app. Check sign-in and your existing saved work.
+- Create an idea, attach a photo/video, edit the caption, reopen and preview it.
+- Check Next Move, refine an idea and save/edit your strategy.
+- Compare Calendar and Saved posts; edit or cancel a test schedule carefully.
+- Connect/cancel each social platform and check the return to Zova.
+- Check keyboard, camera permissions, offline recovery and background/reopen.
+
+Only publish content you explicitly approve to an account you own. No customer charges are enabled. Report device/iOS version, exact steps and a screenshot with private details hidden. This candidate is a beta, not a guarantee of defect-free operation.

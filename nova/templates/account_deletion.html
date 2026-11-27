@@ -1,5 +1,5 @@
 {% extends "base.html" %}{% block title %}Delete account | Zova{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/account.css?v=20261025">{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset_url('account.css') }}">{% endblock %}
 {% block body %}<main class="legal-wrap">
 <h1>Delete your Zova account</h1>
 <p>This covers all your brands, drafts, uploads and saved social connections.</p>
@@ -13,4 +13,4 @@
 <button class="button primary" type="submit">Confirm account deletion</button><p class="form-error" role="status" data-security-message></p>
 </form>
 <p><a href="/forgot-password">Need to set or reset your Zova password?</a></p><p><a href="/account">Keep my account</a></p>
-</main><script defer src="/static/security-forms.js?v=20261020"></script>{% endblock %}
+</main><script defer src="{{ asset_url('security-forms.js') }}"></script>{% endblock %}

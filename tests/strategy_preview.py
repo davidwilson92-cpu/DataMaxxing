@@ -6,7 +6,7 @@ sys.path[:0]=[str(repo/'tests'),str(repo)]
 import conftest
 os.environ.update(PUBLIC_BASE_URL='http://127.0.0.1:8784',STRIPE_MODE='off',PLAN_LIMITS_ENABLED='false',RATE_LIMIT_SCALE='20')
 from nova.app import app
-from nova import ai, strategy, trends
+from nova import ai, strategy, trends, connection_health
 from datetime import datetime, timezone, timedelta
 from nova.db import SessionLocal,User,Draft,MediaAsset,SocialConnection,PublishReview,Publication,ScheduledPost
 from nova.security import hash_password,encrypt
@@ -18,6 +18,7 @@ def blocked_provider(*args,**kwargs):
     raise RuntimeError('External provider access is disabled in the local preview')
 for method in ('get','post','put','patch','delete'):
     setattr(httpx,method,blocked_provider)
+connection_health.probe = lambda *args: 'connected'  # Synthetic grants, never provider calls.
 preview_batch=0
 def mocked_json(uid,instruction,data):
     global preview_batch

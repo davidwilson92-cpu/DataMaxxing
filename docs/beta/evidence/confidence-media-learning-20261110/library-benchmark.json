@@ -1,0 +1,46 @@
+{
+  "workload": "1000 drafts, 500 owned assets, 30-item page; isolated SQLite, local TestClient; no provider calls",
+  "samples": [
+    {
+      "ms": 116.25,
+      "queries": 10,
+      "bytes": 9931
+    },
+    {
+      "ms": 31.58,
+      "queries": 10,
+      "bytes": 9931
+    },
+    {
+      "ms": 26.98,
+      "queries": 10,
+      "bytes": 9931
+    },
+    {
+      "ms": 33.63,
+      "queries": 10,
+      "bytes": 9931
+    },
+    {
+      "ms": 25.54,
+      "queries": 10,
+      "bytes": 9931
+    },
+    {
+      "ms": 25.22,
+      "queries": 10,
+      "bytes": 9931
+    },
+    {
+      "ms": 27.84,
+      "queries": 10,
+      "bytes": 9931
+    },
+    {
+      "ms": 85.25,
+      "queries": 10,
+      "bytes": 9931
+    }
+  ],
+  "median_ms": 29.71
+}

@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "timings": [
+    {
+      "width": 390,
+      "library_ms": 75
+    },
+    {
+      "width": 1366,
+      "library_ms": 58
+    }
+  ],
+  "coverage": [
+    "cancel",
+    "reuse",
+    "save failure retry",
+    "no duplicates",
+    "reload",
+    "remove without deletion",
+    "search",
+    "phone",
+    "desktop",
+    "Studio save/reopen"
+  ]
+}

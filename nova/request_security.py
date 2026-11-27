@@ -75,7 +75,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             if user and required() and uses_ai(path) and not await run_in_threadpool(permitted, user.id):
                 response = JSONResponse({'detail':'Choose whether to use AI before sending content. Your content has not been sent to AI.', 'code':'ai_permission_required'},403)
             identity = f'user:{user.id}' if user else f'ip:{request.client.host if request.client else "unknown"}'
-            auth_request = path in {'/login','/signup','/forgot-password','/reset-password','/api/v1/auth/token','/api/v1/auth/refresh'}
+            auth_request = path in {'/login','/signup','/forgot-password','/reset-password','/api/v1/auth/password','/api/v1/auth/token','/api/v1/auth/refresh'}
             maximum, seconds = (30,300) if auth_request else (120,60)
             if path.startswith('/billing/'):maximum,seconds=10,60
             ai_request=uses_ai(path)

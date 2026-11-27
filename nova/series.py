@@ -81,11 +81,21 @@ def listing(request:Request,db=Depends(get_db)):
     from .security import current_user
     uid=current_user(request).id
     result=[]
-    for row in db.scalars(select(ContentSeries).where(ContentSeries.user_id==uid).order_by(ContentSeries.id.desc()).limit(30)):
+    rows = db.scalars(select(ContentSeries).where(ContentSeries.user_id==uid).order_by(ContentSeries.id.desc()).limit(30)).all()
+    occurrences = db.scalars(select(SeriesOccurrence).where(
+        SeriesOccurrence.user_id == uid, SeriesOccurrence.series_id.in_([row.id for row in rows])
+    ).order_by(SeriesOccurrence.position)).all() if rows else []
+    drafts = {draft.id: draft for draft in db.scalars(select(Draft).where(
+        Draft.user_id == uid, Draft.id.in_([item.draft_id for item in occurrences if item.draft_id])
+    ))} if occurrences else {}
+    by_series = {}
+    for item in occurrences:
+        by_series.setdefault(item.series_id, []).append(item)
+    for row in rows:
         spec=json.loads(row.spec_json)
         items=[]
-        for o in db.scalars(select(SeriesOccurrence).where(SeriesOccurrence.series_id==row.id).order_by(SeriesOccurrence.position)):
-            d=db.get(Draft,o.draft_id) if o.draft_id else None
+        for o in by_series.get(row.id, []):
+            d=drafts.get(o.draft_id)
             items.append({'id':o.id,'position':o.position,'due_at':o.due_at.replace(tzinfo=timezone.utc).isoformat(),'draft_id':o.draft_id,'status':o.status if o.status=='cancelled' else d.status if d else o.status})
         result.append({'id':row.id,'status':row.status,'revision':row.revision,'spec':spec,'occurrences':items})
     return result
@@ -196,13 +206,21 @@ def edit_time(occurrence_id:int,body:OccurrenceEdit,request:Request,db=Depends(g
     revoke_jobs(db,uid,[v.draft_id for v in items if v.draft_id])
     zone=ZoneInfo(spec['timezone'])
     delta=due.astimezone(zone).replace(tzinfo=None)-o.due_at.replace(tzinfo=timezone.utc).astimezone(zone).replace(tzinfo=None)
+    warnings = []
+    from .campaign_review import caption_date_warning, dates
     for item in items:
         if item.status=='cancelled':continue
         draft=db.get(Draft,item.draft_id) if item.draft_id else None
         if draft and draft.status in {'published','partial','pending','publishing','needs_review'}:db.rollback();raise HTTPException(409,'Submitted occurrences cannot be moved. Choose a later occurrence.')
         local=item.due_at.replace(tzinfo=timezone.utc).astimezone(zone).replace(tzinfo=None)+delta
-        item.due_at=schedule_time(local.isoformat(),spec['timezone'])
-    db.commit();return {'status':'updated','note':'Review changed occurrences before scheduling.'}
+        due = schedule_time(local.isoformat(),spec['timezone'])
+        if draft:
+            variants = json.loads(draft.variants_json)
+            caption = '\n'.join(text for v in variants.values() for text in v.get('posts',[]) if isinstance(text,str))
+            note = caption_date_warning(caption,dates(item.due_at,spec['timezone'])['local'],dates(due,spec['timezone'])['local'])
+            if note and note not in warnings: warnings.append(note)
+        item.due_at=due
+    db.commit();return {'status':'updated','note':' '.join(warnings) or 'Review changed occurrences before scheduling.'}
 
 
 def approval_guard(db, draft_id):

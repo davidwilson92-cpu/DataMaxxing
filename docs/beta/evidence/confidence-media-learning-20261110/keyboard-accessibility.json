@@ -1,0 +1,1 @@
+{"passed":true,"width":320,"text_scale":2,"checks":["keyboard Enter open","Space selection","Tab containment","Escape dismissal","focus return","no horizontal clipping","cancel preserves input"]}

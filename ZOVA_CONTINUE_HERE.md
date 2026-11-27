@@ -1,3 +1,114 @@
+# Native QA fixes — build 13 Testing internally and externally
+
+## LinkedIn setup continuation — 28 October 2026
+
+Resume the existing work recorded in chat "Start LinkedIn API integration"
+(01a16f89-7592-7f32-bc69-61770aadecc1), not a new registration attempt from scratch.
+Prior owner authorised creation of a Zova Social company Page, but LinkedIn blocked
+it for insufficient connections. The member profile was renamed Zova Social;
+that did not create the company Page or a developer application. Current developer
+portal still has no apps. Clicking Company now requires workplace verification;
+the linked verification hub offers government-ID identity verification. No company
+Page/app has been saved, no credentials issued, no runtime files changed.
+
+Asked the owner to switch LinkedIn to the established David Wilson personal profile
+or complete verification directly. Existing app registration remains prepared
+with Zova Social / https://zova-social.com/privacy. Do not create duplicates or
+claim LinkedIn is integrated. See docs/beta/LINKEDIN_SETUP_20261028.md.
+
+## External release instruction — 28 October 2026
+
+The owner explicitly lifted the earlier external hold: "I need release for my
+testers." Release validated build 0.1.0 (13) to the existing Zova Social External
+Beta group, submit for Apple's beta review if required, and notify existing testers
+when eligible. No further release permission is needed. This supersedes the
+historical hold statements below and in the 27 October evidence files.
+
+After the owner signed back in, build 13 was assigned to Zova Social External Beta
+and submitted with Automatically notify testers enabled. Apple immediately accepted
+it; the external group's Builds page explicitly showed 0.1.0 (13) — Testing.
+Existing external testers can update now using the same TestFlight invitation.
+No need to notify/release superseded build 12. Keep customer charges disabled,
+Render hosting, and the existing tester limit.
+
+Evidence: docs/beta/evidence/native-qa-20261027/zova-build13-external-testing-20261028.png.
+
+## Active native QA follow-up
+
+Runtime 9504809 fixes the original tester-audit gaps: X-format explanation, 44pt
+controls, real largest-text/landscape handling, connection guidance and a retained,
+validated account-deletion receipt. Native CI40586221324 passed 40 unit / 16 UI and
+Release compilation; application CI40586221444 passed 727 SQLite / 728 PostgreSQL,
+browser, recovery, audit and beta guard. Screenshots inspected. PR native CI40586232192 rerun also passed 40 unit / 16 UI and Release compilation
+after its first attempt hit an XCTest screenshot timeout. Codemagic internal
+build 6ae11bc3206ce93970c6a317 signed exact 9504809 and uploaded build 13.
+Apple finished processing; build 13 is Testing in Zova Social Internal Beta.
+Testing notes saved. No external release/Notify Testers authorised.
+
+Owner reported the requested build 12 Facebook connection/return and populated voice
+scan/reopen checks completed. Original tester schedule 1 / draft 45 / publication 10 is
+cancelled, with no active schedules. Approved account 21 deletion completed and
+verified 21:39:45 UTC, case BETA-ERASURE-20261027-21. Zero pending deletion requests.
+Restricted restore-exclusion records are outside the database; reapply before any
+older restore serves traffic. Production 2de31e1 resumed 21:42:28 UTC after maintenance;
+health/sign-in, maintenance-off, worker heartbeat and billing-off checks passed.
+No unrelated delivery record changed. Render hosting and inactive monitor remain.
+
+Details: docs/beta/NATIVE_QA_FIXES_20261027.md. The audit below is historical;
+its listed follow-ups have the new evidence above. All 79 separate commercial
+findings remain tracked. Build 12 external approval remains held by the owner.
+
+## Historical build 12 audit and release record
+
+Latest audit: docs/beta/NATIVE_QA_REVIEW_20261027.md checks the original workbook's
+57 cases, seven bugs and five UX observations against unchanged native build 12.
+Fresh focused tests: 164 passed. Do not claim all tracker items closed: thread
+format explanation and native touch targets need follow-up; larger-text/full
+product landscape, real Facebook connection/voice scan, original job cleanup and
+completed deletion operations still need evidence. No runtime or release change.
+
+Current candidate/branch: 2de31e19401367d909cb320986122b28093fdeb6 on
+codex/ios-beta-native-20261027, draft PR35. Native SwiftUI product screens replace
+the embedded interface; existing backend/data and native/provider security remain.
+
+Render deployed 2de31e1 successfully (dep-dbgfedsipgvc73eksujg). Backup export
+27 Oct 18:50 UTC completed. Post-deploy health/public pages passed, Studio redirects
+to sign-in, native private routes reject unsigned requests with 401/no-store.
+Stripe test mode, subscription enforcement false and live checkout false verified.
+Seven published, one pending, one unknown, one cancelled publication retained;
+one cancelled schedule, no active deliveries. No real social posts sent.
+
+Application CI40565819642 passed: 727 SQLite / 728 PostgreSQL tests, browser,
+recovery, audits and exact beta guard. Native CI40565819691 PASSED 39 unit / 10 UI tests and iPhone Release compilation.
+PR40565830592 also PASSED. Previous 13f4ab0 passed 35 unit and 8/9 UI
+checks; typed-send UI failed before a caption appeared. Candidate adds save/send
+serialization, session-isolation/media tests and schedule manage/cancel UI coverage.
+
+Codemagic 6ae0f93f206ce93970c697a3 signed and uploaded the exact validated 2de31e1.
+Apple processed 0.1.0 (12), UUID 12a46187-8f8f-45b2-82fc-018df4c2547d. Native
+testing notes saved; existing Zova Social Internal Beta group assigned and its
+builds page visibly confirms Testing. Owner can update through TestFlight now.
+On 27 October the owner answered Yes to the requested device check: update without
+deleting Zova, Studio opens, existing drafts/attachments remain, photo/video idea
+saves and reopens, and cancelling a social connection returns to Zova. This is
+owner-reported acceptance of those checks, not a separate live posting test or
+individual confirmation of every provider/device condition.
+
+Build12 was assigned to the existing Zova Social External Beta group and submitted
+for beta review. Apple immediately showed Approved, with Notify Testers available.
+Automatic tester notification was unchecked. The owner explicitly chose "Keep it
+approved for now" when asked to release/notify. DO NOT click Notify Testers or
+release externally until the owner authorises resuming. Existing build11 remains
+Testing externally; do not claim the public link supplies native build 12 yet.
+Evidence: C:/Users/david/AppData/Local/Temp/zova-native-build 12-external-approved.png.
+No new signing credentials, customer charges, or public App Store submission.
+
+See docs/beta/NATIVE_IOS_PARITY_20261027.md and native TestFlight notes. Broader
+physical/provider and independent tester coverage remains separate from this check.
+Keep Render, charges off, monitor inactive and all 79 commercial findings retained.
+
+---
+
 # Next Move candidate ready for shared Studio publication — 26 October 2026
 
 User requested implementation, iteration and readiness to publish, not deployment.
@@ -13,7 +124,7 @@ approved examples, automatically refreshes bounded performance, considers upcomi
 posts, retains recent idea history, and provides optional one-box refinement.
 Failures retain the original idea/input; no automatic posting or schedule changes.
 Provider/AI response tests are synthetic; live acceptance belongs after deployment.
-Keep Render, customer charges/limits OFF, paid monitor inactive, all79 broader gaps.
+Keep Render, customer charges/limits OFF, paid monitor inactive, all 79 broader gaps.
 
 ---
 
@@ -936,7 +1047,7 @@ Codemagic6ad634947550aed810902dd4 FINISHED3m29s. Apple upload succeeded16:25:19 
 
 Refreshing App Store Connect tab38 redirected to Apple login authResult=FAILED. This is an expired browser session, not a rejected build. Asked owner to sign in to existing App Store Connect tab, including verification, and tell us when in; answer pending. Do not enter/ask for passwords or codes. Apple processing, build9 What to Test notes and assignment to existing Zova Social Internal Beta group a74d0ba7-0d28-4f11-bfb3-c77e75986ba8 remain TO DO. Do not claim9 can be installed until status Testing/group confirmed. Existing8 remains delivered fallback; avoid duplicate signed builds. Native phone automatic dismissal remains unverified until owner updates and accepts profile in a fresh flow. No real social posts or grant changes authorised/tested here.
 
-Next: after owner signs in, refresh/read /apps/6824416979/testflight/ios, find9 (UUID above), wait for processing if needed, set concise notes covering all four social returns after final profile confirmation/cancel plus slim header/Account rows/no raw IDs, add existing internal group and verify Testing/1 tester. No new app, identifier, key, certificate, tester or public release. Then tell owner update0.1.0(9), fully close/reopen, retry one connection without deleting existing ones and report whether browser dismisses. Keep all79 wider gaps, existing identity/data/attachments/connections, explicit publishing approvals, unknown-outcome protection and disabled charges. Rollback server8846cbc/native8; no stale data restore/resend.
+Next: after owner signs in, refresh/read /apps/6824416979/testflight/ios, find9 (UUID above), wait for processing if needed, set concise notes covering all four social returns after final profile confirmation/cancel plus slim header/Account rows/no raw IDs, add existing internal group and verify Testing/1 tester. No new app, identifier, key, certificate, tester or public release. Then tell owner update0.1.0(9), fully close/reopen, retry one connection without deleting existing ones and report whether browser dismisses. Keep all 79 wider gaps, existing identity/data/attachments/connections, explicit publishing approvals, unknown-outcome protection and disabled charges. Rollback server8846cbc/native8; no stale data restore/resend.
 
 Browser handoffs: Codemagic tab37 (new build receipt) and Apple tab38 (login) marked for continuation; browserID2. Temporary local preview31502 STOPPED; preview/live-review/Render tabs closed. User's pre-existing Studio7 and provider tabs left unchanged. Local visual proofs retained under ignored social-proof; do not recreate a test service in production.
 
@@ -1148,13 +1259,13 @@ After owner approves declarations: tick the three checkboxes on the audit Review
 
 # Sandbox publication verified — 18 October 2026, 21:17 BST
 
-Owner requested “Publish updates”. Deployed exact tested runtime 1bd3b9486ea79c82413978c07e7d82a4c26ef52c to zova-tiktok-sandbox only (srv-d9u4joad0e5s73afpu10). Render deployment dep-dbaiictg1s2s73c85sf0 reports Deploy succeeded | Live, duration37.6s. Independent release preflight confirmed exact-commit CI39161889443 green, documentation-only HEAD and all79 known gaps retained. No production deployment, real social post, grant, billing change or native rollout.
+Owner requested “Publish updates”. Deployed exact tested runtime 1bd3b9486ea79c82413978c07e7d82a4c26ef52c to zova-tiktok-sandbox only (srv-d9u4joad0e5s73afpu10). Render deployment dep-dbaiictg1s2s73c85sf0 reports Deploy succeeded | Live, duration37.6s. Independent release preflight confirmed exact-commit CI39161889443 green, documentation-only HEAD and all 79 known gaps retained. No production deployment, real social post, grant, billing change or native rollout.
 
 Before restart, saved read-only draft1/publication-1 UI text and screenshot under social-proof/sandbox-publication-1-before-1bd3b94.{txt,png}. It still showed Outcome unconfirmed; no authoritative receipt was recoverable from this UI. This preserves visible evidence, not a database/uploads backup. Do not resend or reinterpret that submission. Sandbox SQLite/uploads remain ephemeral.
 
 Post-deploy checks: /health and /login return200; all four versioned Studio assets (studio.js, studio-state.js, studio-publish.js, studio-design.css?v=20261018-media) match the exact tested candidate after newline normalization. Browser refresh of sandbox Studio returns the sign-in screen, so no new signed-in/model/provider result is claimed. Prior tests:440 passed/ 1 skipped each SQLite/PostgreSQL plus restore/container/dependency/frontend and scope gates; synthetic desktop/mobile attachment evidence retained. Local release evidence: social-proof/sandbox-release-1bd3b94.png and sandbox-release-1bd3b94-checks.json.
 
-Next: owner signs in again and tests a fresh caption/video draft; sent video should appear on the user conversation turn with an empty composer. Sandbox permits private Only me testing; third-party paid partnerships remain unavailable pending TikTok approval. Do not resend old unknown publication1. Keep production inbox-only unchanged. Operational callback-query log redaction and all79 wider gaps remain tracked.
+Next: owner signs in again and tests a fresh caption/video draft; sent video should appear on the user conversation turn with an empty composer. Sandbox permits private Only me testing; third-party paid partnerships remain unavailable pending TikTok approval. Do not resend old unknown publication1. Keep production inbox-only unchanged. Operational callback-query log redaction and all 79 wider gaps remain tracked.
 
 Rollback: manually deploy exact2fa13f72009fa4629129070c14b8e15fa9f73631 to this sandbox only. No schema rollback; older code ignores additive message/retry metadata. Preserve durable receipts and unknown outcomes; never replay submissions. A sandbox restart can reset temporary users/uploads/connections again.
 
@@ -1224,7 +1335,7 @@ Owner will return tonight; no scheduled reminder or background posting requested
 
 Next session: read this handoff, check sandbox availability/session first, and have owner verify the private video on TikTok. Prepare a NEW draft for the recorded demonstration: connect account, upload original media, edit caption, show privacy/interactions/disclosures and consent, final review, owner-authorised private publication, refresh status, then show the actual TikTok post. Review recording before submitting TikTok production video.publish revision and separate public-access audit. Neither is submitted/approved yet. Production stays inbox-only; approval enables eligible customers to publish publicly from the main site. No further implementation or production activation is implied by the successful private test.
 
-Sandbox https://zova-tiktok-sandbox.onrender.com is FREE with ephemeral SQLite/uploads; restart/spindown/redeploy can lose test state and require a fresh test login/reconnection. Auto-deploy is Off. Do not reconnect its database to production. Code/configuration evidence and recording plan are saved in docs/TIKTOK_DIRECT_POST_20261016.md; screenshots and synthetic video remain locally under social-proof/. Do not expose credentials or upload the whole proof folder. Preserve all79 known beta gaps and existing connections.
+Sandbox https://zova-tiktok-sandbox.onrender.com is FREE with ephemeral SQLite/uploads; restart/spindown/redeploy can lose test state and require a fresh test login/reconnection. Auto-deploy is Off. Do not reconnect its database to production. Code/configuration evidence and recording plan are saved in docs/TIKTOK_DIRECT_POST_20261016.md; screenshots and synthetic video remain locally under social-proof/. Do not expose credentials or upload the whole proof folder. Preserve all 79 known beta gaps and existing connections.
 
 ---
 
@@ -1312,7 +1423,7 @@ Read docs/SOCIAL_BETA_COMPLETION_20261016.md for evidence and rollback. Instagra
 
 # Next Move always-visible sections — 12 October 2026 (not deployed)
 
-Branch codex/next-move-open-sections-20261012 replaces the Details and Change this idea dropdowns with always-visible, labelled sections and bold16px headings. No collapse controls on either section. Source evidence retains its separate disclosure. See steps now focuses the visible Details heading. Existing draft/feedback behavior preserved. Node journey/onboarding suites and4 beta scope tests passed. Synthetic desktop1280x720 and mobile390x844 reviewed; feedback input directly accessible, no horizontal panel overflow. No provider, schema, account or billing changes; all79 gaps retained. Rollback live db9a4ff6daff2735b48ff989771c9ae8c91e866c. Hosting checks required before publication.
+Branch codex/next-move-open-sections-20261012 replaces the Details and Change this idea dropdowns with always-visible, labelled sections and bold16px headings. No collapse controls on either section. Source evidence retains its separate disclosure. See steps now focuses the visible Details heading. Existing draft/feedback behavior preserved. Node journey/onboarding suites and4 beta scope tests passed. Synthetic desktop1280x720 and mobile390x844 reviewed; feedback input directly accessible, no horizontal panel overflow. No provider, schema, account or billing changes; all 79 gaps retained. Rollback live db9a4ff6daff2735b48ff989771c9ae8c91e866c. Hosting checks required before publication.
 
 ---
 

@@ -1,10 +1,12 @@
 """Optional email ownership proof; existing sessions and access are unchanged."""
 import secrets
 import os
+import logging
 from datetime import timedelta
 from fastapi import APIRouter, BackgroundTasks, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlalchemy import update
+from sqlalchemy.exc import SQLAlchemyError
 from .db import SessionLocal, EmailVerification, User, utcnow
 from .security import current_user, hash_api_key
 from . import recovery
@@ -38,6 +40,22 @@ def send(request:Request, background_tasks:BackgroundTasks):
             db.commit()
         background_tasks.add_task(deliver,user.email,token)
     return RedirectResponse('/verify-email?sent=1',303)
+
+
+def welcome_verification(user, background_tasks):
+    """Send once after successful registration; optional proof never blocks access."""
+    try:
+        if not recovery.recovery_ready() or user.email_verified_at: return
+        if not allowed_request(f'verification:{user.id}',3,900): return
+        token = secrets.token_urlsafe(32)
+        with SessionLocal() as db:
+            db.add(EmailVerification(token_hash=hash_api_key(token),user_id=user.id,email=user.email,expires_at=utcnow()+timedelta(minutes=15)))
+            db.commit()
+        background_tasks.add_task(deliver,user.email,token)
+    except SQLAlchemyError:
+        # Registration has already committed. Leave the account usable and let
+        # its owner request a new verification from Account after recovery.
+        logging.getLogger(__name__).error('Welcome verification unavailable; account registration retained')
 
 
 @router.get('/verify-email')

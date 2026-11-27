@@ -1,0 +1,93 @@
+[
+  {
+    "test": "ZovaUITests/testCampaignCompactToolbarKeepsPostVisibleAndNavigationAvailable()",
+    "file": "native-campaign.png",
+    "attachment": {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "A3D77CD3-CFC6-4299-9E39-0DEA239429FA",
+      "deviceName": "iPhone 17 Pro Max",
+      "exportedFileName": "D1452E6F-6F81-4765-B92A-F4BC29012046.png",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "Campaign — white backdrop with compact black toolbar_0_A183620D-B84C-4262-A2D9-63B79BE24FB0.png",
+      "timestamp": 1794335062.607
+    }
+  },
+  {
+    "test": "ZovaUITests/testCampaignPauseAndImprovementPreviewKeepOriginalUntilApply()",
+    "file": "native-refinement.png",
+    "attachment": {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "A3D77CD3-CFC6-4299-9E39-0DEA239429FA",
+      "deviceName": "iPhone 17 Pro Max",
+      "exportedFileName": "22EC3544-E34A-4693-83B6-B454A47FB005.png",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "Campaign — improvement preview retains original_0_435190F6-8084-46E5-B0DA-3DBBB12284B0.png",
+      "timestamp": 1794335132.337
+    }
+  },
+  {
+    "test": "ZovaUITests/testCampaignPauseAndImprovementPreviewKeepOriginalUntilApply()",
+    "file": "native-campaign-evidence.png",
+    "attachment": {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "A3D77CD3-CFC6-4299-9E39-0DEA239429FA",
+      "deviceName": "iPhone 17 Pro Max",
+      "exportedFileName": "A1E40F05-40AD-4B92-8B88-8AE85160AD94.png",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "Campaign — evidence distinguishes a test from measured results_0_3796C2C0-9EB2-4FBE-A3BA-8EC02090F728.png",
+      "timestamp": 1794335129.412
+    }
+  },
+  {
+    "test": "ZovaUITests/testCampaignToolbarSupportsAccessibilityText()",
+    "file": "native-campaign-largest.png",
+    "attachment": {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "A3D77CD3-CFC6-4299-9E39-0DEA239429FA",
+      "deviceName": "iPhone 17 Pro Max",
+      "exportedFileName": "519488EF-EB71-4757-BE17-001702F83780.png",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "Campaign — compact toolbar at accessibility text size_0_4C241C7F-DD8E-4564-8083-605079CCE5E2.png",
+      "timestamp": 1794335167.421
+    }
+  },
+  {
+    "test": "ZovaUITests/testNativeProductTabsAndNextMoveContainNoEmbeddedWebScreens()",
+    "file": "native-next-move.png",
+    "attachment": {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "A3D77CD3-CFC6-4299-9E39-0DEA239429FA",
+      "deviceName": "iPhone 17 Pro Max",
+      "exportedFileName": "C784A665-E210-44DF-A4A0-B644C9A89A29.png",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "Native Next Move — mobile parity_0_43A71DB5-024D-4210-8B3F-6F3FCD7690BB.png",
+      "timestamp": 1794335400.377
+    }
+  },
+  {
+    "test": "ZovaUITests/testSavedMediaAtLargestTextKeepsSelectionAndDismissalReachable()",
+    "file": "native-library-largest.png",
+    "attachment": {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "A3D77CD3-CFC6-4299-9E39-0DEA239429FA",
+      "deviceName": "iPhone 17 Pro Max",
+      "exportedFileName": "6D64C5E7-0B93-4371-A116-A8E5130A811C.png",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "Saved media — largest accessibility text_0_E51A5A40-C513-42C1-A88E-3DF28F07448D.png",
+      "timestamp": 1794335481.138
+    }
+  },
+  {
+    "test": "ZovaUITests/testSavedMediaCanBeReusedAndCancelledWithoutChangingBrief()",
+    "file": "native-library.png",
+    "attachment": {
+      "configurationName": "Test Scheme Action",
+      "deviceId": "A3D77CD3-CFC6-4299-9E39-0DEA239429FA",
+      "deviceName": "iPhone 17 Pro Max",
+      "exportedFileName": "13082C99-E9C6-4D72-A1B2-0DB21B0AAF95.png",
+      "isAssociatedWithFailure": false,
+      "suggestedHumanReadableName": "Saved media — selectable owned assets_0_04BE59DE-A483-44D7-AA26-EE6FEAC82035.png",
+      "timestamp": 1794335504.126
+    }
+  }
+]

@@ -9,14 +9,14 @@ function renderKpis(summary){const metrics=[
   ["Views / impressions",summary.impressions,"Available views and impressions"],
   ["Engagements",summary.engagements,"Likes, comments and shares"],
   ["Comments",summary.comments,"Available comments on sampled posts"],
-  ["Followers",summary.followers,"Across connected accounts"],
+  ["Current followers",summary.followers,"Across connected accounts"],
   ["Posts",summary.posts,"Posts represented in this view"]
-];const available=metrics.filter(([,value])=>value!=null);document.getElementById("analyticsKpis").innerHTML=available.length?available.map(([label,value,note],index)=>`<article class="analytics-kpi ${index===0?"primary":""}"><span>${label}</span><strong>${value==null?"—":typeof value==="number"?analyticsNumber(value):value}</strong><small>${note}</small></article>`).join(""):'<p class="analytics-empty-summary">Combined totals are incomplete. Available account results are below.</p>';}
+];const available=metrics.filter(([,value])=>value!=null);document.getElementById("analyticsKpis").innerHTML=available.length?'<p class="support-note">Lifetime results for posts published in this period. Bookings and sales are not measured.</p>'+available.map(([label,value,note],index)=>`<article class="analytics-kpi ${index===0?"primary":""}"><span>${label}</span><strong>${value==null?"—":typeof value==="number"?analyticsNumber(value):value}</strong><small>${note}</small></article>`).join(""):'<p class="analytics-empty-summary">Combined totals are incomplete. Available account results are below.</p>';}
 
 function renderPlatforms(platforms){
   const connected=Object.entries(platforms).filter(([,value])=>value.connected);
   document.getElementById('platformPerformance').innerHTML=connected.length?connected.map(([name,value])=>{
-    const metrics=[['Views / impressions',value.impressions],['Engagements',value.engagements],['Followers',value.followers]].filter(([,count])=>count!=null);
+    const metrics=[['Views / impressions',value.impressions],['Engagements',value.engagements],['Current followers',value.followers]].filter(([,count])=>count!=null);
     return `<article class="platform-performance-row"><div class="analytics-platform-mark ${name}">${analyticsIcon(name)}</div><div class="platform-performance-main"><div><strong>${analyticsPlatform(name)}</strong><span>${analyticsEsc(value.account||'Connected')}</span></div>
     ${metrics.length?`<dl>${metrics.map(([label,count])=>`<div><dt>${label}</dt><dd>${analyticsNumber(count)}</dd></div>`).join('')}</dl>`:'<p class="metric-note">Results are unavailable for this account.</p>'}
     ${value.error&&metrics.length?'<small class="metric-note">Some metrics are unavailable.</small>':''}</div></article>`;
@@ -33,17 +33,57 @@ function renderPosts(posts) {
   document.getElementById('topPosts').innerHTML=posts.length?posts.map(post=>{
     const url=analyticsSafeUrl(post.url), image=analyticsSafeUrl(post.image_url), tag=url?'a':'article';
     return `<${tag} class="analytics-post" ${url?`href="${analyticsEsc(url)}" target="_blank" rel="noopener"`:''}>
-    ${image?`<img src="${analyticsEsc(image)}" alt="">`:`<span class="analytics-post-art ${post.platform}">${analyticsIcon(post.platform)}</span>`}
+    ${image?`<img src="${analyticsEsc(image)}" alt="" loading="lazy" decoding="async">`:`<span class="analytics-post-art ${post.platform}">${analyticsIcon(post.platform)}</span>`}
     <div><span class="post-channel">${analyticsPlatform(post.platform)}</span><p>${analyticsEsc((post.text||'Media post').slice(0,170))}</p><dl>
     ${[['Likes','likes'],['Comments','comments'],['Shares','shares'],['Views','views']].map(([label,key])=>`<div><dt>${label}</dt><dd>${analyticsNumber(post[key])}</dd></div>`).join('')}
     </dl></div></${tag}>`;
   }).join(''):'<div class="analytics-empty">No dated posts are available for this period. Try 30 days or create your next post in Studio.</div>';
 }
 
+function renderCampaignResults(rows) {
+  const selector=document.getElementById('performanceScope'), panel=document.getElementById('campaignResults');
+  if(!selector || !panel) return;
+  document.getElementById('performanceScopeLabel').hidden=!Array.isArray(rows);
+  if(!Array.isArray(rows)) {
+    selector.checked=false;panel.hidden=true;document.getElementById('postResults').hidden=false;return;
+  }
+  const scope=document.getElementById('performanceScopeLabel');
+  scope.onchange=()=>{
+    const campaigns=selector.checked;
+    panel.hidden=!campaigns;
+    document.getElementById('postResults').hidden=campaigns;
+  };
+  if(!selector.checked) scope.querySelector('input[value="posts"]').checked=true;
+  scope.onchange();
+  panel.replaceChildren();
+  const note=document.createElement('p');
+  note.textContent=rows?.length?'Lifetime counters for campaign posts published in this period.':'No campaigns yet.';
+  panel.append(note);
+  for (const row of rows || []) {
+    const card=document.createElement('article');card.className='analytics-panel';
+    const title=document.createElement('h2');title.textContent=row.name;
+    const coverage=document.createElement('p');coverage.textContent=row.published ? row.measured+' of '+row.published+' published posts measured' : 'No posts published in this period.';
+    card.append(title,coverage);
+    if(row.published) {
+      const metrics=document.createElement('p');
+      metrics.textContent=['views','likes','comments','shares'].map(k=>analyticsNumber(row[k])+' '+k).join(' · ');card.append(metrics);
+    }
+    if(row.posts.length){
+      const list=document.createElement('details'), heading=document.createElement('summary');heading.textContent='Post results';list.append(heading);
+      for (const p of row.posts){const item=document.createElement('p');item.textContent=analyticsPlatform(p.platform)+' · '+p.text+' — '+analyticsNumber(p.likes)+' likes · '+analyticsNumber(p.comments)+' comments';list.append(item);}
+      card.append(list);
+    }
+    const open=document.createElement('a');open.textContent='Open campaign';
+    open.href=window.zovaWorkspaceUrl('/campaigns?campaign='+row.id);card.append(open);
+    panel.append(card);
+  }
+}
 let analyticsRequest=0, analyticsAnswerRequest=0;
 function showResultPanels(visible){document.querySelectorAll('.analytics-split,.content-panel,.analytics-ask').forEach(el=>el.hidden=!visible);}
-async function loadAnalytics(){
+async function loadAnalytics(refresh=false){
   const request=++analyticsRequest;
+  const campaignPanel=document.getElementById('campaignResults');
+  if(campaignPanel && !campaignPanel.hidden) campaignPanel.textContent='Updating results…';
   ++analyticsAnswerRequest;
   document.getElementById('analyticsAnswer').hidden=true;
   document.getElementById('analyticsRefresh').disabled=true;
@@ -53,8 +93,9 @@ async function loadAnalytics(){
   showResultPanels(false);
   try{
     const days=document.getElementById('analyticsWindow').value;
-    const data=await analyticsApi('/api/analytics/dashboard?days='+encodeURIComponent(days));
+    const data=await analyticsApi('/api/analytics/dashboard?days='+encodeURIComponent(days)+'&refresh='+(refresh===true));
     if(request!==analyticsRequest)return;
+    renderCampaignResults(data.campaigns);
     const connected=Object.values(data.platforms||{}).some(p=>p.connected);
     if(!connected){
       document.getElementById('analyticsNote').textContent='';
@@ -68,6 +109,7 @@ async function loadAnalytics(){
     renderKpis(data.summary||{});renderPlatforms(data.platforms||{});renderRecommendations(data.recommendations||[]);renderPosts(data.top_posts||[]);
   }catch(error){
     if(request!==analyticsRequest)return;
+    renderCampaignResults(null);
     document.getElementById('analyticsNote').textContent='Results could not be updated.';
     document.getElementById('analyticsKpis').innerHTML=`<div class="analytics-error">${analyticsEsc(error.message)} Use Refresh to try again.</div>`;
     showResultPanels(false);
@@ -87,6 +129,6 @@ async function askAnalytics(question){
 
 document.getElementById("analyticsQuestion").addEventListener("submit",event=>{event.preventDefault();const field=document.getElementById("analyticsQuestionText"),question=field.value.trim();if(question)askAnalytics(question);});
 document.querySelectorAll(".analytics-prompts button").forEach(button=>button.addEventListener("click",()=>{document.getElementById("analyticsQuestionText").value=button.textContent;askAnalytics(button.textContent);}));
-document.getElementById("analyticsRefresh").addEventListener("click",loadAnalytics);
+document.getElementById("analyticsRefresh").addEventListener("click",()=>loadAnalytics(true));
 document.getElementById("analyticsWindow").addEventListener("change",loadAnalytics);
 loadAnalytics();

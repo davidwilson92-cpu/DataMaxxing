@@ -12,7 +12,7 @@ const plan={goal:'Restaurant bookings',platforms:['instagram'],description:'I ru
  assert.match(node('strategyActions').innerHTML,/Gym workout/);
  // Reopening must remove old interactive DOM immediately, not after either GET.
  let resolvePlan,resolveActions;
- context.api=url=>new Promise(resolve=>{if(url==='/api/strategy')resolvePlan=resolve;else resolveActions=resolve;});
+ context.api=url=>new Promise(resolve=>{if(url.split('?')[0]==='/api/strategy')resolvePlan=resolve;else resolveActions=resolve;});
  const opening=context.openNextMove();
  assert.doesNotMatch(node('strategyActions').innerHTML,/Gym workout|next-move-featured/);
  resolvePlan({revision:1,confirmed:{goal:'Gym',platforms:['instagram']},proposal:{},defaults:{}});
@@ -22,7 +22,7 @@ const plan={goal:'Restaurant bookings',platforms:['instagram'],description:'I ru
  resolveActions({revision:1,items:[old]});await opening;
  assert.match(node('strategyActions').innerHTML,/Gym workout/);
  // The saved revision changes, then the next request fails: never leave the previous business's card on screen.
- context.api=async url=>{if(url==='/api/strategy')return {revision:2,confirmed:plan,proposal:{},defaults:{}};throw Error('Connection interrupted. Retry.');};
+ context.api=async url=>{if(url.split('?')[0]==='/api/strategy')return {revision:2,confirmed:plan,proposal:{},defaults:{}};throw Error('Connection interrupted. Retry.');};
  await context.openNextMove();
  assert.doesNotMatch(node('strategyActions').innerHTML,/Gym workout/);
  assert.match(node('strategyStatus').textContent,/Connection interrupted/);

@@ -1,0 +1,5 @@
+<nav class="mobile-workspace-tabs" aria-label="Main navigation">
+{% for href,label in [('/studio','Studio'),('/campaigns','Campaign'),('/drafts','Schedule'),('/analytics','Performance'),('/account','Account')] %}
+<a href="{{ href }}?workspace={{ brand.id if brand else 0 }}" {% if request.url.path == href %}aria-current="page"{% endif %}><span aria-hidden="true">{% include 'ui_icon.html' %}</span>{{ label }}</a>
+{% endfor %}
+</nav>

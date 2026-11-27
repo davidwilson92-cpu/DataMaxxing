@@ -15,7 +15,7 @@ from urllib.parse import urlencode, urlsplit
 
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 from sqlalchemy import select, update
 
 from .db import MobileGrant, MobileRefresh, MobileSession, SessionLocal, User, utcnow
@@ -184,6 +184,32 @@ def remove_expired_sessions():
         db.commit()
 
 
+def create_device_session(db, user_id, auth_version):
+    session = MobileSession(id=secrets.token_urlsafe(24), user_id=user_id, auth_version=auth_version,
+                            expires_at=utcnow()+timedelta(days=30))
+    db.add(session)
+    result = token_pair(db, session)
+    db.commit()
+    return result
+
+
+class PasswordLogin(BaseModel):
+    email: str
+    password: SecretStr
+
+
+@router.post('/api/v1/auth/password')
+def password_login(body: PasswordLogin):
+    from .security import authenticate_password
+    require_enabled()
+    with SessionLocal() as db:
+        identity = authenticate_password(db, body.email, body.password.get_secret_value())
+        if identity is None:
+            raise HTTPException(401, 'Incorrect email or password')
+        user, version = identity
+        return create_device_session(db, user.id, version)
+
+
 @router.post('/api/v1/auth/token')
 def exchange(body: CodeExchange):
     validate_client(body.client_id, body.redirect_uri)
@@ -198,12 +224,7 @@ def exchange(body: CodeExchange):
         claimed = db.execute(update(MobileGrant).where(MobileGrant.id==row.id,MobileGrant.used.is_(False),MobileGrant.expires_at>utcnow()).values(used=True).execution_options(synchronize_session=False))
         if claimed.rowcount!=1:
             raise HTTPException(401,'Sign-in code already used')
-        session = MobileSession(id=secrets.token_urlsafe(24), user_id=user.id, auth_version=user.auth_version,
-                                expires_at=utcnow()+timedelta(days=30))
-        db.add(session)
-        result=token_pair(db,session)
-        db.commit()
-        return result
+        return create_device_session(db, user.id, row.auth_version)
 
 
 @router.post('/api/v1/auth/refresh')

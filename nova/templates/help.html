@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Guide | Zova{% endblock %}
 {% block body_class %}app-body{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/account-access.css?v=20261025">{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ asset_url('account-access.css') }}">{% endblock %}
 {% block site_header %}{% endblock %}{% block site_footer %}{% endblock %}
 {% block body %}
 <div class="{% if user %}app-shell{% endif %}">{% if user %}{% include "app_nav.html" %}{% endif %}
@@ -21,5 +21,5 @@
 <details><summary>Images, video and music</summary><p>With your permission, AI checks images and sampled video frames. It does not listen to audio. Review the proposed caption.</p><p>Choose Instagram Post or Story below the platform buttons. Story planning notes are not overlaid on the media. To add Instagram’s music or stickers to a Story or photo, save your media and finish in Instagram. Zova does not mark that handoff as published.</p></details>
 <details><summary>Your voice and privacy</summary><p><a href="/account#voice">Your voice</a> saves the writing guidance Zova uses. You can edit it, learn from recent posts or clear learned examples. Your edits take priority.</p><p><a href="/account#security">Account</a> contains AI-sharing and security controls, plus Delete account. Turning off AI sharing stops new AI requests; saved work remains editable.</p></details>
 <details><summary>Sign-in and saving problems</summary><p><a href="/forgot-password">Reset your password</a> if you cannot sign in. Check Spam for the email.</p><p>If saving fails, keep Studio open and use Retry save or Download your work. Opening another saved version requires resolving unsaved changes first.</p></details>
-<details><summary>Beta and support</summary>{% include "offer_summary.html" %}{% include "support_link.html" %}</details>
+<details><summary>Access and support</summary>{% include "offer_summary.html" %}{% include "support_link.html" %}</details>
 </main></div>{% endblock %}

@@ -8,5 +8,7 @@
     <footer><a href="/guide">Open Guide</a><div><button type="button" class="intro-back" aria-label="Previous tip">←</button><button type="button" class="intro-next">Next →</button></div></footer>
   </section>
 </dialog>
-<link rel="stylesheet" href="/static/studio-intro.css?v=20261025">
-<script defer src="/static/studio-intro.js?v=20261025"></script>
+{% if user.studio_intro_pending or request.query_params.get('intro') == '1' %}
+<link rel="stylesheet" href="{{ asset_url('studio-intro.css') }}">
+<script defer src="{{ asset_url('studio-intro.js') }}"></script>
+{% endif %}

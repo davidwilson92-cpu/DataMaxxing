@@ -1,0 +1,9 @@
+{
+  "baseline": "4a6fc00c7bd3599c6b7eacc287d622e12f197d00",
+  "candidate": "723a26af2bfa2a58190ffa2ede5272004c0d8d61",
+  "application_run": 42872780694,
+  "native_run": 42872781079,
+  "classification": "Review only; synthetic accounts and workloads; no production distribution",
+  "performance_note": "ASGI measurements taken on 08f26c7 before later native retry, accessibility and client filter changes. The only later backend change is singular draft-summary wording; measured query/AI/media paths are unchanged.",
+  "web_screenshots": "library-* (except 320 enlarged), studio-* from application CI 42872780694 on runtime 723a26a; other browser captures are local same-source selected paths."
+}

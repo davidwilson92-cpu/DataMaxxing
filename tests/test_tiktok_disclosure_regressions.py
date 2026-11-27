@@ -103,7 +103,7 @@ def test_client_disclosure_choices_reset_consent_and_show_correct_label():
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const nodes=new Map();
 function get(id){if(!nodes.has(id))nodes.set(id,{checked:false,disabled:false,value:'',options:[],textContent:'',innerHTML:'',hidden:false});return nodes.get(id);}
-const ctx=vm.createContext({document:{getElementById:get},esc:String,uploadedMediaKind:'video'});
+const ctx=vm.createContext({window:{addEventListener(){}},document:{getElementById:get},esc:String,uploadedMediaKind:'video'});
 vm.runInContext(fs.readFileSync(process.argv[1],'utf8'),ctx);
 const run=code=>vm.runInContext(code,ctx);
 const html=run("tiktokDirectControls({display_name:'Synthetic creator',privacy_options:['SELF_ONLY','PUBLIC_TO_EVERYONE']})");

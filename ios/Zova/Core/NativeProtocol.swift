@@ -60,24 +60,7 @@ struct ZovaConfiguration {
         if let workspace, workspace.allSatisfy(\.isNumber), !workspace.isEmpty { target += "?workspace=" + workspace }
         return target
     }
-    func tabIndex(for url: URL) -> Int? {
-        guard owns(url) else { return nil }
-        return ["/studio", "/drafts", "/analytics", "/account"].firstIndex(of: url.path)
-    }
-    func tabRoot(_ path: String, from current: URL?) throws -> URL {
-        var parts = URLComponents(url: try endpoint(path), resolvingAgainstBaseURL: false)!
-        if let current, owns(current),
-           let workspace = URLComponents(url: current, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "workspace" })?.value,
-           !workspace.isEmpty, workspace.allSatisfy(\.isNumber) {
-            parts.queryItems = [URLQueryItem(name: "workspace", value: workspace)]
-        }
-        return parts.url!
-    }
-    func tabRefreshURL(_ path: String, from current: URL?) -> URL? {
-        // Reload read-only lists; retain Studio and unfinished Account edits.
-        guard ["/drafts", "/analytics"].contains(path) else { return nil }
-        return try? tabRoot(path, from: current)
-    }
+
 }
 
 enum NativeProof {

@@ -95,7 +95,7 @@ def test_studio_has_premium_application_shell():
     assert 'zova-symbol' in page.text
     assert 'composer-platforms' in page.text and 'id="xFormat"' in page.text
     assert 'studio-watermark-gradient' in page.text and 'recent-posts' in page.text
-    assert 'id="connectionPrompt"' in page.text
+    assert 'id="draftFormatPrompt"' in page.text
 
 
 
@@ -146,7 +146,7 @@ def test_account_management_and_social_voice_waiting_state():
     page = client.get("/account", cookies=signup.cookies).text
     assert 'action="/account/profile"' in page
     assert 'action="/account/password"' in page
-    assert "Connected socials" in page and "Change password" in page
+    assert "Connected socials" in page and "Update password" in page
     response = client.post("/api/voice/scan-socials", cookies=signup.cookies)
     assert response.json()["status"] == "waiting"
 

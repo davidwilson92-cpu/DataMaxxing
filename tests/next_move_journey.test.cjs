@@ -9,12 +9,13 @@ function setup(){
 const idea={id:9,title:'Show how you make a mug',reason:'Help beginners get started.',platform:'instagram',format:'post',kind:'draft',effort:'5 minutes',needs:''};
 (async()=>{
  const {c,node,calls,navigations}=setup();let ready=false,fail=false;
- c.api=async(url)=>{calls.push(url);if(url==='/api/strategy')return {revision:4,confirmed:{goal:'Grow',platforms:['instagram']},proposal:{},defaults:{}};
+ c.api=async(url)=>{calls.push(url);if(url==='/api/strategy?include_actions=true')return {revision:4,confirmed:{goal:'Grow',platforms:['instagram']},proposal:{},defaults:{},actions:{revision:4,items:ready?[idea]:[],source_note:'Evergreen'}};
  if(url==='/api/strategy/actions')return {items:ready?[idea]:[],source_note:'Evergreen'};
  if(url==='/api/strategy/recommend'){if(fail)throw Error('Could not find ideas. Try again.');ready=true;return {};}
  throw Error('Unexpected request '+url);};
  await c.openNextMove();assert.equal(calls.filter(x=>x.endsWith('/recommend')).length,1);assert.match(node('strategyActions').innerHTML,/Draft post/);assert.equal(node('strategyStatus').textContent,'');
  node('strategyBrief').value='My unfinished edit';calls.length=0;await c.openNextMove();assert.equal(node('strategyBrief').value,'My unfinished edit');assert.equal(calls.filter(x=>x.endsWith('/recommend')).length,0);assert.ok(!calls.some(x=>x.includes('series')));
+ assert.deepEqual(calls,['/api/strategy?include_actions=true']);
  ready=false;fail=true;await c.openNextMove();assert.match(node('strategyStatus').textContent,/Try again/);assert.equal(node('recommendButton').hidden,false);
  c.saveDraftNow=async()=>{throw Error('Save failed');};calls.length=0;await vm.runInContext('draftNextMove(9,{})',c);assert.equal(calls.length,0);assert.equal(navigations.length,0);assert.match(node('strategyStatus').textContent,/Save failed/);
  // Opening saved work must not call the AI-generating endpoint or require new AI consent.

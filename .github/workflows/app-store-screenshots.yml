@@ -1,0 +1,35 @@
+name: App Store iPhone screenshots
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/ios-beta-*']
+    paths: ['.github/workflows/app-store-screenshots.yml']
+permissions:
+  contents: read
+jobs:
+  screenshots:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Generate native project
+        run: |
+          brew install xcodegen
+          cd ios
+          xcodegen generate
+      - name: Capture actual medium-display iPhone screens
+        run: |
+          cd ios
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); phones=[x for devices in d["devices"].values() for x in devices if x.get("isAvailable")]; print(next(x["udid"] for x in phones if x["name"]=="iPhone 17 Pro"))')
+          xcodebuild test -project Zova.xcodeproj -scheme Zova -destination "platform=iOS Simulator,id=$DEVICE_ID" -resultBundlePath ../app-store-screenshots.xcresult -only-testing:ZovaUITests/ZovaUITests/testNativeProductTabsAndNextMoveContainNoEmbeddedWebScreens -only-testing:ZovaUITests/ZovaUITests/testNativeComposerMovesSentIdeaIntoTranscriptAndKeepsEditableCaption CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGNING_ALLOWED=YES
+      - name: Export screenshot evidence
+        if: always()
+        run: |
+          if [ -d app-store-screenshots.xcresult ]; then
+            xcrun xcresulttool export attachments --path app-store-screenshots.xcresult --output-path app-store-screenshots
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: app-store-medium-iphone-screenshots
+          path: app-store-screenshots

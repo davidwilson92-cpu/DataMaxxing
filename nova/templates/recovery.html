@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% block body_class %}recovery-page{% endblock %}
 {% block title %}Account recovery | Zova{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/account-access.css?v=20261025">{% endblock %}
+{% block head %}<script defer src="{{ asset_url('account-fields.js') }}"></script><link rel="stylesheet" href="{{ asset_url('account-access.css') }}">{% endblock %}
 {% block body %}
 <main class="legal-wrap">
   <h1>{{ 'Choose a new password' if reset else 'Recover your account' }}</h1>
@@ -38,5 +39,5 @@
   {% include "support_link.html" %}
   <p><a class="recovery-back" href="/login">Back to login</a></p>
 </main>
-<script defer src="/static/security-forms.js?v=20261020"></script>
+<script defer src="{{ asset_url('security-forms.js') }}"></script>
 {% endblock %}

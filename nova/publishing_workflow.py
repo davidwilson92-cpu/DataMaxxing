@@ -158,16 +158,20 @@ def prepare_review(db,uid,body):
     return {'review_token':row.code,'snapshot':payload,'expires_in':900}
 
 
-def results_for(db,uid,draft_id,refresh=False):
+def results_for(db,uid,draft_id,refresh=False,stored_only=False):
     draft=owned_draft(db,uid,draft_id)
     rows=db.scalars(select(Publication).where(Publication.user_id==uid,Publication.draft_id==draft_id)).all()
-    for row in rows:
-        reconcile_instagram(db,row)
-        if refresh:
-            from .tiktok_status import reconcile
-            reconcile(db,row)
+    if not stored_only:
+        for row in rows:
+            reconcile_instagram(db,row)
+            if refresh:
+                from .tiktok_status import reconcile
+                reconcile(db,row)
     db.refresh(draft)
-    results={r.platform:{**json.loads(r.result_json or '{}'),'status':r.status} for r in rows}
+    from .publication_status import LABELS, guidance
+    results={r.platform:{**json.loads(r.result_json or '{}'),'status':r.status,
+        'status_label':LABELS.get(r.status,'Check results'), 'recovery_note':guidance(r.status),
+        'support_reference':'publication-'+str(r.id)} for r in rows}
     draft=owned_draft(db,uid,draft_id)
     return {'draft_status':draft.status,'results':results,'summary':' '.join(f"{'X' if p=='x' else p.title()}: {r['status'].replace('_',' ')}." for p,r in results.items())}
 

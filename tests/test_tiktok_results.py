@@ -17,11 +17,14 @@ def pending():
 def test_studio_get_reconciles_public_link_and_never_resends(monkeypatch):
     client, draft, _ = pending(); calls=[]
     monkeypatch.setattr(tiktok_status, 'resolve_tiktok_post', lambda *a: calls.append(a[-1]) or {'status':'PUBLISH_COMPLETE','public_ids':['1234567890123456789']})
+    stored=client.get(f'/api/publications/{draft}?stored_only=true').json()
+    assert stored['results']['tiktok']['status']=='pending' and not calls
     result=client.get(f'/api/publications/{draft}').json()
     assert result['draft_status']=='published'
     assert result['results']['tiktok']['url']=='https://www.tiktok.com/@demo/video/1234567890123456789'
     client.get(f'/api/publications/{draft}')
     assert calls==['receipt-only']
+    assert client.get(f'/api/publications/{draft}?stored_only=true').json()==result
 
 
 def test_private_complete_has_no_invented_link(monkeypatch):

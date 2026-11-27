@@ -49,6 +49,7 @@
     if (!pending) pending = choose().finally(() => { pending = null; });
     return pending;
   }
+  window.zovaEnsureAIConsent = ensure;
   window.fetch = async (input, init = {}) => {
     const url = new URL(input instanceof Request ? input.url : input, location.href);
     const method = (init.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();

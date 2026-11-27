@@ -1,0 +1,16 @@
+{
+  "checked_at": "2026-10-30T11:13:18.274045+00:00",
+  "connection_saved_at": "2026-10-30T11:12:01.457485+00:00",
+  "connection_reference": 26,
+  "owner_confirmed_iphone_completion": true,
+  "connection_active": true,
+  "direct_mode": true,
+  "granted_scopes": ["user.info.basic", "video.publish"],
+  "provider_creator_info_success": true,
+  "privacy_options": ["FOLLOWER_OF_CREATOR", "MUTUAL_FOLLOW_FRIENDS", "SELF_ONLY"],
+  "max_video_duration_sec": 3600,
+  "public_everyone_option_returned": false,
+  "new_publication_attempted": false,
+  "direct_delivery_verified": false,
+  "method": "Read-only production connection inspection and creator_info/query through existing adapter; no credential or pending payload exported."
+}
