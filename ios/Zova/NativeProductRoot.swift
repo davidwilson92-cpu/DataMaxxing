@@ -6,7 +6,6 @@ final class NativeProductSession: ObservableObject {
     let configuration = ZovaConfiguration.bundled
     let api: NativeAPI
     let store: ProductStore
-    let signIn = NativeSignIn()
     let social = NativeSignIn()
     @Published var phase: Phase = .opening
     @Published var working = false
@@ -49,19 +48,12 @@ final class NativeProductSession: ObservableObject {
         do { try await api.ensureAvailable(); try await store.start(); phase = .product }
         catch { message = error.localizedDescription; phase = .signedOut }
     }
-    func login(email: String? = nil, password: String? = nil) async {
+    func login(email: String, password: String) async {
         guard !working else { return }; working = true; message = nil; deletionReceipt = nil
         defer { working = false }
         do {
             try await api.ensureAvailable()
-            if let email, let password {
-                try await api.login(email: email, password: password)
-            } else {
-                let verifier = try NativeProof.random(48), state = try NativeProof.random()
-                let returned = try await signIn.open(configuration: configuration, challenge: NativeProof.challenge(verifier), state: state)
-                let code = try NativeProof.code(from: returned, configuration: configuration, state: state)
-                try await api.exchange(code: code, verifier: verifier)
-            }
+            try await api.login(email: email, password: password)
             store.signedOut = false; try await store.start(); phase = .product
         } catch { message = error.localizedDescription }
     }
@@ -91,7 +83,7 @@ final class NativeProductSession: ObservableObject {
             } catch ZovaFailure.cancelled { try await self.store.reloadAccount() }
         }
     }
-    func returned(_ url: URL) { if social.isActive { social.received(url) } else { signIn.received(url) } }
+    func returned(_ url: URL) { if social.isActive { social.received(url) } }
 }
 
 struct NativeProductRoot: View {
@@ -101,7 +93,8 @@ struct NativeProductRoot: View {
     @State private var password = ""
     private enum Field { case email, password }
     @FocusState private var focused: Field?
-    @State private var recovering = false
+    @State private var accountScreen: ZovaAccountScreen?
+    @State private var pendingVerification: String?
     @State private var launched = false
     var body: some View {
         ZStack {
@@ -114,12 +107,19 @@ struct NativeProductRoot: View {
             }
             if !launched { ZovaLaunchScreen(ready: session.phase != .opening) { launched = true }.zIndex(1) }
             if scenePhase != .active { ZovaDesign.dark.ignoresSafeArea().overlay(Image("ZovaMark").resizable().scaledToFit().frame(width: 72)).zIndex(2).accessibilityHidden(true) }
-        }.sheet(isPresented: $recovering) {
-            NativeRecoveryForm(api: session.api, initialEmail: email)
+        }.sheet(item: $accountScreen) { screen in
+            switch screen {
+            case .recovery: NativeRecoveryForm(api: session.api, initialEmail: email, openReset: { accountScreen = $0 })
+            default: ZovaAccountForm(screen: screen, session: session)
+            }
         }.onChange(of: session.phase) { _, phase in
-            if phase == .product { email = ""; password = "" }
-        }.task { await session.start() }.onOpenURL { session.returned($0) }
-            .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { session.returned(url) } }
+            if phase == .product {
+                email = ""; password = ""
+                accountScreen = pendingVerification.map { .verify($0) }
+                pendingVerification = nil
+            }
+        }.task { await session.start() }.onOpenURL { handleLink($0) }
+            .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { handleLink(url) } }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background { Task { await session.store.perform { try await session.store.save() } } }
                 if phase == .active, session.phase == .product { Task { await session.store.perform { try await session.store.reloadAccount() } } }
@@ -143,12 +143,11 @@ struct NativeProductRoot: View {
                     .onSubmit { submitCredentials() }
                 signInButton
                 if let message = session.message { Text(message).font(.callout).accessibilityAddTraits(.updatesFrequently) }
-                Button("Forgot password?") { password = ""; recovering = true }
+                Button("Forgot password?") { password = ""; accountScreen = .recovery }
                     .frame(minHeight: 44).disabled(session.working)
-                Button("More sign-in options or create an account") {
-                    password = ""
-                    Task { await session.login() }
-                }.disabled(session.working)
+                ZovaAppleButton(session: session, acceptsTerms: false)
+                Button("Create an account") { password = ""; accountScreen = .signup }
+                    .disabled(session.working)
                 welcomeLinks
                 Text("When you ask for AI help, your idea and selected images or video frames are sent to OpenAI. Audio isn’t analysed.").font(.footnote).foregroundStyle(.white.opacity(0.75))
                 if let receipt = session.deletionReceipt {
@@ -163,6 +162,18 @@ struct NativeProductRoot: View {
     }
     private var canSignIn: Bool {
         !session.working && !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !password.isEmpty
+    }
+    private func handleLink(_ url: URL) {
+        guard let screen = ZovaAccountScreen(link: url, base: session.configuration.base) else {
+            session.returned(url)
+            return
+        }
+        if case let .verify(token) = screen, session.phase != .product {
+            pendingVerification = token
+            session.message = "Sign in to the account you want to verify."
+        } else {
+            accountScreen = screen
+        }
     }
     private func submitCredentials() {
         guard canSignIn else { return }
@@ -198,14 +209,17 @@ struct NativeProductRoot: View {
 
 private struct NativeRecoveryForm: View {
     let api: NativeAPI
+    let openReset: (ZovaAccountScreen) -> Void
+    @State private var resetLink = ""
     @Environment(\.dismiss) private var dismiss
     @State private var email: String
     @State private var working = false
     @State private var sent = false
     @State private var error: String?
 
-    init(api: NativeAPI, initialEmail: String) {
+    init(api: NativeAPI, initialEmail: String, openReset: @escaping (ZovaAccountScreen) -> Void) {
         self.api = api
+        self.openReset = openReset
         _email = State(initialValue: initialEmail)
     }
 
@@ -214,6 +228,19 @@ private struct NativeRecoveryForm: View {
             Form {
                 if sent {
                     Text("If this email belongs to a Zova account, check your inbox and spam folder for a reset link. It expires in 15 minutes.")
+                    SecureField("Paste reset link from email", text: $resetLink)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    Button("Continue with reset link") {
+                        guard let url = URL(string: resetLink),
+                              let screen = ZovaAccountScreen(link: url, base: ZovaConfiguration.bundled.base),
+                              case .reset = screen else {
+                            error = "Paste the complete reset link from your Zova email."
+                            return
+                        }
+                        resetLink = ""
+                        openReset(screen)
+                    }.disabled(resetLink.isEmpty)
+                    if let error { Text(error) }
                 } else {
                     TextField("Email address", text: $email)
                         .textContentType(.username).keyboardType(.emailAddress)

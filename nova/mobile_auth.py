@@ -198,6 +198,83 @@ class PasswordLogin(BaseModel):
     password: SecretStr
 
 
+class AppleLogin(BaseModel):
+    token: SecretStr
+    nonce: str = Field(min_length=43, max_length=43)
+    accept_terms: bool = False
+
+
+@router.post('/api/v1/auth/apple/challenge')
+def apple_challenge():
+    from sqlalchemy import delete
+    from .db import AuthState
+    require_enabled()
+    nonce = secrets.token_urlsafe(32)
+    digest = hash_api_key(nonce)
+    with SessionLocal() as db:
+        db.execute(delete(AuthState).where(AuthState.provider == 'apple-ios',
+                                          AuthState.created_at < utcnow() - timedelta(minutes=5)))
+        db.add(AuthState(provider='apple-ios', state_hash=digest, nonce_hash=digest))
+        db.commit()
+    return {'nonce': nonce}
+
+
+@router.post('/api/v1/auth/apple')
+def native_apple(body: AppleLogin, request: Request):
+    import jwt
+    from sqlalchemy.exc import IntegrityError
+    from .db import AuthIdentity, AuthState
+    from .security import hash_password
+    require_enabled()
+    with SessionLocal() as db:
+        digest = hash_api_key(body.nonce)
+        available = (AuthState.provider == 'apple-ios', AuthState.state_hash == digest,
+                     AuthState.used.is_(False), AuthState.created_at > utcnow() - timedelta(minutes=5))
+        if db.scalar(select(AuthState.id).where(*available)) is None:
+            raise HTTPException(401, 'Start Apple sign-in again.')
+        token = body.token.get_secret_value()
+        try:
+            keys = jwt.PyJWKClient('https://appleid.apple.com/auth/keys')
+            claims = jwt.decode(token, keys.get_signing_key_from_jwt(token).key, algorithms=['RS256'],
+                                audience='com.zovasocial.app', issuer='https://appleid.apple.com',
+                                options={'require': ['sub', 'exp', 'iat', 'nonce']})
+        except jwt.PyJWTError:
+            raise HTTPException(401, 'Apple could not verify this sign-in.')
+        if claims['nonce'] != body.nonce:
+            raise HTTPException(401, 'Start Apple sign-in again.')
+        if db.execute(update(AuthState).where(*available).values(used=True)).rowcount != 1:
+            raise HTTPException(401, 'Start Apple sign-in again.')
+        identity = db.scalar(select(AuthIdentity).where(AuthIdentity.provider == 'apple', AuthIdentity.subject == claims['sub']))
+        if identity:
+            user = db.get(User, identity.user_id)
+        else:
+            email = str(claims.get('email') or '').strip().lower()
+            if not email or claims.get('email_verified') not in (True, 'true'):
+                raise HTTPException(400, 'Apple must confirm your email address.')
+            user = db.scalar(select(User).where(User.email == email))
+            if user and not user.email_verified_at:
+                raise HTTPException(409, 'Sign in with your Zova password and verify your email before connecting Apple.')
+            try:
+                if user is None:
+                    if not body.accept_terms:
+                        raise HTTPException(409, 'Choose Create an account and accept the terms to join with Apple.')
+                    user = User(email=email, password_hash=hash_password(secrets.token_urlsafe(48)),
+                                email_verified_at=utcnow(), terms_accepted_at=utcnow())
+                    db.add(user)
+                    db.flush()
+                    db.info.update(brand_id=0, brand_user_id=user.id)
+                    request.state.brand_id = 0
+                db.add(AuthIdentity(user_id=user.id, provider='apple', subject=claims['sub']))
+                db.flush()
+            except IntegrityError:
+                db.rollback()
+                raise HTTPException(409, 'Start Apple sign-in again.')
+        if not user or not user.active:
+            raise HTTPException(401, 'This account is unavailable.')
+        user.last_login_at = utcnow()
+        return create_device_session(db, user.id, user.auth_version)
+
+
 @router.post('/api/v1/auth/password')
 def password_login(body: PasswordLogin):
     from .security import authenticate_password

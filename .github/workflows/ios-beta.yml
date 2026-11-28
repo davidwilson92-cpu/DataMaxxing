@@ -46,3 +46,26 @@ jobs:
           path: |
             ios-results.xcresult
             ios-test-attachments
+  compact-campaign:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Generate native project
+        run: |
+          brew install xcodegen
+          cd ios
+          xcodegen generate
+      - name: Check the campaign landing on a compact iPhone
+        run: |
+          cd ios
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; devices=[d for group in json.load(sys.stdin)["devices"].values() for d in group if d["isAvailable"] and d["name"].startswith("iPhone")]; prefer=("iPhone SE (3rd generation)","iPhone 13 mini","iPhone 17e","iPhone 16e","iPhone 17","iPhone 16"); print(next(d["udid"] for name in prefer for d in devices if d["name"]==name))')
+          xcodebuild test -project Zova.xcodeproj -scheme Zova -destination "platform=iOS Simulator,id=$DEVICE_ID" -parallel-testing-enabled NO -only-testing:ZovaUITests/ZovaUITests/testCampaignLandingSeparatesBriefFromSavedWork -only-testing:ZovaUITests/ZovaUITests/testCampaignToolbarSupportsAccessibilityText -resultBundlePath ../campaign-compact.xcresult CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGNING_ALLOWED=YES
+      - name: Export campaign screenshots
+        if: always()
+        run: xcrun xcresulttool export attachments --path campaign-compact.xcresult --output-path campaign-compact-attachments
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: campaign-compact-screenshots
+          path: campaign-compact-attachments

@@ -43,6 +43,10 @@ actor NativeAPI {
         let (data, response) = try await session.data(for: request)
         guard let response = response as? HTTPURLResponse else { throw ZovaFailure.invalidResponse }
         if response.statusCode == 401 { throw ZovaFailure.signInRequired }
+        if response.statusCode == 409, path == "/api/v1/auth/apple" {
+            struct Issue: Decodable { let detail: String }
+            if let issue = try? JSONDecoder().decode(Issue.self, from: data) { throw ZovaFailure.server(issue.detail) }
+        }
         if response.statusCode == 429 { throw ZovaFailure.server("Please wait a moment before trying again.") }
         guard (200...299).contains(response.statusCode), data.count <= 1_048_576 else { throw ZovaFailure.unavailable }
         return (data, response)
@@ -60,6 +64,35 @@ actor NativeAPI {
         case 429: throw ZovaFailure.server("Please wait a moment before requesting another link.")
         case 503: throw ZovaFailure.server("Email recovery is unavailable. Contact support@zova-social.com.")
         default: throw ZovaFailure.unavailable
+        }
+    }
+    func appleChallenge() async throws -> String {
+        struct Challenge: Decodable { let nonce: String }
+        let data = try await request("/api/v1/auth/apple/challenge", body: [:])
+        return try JSONDecoder().decode(Challenge.self, from: data).nonce
+    }
+    func appleLogin(token: String, nonce: String, acceptsTerms: Bool) async throws {
+        let epoch = sessionEpoch
+        let data = try await request("/api/v1/auth/apple", body: ["token": token, "nonce": nonce, "accept_terms": acceptsTerms ? "true" : "false"])
+        try acceptSignIn(data, epoch: epoch)
+    }
+    func accountForm(path: String, fields: [String: String]) async throws {
+        var request = URLRequest(url: try configuration.endpoint(path))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        if path == "/verify-email" {
+            let cookie = try await productSession()
+            request.setValue(HTTPCookie.requestHeaderFields(with: [cookie])["Cookie"], forHTTPHeaderField: "Cookie")
+        }
+        let encoded = fields.map { ProductLinks.query($0.key) + "=" + ProductLinks.query($0.value) }
+        request.httpBody = Data(encoded.joined(separator: "&").utf8)
+        let (data, result) = try await session.data(for: request)
+        guard let http = result as? HTTPURLResponse else { throw ZovaFailure.invalidResponse }
+        guard (200...299).contains(http.statusCode), http.mimeType == "application/json" else {
+            struct Issue: Decodable { let detail: String }
+            let detail = try? JSONDecoder().decode(Issue.self, from: data).detail
+            throw ZovaFailure.server(detail ?? "Please try again.")
         }
     }
     func ensureAvailable() async throws {

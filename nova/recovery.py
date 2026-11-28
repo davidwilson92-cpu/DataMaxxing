@@ -99,7 +99,7 @@ def reset_page(request:Request,token:str=''):
 
 
 @router.post('/reset-password')
-def reset(token:str=Form(...),password:str=Form(...),confirmation:str=Form(...)):
+def reset(request:Request,token:str=Form(...),password:str=Form(...),confirmation:str=Form(...)):
     if not 10<=len(password)<=256 or password!=confirmation:
         raise HTTPException(400,'Use matching passwords with 10–256 characters. Return to the form to try again.')
     with SessionLocal() as db:
@@ -113,4 +113,6 @@ def reset(token:str=Form(...),password:str=Form(...),confirmation:str=Form(...))
         if changed.rowcount!=1:
             db.rollback(); raise HTTPException(400,'Request a new reset link.')
         db.commit()
+    if request.headers.get('accept') == 'application/json':
+        return JSONResponse({'reset': True})
     return RedirectResponse('/login?error=Password+updated.+Sign+in+with+your+new+password.',303)

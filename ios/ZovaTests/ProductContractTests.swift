@@ -2,6 +2,18 @@ import XCTest
 @testable import Zova
 
 final class ProductContractTests: XCTestCase {
+    func testAccountLinksOnlyAcceptZovaAndValidTokens() throws {
+        let base = try XCTUnwrap(URL(string: "https://zova-social.com"))
+        let token = String(repeating: "a", count: 43)
+        func parse(_ text: String) -> ZovaAccountScreen? {
+            URL(string: text).flatMap { ZovaAccountScreen(link: $0, base: base) }
+        }
+        XCTAssertEqual(parse("https://zova-social.com/reset-password#token=" + token), .reset(token))
+        XCTAssertEqual(parse("https://zova-social.com/verify-email#token=" + token), .verify(token))
+        XCTAssertNil(parse("https://example.test/reset-password#token=" + token))
+        XCTAssertNil(parse("https://zova-social.com/reset-password?token=" + token))
+        XCTAssertNil(parse("https://zova-social.com/reset-password#token=short"))
+    }
     func testUploadRetryPreservesSelectionOrderForEveryFailureSubset() {
         // Four selected assets, two pre-existing. Exhaust all initial/retry failures.
         for firstFailures in 0..<16 {
