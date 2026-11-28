@@ -48,6 +48,8 @@ targets:
         com.apple.developer.associated-domains:
           - applinks:zova-social.com
           - webcredentials:zova-social.com
+        com.apple.developer.applesignin:
+          - Default
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: "$(ZOVA_BUNDLE_ID)"

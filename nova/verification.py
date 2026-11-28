@@ -4,7 +4,7 @@ import os
 import logging
 from datetime import timedelta
 from fastapi import APIRouter, BackgroundTasks, Request, Form, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import update
 from sqlalchemy.exc import SQLAlchemyError
 from .db import SessionLocal, EmailVerification, User, utcnow
@@ -76,4 +76,6 @@ def confirm(request:Request, token:str=Form(...)):
         if result.rowcount!=1:raise HTTPException(400,'This link expired or was already used. Request another link.')
         db.execute(update(User).where(User.id==user.id,User.email==row.email,User.active.is_(True)).values(email_verified_at=utcnow()))
         db.commit()
+    if request.headers.get('accept') == 'application/json':
+        return JSONResponse({'verified': True})
     return RedirectResponse('/account?saved=verified',303)

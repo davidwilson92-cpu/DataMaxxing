@@ -1,6 +1,19 @@
 import XCTest
 
 final class ZovaUITests: XCTestCase {
+    func testRegistrationUsesNativeFieldsAndRequiresConsent() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--test-fresh-install", "--native-fixture", "--fixture-login"]
+        app.launch()
+        let register = app.buttons["Create an account"]
+        XCTAssertTrue(register.waitForExistence(timeout: 12))
+        register.tap()
+        XCTAssertTrue(app.textFields["Name"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.secureTextFields["Confirm password"].exists)
+        XCTAssertFalse(app.buttons["Create an account"].isEnabled)
+        app.buttons["Close"].tap()
+        XCTAssertTrue(app.buttons["continue-zova"].waitForExistence(timeout: 5))
+    }
     override func setUp() { continueAfterFailure = false }
     func testPasswordRecoveryReturnsToNativeSignIn() {
         let app = XCUIApplication()

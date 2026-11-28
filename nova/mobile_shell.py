@@ -324,7 +324,8 @@ def association():
     app_id = os.environ.get('ZOVA_IOS_APP_ID', '')
     if not enabled() or not re.fullmatch(r'[A-Z0-9]{10}\.[A-Za-z0-9.-]+', app_id):
         raise HTTPException(404, 'Not found')
-    return JSONResponse({'applinks': {'details': [{'appIDs': [app_id], 'components': [{'/': '/mobile/callback', 'comment': 'Zova native sign-in only'}]}]}, 'webcredentials': {'apps': [app_id]}})
+    account_paths = ['/mobile/callback', '/verify-email', '/reset-password']
+    return JSONResponse({'applinks': {'details': [{'appIDs': [app_id], 'components': [{'/': path} for path in account_paths]}]}, 'webcredentials': {'apps': [app_id]}})
 
 
 class NativeBillingMiddleware(BaseHTTPMiddleware):

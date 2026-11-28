@@ -293,6 +293,10 @@ def signup_page(request: Request, error: str | None = None):
 @app.post("/signup")
 def signup(request: Request, background_tasks: BackgroundTasks, name: Annotated[str, Form()], email: Annotated[str, Form()], password: Annotated[str, Form()], password_confirmation: Annotated[str, Form()], country: Annotated[str, Form()] = "", accept_terms: Annotated[str | None, Form()] = None, marketing_consent: Annotated[str | None, Form()] = None, db: Session=Depends(get_db)):
     def retry(location, status=303):
+        if request.headers.get("accept") == "application/json":
+            from urllib.parse import parse_qs, urlsplit
+            detail = parse_qs(urlsplit(location).query).get("error", ["Check your details."])[0]
+            return JSONResponse({"detail": detail}, status_code=400)
         response=RedirectResponse(location,status)
         response.set_cookie('zova_signup_input',encrypt(json.dumps({'name':name[:160],'email':email[:320],'country':country[:2],'expires':utcnow().timestamp()+600})),max_age=600,httponly=True,secure=base_url().startswith('https://'),samesite='lax',path='/signup')
         return response
@@ -313,6 +317,8 @@ def signup(request: Request, background_tasks: BackgroundTasks, name: Annotated[
     distribution.record_signup(user.id,request)
     from .verification import welcome_verification
     welcome_verification(user, background_tasks)
+    if request.headers.get("accept") == "application/json":
+        return JSONResponse({"created": True}, status_code=201)
     from .mobile_auth import resume_destination
     resp=RedirectResponse(resume_destination(request.cookies.get('zova_mobile_grant'), db) or "/onboarding/socials",303); set_user_cookie(resp,user); resp.delete_cookie("zova_brand",path="/"); resp.delete_cookie("zova_onboarding",path="/"); resp.delete_cookie("zova_signup_input",path="/signup"); return resp
 

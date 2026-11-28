@@ -24,13 +24,14 @@ workflows:
         script: |
           set -eu
           test "$CM_BRANCH" = "release/apple-review-1.0.1"
-          test "$(git rev-parse HEAD^)" = "61d0138ec177feb8139df094bfa37ecb2414c512"
+          test "$(git rev-parse HEAD^)" = "8f525029c0df47e012fc703ae9ff1ef299d7c82c"
           python3 scripts/check_beta_release.py
       - name: Check that production serves native password sign-in
         script: |
           set -eu
           status=$(curl --silent --show-error --max-time 45 --output /dev/null --write-out '%{http_code}' "$ZOVA_SERVER_URL/api/v1/auth/password")
           test "$status" = 405
+          curl --fail --silent --show-error --max-time 45 "$ZOVA_SERVER_URL/.well-known/apple-app-site-association" | python3 -c 'import json,sys; details=json.load(sys.stdin)["applinks"]["details"]; assert any("7B4W8RN6GX.com.zovasocial.app" in item["appIDs"] and {"/verify-email","/reset-password"} <= {c.get("/") for c in item["components"]} for item in details)'
       - name: Generate reviewed iPhone project
         script: |
           set -eu
