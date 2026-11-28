@@ -1,35 +1,48 @@
-name: App Store iPhone screenshots
+name: Campaign simulator visual review
 on:
-  workflow_dispatch:
   push:
-    branches: ['codex/ios-beta-*']
-    paths: ['.github/workflows/app-store-screenshots.yml']
+    branches: ['codex/ios-beta-campaign-preview-9460118']
 permissions:
-  contents: read
+  actions: read
 jobs:
-  screenshots:
-    runs-on: macos-26
+  preview:
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Generate native project
+      - name: Read campaign screenshots from the simulator run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          brew install xcodegen
-          cd ios
-          xcodegen generate
-      - name: Capture actual medium-display iPhone screens
-        run: |
-          cd ios
-          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); phones=[x for devices in d["devices"].values() for x in devices if x.get("isAvailable")]; print(next(x["udid"] for x in phones if x["name"]=="iPhone 17 Pro"))')
-          xcodebuild test -project Zova.xcodeproj -scheme Zova -destination "platform=iOS Simulator,id=$DEVICE_ID" -resultBundlePath ../app-store-screenshots.xcresult -only-testing:ZovaUITests/ZovaUITests/testNativeProductTabsAndNextMoveContainNoEmbeddedWebScreens -only-testing:ZovaUITests/ZovaUITests/testNativeComposerMovesSentIdeaIntoTranscriptAndKeepsEditableCaption CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGNING_ALLOWED=YES
-      - name: Export screenshot evidence
-        if: always()
-        run: |
-          if [ -d app-store-screenshots.xcresult ]; then
-            xcrun xcresulttool export attachments --path app-store-screenshots.xcresult --output-path app-store-screenshots
-          fi
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: app-store-medium-iphone-screenshots
-          path: app-store-screenshots
+          for attempt in $(seq 1 90); do
+            if gh run download 46150367125 --name campaign-compact-screenshots --dir evidence; then break; fi
+            sleep 10
+          done
+          python3 - <<'PY'
+          import base64, io, json, pathlib
+          from PIL import Image
+          root = pathlib.Path("evidence")
+          manifest = json.loads(next(root.rglob("manifest.json")).read_text())
+          def walk(x):
+              if isinstance(x, dict):
+                  if "exportedFileName" in x:
+                      yield x
+                  for v in x.values():
+                      yield from walk(v)
+              if isinstance(x, list):
+                  for v in x:
+                      yield from walk(v)
+          for a in walk(manifest):
+              name = a.get("suggestedHumanReadableName", "")
+              if "Campaign landing -" not in name:
+                  continue
+              with Image.open(next(root.rglob(a["exportedFileName"]))) as im:
+                  im.thumbnail((410, 820))
+                  out = io.BytesIO()
+                  im.convert("RGB").save(out, "JPEG", quality=80)
+                  data = base64.b64encode(out.getvalue()).decode()
+                  print("PREVIEW_NAME " + name)
+                  for pos in range(0, len(data), 1800):
+                      print("PREVIEW_DATA " + data[pos:pos+1800])
+                  print("PREVIEW_END")
+          PY
