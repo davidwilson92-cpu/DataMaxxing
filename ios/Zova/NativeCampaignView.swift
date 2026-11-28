@@ -29,9 +29,13 @@ struct NativeCampaignView: View {
     @State private var media: [JSONValue] = []
     @State private var importing = false
     @State private var savedMedia = false
+    @State private var browsingLibrary = false
+    @State private var savedExpanded = false
+    @State private var restoredBrief = false
     @State private var photos: [PhotosPickerItem] = []
     @State private var working = false
     @State private var ready = false
+    @State private var loadAttempt = 0
     @State private var consent = false
     @State private var locked = false
     @State private var message = ""
@@ -59,21 +63,14 @@ struct NativeCampaignView: View {
                         Link("Request Premium access", destination: URL(string: "mailto:support@zova-social.com?subject=Premium%20campaign%20access")!)
                     }
                 } else if ready {
-                    if current.isNull {
-                        if !campaigns.isEmpty {
-                            Section("Saved campaigns") {
-                                ForEach(campaigns, id: \.["id"].int) { item in
-                                    Button(campaignName(item)) {
-                                        Task { await perform { try await reopen(item["id"].int) } }
-                                    }.accessibilityIdentifier("saved-campaign-\(item["id"].int)")
-                                }
-                            }
-                        }
-                    }
+                    campaignLibrary
                     brief
                 }
                 if working { ProgressView() }
                 if !message.isEmpty { Text(message).foregroundStyle(.secondary) }
+                if !ready && !working && !locked && !message.isEmpty {
+                    Button("Try again") { loadAttempt += 1 }
+                }
             }
             .scrollContentBackground(.hidden)
             }
@@ -97,13 +94,16 @@ struct NativeCampaignView: View {
                     try await writer.save(briefPayload, store:store)
                 }.environmentObject(store)
             }
+            .sheet(isPresented: $browsingLibrary) {
+                NativeMediaLibrary(existing: [], limit: 0, browsing: true) { _ in }
+                    .environmentObject(store)
+            }
             .sheet(isPresented: $consent) { NativeAIConsentView().environmentObject(store) }
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color.white,for:.navigationBar)
             .toolbarBackground(.visible,for:.navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button {
-                    if embedded {store.selectedTab = 0; return}
                     Task { await perform {
                         if ready && current.isNull { try await writer.save(briefPayload,store:store) }
                         if embedded { store.selectedTab = 0 } else { dismiss() }
@@ -111,10 +111,11 @@ struct NativeCampaignView: View {
                 } label: { Image(systemName:"xmark").frame(minWidth:44,minHeight:44) }.accessibilityLabel("Close campaign").accessibilityIdentifier("close-campaign") }
             }
             .interactiveDismissDisabled(working && !embedded)
-            .task { await perform {
+            .task(id: loadAttempt) { await perform {
                 campaigns = try await store.request("/api/campaigns").array
                 let saved = try await store.request("/api/campaign-brief")
                 let partial = saved["brief"]
+                restoredBrief = !partial.isNull
                 if !partial.isNull {
                     suggested = partial["recommend_times"].bool
                     name = partial["name"].string; idea = partial["idea"].string; platforms = Set(partial["platforms"].strings)
@@ -134,9 +135,70 @@ struct NativeCampaignView: View {
             }
         }
     }
+    private var campaignLibrary: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 0) {
+                NativeAdaptiveRow(spacing: 12) {
+                    Button {
+                        savedExpanded.toggle()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("Saved campaigns")
+                            Image(systemName: savedExpanded ? "chevron.up" : "chevron.down").font(.caption)
+                        }.frame(minHeight: 44)
+                    }
+                    .accessibilityIdentifier("campaign-library-toggle")
+                    .accessibilityValue(savedExpanded ? "Expanded" : "Collapsed")
+                    Spacer(minLength: 0)
+                    Button { browsingLibrary = true } label: {
+                        Label("Saved files", systemImage: "folder").frame(minHeight: 44)
+                    }.accessibilityIdentifier("campaign-library-files")
+                }.font(.subheadline.weight(.semibold))
+                if savedExpanded {
+                    Divider().overlay(Color.white.opacity(0.3))
+                    if campaigns.isEmpty {
+                        Text("Your saved campaigns will appear here.").font(.callout).padding(.vertical, 12)
+                    }
+                    ForEach(campaigns, id: \.["id"].int) { item in
+                        Button {
+                            Task { await perform { try await writer.save(briefPayload, store: store); try await reopen(item["id"].int) } }
+                        } label: {
+                            HStack {
+                                Text(campaignName(item)).multilineTextAlignment(.leading)
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.caption)
+                            }.frame(minHeight: 44).contentShape(Rectangle())
+                        }.accessibilityIdentifier("saved-campaign-\(item["id"].int)")
+                    }
+                }
+            }.padding(.horizontal, 14).padding(.vertical, 4)
+                .foregroundStyle(.white).tint(.white).buttonStyle(.plain)
+                .background(ZovaDesign.hero, in: RoundedRectangle(cornerRadius: 12))
+                .listRowInsets(EdgeInsets()).listRowSeparator(.hidden)
+        }
+    }
     @ViewBuilder private var brief: some View {
-        Section("Campaign name") { TextField("Summer launch",text:$name).textFieldStyle(.roundedBorder).accessibilityLabel("Campaign name") }
-        Section("What are you promoting?") { TextEditor(text: $idea).frame(minHeight: 120).padding(8).overlay(RoundedRectangle(cornerRadius:10).stroke(Color.gray.opacity(0.45))).accessibilityLabel("Campaign brief") }
+        Section {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(restoredBrief ? "Continue your campaign" : "Start a campaign")
+                    .font(.largeTitle.weight(.bold)).foregroundStyle(ZovaDesign.ink)
+                    .accessibilityAddTraits(.isHeader)
+                Text("Describe what you’re promoting. Zova will draft a series of posts for you to review.")
+                    .font(.body).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Campaign name").font(.headline)
+                    TextField("e.g. Summer launch",text:$name).textFieldStyle(.roundedBorder)
+                        .accessibilityLabel("Campaign name")
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("What are you promoting?").font(.headline)
+                    TextEditor(text: $idea).frame(minHeight: 92).padding(5)
+                        .scrollContentBackground(.hidden).background(Color.white)
+                        .overlay(RoundedRectangle(cornerRadius:8).stroke(ZovaDesign.line))
+                        .accessibilityLabel("Campaign brief")
+                }
+            }.padding(.vertical, 6)
+        }.listRowBackground(ZovaDesign.pale.opacity(0.65))
         Section("Photos and videos") {
             if !uploadProgress.isEmpty { ProgressView(uploadProgress).accessibilityLabel(uploadProgress) }
             ForEach(media, id: \.["id"].int) { asset in
@@ -173,8 +235,18 @@ struct NativeCampaignView: View {
             Stepper("\(count) posts", value: $count, in: 1...10)
         }
         if !writer.note.isEmpty { Text(writer.note).font(.caption).foregroundStyle(.secondary) }
+        if let buildGuidance { Text(buildGuidance).font(.footnote).foregroundStyle(.secondary) }
         Button("Build campaign") { Task { await perform { try await build() } } }
-            .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name.count > 80 || idea.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || platforms.isEmpty || count < platforms.count)
+            .buttonStyle(ZovaPrimary())
+            .disabled(buildGuidance != nil)
+    }
+    private var buildGuidance: String? {
+        if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "Give your campaign a name to get started." }
+        if name.count > 80 { return "Keep the campaign name to 80 characters." }
+        if idea.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "Add a brief so Zova knows what to promote." }
+        if platforms.isEmpty { return "Choose at least one platform." }
+        if count < platforms.count { return "Plan at least one post per selected platform." }
+        return nil
     }
     private var positions: [Int] {
         let posts=current["posts"].array, dates=current["dates"].array
@@ -350,6 +422,7 @@ struct NativeCampaignView: View {
         body["brief_revision"] = .integer(writer.revision)
         select(try await store.request("/api/campaigns", method: "POST", body: body))
         name = ""; idea = ""; media = []; platforms = []; suggested = true; count = 4; frequency = "daily"
+        restoredBrief = false
         briefZone = TimeZone.current.identifier; start = Date().addingTimeInterval(86400)
         writer.restore(briefPayload,revision:writer.revision+1,restored:false)
         try await generate()

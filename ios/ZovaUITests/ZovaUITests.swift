@@ -1,6 +1,43 @@
 import XCTest
 
 final class ZovaUITests: XCTestCase {
+    private func expandCampaignLibrary(_ app: XCUIApplication) {
+        let toggle = app.buttons["campaign-library-toggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        reveal(toggle, in: app, down: true)
+        if toggle.value as? String != "Expanded" { toggle.tap() }
+    }
+
+    func testCampaignLandingSeparatesBriefFromSavedWork() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--native-fixture"]
+        app.launch()
+        let entry = app.buttons["Campaign"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 12)); entry.tap()
+        let heading = app.staticTexts["Start a campaign"]
+        XCTAssertTrue(heading.waitForExistence(timeout: 8))
+        XCTAssertTrue(heading.isHittable)
+        let toggle = app.buttons["campaign-library-toggle"]
+        let files = app.buttons["campaign-library-files"]
+        XCTAssertEqual(toggle.value as? String, "Collapsed")
+        XCTAssertFalse(app.buttons["saved-campaign-6"].exists)
+        XCTAssertGreaterThanOrEqual(toggle.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(files.frame.height, 44)
+        capture(app, "Campaign landing - start a campaign")
+        files.tap()
+        XCTAssertTrue(app.navigationBars["Saved files"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.textFields["Search saved media"].exists)
+        XCTAssertFalse(app.buttons["Use selected (0)"].exists)
+        app.buttons["Videos"].tap()
+        XCTAssertTrue(app.staticTexts["Studio tour.mp4"].waitForExistence(timeout: 8))
+        app.buttons["Done"].tap()
+        expandCampaignLibrary(app)
+        XCTAssertTrue(app.buttons["saved-campaign-6"].waitForExistence(timeout: 8))
+        capture(app, "Campaign landing - saved campaigns expanded")
+        toggle.tap()
+        XCTAssertFalse(app.buttons["saved-campaign-6"].exists)
+        XCTAssertTrue(app.textFields["Campaign name"].exists)
+    }
     func testRegistrationUsesNativeFieldsAndRequiresConsent() {
         let app = XCUIApplication()
         app.launchArguments = ["--test-fresh-install", "--native-fixture", "--fixture-login"]
@@ -97,6 +134,7 @@ final class ZovaUITests: XCTestCase {
     func testCampaignCompactToolbarKeepsPostVisibleAndNavigationAvailable() {
         let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
         XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        expandCampaignLibrary(app)
         let saved=app.buttons["saved-campaign-6"]
         XCTAssertTrue(saved.waitForExistence(timeout:8));saved.tap()
         let all=app.buttons["campaign-all"], calendar=app.buttons["Calendar"]
@@ -120,6 +158,7 @@ final class ZovaUITests: XCTestCase {
         app.launchArguments=["--native-fixture","-UIPreferredContentSizeCategoryName","UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
         XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        expandCampaignLibrary(app)
         let saved=app.buttons["saved-campaign-6"]
         XCTAssertTrue(saved.waitForExistence(timeout:8));reveal(saved,in:app);saved.tap()
         let menu=app.buttons["campaign-actions"]
@@ -136,6 +175,7 @@ final class ZovaUITests: XCTestCase {
     func testCampaignToolsCancelWithoutChangingSavedPlan() {
         let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
         XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        expandCampaignLibrary(app)
         let saved=app.buttons["saved-campaign-6"]
         XCTAssertTrue(saved.waitForExistence(timeout:8));saved.tap()
         for title in ["Move remaining dates","Reuse campaign","Add posts"] {
@@ -149,6 +189,7 @@ final class ZovaUITests: XCTestCase {
     func testCampaignPauseAndImprovementPreviewKeepOriginalUntilApply() {
         let app=XCUIApplication();app.launchArguments=["--native-fixture"];app.launch()
         XCTAssertTrue(app.buttons["Campaign"].waitForExistence(timeout:12));app.buttons["Campaign"].tap()
+        expandCampaignLibrary(app)
         let saved=app.buttons["saved-campaign-6"]
         XCTAssertTrue(saved.waitForExistence(timeout:8));saved.tap()
         let menu=app.buttons["campaign-actions"]
@@ -184,6 +225,7 @@ final class ZovaUITests: XCTestCase {
         let app = XCUIApplication(); app.launchArguments = ["--native-fixture"]; app.launch()
         let entry = app.buttons["Campaign"]
         XCTAssertTrue(entry.waitForExistence(timeout: 12)); entry.tap()
+        expandCampaignLibrary(app)
         let campaign = app.buttons["saved-campaign-6"]
         XCTAssertTrue(campaign.waitForExistence(timeout: 8)); campaign.tap()
         let edit = app.buttons["Edit post"]

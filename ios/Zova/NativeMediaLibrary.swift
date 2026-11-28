@@ -14,6 +14,7 @@ struct NativeMediaLibrary: View {
     @Environment(\.dismiss) private var dismiss
     var existing: [Int]
     var limit: Int
+    var browsing = false
     var selected: ([JSONValue]) async throws -> Void
     @State private var rows: [JSONValue] = []
     @State private var picks: [JSONValue] = []
@@ -39,13 +40,15 @@ struct NativeMediaLibrary: View {
                 }.padding(16)
             }
             .safeAreaInset(edge: .bottom) {
+                if !browsing {
                 Button("Use selected (\(picks.count))") {
                     guard !applying, ownerEpoch == store.authority else { dismiss(); return }; applying = true
                     Task { do { try await selected(picks); dismiss() } catch { self.error = error.localizedDescription }; applying = false }
                 }.buttonStyle(ZovaPrimary()).disabled(picks.isEmpty || applying || loading).padding().background(Color.white)
+                }
             }
-            .navigationTitle("Saved media").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(applying) } }
+            .navigationTitle(browsing ? "Saved files" : "Saved media").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button(browsing ? "Done" : "Cancel") { dismiss() }.disabled(applying) } }
             .interactiveDismissDisabled(applying)
             .background(Color.white).preferredColorScheme(.light).tint(ZovaDesign.purple)
             .task { load(reset: true) }
@@ -53,6 +56,12 @@ struct NativeMediaLibrary: View {
     }
     private func assetRow(_ asset: JSONValue) -> some View {
         VStack(alignment: .leading, spacing: 8) {
+            if browsing {
+                HStack(spacing: 12) {
+                    CampaignMediaTile(asset: asset, height: 64).frame(width: 64, height: 64).clipped()
+                    Text(asset["filename"].string).font(.headline)
+                }
+            } else {
             Button {
                 if picks.contains(where: { $0["id"] == asset["id"] }) { picks.removeAll { $0["id"] == asset["id"] } }
                 else if picks.count < limit { picks.append(asset) }
@@ -68,6 +77,7 @@ struct NativeMediaLibrary: View {
             .accessibilityIdentifier("library-asset-\(asset["id"].int)")
             .accessibilityLabel(asset["filename"].string + (existing.contains(asset["id"].int) ? ", already attached" : ""))
             .accessibilityValue(existing.contains(asset["id"].int) || picks.contains(where: { $0["id"] == asset["id"] }) ? "Selected" : "Not selected")
+            }
             if !asset["uses"].array.isEmpty { DisclosureGroup("Used in \(asset["uses"].array.count) places") {
                 ForEach(Array(asset["uses"].array.enumerated()), id: \.offset) { _, use in Text(use["title"].string + " · " + use["state"].string.replacingOccurrences(of: "_", with: " ")).font(.caption).frame(maxWidth: .infinity, alignment: .leading) }
             }.font(.caption) }
