@@ -374,8 +374,8 @@
     "tests/confidence_preview.py": "66b6fec6a081f32a5d523d5cb4460ced1a59ee16002065f5d02b95d65cccc67c",
     "tests/test_confidence_media_learning.py": "9c7978f459c3d0e420560f4d11870ff891ff1b63e53cc9baa6405d6096a671d1",
     "tests/test_first_draft_brief.py": "8f8fe00fcf52de75ecaa258316ff92bb2d6fb8154440528b734961c3f06bd72b",
-    "ios/Zova/ZovaAccountForm.swift": "5d5d786164aa13a54ececaccb1b67f58c5f8b7689e1d6a62b07ef8aca2ed626a",
-    "tests/test_native_account_journey.py": "5a607b0d4ad6f770b31d7d048598ed05a72263e09ec9ca21d194d1d9814641d4"
+    "ios/Zova/ZovaAccountForm.swift": "cf05394ebe5cfbc10e8bab92cc3d48f7b84ce13efc08d474823074a5a936ec49",
+    "tests/test_native_account_journey.py": "119de79e70fde80e31d3f2669bb17b6294908a2dbc28c3f234f17a3aa2051fbb"
   },
   "release_class": "limited-beta",
   "reviewed_update": "2026-10-27 native QA gap fixes; first candidate passed application and native CI, visual review found tab-label wrapping and sheet text-size test weakness. Follow-up applies Large Content Viewer to compact tabs, verifies UIKit text-size in sheets, and preserves a strictly validated deletion receipt after sign-out. Backend/auth/billing unchanged. Fresh follow-up CI pending; external release held, charges disabled, all 79 commercial findings retained.",

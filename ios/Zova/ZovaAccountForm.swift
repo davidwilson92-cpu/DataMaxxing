@@ -1,4 +1,5 @@
 import AuthenticationServices
+import SafariServices
 import SwiftUI
 
 enum ZovaAccountScreen: Identifiable, Hashable {
@@ -62,6 +63,12 @@ struct ZovaAppleButton: View {
 }
 
 struct ZovaAccountForm: View {
+    private enum Policy: String, Identifiable {
+        case terms = "terms-of-service"
+        case privacy = "privacy-policy"
+        var id: Self { self }
+    }
+    @State private var policy: Policy?
     let screen: ZovaAccountScreen
     @ObservedObject var session: NativeProductSession
     @Environment(\.dismiss) private var dismiss
@@ -98,7 +105,8 @@ struct ZovaAccountForm: View {
                     default: EmptyView()
                     }
                     if screen == .signup {
-                        Text("[Terms of Service](https://zova-social.com/terms-of-service) and [Privacy Policy](https://zova-social.com/privacy-policy)")
+                        Button("Terms of Service") { policy = .terms }
+                        Button("Privacy Policy") { policy = .privacy }
                         Toggle("I accept the terms and privacy policy", isOn: $terms)
                     }
                     Button(title) { Task { await submit() } }.disabled(!ready || working)
@@ -108,6 +116,9 @@ struct ZovaAccountForm: View {
             }.navigationTitle(title)
                 .toolbar { Button(finished ? "Done" : "Close") { dismiss() }.disabled(working) }
         }.interactiveDismissDisabled(working)
+            .sheet(item: $policy) { page in
+                ZovaPolicyPage(url: session.configuration.base.appendingPathComponent(page.rawValue))
+            }
     }
     private var ready: Bool {
         if case .verify = screen { return true }
@@ -138,4 +149,12 @@ struct ZovaAccountForm: View {
             password = ""; confirmation = ""
         } catch { message = error.localizedDescription }
     }
+}
+
+private struct ZovaPolicyPage: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        SFSafariViewController(url: url)
+    }
+    func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
 }
