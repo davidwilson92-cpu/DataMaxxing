@@ -18,7 +18,9 @@ jobs:
             if gh run download 46150367125 --name campaign-compact-screenshots --dir evidence; then break; fi
             sleep 10
           done
-          python3 - <<'PY'
+          python3 -m venv /tmp/campaign-images
+          /tmp/campaign-images/bin/pip install Pillow
+          /tmp/campaign-images/bin/python - <<'PY'
           import base64, io, json, pathlib
           from PIL import Image
           root = pathlib.Path("evidence")
