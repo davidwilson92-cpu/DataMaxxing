@@ -19,17 +19,20 @@ final class ZovaUITests: XCTestCase {
         XCTAssertTrue(heading.isHittable)
         let toggle = app.buttons["campaign-library-toggle"]
         let files = app.buttons["campaign-library-files"]
+        capture(app, "Campaign landing - start a campaign")
         XCTAssertEqual(toggle.value as? String, "Collapsed")
         XCTAssertFalse(app.buttons["saved-campaign-6"].exists)
         XCTAssertGreaterThanOrEqual(toggle.frame.height, 44)
         XCTAssertGreaterThanOrEqual(files.frame.height, 44)
-        capture(app, "Campaign landing - start a campaign")
         files.tap()
         XCTAssertTrue(app.navigationBars["Saved files"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.textFields["Search saved media"].exists)
         XCTAssertFalse(app.buttons["Use selected (0)"].exists)
         app.buttons["Videos"].tap()
         XCTAssertTrue(app.staticTexts["Studio tour.mp4"].waitForExistence(timeout: 8))
+        app.buttons["Preview Studio tour.mp4"].tap()
+        let closePreview = app.buttons["Close Media preview"]
+        XCTAssertTrue(closePreview.waitForExistence(timeout: 8)); closePreview.tap()
         app.buttons["Done"].tap()
         expandCampaignLibrary(app)
         XCTAssertTrue(app.buttons["saved-campaign-6"].waitForExistence(timeout: 8))
@@ -47,7 +50,7 @@ final class ZovaUITests: XCTestCase {
         register.tap()
         XCTAssertTrue(app.textFields["Name"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.secureTextFields["Confirm password"].exists)
-        XCTAssertFalse(app.buttons["Create an account"].isEnabled)
+        XCTAssertFalse(app.buttons["account-form-submit"].isEnabled)
         app.buttons["Close"].tap()
         XCTAssertTrue(app.buttons["continue-zova"].waitForExistence(timeout: 5))
     }

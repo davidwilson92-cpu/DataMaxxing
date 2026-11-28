@@ -110,6 +110,7 @@ struct ZovaAccountForm: View {
                         Toggle("I accept the terms and privacy policy", isOn: $terms)
                     }
                     Button(title) { Task { await submit() } }.disabled(!ready || working)
+                        .accessibilityIdentifier("account-form-submit")
                     if screen == .signup && terms { ZovaAppleButton(session: session, acceptsTerms: true) }
                 }
                 if let message { Text(message).accessibilityAddTraits(.updatesFrequently) }

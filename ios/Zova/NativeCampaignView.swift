@@ -145,13 +145,13 @@ struct NativeCampaignView: View {
                         HStack(spacing: 6) {
                             Text("Saved campaigns")
                             Image(systemName: savedExpanded ? "chevron.up" : "chevron.down").font(.caption)
-                        }.frame(minHeight: 44)
+                        }.frame(minHeight: 44).contentShape(Rectangle())
                     }
                     .accessibilityIdentifier("campaign-library-toggle")
                     .accessibilityValue(savedExpanded ? "Expanded" : "Collapsed")
                     Spacer(minLength: 0)
                     Button { browsingLibrary = true } label: {
-                        Label("Saved files", systemImage: "folder").frame(minHeight: 44)
+                        Label("Saved files", systemImage: "folder").frame(minHeight: 44).contentShape(Rectangle())
                     }.accessibilityIdentifier("campaign-library-files")
                 }.font(.subheadline.weight(.semibold))
                 if savedExpanded {
@@ -172,7 +172,7 @@ struct NativeCampaignView: View {
                     }
                 }
             }.padding(.horizontal, 14).padding(.vertical, 4)
-                .foregroundStyle(.white).tint(.white).buttonStyle(.plain)
+                .foregroundStyle(.white).tint(.white).buttonStyle(CampaignControlButtonStyle())
                 .background(ZovaDesign.hero, in: RoundedRectangle(cornerRadius: 12))
                 .listRowInsets(EdgeInsets()).listRowSeparator(.hidden)
         }
@@ -260,7 +260,7 @@ struct NativeCampaignView: View {
     }
     @ViewBuilder private var review: some View {
         CampaignActionsView(row:current,working:working,calendarView:$calendarView,sortBy:$sortBy,
-        allCampaigns:{current = .null; feedback = ""; message = ""},
+        allCampaigns:{current = .null; savedExpanded = true; feedback = ""; message = ""},
         rename:{newName=campaignName(current);renaming=true},refresh:{
             await perform {try await reopen(current["id"].int)}
         },request:{path,body in

@@ -34,7 +34,13 @@ struct NativeMediaLibrary: View {
                     Picker("Media type", selection: $kind) { Text("All").tag("all"); Text("Photos").tag("image"); Text("Videos").tag("video") }.pickerStyle(.segmented).onChange(of: kind) { _, _ in load(reset: true) }.disabled(loading || applying)
                     if loading { ProgressView("Loading saved media") }
                     if !error.isEmpty { Text(error).foregroundStyle(.secondary); Button("Try again") { load(reset: true) }.frame(minHeight: 44) }
-                    if rows.isEmpty && !loading && error.isEmpty { Text("No matching files. Upload from your device to get started.").foregroundStyle(.secondary) }
+                    if rows.isEmpty && !loading && error.isEmpty {
+                        if !query.isEmpty || kind != "all" {
+                            Text("No files match this search. Try another name or media type.").foregroundStyle(.secondary)
+                        } else {
+                            Text(browsing ? "No saved files yet. Add photos or videos to your campaign brief to use them again." : "No saved files yet. Choose photos or videos from your device.").foregroundStyle(.secondary)
+                        }
+                    }
                     LazyVStack(spacing: 12) { ForEach(rows, id: \.["id"].int) { asset in assetRow(asset) } }
                     if cursor > 0 { Button("Load more") { load(reset: false) }.frame(minHeight: 44).disabled(loading) }
                 }.padding(16)
